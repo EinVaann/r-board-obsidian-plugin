@@ -15,6 +15,7 @@
   gap: 8px;
 }
 .rb-spacer { flex: 1 1 auto; }
+.rb-tools { display: flex; gap: 6px; }
 
 /* View tabs */
 .rb-view-switch {

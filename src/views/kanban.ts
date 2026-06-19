@@ -14,11 +14,17 @@ import {
 import { renderPaged } from '../render/paginate';
 import { renderNoteExcerpt } from '../render/content';
 
+/** dataTransfer MIME marking a column-reorder drag (vs. a card drag). */
+const COLUMN_MIME = 'application/x-rb-column';
+
+/** Reorders the view's columns; persists and re-renders. */
+type Reorder = (draggedKey: string, beforeKey: string | null) => void;
+
 /**
  * Kanban board: one column per distinct value of the view's group property,
- * plus an Uncategorized column for notes missing it. Cards are dragged between
- * columns (which rewrites the group property), and clicking a card opens the
- * note. Items arrive already sorted by the view's sort.
+ * plus an Uncategorized column for notes missing it. Cards drag between columns
+ * (rewriting the group property); columns can be reordered by dragging their
+ * header; and a trailing "Add group" column creates a new (empty) column.
  */
 export function renderKanban(host: HTMLElement, items: BoardItem[], ctx: RenderContext): void {
   host.empty();
@@ -35,9 +41,22 @@ export function renderKanban(host: HTMLElement, items: BoardItem[], ctx: RenderC
   }
 
   const board = host.createDiv({ cls: `rb-kanban ${cardSizeClass(ctx.view)}` });
-  for (const column of groupItems(items, groupProp, ctx.view.columns)) {
-    renderColumn(board, column, groupProp, ctx);
-  }
+  const columns = groupItems(items, groupProp, ctx.view.columns);
+  const realKeys = columns.filter((c) => c.key !== null).map((c) => c.key as string);
+
+  const reorder: Reorder = (draggedKey, beforeKey) => {
+    const order = realKeys.filter((k) => k !== draggedKey);
+    if (beforeKey === null) order.push(draggedKey);
+    else {
+      const to = order.indexOf(beforeKey);
+      order.splice(to === -1 ? order.length : to, 0, draggedKey);
+    }
+    ctx.view.columns = order;
+    ctx.commit();
+  };
+
+  for (const column of columns) renderColumn(board, column, groupProp, ctx, reorder);
+  renderAddGroup(board, realKeys, ctx);
 }
 
 function renderColumn(
@@ -45,10 +64,26 @@ function renderColumn(
   column: ItemGroup,
   groupProp: PropertyConfig,
   ctx: RenderContext,
+  reorder: Reorder,
 ): void {
   const collapsed = ctx.ui.collapsed.has(column.label);
   const colEl = board.createDiv({ cls: 'rb-kanban-col' });
   if (collapsed) colEl.addClass('rb-collapsed');
+
+  // Accept a dragged column header → reorder before this column.
+  colEl.addEventListener('dragover', (e) => {
+    if (!hasType(e, COLUMN_MIME)) return;
+    e.preventDefault();
+    colEl.addClass('rb-col-drop');
+  });
+  colEl.addEventListener('dragleave', () => colEl.removeClass('rb-col-drop'));
+  colEl.addEventListener('drop', (e) => {
+    if (!hasType(e, COLUMN_MIME)) return;
+    e.preventDefault();
+    colEl.removeClass('rb-col-drop');
+    const dragged = e.dataTransfer?.getData(COLUMN_MIME);
+    if (dragged && dragged !== column.key) reorder(dragged, column.key);
+  });
 
   const header = colEl.createDiv({ cls: 'rb-kanban-header' });
   const caret = header.createSpan({ cls: 'rb-kanban-caret' });
@@ -61,6 +96,18 @@ function renderColumn(
     ctx.refresh();
   };
 
+  // Real columns (not Uncategorized) are draggable by their header to reorder.
+  if (column.key !== null) {
+    header.addClass('rb-draggable');
+    header.setAttr('draggable', 'true');
+    header.addEventListener('dragstart', (e) => {
+      e.dataTransfer?.setData(COLUMN_MIME, column.key as string);
+      e.dataTransfer!.effectAllowed = 'move';
+      colEl.addClass('rb-col-dragging');
+    });
+    header.addEventListener('dragend', () => colEl.removeClass('rb-col-dragging'));
+  }
+
   const list = colEl.createDiv({ cls: 'rb-kanban-list' });
   if (collapsed) return;
 
@@ -68,18 +115,58 @@ function renderColumn(
     renderCard(host, item, ctx),
   );
 
-  // Drop zone: accept cards dragged from other columns.
+  // Card drop zone (ignores column-reorder drags, which the column handles).
   list.addEventListener('dragover', (e) => {
+    if (hasType(e, COLUMN_MIME)) return;
     e.preventDefault();
     list.addClass('rb-drop-active');
   });
   list.addEventListener('dragleave', () => list.removeClass('rb-drop-active'));
   list.addEventListener('drop', (e) => {
-    e.preventDefault();
     list.removeClass('rb-drop-active');
+    if (hasType(e, COLUMN_MIME)) return;
+    e.preventDefault();
     const path = e.dataTransfer?.getData('text/plain');
     if (path) void handleDrop(path, column, groupProp, ctx);
   });
+}
+
+/** Trailing column with a button (then inline input) to add a new group. */
+function renderAddGroup(board: HTMLElement, realKeys: string[], ctx: RenderContext): void {
+  const col = board.createDiv({ cls: 'rb-kanban-col rb-kanban-add' });
+  const btn = col.createDiv({ cls: 'rb-kanban-add-btn' });
+  setIcon(btn.createSpan({ cls: 'rb-kanban-add-icon' }), 'plus');
+  btn.createSpan({ text: 'Add group' });
+
+  btn.onclick = () => {
+    col.empty();
+    const input = col.createEl('input', {
+      cls: 'rb-kanban-add-input',
+      attr: { type: 'text', placeholder: 'Group name…' },
+    });
+    input.focus();
+
+    let done = false;
+    const finish = (save: boolean): void => {
+      if (done) return;
+      done = true;
+      const name = input.value.trim();
+      if (save && name && !realKeys.includes(name)) {
+        const cols = ctx.view.columns ? [...ctx.view.columns] : [...realKeys];
+        if (!cols.includes(name)) cols.push(name);
+        ctx.view.columns = cols;
+        ctx.commit();
+      } else {
+        ctx.refresh();
+      }
+    };
+
+    input.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') finish(true);
+      else if (e.key === 'Escape') finish(false);
+    });
+    input.addEventListener('blur', () => finish(true));
+  };
 }
 
 function renderCard(list: HTMLElement, item: BoardItem, ctx: RenderContext): void {
@@ -116,6 +203,11 @@ function renderCard(list: HTMLElement, item: BoardItem, ctx: RenderContext): voi
     const content = body.createDiv({ cls: 'rb-card-content' });
     void renderNoteExcerpt(ctx.app, content, item.file, ctx.component);
   }
+}
+
+/** Whether a drag event carries the given data type. */
+function hasType(e: DragEvent, type: string): boolean {
+  return !!e.dataTransfer && Array.from(e.dataTransfer.types).includes(type);
 }
 
 async function handleDrop(

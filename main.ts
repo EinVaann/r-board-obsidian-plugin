@@ -32,6 +32,20 @@ export default class RBoardPlugin extends Plugin {
       name: 'Create new database',
       callback: () => this.openCreateWizard(),
     });
+
+    // File-explorer right-click → "New board" (in the folder, or a file's folder).
+    this.registerEvent(
+      this.app.workspace.on('file-menu', (menu, file) => {
+        const folder = file instanceof TFolder ? file : file instanceof TFile ? file.parent : null;
+        if (!folder) return;
+        menu.addItem((item) =>
+          item
+            .setTitle('New board')
+            .setIcon('circuit-board')
+            .onClick(() => this.openCreateWizard(folder.path)),
+        );
+      }),
+    );
   }
 
   // --- Active-view persistence ----------------------------------------------
@@ -75,15 +89,17 @@ export default class RBoardPlugin extends Plugin {
     await this.app.workspace.getLeaf(true).openFile(file);
   }
 
-  private openCreateWizard(): void {
+  private openCreateWizard(folderPath?: string): void {
     new WizardModal(this.app, {}, 'Create database', (config) => {
-      void this.createDatabaseFromConfig(config);
+      void this.createDatabaseFromConfig(config, folderPath);
     }).open();
   }
 
   /** Write a new `.board` file from a config and open it. */
-  async createDatabaseFromConfig(config: DatabaseConfig): Promise<void> {
-    const folder = this.app.fileManager.getNewFileParent('');
+  async createDatabaseFromConfig(config: DatabaseConfig, folderPath?: string): Promise<void> {
+    const folder = folderPath !== undefined
+      ? this.app.vault.getAbstractFileByPath(folderPath)
+      : this.app.fileManager.getNewFileParent('');
     const dir = folder instanceof TFolder && folder.path ? `${folder.path}/` : '';
     const base = (config.name?.trim() || 'New Database').replace(/[\\/:*?"<>|]/g, '-');
 

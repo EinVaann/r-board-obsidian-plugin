@@ -205,10 +205,7 @@ export class BoardView extends TextFileView {
     setIcon(addBtn.createSpan({ cls: 'rb-view-btn-icon' }), 'plus');
     addBtn.onclick = (e) => this.openCreateViewMenu(e);
 
-    tabsRow.createDiv({ cls: 'rb-spacer' });
-    this.toolButton(tabsRow, 'settings', 'Board settings', () => this.toggleSidebar('board'), this.sidebar === 'board');
-
-    // Row 2: search + sort/filter chips (left), view settings (right).
+    // Row 2: search + sort/filter chips (left), settings buttons (right).
     const ctrlRow = bar.createDiv({ cls: 'rb-controls-row' });
     const search = ctrlRow.createEl('input', {
       cls: 'rb-search',
@@ -224,9 +221,13 @@ export class BoardView extends TextFileView {
     if (view) {
       this.renderSortChip(ctrlRow, view);
       this.renderFilterChip(ctrlRow, view);
-      ctrlRow.createDiv({ cls: 'rb-spacer' });
-      this.toolButton(ctrlRow, 'sliders-horizontal', 'View settings', () => this.toggleSidebar('view'), this.sidebar === 'view');
     }
+    ctrlRow.createDiv({ cls: 'rb-spacer' });
+    const tools = ctrlRow.createDiv({ cls: 'rb-tools' });
+    if (view) {
+      this.toolButton(tools, 'sliders-horizontal', 'View settings', () => this.toggleSidebar('view'), this.sidebar === 'view');
+    }
+    this.toolButton(tools, 'settings', 'Board settings', () => this.toggleSidebar('board'), this.sidebar === 'board');
   }
 
   private renderSortChip(parent: HTMLElement, view: ViewConfig): void {
@@ -437,6 +438,7 @@ export class BoardView extends TextFileView {
         view.sort = s;
         this.saveConfig();
       },
+      commit: () => this.saveConfig(),
       refresh: () => this.renderBody(),
       ui: this.ui,
     };

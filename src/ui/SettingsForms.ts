@@ -73,13 +73,16 @@ export function renderViewSettings(
       });
     });
 
-  // Group
+  // Group — kanban columns can only be plain-text properties.
+  const groupProps = view.type === 'kanban'
+    ? config.properties.filter((p) => p.type === 'text')
+    : config.properties;
   new Setting(container)
     .setName('Group by')
-    .setDesc(view.type === 'kanban' ? 'Required: defines the columns.' : 'Optional: section headers.')
+    .setDesc(view.type === 'kanban' ? 'Required: a text property defines the columns.' : 'Optional: section headers.')
     .addDropdown((d) => {
-      d.addOption('', view.type === 'kanban' ? '(choose a property)' : 'None');
-      for (const p of config.properties) d.addOption(p.name, propertyLabel(p));
+      d.addOption('', view.type === 'kanban' ? '(choose a text property)' : 'None');
+      for (const p of groupProps) d.addOption(p.name, propertyLabel(p));
       d.setValue(view.group ?? '');
       d.onChange((v) => {
         view.group = v || undefined;
