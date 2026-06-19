@@ -1,0 +1,40 @@
+/* ===================== Board base ===================== */
+.rb-root {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  overflow: hidden;
+}
+.rb-body {
+  flex: 1 1 auto;
+  overflow-y: auto;
+  padding: 16px;
+}
+.rb-empty {
+  color: var(--text-muted);
+  padding: 32px 0;
+  text-align: center;
+}
+.rb-error {
+  padding: 24px;
+  color: var(--text-error);
+}
+.rb-error h3 { margin-top: 0; }
+.rb-error p {
+  font-family: var(--font-monospace);
+  color: var(--text-muted);
+  white-space: pre-wrap;
+}
+
+.rb-view-more {
+  display: block;
+  margin: 16px auto 0;
+  padding: 6px 16px;
+  border-radius: 6px;
+  background: var(--background-secondary);
+  color: var(--text-normal);
+  border: 1px solid var(--background-modifier-border);
+  cursor: pointer;
+  font-size: 13px;
+}
+.rb-view-more:hover { background: var(--background-modifier-hover); }

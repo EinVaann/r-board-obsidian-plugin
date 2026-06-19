@@ -1,0 +1,15 @@
+/* ===================== Gallery (masonry) ===================== */
+.rb-gallery {
+  column-count: 4;
+  column-gap: 14px;
+}
+.rb-gallery-card {
+  display: inline-block;
+  width: 100%;
+  margin: 0 0 14px;
+  break-inside: avoid;
+}
+
+@media (max-width: 1100px) { .rb-gallery { column-count: 3; } }
+@media (max-width: 800px) { .rb-gallery { column-count: 2; } }
+@media (max-width: 500px) { .rb-gallery { column-count: 1; } }

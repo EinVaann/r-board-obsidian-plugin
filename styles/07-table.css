@@ -1,0 +1,25 @@
+/* ===================== Table ===================== */
+.rb-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+.rb-th {
+  text-align: left;
+  padding: 8px 10px;
+  border-bottom: 2px solid var(--background-modifier-border);
+  cursor: pointer;
+  user-select: none;
+  white-space: nowrap;
+  color: var(--text-normal);
+}
+.rb-th:hover { background: var(--background-modifier-hover); }
+.rb-sort-ind { color: var(--text-accent); }
+.rb-td {
+  padding: 8px 10px;
+  border-bottom: 1px solid var(--background-modifier-border);
+  vertical-align: middle;
+}
+.rb-tr:hover { background: var(--background-modifier-hover); }
+.rb-td .rb-img { width: 48px; }
+.rb-td .rb-img img { aspect-ratio: 3 / 4; object-fit: cover; border-radius: 4px; }

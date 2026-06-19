@@ -1,0 +1,20 @@
+{
+  "name": "r-board",
+  "version": "0.1.0",
+  "description": "Configurable board views for Obsidian",
+  "main": "main.js",
+  "scripts": {
+    "dev": "node esbuild.config.mjs",
+    "build": "node esbuild.config.mjs production",
+    "build:css": "node build-css.mjs",
+    "deploy": "node esbuild.config.mjs production && cp main.js manifest.json styles.css \"/Users/anhv/Documents/Vault/.obsidian/plugins/r-board/\""
+  },
+  "dependencies": {},
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "builtin-modules": "^3.3.0",
+    "esbuild": "^0.21.5",
+    "obsidian": "latest",
+    "typescript": "^5.4.0"
+  }
+}

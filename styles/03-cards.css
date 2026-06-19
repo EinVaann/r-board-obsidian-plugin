@@ -1,0 +1,38 @@
+/* ===================== Cards (shared) ===================== */
+.rb-card {
+  background: var(--background-secondary);
+  border: 1px solid var(--background-modifier-border);
+  border-radius: 10px;
+  overflow: hidden;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+.rb-card:hover {
+  border-color: var(--background-modifier-border-hover);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.12);
+}
+.rb-card-body {
+  padding: 10px 12px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.rb-title {
+  font-weight: 600;
+  font-size: 14px;
+  color: var(--text-normal);
+  text-decoration: none;
+  line-height: 1.3;
+}
+.rb-title:hover { color: var(--text-accent); text-decoration: underline; }
+.rb-field {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  align-items: center;
+}
+
+/* Card cover images */
+.rb-img { width: 100%; line-height: 0; background: var(--background-primary); }
+.rb-img img { width: 100%; display: block; cursor: zoom-in; }
+.rb-img-fill img { aspect-ratio: 3 / 4; object-fit: cover; }
+.rb-img-fit img { max-height: 320px; object-fit: contain; }

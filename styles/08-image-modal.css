@@ -1,0 +1,19 @@
+/* ===================== Fullscreen image modal ===================== */
+.rb-image-modal {
+  width: auto;
+  max-width: 92vw;
+  max-height: 92vh;
+  background: transparent;
+  box-shadow: none;
+  border: none;
+  padding: 0;
+}
+.rb-image-modal .modal-close-button { z-index: 2; }
+.rb-image-modal .modal-content { margin: 0; padding: 0; }
+.rb-image-modal-img {
+  max-width: 92vw;
+  max-height: 92vh;
+  object-fit: contain;
+  cursor: zoom-out;
+  border-radius: 6px;
+}
