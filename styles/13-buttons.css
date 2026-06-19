@@ -1,0 +1,54 @@
+/* ===================== Custom buttons ===================== */
+/* Replaces Obsidian's default button chrome inside our forms (wizard, settings
+   modals, and the settings sidebar — all carry the .rb-wizard class). */
+.rb-wizard button {
+  padding: 7px 14px;
+  border-radius: 8px;
+  border: 1px solid var(--background-modifier-border);
+  background: var(--background-primary);
+  color: var(--text-normal);
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  box-shadow: none;
+  transition: background 0.12s ease, border-color 0.12s ease, transform 0.05s ease;
+}
+.rb-wizard button:hover {
+  background: var(--background-modifier-hover);
+  border-color: var(--background-modifier-border-hover);
+}
+.rb-wizard button:active { transform: translateY(1px); }
+
+.rb-wizard button.mod-cta {
+  background: var(--interactive-accent);
+  border-color: transparent;
+  color: var(--text-on-accent);
+}
+.rb-wizard button.mod-cta:hover { background: var(--interactive-accent-hover); }
+
+.rb-wizard button.mod-warning {
+  background: transparent;
+  border-color: var(--text-error);
+  color: var(--text-error);
+}
+.rb-wizard button.mod-warning:hover {
+  background: var(--text-error);
+  border-color: var(--text-error);
+  color: var(--text-on-accent);
+}
+
+/* Full-width primary buttons for "Add property" / "Add filter" / "Delete view". */
+.rb-wizard .setting-item:not(.rb-prop-row):not(.rb-filter-row) > .setting-item-control:only-child {
+  justify-content: stretch;
+}
+.rb-wizard .setting-item:not(.rb-prop-row):not(.rb-filter-row) > .setting-item-control:only-child button {
+  flex: 1 1 auto;
+}
+
+/* "View More" and home/empty primary buttons share the custom look. */
+.rb-view-more,
+.rb-home-create {
+  transition: background 0.12s ease, transform 0.05s ease;
+}
+.rb-view-more:active,
+.rb-home-create:active { transform: translateY(1px); }

@@ -92,6 +92,14 @@ function renderCard(list: HTMLElement, item: BoardItem, ctx: RenderContext): voi
 
   card.addEventListener('dragstart', (e) => {
     e.dataTransfer?.setData('text/plain', item.file.path);
+    e.dataTransfer!.effectAllowed = 'move';
+    // Drag a styled clone of the card (not just the highlight outline).
+    const ghost = card.cloneNode(true) as HTMLElement;
+    ghost.addClass('rb-drag-ghost');
+    ghost.style.width = `${card.offsetWidth}px`;
+    document.body.appendChild(ghost);
+    e.dataTransfer?.setDragImage(ghost, e.offsetX, e.offsetY);
+    window.setTimeout(() => ghost.remove(), 0);
     card.addClass('rb-dragging');
   });
   card.addEventListener('dragend', () => card.removeClass('rb-dragging'));

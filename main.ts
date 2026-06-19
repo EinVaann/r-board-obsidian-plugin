@@ -20,7 +20,7 @@ export default class RBoardPlugin extends Plugin {
     this.registerView(HOME_VIEW_TYPE, (leaf) => new BoardHomeView(leaf, this));
     this.registerExtensions([BOARD_EXTENSION], BOARD_VIEW_TYPE);
 
-    this.addRibbonIcon('layout-dashboard', 'R Board', () => void this.openHome());
+    this.addRibbonIcon('circuit-board', 'R Board', () => void this.openHome());
 
     this.addCommand({
       id: 'open-home',

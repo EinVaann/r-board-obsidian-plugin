@@ -4,14 +4,14 @@
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 10px;
+  gap: 12px;
   height: 100%;
   padding: 24px;
   text-align: center;
 }
 .rb-setup-icon { color: var(--text-accent); }
-.rb-setup-icon svg { width: 40px; height: 40px; }
-.rb-setup h3 { margin: 0; }
+.rb-setup-icon svg { width: 44px; height: 44px; }
+.rb-setup h3 { margin: 0; font-size: 18px; }
 .rb-setup-error {
   color: var(--text-error);
   font-family: var(--font-monospace);
@@ -22,14 +22,36 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 12px;
+  gap: 14px;
 }
 
-/* ===================== Settings modals ===================== */
-.rb-wizard .rb-wizard-hint { color: var(--text-muted); font-size: 12px; margin: -4px 0 8px; }
-.rb-wizard h4 { margin: 16px 0 6px; }
-.rb-prop-row .setting-item-info { display: none; }
-.rb-prop-row { padding: 6px 0; border: none; }
-.rb-prop-row .rb-prop-max input { width: 70px; }
+/* ===================== Wizard / settings forms ===================== */
+.modal:has(.rb-wizard) { width: min(620px, 90vw); }
+.rb-wizard .rb-wizard-hint { color: var(--text-muted); font-size: 12px; margin: -4px 0 10px; }
+.rb-wizard h4 {
+  margin: 20px 0 6px;
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--text-muted);
+}
+
+/* Property + filter rows: hide the empty info column, lay controls in a row. */
+.rb-prop-row.setting-item,
+.rb-filter-row.setting-item {
+  border: none;
+  padding: 6px 0;
+}
+.rb-prop-row .setting-item-info,
 .rb-filter-row .setting-item-info { display: none; }
-.rb-filter-row { padding: 6px 0; border: none; }
+.rb-prop-row .setting-item-control,
+.rb-filter-row .setting-item-control {
+  width: 100%;
+  justify-content: flex-start;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.rb-prop-row .setting-item-control input[type='text'] { flex: 1 1 140px; }
+.rb-prop-row .rb-prop-max { flex: 0 0 80px !important; }
+.rb-filter-row .setting-item-control select,
+.rb-filter-row .setting-item-control input { flex: 1 1 120px; }

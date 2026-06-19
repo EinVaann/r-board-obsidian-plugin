@@ -18,9 +18,8 @@ import { renderGallery } from './views/gallery';
 import { renderKanban } from './views/kanban';
 import { renderTable } from './views/table';
 import { WizardModal } from './ui/WizardModal';
-import { DatabaseSettingsModal } from './ui/DatabaseSettingsModal';
-import { ViewSettingsModal } from './ui/ViewSettingsModal';
 import { FilterModal } from './ui/FilterModal';
+import { renderDatabaseSettings, renderViewSettings } from './ui/SettingsForms';
 
 export const BOARD_VIEW_TYPE = 'r-board-view';
 /** File extension that opens as a database board (JSON content, like `.canvas`). */
@@ -32,6 +31,8 @@ const TYPE_ICON: Record<ViewType, string> = {
   table: 'table',
 };
 
+type SidebarMode = 'view' | 'board' | null;
+
 /** A board pane: parses a `.board` database config and renders the active view. */
 export class BoardView extends TextFileView {
   plugin: RBoardPlugin;
@@ -40,9 +41,12 @@ export class BoardView extends TextFileView {
   private parseError: string | null = null;
   private activeView = '';
   private searchQuery = '';
+  private sidebar: SidebarMode = null;
   private ui: BoardUiState = { collapsed: new Set() };
 
   private bodyEl: HTMLElement | null = null;
+  private toolbarEl: HTMLElement | null = null;
+  private sidebarEl: HTMLElement | null = null;
 
   constructor(leaf: WorkspaceLeaf, plugin: RBoardPlugin) {
     super(leaf);
@@ -102,30 +106,17 @@ export class BoardView extends TextFileView {
 
   // --- Config persistence ----------------------------------------------------
 
-  /** Write a new config to the `.board` file and re-render. */
-  private async writeConfig(config: DatabaseConfig): Promise<void> {
-    const json = serializeDatabase(config);
-    this.data = json;
-    if (this.file) await this.app.vault.modify(this.file, json);
-    this.setViewData(json, false);
-  }
-
-  private async writeView(view: ViewConfig): Promise<void> {
+  /**
+   * Persist the current in-memory config to the `.board` file without forcing a
+   * full reload (so the sidebar keeps focus). Refreshes body + toolbar.
+   */
+  private saveConfig(): void {
     if (!this.config) return;
-    const views = this.config.views.map((v) => (v.name === this.activeView ? view : v));
-    this.activeView = view.name;
-    if (this.file) void this.plugin.setActiveView(this.file.path, view.name);
-    await this.writeConfig({ ...this.config, views });
+    this.data = serializeDatabase(this.config);
+    this.requestSave();
+    this.renderToolbar();
+    this.renderBody();
   }
-
-  private async deleteActiveView(): Promise<void> {
-    if (!this.config) return;
-    const views = this.config.views.filter((v) => v.name !== this.activeView);
-    this.activeView = views[0]?.name ?? '';
-    await this.writeConfig({ ...this.config, views, defaultView: views[0]?.name });
-  }
-
-  // --- Rendering -------------------------------------------------------------
 
   private currentView(): ViewConfig | null {
     if (!this.config) return null;
@@ -140,6 +131,8 @@ export class BoardView extends TextFileView {
     this.render();
   }
 
+  // --- Rendering -------------------------------------------------------------
+
   private render(): void {
     const root = this.contentEl;
     root.empty();
@@ -150,18 +143,23 @@ export class BoardView extends TextFileView {
       return;
     }
 
-    this.renderToolbar(root);
-    this.bodyEl = root.createDiv({ cls: 'rb-body' });
+    this.toolbarEl = root.createDiv({ cls: 'rb-toolbar' });
+    this.renderToolbar();
+
+    const main = root.createDiv({ cls: 'rb-main' });
+    this.bodyEl = main.createDiv({ cls: 'rb-body' });
+    this.sidebarEl = main.createDiv({ cls: 'rb-sidebar' });
 
     if (this.config.views.length === 0) {
       const empty = this.bodyEl.createDiv({ cls: 'rb-empty rb-empty-views' });
       empty.createDiv({ text: 'This board has no views yet.' });
-      const btn = empty.createEl('button', { cls: 'rb-view-more', text: 'Create view' });
+      const btn = empty.createEl('button', { cls: 'rb-home-create', text: 'Create view' });
       btn.onclick = (e) => this.openCreateViewMenu(e);
-      return;
+    } else {
+      this.renderBody();
     }
 
-    this.renderBody();
+    this.renderSidebar();
   }
 
   /** Setup prompt shown when the `.board` file is empty or unparseable. */
@@ -174,19 +172,45 @@ export class BoardView extends TextFileView {
     }
     const btn = box.createEl('button', { cls: 'rb-home-create', text: 'Configure board' });
     btn.onclick = () => {
-      new WizardModal(this.app, {}, 'Set up board', (config) => void this.writeConfig(config)).open();
+      new WizardModal(this.app, {}, 'Set up board', (config) => {
+        this.config = config;
+        this.activeView = config.views[0]?.name ?? '';
+        this.saveConfig();
+        this.render();
+      }).open();
     };
   }
 
-  private renderToolbar(root: HTMLElement): void {
-    const bar = root.createDiv({ cls: 'rb-toolbar' });
+  // --- Toolbar ---------------------------------------------------------------
 
-    bar.createDiv({
-      cls: 'rb-toolbar-title',
-      text: this.config?.name ?? this.file?.basename ?? 'Board',
-    });
+  private renderToolbar(): void {
+    const bar = this.toolbarEl;
+    if (!bar || !this.config) return;
+    bar.empty();
 
-    const search = bar.createEl('input', {
+    // Row 1: view tabs + add view (left), board settings (right).
+    const tabsRow = bar.createDiv({ cls: 'rb-tabs-row' });
+    const tabs = tabsRow.createDiv({ cls: 'rb-view-switch' });
+    for (const view of this.config.views) {
+      const btn = tabs.createEl('button', {
+        cls: view.name === this.activeView ? 'rb-view-btn rb-active' : 'rb-view-btn',
+        attr: { title: `${view.name} (${view.type})` },
+      });
+      setIcon(btn.createSpan({ cls: 'rb-view-btn-icon' }), TYPE_ICON[view.type]);
+      btn.createSpan({ text: view.name });
+      btn.onclick = () => this.setActiveView(view.name);
+      btn.oncontextmenu = (e) => this.openTabMenu(e, view);
+    }
+    const addBtn = tabs.createEl('button', { cls: 'rb-view-btn rb-view-add', attr: { title: 'Create view' } });
+    setIcon(addBtn.createSpan({ cls: 'rb-view-btn-icon' }), 'plus');
+    addBtn.onclick = (e) => this.openCreateViewMenu(e);
+
+    tabsRow.createDiv({ cls: 'rb-spacer' });
+    this.toolButton(tabsRow, 'settings', 'Board settings', () => this.toggleSidebar('board'), this.sidebar === 'board');
+
+    // Row 2: search + sort/filter chips (left), view settings (right).
+    const ctrlRow = bar.createDiv({ cls: 'rb-controls-row' });
+    const search = ctrlRow.createEl('input', {
       cls: 'rb-search',
       attr: { type: 'search', placeholder: 'Search…' },
     });
@@ -196,36 +220,57 @@ export class BoardView extends TextFileView {
       this.renderBody();
     };
 
-    // View tabs.
-    const tabs = bar.createDiv({ cls: 'rb-view-switch' });
-    for (const view of this.config?.views ?? []) {
-      const btn = tabs.createEl('button', {
-        cls: view.name === this.activeView ? 'rb-view-btn rb-active' : 'rb-view-btn',
-        attr: { title: `${view.name} (${view.type})` },
-      });
-      setIcon(btn.createSpan({ cls: 'rb-view-btn-icon' }), TYPE_ICON[view.type]);
-      btn.createSpan({ text: view.name });
-      btn.onclick = () => this.setActiveView(view.name);
-    }
-    const addBtn = tabs.createEl('button', { cls: 'rb-view-btn rb-view-add', attr: { title: 'Create view' } });
-    setIcon(addBtn.createSpan({ cls: 'rb-view-btn-icon' }), 'plus');
-    addBtn.onclick = (e) => this.openCreateViewMenu(e);
-
-    // Right-aligned tools (only meaningful with an active view).
-    const tools = bar.createDiv({ cls: 'rb-tools' });
     const view = this.currentView();
     if (view) {
-      this.toolButton(tools, 'arrow-up-down', 'Sort', (e) => this.openSortMenu(e));
-      this.toolButton(tools, 'filter', 'Filter', () => this.openFilter());
-      this.toolButton(tools, 'sliders-horizontal', 'View settings', () => this.openViewSettings());
+      this.renderSortChip(ctrlRow, view);
+      this.renderFilterChip(ctrlRow, view);
+      ctrlRow.createDiv({ cls: 'rb-spacer' });
+      this.toolButton(ctrlRow, 'sliders-horizontal', 'View settings', () => this.toggleSidebar('view'), this.sidebar === 'view');
     }
-    this.toolButton(tools, 'settings', 'Board settings', () => this.openBoardSettings());
   }
 
-  private toolButton(parent: HTMLElement, icon: string, label: string, onClick: (e: MouseEvent) => void): void {
-    const btn = parent.createEl('button', { cls: 'rb-tool-btn', attr: { 'aria-label': label, title: label } });
+  private renderSortChip(parent: HTMLElement, view: ViewConfig): void {
+    const sort = effectiveSort(view);
+    const active = !!view.sort;
+    const label = active
+      ? `${this.propLabel(sort.property)} ${sort.dir === 'asc' ? '↑' : '↓'}`
+      : 'Sort';
+    const chip = this.chip(parent, 'arrow-up-down', label, active);
+    chip.onclick = (e) => this.openSortMenu(e, view);
+  }
+
+  private renderFilterChip(parent: HTMLElement, view: ViewConfig): void {
+    const count = view.filter?.length ?? 0;
+    const chip = this.chip(parent, 'filter', count ? `Filter · ${count}` : 'Filter', count > 0);
+    chip.onclick = () => this.openFilter(view);
+  }
+
+  private chip(parent: HTMLElement, icon: string, label: string, active: boolean): HTMLElement {
+    const chip = parent.createEl('button', { cls: active ? 'rb-chip rb-chip-active' : 'rb-chip' });
+    setIcon(chip.createSpan({ cls: 'rb-chip-icon' }), icon);
+    chip.createSpan({ text: label });
+    return chip;
+  }
+
+  private toolButton(
+    parent: HTMLElement,
+    icon: string,
+    label: string,
+    onClick: (e: MouseEvent) => void,
+    active = false,
+  ): void {
+    const btn = parent.createEl('button', {
+      cls: active ? 'rb-tool-btn rb-active' : 'rb-tool-btn',
+      attr: { 'aria-label': label, title: label },
+    });
     setIcon(btn, icon);
     btn.onclick = onClick;
+  }
+
+  private propLabel(key: string): string {
+    if (key === TITLE_SORT_KEY) return 'Title';
+    const p = this.config?.properties.find((q) => q.name === key);
+    return p ? propertyLabel(p) : key;
   }
 
   // --- Toolbar actions -------------------------------------------------------
@@ -237,66 +282,135 @@ export class BoardView extends TextFileView {
       menu.addItem((item) =>
         item.setTitle(`New ${type} view`).setIcon(TYPE_ICON[type]).onClick(() => {
           const view = makeDefaultView(type, this.config!.views);
-          void this.writeConfig({ ...this.config!, views: [...this.config!.views, view] }).then(() => {
-            this.setActiveView(view.name);
-            this.openViewSettings();
-          });
+          this.config!.views.push(view);
+          this.activeView = view.name;
+          if (this.file) void this.plugin.setActiveView(this.file.path, view.name);
+          this.sidebar = 'view';
+          this.saveConfig();
+          this.render();
         }),
       );
     });
     menu.showAtMouseEvent(e);
   }
 
-  private openSortMenu(e: MouseEvent): void {
-    const view = this.currentView();
-    if (!this.config || !view) return;
+  private openTabMenu(e: MouseEvent, view: ViewConfig): void {
+    e.preventDefault();
+    const menu = new Menu();
+    menu.addItem((i) => i.setTitle('View settings').setIcon('sliders-horizontal').onClick(() => {
+      this.setActiveView(view.name);
+      this.toggleSidebar('view', true);
+    }));
+    menu.addItem((i) => i.setTitle('Delete view').setIcon('trash').onClick(() => this.deleteView(view.name)));
+    menu.showAtMouseEvent(e);
+  }
+
+  private openSortMenu(e: MouseEvent, view: ViewConfig): void {
+    if (!this.config) return;
     const current = effectiveSort(view);
     const menu = new Menu();
-
     const addItem = (key: string, label: string): void => {
       menu.addItem((item) => {
         item.setTitle(label);
         if (current.property === key) item.setIcon(current.dir === 'asc' ? 'arrow-up' : 'arrow-down');
         item.onClick(() => {
           const dir = current.property === key && current.dir === 'asc' ? 'desc' : 'asc';
-          void this.writeView({ ...view, sort: { property: key, dir } });
+          view.sort = { property: key, dir };
+          this.saveConfig();
         });
       });
     };
-
     addItem(TITLE_SORT_KEY, 'Title');
     for (const p of this.config.properties) addItem(p.name, propertyLabel(p));
     menu.showAtMouseEvent(e);
   }
 
-  private openFilter(): void {
-    const view = this.currentView();
-    if (!this.config || !view) return;
+  private openFilter(view: ViewConfig): void {
+    if (!this.config) return;
     new FilterModal(this.app, view.filter ?? [], this.config.properties, (rules) => {
-      void this.writeView({ ...view, filter: rules.length ? rules : undefined });
+      view.filter = rules.length ? rules : undefined;
+      this.saveConfig();
     }).open();
   }
 
-  private openViewSettings(): void {
-    const view = this.currentView();
-    if (!this.config || !view) return;
-    new ViewSettingsModal(
-      this.app,
-      view,
-      this.config,
-      (updated) => void this.writeView(updated),
-      () => void this.deleteActiveView(),
-    ).open();
+  private deleteView(name: string): void {
+    if (!this.config) return;
+    this.config.views = this.config.views.filter((v) => v.name !== name);
+    if (this.activeView === name) this.activeView = this.config.views[0]?.name ?? '';
+    this.config.defaultView = this.config.views[0]?.name;
+    if (this.sidebar === 'view' && this.config.views.length === 0) this.sidebar = null;
+    this.saveConfig();
+    this.render();
   }
 
-  private openBoardSettings(): void {
-    if (!this.config) return;
-    new DatabaseSettingsModal(this.app, this.config, (updated) => void this.writeConfig(updated)).open();
+  // --- Sidebar ---------------------------------------------------------------
+
+  private toggleSidebar(mode: Exclude<SidebarMode, null>, force = false): void {
+    this.sidebar = !force && this.sidebar === mode ? null : mode;
+    this.contentEl.toggleClass('rb-has-sidebar', this.sidebar !== null);
+    this.renderToolbar();
+    this.renderSidebar();
+  }
+
+  private renderSidebar(): void {
+    const el = this.sidebarEl;
+    if (!el || !this.config) return;
+    el.empty();
+    this.contentEl.toggleClass('rb-has-sidebar', this.sidebar !== null);
+    if (!this.sidebar) return;
+
+    const header = el.createDiv({ cls: 'rb-sidebar-header' });
+    header.createSpan({ cls: 'rb-sidebar-title', text: this.sidebar === 'board' ? 'Board settings' : 'View settings' });
+    const close = header.createEl('button', { cls: 'rb-sidebar-close', attr: { 'aria-label': 'Close' } });
+    setIcon(close, 'x');
+    close.onclick = () => this.toggleSidebar(this.sidebar as Exclude<SidebarMode, null>);
+
+    const content = el.createDiv({ cls: 'rb-sidebar-content rb-wizard' });
+
+    if (this.sidebar === 'board') {
+      renderDatabaseSettings(content, this.config, {
+        onChange: () => this.saveConfig(),
+        onStructureChange: () => {
+          this.saveConfig();
+          this.renderSidebar();
+        },
+      });
+    } else {
+      const view = this.currentView();
+      if (!view) {
+        content.createDiv({ cls: 'rb-empty', text: 'No view selected.' });
+        return;
+      }
+      // The view's name may be edited here; keep the active-view pointer in sync.
+      const syncName = (): void => {
+        if (this.activeView !== view.name) {
+          this.activeView = view.name;
+          if (this.file) void this.plugin.setActiveView(this.file.path, view.name);
+        }
+      };
+      renderViewSettings(
+        this.app,
+        content,
+        this.config,
+        view,
+        {
+          onChange: () => {
+            syncName();
+            this.saveConfig();
+          },
+          onStructureChange: () => {
+            syncName();
+            this.saveConfig();
+            this.renderSidebar();
+          },
+        },
+        () => this.deleteView(view.name),
+      );
+    }
   }
 
   // --- Body ------------------------------------------------------------------
 
-  /** Re-query the vault and draw the active view into the body. */
   private renderBody(): void {
     const body = this.bodyEl;
     const view = this.currentView();
@@ -319,7 +433,10 @@ export class BoardView extends TextFileView {
       boardFile: this.file!,
       component: this,
       sort,
-      setSort: (s: SortSpec) => void this.writeView({ ...view, sort: s }),
+      setSort: (s: SortSpec) => {
+        view.sort = s;
+        this.saveConfig();
+      },
       refresh: () => this.renderBody(),
       ui: this.ui,
     };

@@ -16,11 +16,12 @@ export function asNumber(value: unknown): number | null {
   return null;
 }
 
-/** Coerce a frontmatter value to a string array. */
+/** Coerce a frontmatter value to a string array, dropping empty/null entries. */
 export function asArray(value: unknown): string[] {
-  if (Array.isArray(value)) return value.map((v) => String(v));
-  if (value === undefined || value === null || value === '') return [];
-  return [String(value)];
+  const raw = Array.isArray(value) ? value : value === undefined || value === null || value === '' ? [] : [value];
+  return raw
+    .filter((v) => v !== null && v !== undefined && String(v).trim() !== '')
+    .map((v) => String(v));
 }
 
 /**

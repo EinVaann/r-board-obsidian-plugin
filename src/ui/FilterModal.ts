@@ -36,6 +36,7 @@ export class FilterModal extends Modal {
 
   onOpen(): void {
     this.titleEl.setText('Filters (all must match)');
+    this.contentEl.addClass('rb-wizard');
     this.render();
   }
 

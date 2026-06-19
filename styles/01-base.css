@@ -5,9 +5,18 @@
   height: 100%;
   overflow: hidden;
 }
+/* Body + settings sidebar sit side by side below the toolbar. */
+.rb-main {
+  flex: 1 1 auto;
+  display: flex;
+  min-height: 0;
+  overflow: hidden;
+}
 .rb-body {
   flex: 1 1 auto;
+  min-width: 0;
   overflow-y: auto;
+  overflow-x: hidden;
   padding: 16px;
 }
 .rb-empty {

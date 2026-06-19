@@ -37,6 +37,7 @@ export function renderPropertyEditor(
     setting.addText((t) =>
       t.setPlaceholder('name').setValue(prop.name).onChange((v) => {
         prop.name = v;
+        onChange();
       }),
     );
 
@@ -67,6 +68,7 @@ export function renderPropertyEditor(
         t.onChange((v) => {
           const n = Number(v);
           prop.max = Number.isNaN(n) ? undefined : n;
+          onChange();
         });
       });
     }

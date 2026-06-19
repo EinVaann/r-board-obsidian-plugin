@@ -52,12 +52,36 @@
   gap: 10px;
   padding: 0 10px 12px;
   overflow-y: auto;
-  min-height: 12px;
+  /* Let the list take the column's remaining height and scroll inside it. */
+  flex: 1 1 auto;
+  min-height: 0;
 }
 .rb-kanban-list.rb-drop-active {
   outline: 2px dashed var(--text-accent);
   outline-offset: -4px;
   border-radius: 8px;
 }
-.rb-kanban-card { cursor: grab; }
-.rb-kanban-card.rb-dragging { opacity: 0.5; }
+/* Cards keep their natural height — never shrink to thin strips. */
+.rb-kanban-card {
+  flex: 0 0 auto;
+  cursor: grab;
+  transition: transform 0.12s ease, box-shadow 0.12s ease, opacity 0.12s ease;
+}
+.rb-kanban-card:active { cursor: grabbing; }
+.rb-kanban-card.rb-dragging {
+  opacity: 0.4;
+  transform: scale(0.97) rotate(-1deg);
+}
+/* The "View More" button inside a column shouldn't shrink either. */
+.rb-kanban-list .rb-view-more { flex: 0 0 auto; }
+
+/* Floating clone used as the drag image (lives off-screen on <body>). */
+.rb-drag-ghost {
+  position: fixed;
+  top: -9999px;
+  left: -9999px;
+  pointer-events: none;
+  transform: rotate(2deg);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
+  opacity: 0.95;
+}
