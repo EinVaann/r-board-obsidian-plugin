@@ -1,46 +1,14 @@
-import { Notice, Plugin, TFolder, normalizePath } from 'obsidian';
+import { Notice, Plugin, TFile, TFolder, WorkspaceLeaf, normalizePath } from 'obsidian';
 import { BOARD_EXTENSION, BOARD_VIEW_TYPE, BoardView } from './src/BoardView';
+import { BoardHomeView, HOME_VIEW_TYPE } from './src/home/HomeView';
+import { serializeDatabase } from './src/config';
+import type { DatabaseConfig } from './src/types';
+import { WizardModal } from './src/ui/WizardModal';
 
 interface RBoardData {
   /** Active view name chosen per database, keyed by the `.board` file path. */
   activeViews?: Record<string, string>;
 }
-
-/** A starter `.board` database written by the "Create database" command. */
-const STARTER_DATABASE = {
-  name: 'Game Backlog',
-  sourceTag: 'backlog',
-  properties: [
-    { name: 'cover', type: 'image', render: 'fill' },
-    { name: 'genre', type: 'multi', render: 'pills' },
-    { name: 'status', type: 'text', render: 'badge' },
-    { name: 'rating', type: 'number', render: 'stars', max: 5 },
-    { name: 'score', type: 'number', render: 'bar', max: 100 },
-  ],
-  views: [
-    {
-      name: 'Gallery',
-      type: 'gallery',
-      limit: 50,
-      properties: ['cover', 'genre', 'rating', 'score'],
-    },
-    {
-      name: 'Board',
-      type: 'kanban',
-      limit: 'none',
-      group: 'status',
-      columns: ['to-play', 'playing', 'completed', 'on-hold', 'dropped'],
-      properties: ['cover', 'score'],
-    },
-    {
-      name: 'Table',
-      type: 'table',
-      limit: 100,
-      properties: ['status', 'genre', 'rating', 'score'],
-    },
-  ],
-  defaultView: 'Gallery',
-};
 
 export default class RBoardPlugin extends Plugin {
   private data: RBoardData = {};
@@ -49,21 +17,29 @@ export default class RBoardPlugin extends Plugin {
     this.data = ((await this.loadData()) as RBoardData) ?? {};
 
     this.registerView(BOARD_VIEW_TYPE, (leaf) => new BoardView(leaf, this));
+    this.registerView(HOME_VIEW_TYPE, (leaf) => new BoardHomeView(leaf, this));
     this.registerExtensions([BOARD_EXTENSION], BOARD_VIEW_TYPE);
 
+    this.addRibbonIcon('layout-dashboard', 'R Board', () => void this.openHome());
+
+    this.addCommand({
+      id: 'open-home',
+      name: 'Open R Board',
+      callback: () => void this.openHome(),
+    });
     this.addCommand({
       id: 'create-database',
       name: 'Create new database',
-      callback: () => void this.createDatabase(),
+      callback: () => this.openCreateWizard(),
     });
   }
 
-  /** The view name last chosen for a given database file, if any. */
+  // --- Active-view persistence ----------------------------------------------
+
   getActiveView(path: string): string | undefined {
     return this.data.activeViews?.[path];
   }
 
-  /** Persist the chosen view name for a database file. */
   async setActiveView(path: string, name: string): Promise<void> {
     if (!this.data.activeViews) this.data.activeViews = {};
     if (this.data.activeViews[path] === name) return;
@@ -71,19 +47,54 @@ export default class RBoardPlugin extends Plugin {
     await this.saveData(this.data);
   }
 
-  /** Create a starter `.board` database at the vault root and open it. */
-  private async createDatabase(): Promise<void> {
+  // --- Home + boards ---------------------------------------------------------
+
+  /** Open (or reveal) the R Board home view in a tab. */
+  async openHome(): Promise<void> {
+    const existing = this.app.workspace.getLeavesOfType(HOME_VIEW_TYPE);
+    if (existing.length > 0) {
+      this.app.workspace.revealLeaf(existing[0]);
+      void (existing[0].view as BoardHomeView).render();
+      return;
+    }
+    const leaf: WorkspaceLeaf = this.app.workspace.getLeaf(true);
+    await leaf.setViewState({ type: HOME_VIEW_TYPE, active: true });
+    this.app.workspace.revealLeaf(leaf);
+  }
+
+  /** Every `.board` file in the vault, sorted by path. */
+  listBoardFiles(): TFile[] {
+    return this.app.vault
+      .getFiles()
+      .filter((f) => f.extension === BOARD_EXTENSION)
+      .sort((a, b) => a.path.localeCompare(b.path));
+  }
+
+  /** Open a `.board` file as a board view. */
+  async openBoard(file: TFile): Promise<void> {
+    await this.app.workspace.getLeaf(true).openFile(file);
+  }
+
+  private openCreateWizard(): void {
+    new WizardModal(this.app, {}, 'Create database', (config) => {
+      void this.createDatabaseFromConfig(config);
+    }).open();
+  }
+
+  /** Write a new `.board` file from a config and open it. */
+  async createDatabaseFromConfig(config: DatabaseConfig): Promise<void> {
     const folder = this.app.fileManager.getNewFileParent('');
-    const base = folder instanceof TFolder ? folder.path : '';
-    const dir = base ? `${base}/` : '';
-    let path = normalizePath(`${dir}New Database.${BOARD_EXTENSION}`);
+    const dir = folder instanceof TFolder && folder.path ? `${folder.path}/` : '';
+    const base = (config.name?.trim() || 'New Database').replace(/[\\/:*?"<>|]/g, '-');
+
+    let path = normalizePath(`${dir}${base}.${BOARD_EXTENSION}`);
     let i = 2;
     while (this.app.vault.getAbstractFileByPath(path)) {
-      path = normalizePath(`${dir}New Database ${i++}.${BOARD_EXTENSION}`);
+      path = normalizePath(`${dir}${base} ${i++}.${BOARD_EXTENSION}`);
     }
     try {
-      const file = await this.app.vault.create(path, JSON.stringify(STARTER_DATABASE, null, 2));
-      await this.app.workspace.getLeaf(true).openFile(file);
+      const file = await this.app.vault.create(path, serializeDatabase(config));
+      await this.openBoard(file);
     } catch (e) {
       new Notice(`R Board: could not create database — ${(e as Error).message}`);
     }

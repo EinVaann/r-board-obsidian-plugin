@@ -53,3 +53,21 @@
   align-items: center;
 }
 .rb-view-btn-icon svg { width: 15px; height: 15px; }
+.rb-view-add { color: var(--text-muted); padding: 5px 8px; }
+
+/* Right-aligned tool buttons (sort / filter / settings). */
+.rb-tools { display: flex; gap: 4px; }
+.rb-tool-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  border: none;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--text-muted);
+  cursor: pointer;
+}
+.rb-tool-btn:hover { background: var(--background-modifier-hover); color: var(--text-normal); }
+.rb-tool-btn svg { width: 16px; height: 16px; }

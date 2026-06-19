@@ -1,5 +1,5 @@
-import type { App, TFile } from 'obsidian';
-import type { BoardItem, DatabaseConfig, PropertyConfig, ViewConfig } from '../types';
+import type { App, Component, TFile } from 'obsidian';
+import type { BoardItem, DatabaseConfig, PropertyConfig, SortSpec, ViewConfig } from '../types';
 import { fieldSearchText } from './values';
 
 /** Shared context passed to each view renderer. */
@@ -12,10 +12,21 @@ export interface RenderContext {
   properties: PropertyConfig[];
   /** The `.board` file, used to anchor relative wikilink resolution. */
   boardFile: TFile;
+  /** Component that owns any async markdown rendering (the BoardView). */
+  component: Component;
+  /** Effective sort for this view (already applied to the items list). */
+  sort: SortSpec;
+  /** Change the sort and persist it (used by table headers). */
+  setSort: (sort: SortSpec) => void;
   /** Re-query and re-render the active view (e.g. after a kanban drag). */
   refresh: () => void;
   /** View-local UI state that survives re-renders (kept on the BoardView). */
   ui: BoardUiState;
+}
+
+/** Open a note via Obsidian's native navigation. */
+export function openNote(app: App, item: BoardItem, newLeaf: boolean): void {
+  void app.workspace.openLinkText(item.file.path, item.file.path, newLeaf);
 }
 
 /** Transient, per-view UI state (not persisted to disk). */
@@ -38,6 +49,11 @@ export function createTitleLink(
     void app.workspace.openLinkText(item.file.path, item.file.path, e.ctrlKey || e.metaKey);
   };
   return link;
+}
+
+/** CSS modifier class for a view's card size (defaults to medium). */
+export function cardSizeClass(view: ViewConfig): string {
+  return `rb-size-${view.cardSize ?? 'medium'}`;
 }
 
 /** The first visible image property, if any (drawn as the card cover). */

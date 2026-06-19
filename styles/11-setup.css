@@ -1,0 +1,35 @@
+/* ===================== Setup prompt + empty views ===================== */
+.rb-setup {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  height: 100%;
+  padding: 24px;
+  text-align: center;
+}
+.rb-setup-icon { color: var(--text-accent); }
+.rb-setup-icon svg { width: 40px; height: 40px; }
+.rb-setup h3 { margin: 0; }
+.rb-setup-error {
+  color: var(--text-error);
+  font-family: var(--font-monospace);
+  font-size: 12px;
+  max-width: 480px;
+}
+.rb-empty-views {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+}
+
+/* ===================== Settings modals ===================== */
+.rb-wizard .rb-wizard-hint { color: var(--text-muted); font-size: 12px; margin: -4px 0 8px; }
+.rb-wizard h4 { margin: 16px 0 6px; }
+.rb-prop-row .setting-item-info { display: none; }
+.rb-prop-row { padding: 6px 0; border: none; }
+.rb-prop-row .rb-prop-max input { width: 70px; }
+.rb-filter-row .setting-item-info { display: none; }
+.rb-filter-row { padding: 6px 0; border: none; }

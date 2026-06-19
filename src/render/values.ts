@@ -24,19 +24,6 @@ export function asArray(value: unknown): string[] {
 }
 
 /**
- * The `score` field value used to sort kanban cards descending.
- * Notes without a numeric score sort to the bottom.
- */
-export function scoreOf(item: BoardItem): number {
-  return asNumber(item.frontmatter.score) ?? Number.NEGATIVE_INFINITY;
-}
-
-/** Sort a copy of `items` by score descending. */
-export function byScoreDesc(items: BoardItem[]): BoardItem[] {
-  return [...items].sort((a, b) => scoreOf(b) - scoreOf(a));
-}
-
-/**
  * Resolve an image field value (an Obsidian wikilink like `[[cover.png]]`,
  * a bare path, or an http(s) URL) to a usable <img> src, or null.
  */

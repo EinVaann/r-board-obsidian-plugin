@@ -7,8 +7,13 @@
   overflow-x: auto;
   padding-bottom: 8px;
 }
+.rb-kanban { --rb-col-w: 280px; --rb-cover-h: 120px; }
+.rb-kanban.rb-size-small { --rb-col-w: 220px; --rb-cover-h: 90px; }
+.rb-kanban.rb-size-medium { --rb-col-w: 280px; --rb-cover-h: 120px; }
+.rb-kanban.rb-size-large { --rb-col-w: 340px; --rb-cover-h: 170px; }
+
 .rb-kanban-col {
-  flex: 0 0 280px;
+  flex: 0 0 var(--rb-col-w);
   display: flex;
   flex-direction: column;
   max-height: 100%;
@@ -16,6 +21,9 @@
   border-radius: 10px;
 }
 .rb-kanban-col.rb-collapsed { flex-basis: 200px; }
+
+/* Fixed-size kanban cards: the cover crops to a consistent height. */
+.rb-kanban-card .rb-img img { height: var(--rb-cover-h); aspect-ratio: auto; object-fit: cover; }
 
 .rb-kanban-header {
   display: flex;

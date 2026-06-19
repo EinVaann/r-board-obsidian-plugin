@@ -10,6 +10,20 @@
   border-color: var(--background-modifier-border-hover);
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.12);
 }
+.rb-gallery-card, .rb-kanban-card { cursor: pointer; }
+
+/* Note-content excerpt on a card. */
+.rb-card-content {
+  font-size: 12px;
+  color: var(--text-muted);
+  line-height: 1.45;
+  max-height: 7.5em;
+  overflow: hidden;
+  -webkit-mask-image: linear-gradient(180deg, #000 60%, transparent);
+  mask-image: linear-gradient(180deg, #000 60%, transparent);
+}
+.rb-card-content > :first-child { margin-top: 0; }
+.rb-card-content p { margin: 0 0 4px; }
 .rb-card-body {
   padding: 10px 12px 12px;
   display: flex;

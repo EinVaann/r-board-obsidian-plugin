@@ -56,6 +56,20 @@ export interface FilterRule {
   value?: unknown;
 }
 
+export type SortDir = 'asc' | 'desc';
+
+/** Sort key for a view. `property` is `'$title'` to sort by the note title. */
+export interface SortSpec {
+  property: string;
+  dir: SortDir;
+}
+
+/** Card sizing for gallery / kanban views. */
+export type CardSize = 'small' | 'medium' | 'large';
+
+/** Gallery tiling layout. */
+export type GalleryLayout = 'masonry' | 'grid';
+
 /**
  * A saved view over the database: a layout plus its own visibility, limit,
  * filter, and grouping.
@@ -76,6 +90,14 @@ export interface ViewConfig {
   group?: string;
   /** Optional explicit order of group/column values; others follow, sorted. */
   columns?: string[];
+  /** Sort key; defaults to title ascending. */
+  sort?: SortSpec;
+  /** Card size for gallery / kanban (defaults to `medium`). */
+  cardSize?: CardSize;
+  /** Render an excerpt of each note's body on the card (gallery / kanban). */
+  showContent?: boolean;
+  /** Gallery tiling (defaults to `masonry`). */
+  layout?: GalleryLayout;
 }
 
 /** The full schema stored in a `.board` file: a database with views. */

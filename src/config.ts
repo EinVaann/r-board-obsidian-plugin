@@ -1,15 +1,19 @@
 import type {
+  CardSize,
   DatabaseConfig,
   FilterOp,
   FilterRule,
+  GalleryLayout,
   LoadLimit,
   PropertyConfig,
+  SortSpec,
   ViewConfig,
   ViewType,
 } from './types';
 
 const PROPERTY_TYPES = new Set(['image', 'text', 'multi', 'number']);
 const VIEW_TYPES = new Set(['gallery', 'kanban', 'table']);
+const CARD_SIZES = new Set<CardSize>(['small', 'medium', 'large']);
 const LIMITS = new Set<LoadLimit>([10, 50, 100, 'none']);
 const FILTER_OPS = new Set<FilterOp>([
   'eq', 'ne', 'contains', 'gt', 'gte', 'lt', 'lte', 'empty', 'notempty',
@@ -48,6 +52,13 @@ function parseFilter(raw: unknown): FilterRule | null {
   return { property: r.property, op: r.op as FilterOp, value: r.value };
 }
 
+function parseSort(raw: unknown): SortSpec | undefined {
+  if (typeof raw !== 'object' || raw === null) return undefined;
+  const s = raw as Record<string, unknown>;
+  if (typeof s.property !== 'string') return undefined;
+  return { property: s.property, dir: s.dir === 'desc' ? 'desc' : 'asc' };
+}
+
 function parseView(raw: unknown, index: number): ViewConfig | null {
   if (typeof raw !== 'object' || raw === null) return null;
   const v = raw as Record<string, unknown>;
@@ -67,6 +78,10 @@ function parseView(raw: unknown, index: number): ViewConfig | null {
     columns: Array.isArray(v.columns)
       ? v.columns.filter((c): c is string => typeof c === 'string')
       : undefined,
+    sort: parseSort(v.sort),
+    cardSize: CARD_SIZES.has(v.cardSize as CardSize) ? (v.cardSize as CardSize) : undefined,
+    showContent: typeof v.showContent === 'boolean' ? v.showContent : undefined,
+    layout: v.layout === 'grid' ? 'grid' : v.layout === 'masonry' ? 'masonry' : undefined,
   };
 }
 
@@ -91,19 +106,15 @@ export function parseDatabaseConfig(raw: string): ParseResult {
     ? obj.properties.map(parseProperty).filter((p): p is PropertyConfig => p !== null)
     : [];
 
-  let views: ViewConfig[] = Array.isArray(obj.views)
+  // Views are created explicitly by the user; an empty database has none yet.
+  const views: ViewConfig[] = Array.isArray(obj.views)
     ? obj.views.map(parseView).filter((v): v is ViewConfig => v !== null)
     : [];
-
-  // A database with no views still gets a default gallery view.
-  if (views.length === 0) {
-    views = [{ name: 'Gallery', type: 'gallery', limit: 50 }];
-  }
 
   const defaultView =
     typeof obj.defaultView === 'string' && views.some((v) => v.name === obj.defaultView)
       ? obj.defaultView
-      : views[0].name;
+      : views[0]?.name;
 
   return {
     ok: true,
@@ -120,6 +131,54 @@ export function parseDatabaseConfig(raw: string): ParseResult {
 /** The label shown for a property (explicit label, else the frontmatter key). */
 export function propertyLabel(prop: PropertyConfig): string {
   return prop.label ?? prop.name;
+}
+
+/** Sort key meaning "the note title". */
+export const TITLE_SORT_KEY = '$title';
+
+/** A view's effective sort (its own, else title ascending). */
+export function effectiveSort(view: ViewConfig): SortSpec {
+  return view.sort ?? { property: TITLE_SORT_KEY, dir: 'asc' };
+}
+
+/** Serialize a database config back to pretty JSON for the `.board` file. */
+export function serializeDatabase(config: DatabaseConfig): string {
+  const out: Record<string, unknown> = {};
+  if (config.name) out.name = config.name;
+  out.sourceTag = config.sourceTag;
+  out.properties = config.properties;
+  out.views = config.views.map((v) => {
+    const view: Record<string, unknown> = { name: v.name, type: v.type };
+    if (v.properties && v.properties.length) view.properties = v.properties;
+    if (v.limit !== undefined) view.limit = v.limit;
+    if (v.filter && v.filter.length) view.filter = v.filter;
+    if (v.group) view.group = v.group;
+    if (v.columns && v.columns.length) view.columns = v.columns;
+    if (v.sort) view.sort = v.sort;
+    if (v.cardSize) view.cardSize = v.cardSize;
+    if (v.showContent) view.showContent = v.showContent;
+    if (v.layout) view.layout = v.layout;
+    return view;
+  });
+  if (config.defaultView) out.defaultView = config.defaultView;
+  return JSON.stringify(out, null, 2);
+}
+
+/** A fresh view of the given type, with a name unique among `existing`. */
+export function makeDefaultView(type: ViewType, existing: ViewConfig[]): ViewConfig {
+  const baseName = type === 'gallery' ? 'Gallery' : type === 'kanban' ? 'Board' : 'Table';
+  let name = baseName;
+  let n = 2;
+  while (existing.some((v) => v.name === name)) name = `${baseName} ${n++}`;
+
+  const view: ViewConfig = { name, type, limit: 50 };
+  if (type === 'gallery') {
+    view.layout = 'masonry';
+    view.cardSize = 'medium';
+  } else if (type === 'kanban') {
+    view.cardSize = 'medium';
+  }
+  return view;
 }
 
 /**

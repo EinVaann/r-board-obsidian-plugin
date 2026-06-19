@@ -1,14 +1,23 @@
 import type { BoardItem } from '../types';
 import { renderField } from '../render/fields';
-import { bodyProperties, coverProperty, createTitleLink, type RenderContext } from '../render/common';
+import {
+  bodyProperties,
+  cardSizeClass,
+  coverProperty,
+  createTitleLink,
+  openNote,
+  type RenderContext,
+} from '../render/common';
 import { renderPaged } from '../render/paginate';
+import { renderNoteExcerpt } from '../render/content';
 import { groupItems } from '../data/group';
 
 /**
- * Masonry gallery (CSS column-count). Each card shows the cover image, the
- * title as an internal link, and the remaining visible properties. When the
- * view sets `group`, items are split into labelled sections. Cards are not
- * draggable.
+ * Gallery of cards (masonry or fixed grid). Each card shows the cover image,
+ * the title as an internal link, the remaining visible properties, and
+ * optionally an excerpt of the note body. Clicking the card opens the note
+ * (clicking the cover opens it fullscreen). When the view sets `group`, items
+ * are split into labelled sections.
  */
 export function renderGallery(host: HTMLElement, items: BoardItem[], ctx: RenderContext): void {
   host.empty();
@@ -38,10 +47,15 @@ export function renderGallery(host: HTMLElement, items: BoardItem[], ctx: Render
 function renderGrid(parent: HTMLElement, items: BoardItem[], ctx: RenderContext): void {
   const cover = coverProperty(ctx.properties);
   const fields = bodyProperties(ctx.properties);
-  const grid = parent.createDiv({ cls: 'rb-gallery' });
+  const layout = ctx.view.layout ?? 'masonry';
+  const grid = parent.createDiv({
+    cls: `rb-gallery rb-gallery-${layout} ${cardSizeClass(ctx.view)}`,
+  });
 
   renderPaged(grid, items, ctx.view.limit ?? 50, (item, host) => {
     const card = host.createDiv({ cls: 'rb-card rb-gallery-card' });
+    card.onclick = (e) => openNote(ctx.app, item, e.ctrlKey || e.metaKey);
+
     if (cover) renderField(ctx.app, card, item, cover);
 
     const body = card.createDiv({ cls: 'rb-card-body' });
@@ -49,6 +63,10 @@ function renderGrid(parent: HTMLElement, items: BoardItem[], ctx: RenderContext)
     for (const prop of fields) {
       const row = body.createDiv({ cls: 'rb-field' });
       if (!renderField(ctx.app, row, item, prop)) row.remove();
+    }
+    if (ctx.view.showContent) {
+      const content = body.createDiv({ cls: 'rb-card-content' });
+      void renderNoteExcerpt(ctx.app, content, item.file, ctx.component);
     }
   });
 }

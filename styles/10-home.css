@@ -1,0 +1,52 @@
+/* ===================== Home (board hub) ===================== */
+.rb-home { padding: 20px; overflow-y: auto; }
+.rb-home-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 18px;
+}
+.rb-home-header h2 { margin: 0; }
+.rb-home-create {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 14px;
+  border-radius: 7px;
+  border: none;
+  background: var(--interactive-accent);
+  color: var(--text-on-accent);
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 600;
+}
+.rb-home-create:hover { background: var(--interactive-accent-hover); }
+.rb-home-create-icon { display: inline-flex; }
+.rb-home-create-icon svg { width: 15px; height: 15px; }
+
+.rb-home-empty { color: var(--text-muted); padding: 40px 0; text-align: center; }
+
+.rb-home-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 12px;
+}
+.rb-home-card {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px;
+  border-radius: 10px;
+  border: 1px solid var(--background-modifier-border);
+  background: var(--background-secondary);
+  cursor: pointer;
+}
+.rb-home-card:hover {
+  border-color: var(--background-modifier-border-hover);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.12);
+}
+.rb-home-card-icon { display: inline-flex; color: var(--text-accent); }
+.rb-home-card-icon svg { width: 24px; height: 24px; }
+.rb-home-card-title { font-weight: 600; font-size: 14px; }
+.rb-home-card-meta { font-size: 12px; color: var(--text-muted); margin-top: 2px; }
+.rb-home-card-error { color: var(--text-error); }

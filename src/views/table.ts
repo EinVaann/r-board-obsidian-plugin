@@ -1,23 +1,15 @@
-import type { BoardItem, PropertyConfig } from '../types';
+import type { BoardItem, PropertyConfig, SortDir } from '../types';
 import { renderField } from '../render/fields';
-import { createTitleLink, type RenderContext } from '../render/common';
-import { propertyLabel } from '../config';
+import { createTitleLink, openNote, type RenderContext } from '../render/common';
+import { propertyLabel, TITLE_SORT_KEY } from '../config';
 import { renderPaged } from '../render/paginate';
-import { asNumber, fieldValue } from '../render/values';
 import { groupItems } from '../data/group';
-
-/** Sort state for the table; column index -1 means the title column. */
-interface SortState {
-  col: number;
-  dir: 1 | -1;
-}
-
-const sortByView = new WeakMap<RenderContext, SortState>();
 
 /**
  * Tabular view: one row per note, a column per visible property plus the title.
- * Clicking a header sorts by that column. When the view sets `group`, rows are
- * split into labelled tables.
+ * Clicking a header sorts by that column (persisted on the view). Clicking a row
+ * opens the note. When the view sets `group`, rows are split into labelled
+ * tables. Items arrive already sorted by the view's sort.
  */
 export function renderTable(host: HTMLElement, items: BoardItem[], ctx: RenderContext): void {
   host.empty();
@@ -27,80 +19,53 @@ export function renderTable(host: HTMLElement, items: BoardItem[], ctx: RenderCo
   }
 
   const props = ctx.properties;
-  const sort = sortByView.get(ctx);
-  const sorted = sort ? sortItems(items, props, sort) : items;
-
   const groupProp = ctx.view.group ? props.find((p) => p.name === ctx.view.group) : undefined;
   if (groupProp) {
-    for (const group of groupItems(sorted, groupProp, ctx.view.columns)) {
+    for (const group of groupItems(items, groupProp, ctx.view.columns)) {
       const section = host.createDiv({ cls: 'rb-section' });
       const header = section.createDiv({ cls: 'rb-section-header' });
       header.createSpan({ cls: 'rb-section-title', text: group.label });
       header.createSpan({ cls: 'rb-section-count', text: String(group.items.length) });
-      renderTableEl(section, group.items, props, sort, ctx);
+      renderTableEl(section, group.items, props, ctx);
     }
     return;
   }
 
-  renderTableEl(host, sorted, props, sort, ctx);
+  renderTableEl(host, items, props, ctx);
 }
 
 function renderTableEl(
   parent: HTMLElement,
   items: BoardItem[],
   props: PropertyConfig[],
-  sort: SortState | undefined,
   ctx: RenderContext,
 ): void {
   const table = parent.createEl('table', { cls: 'rb-table' });
   const headRow = table.createEl('thead').createEl('tr');
 
-  const makeHeader = (label: string, col: number): void => {
+  const makeHeader = (label: string, key: string): void => {
     const th = headRow.createEl('th', { cls: 'rb-th' });
     th.createSpan({ text: label });
-    if (sort?.col === col) th.createSpan({ cls: 'rb-sort-ind', text: sort.dir === 1 ? ' ▲' : ' ▼' });
+    if (ctx.sort.property === key) {
+      th.createSpan({ cls: 'rb-sort-ind', text: ctx.sort.dir === 'asc' ? ' ▲' : ' ▼' });
+    }
     th.onclick = () => {
-      const cur = sortByView.get(ctx);
-      const dir: 1 | -1 = cur && cur.col === col && cur.dir === 1 ? -1 : 1;
-      sortByView.set(ctx, { col, dir });
-      ctx.refresh();
+      const dir: SortDir =
+        ctx.sort.property === key && ctx.sort.dir === 'asc' ? 'desc' : 'asc';
+      ctx.setSort({ property: key, dir });
     };
   };
 
-  makeHeader('Title', -1);
-  props.forEach((p, i) => makeHeader(propertyLabel(p), i));
+  makeHeader('Title', TITLE_SORT_KEY);
+  props.forEach((p) => makeHeader(propertyLabel(p), p.name));
 
   const tbody = table.createEl('tbody');
   renderPaged(tbody, items, ctx.view.limit ?? 50, (item) => {
     const tr = tbody.createEl('tr', { cls: 'rb-tr' });
+    tr.onclick = (e) => openNote(ctx.app, item, e.ctrlKey || e.metaKey);
     createTitleLink(ctx.app, tr.createEl('td', { cls: 'rb-td' }), item);
     for (const prop of props) {
       renderField(ctx.app, tr.createEl('td', { cls: 'rb-td' }), item, prop);
     }
   });
-}
-
-function sortItems(items: BoardItem[], props: PropertyConfig[], sort: SortState): BoardItem[] {
-  const out = [...items];
-  out.sort((a, b) => {
-    let av: string | number;
-    let bv: string | number;
-    if (sort.col === -1) {
-      av = a.title.toLowerCase();
-      bv = b.title.toLowerCase();
-    } else {
-      const prop = props[sort.col];
-      if (prop.type === 'number') {
-        av = asNumber(fieldValue(a, prop)) ?? Number.NEGATIVE_INFINITY;
-        bv = asNumber(fieldValue(b, prop)) ?? Number.NEGATIVE_INFINITY;
-      } else {
-        av = String(fieldValue(a, prop) ?? '').toLowerCase();
-        bv = String(fieldValue(b, prop) ?? '').toLowerCase();
-      }
-    }
-    if (av < bv) return -1 * sort.dir;
-    if (av > bv) return 1 * sort.dir;
-    return 0;
-  });
-  return out;
 }

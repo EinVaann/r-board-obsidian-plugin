@@ -3,15 +3,22 @@ import type { BoardItem, PropertyConfig } from '../types';
 import { groupItems, type ItemGroup } from '../data/group';
 import { setProperty } from '../data/properties';
 import { renderField } from '../render/fields';
-import { bodyProperties, coverProperty, createTitleLink, type RenderContext } from '../render/common';
-import { byScoreDesc } from '../render/values';
+import {
+  bodyProperties,
+  cardSizeClass,
+  coverProperty,
+  createTitleLink,
+  openNote,
+  type RenderContext,
+} from '../render/common';
 import { renderPaged } from '../render/paginate';
+import { renderNoteExcerpt } from '../render/content';
 
 /**
  * Kanban board: one column per distinct value of the view's group property,
- * plus an Uncategorized column for notes missing it. Cards are sorted by
- * `score` descending and can be dragged between columns, which rewrites the
- * group property in the note's frontmatter.
+ * plus an Uncategorized column for notes missing it. Cards are dragged between
+ * columns (which rewrites the group property), and clicking a card opens the
+ * note. Items arrive already sorted by the view's sort.
  */
 export function renderKanban(host: HTMLElement, items: BoardItem[], ctx: RenderContext): void {
   host.empty();
@@ -22,12 +29,12 @@ export function renderKanban(host: HTMLElement, items: BoardItem[], ctx: RenderC
   if (!groupProp) {
     host.createDiv({
       cls: 'rb-empty',
-      text: 'This kanban view needs a "group" property to use as columns.',
+      text: 'This kanban view needs a "group" property to use as columns. Open view settings to set one.',
     });
     return;
   }
 
-  const board = host.createDiv({ cls: 'rb-kanban' });
+  const board = host.createDiv({ cls: `rb-kanban ${cardSizeClass(ctx.view)}` });
   for (const column of groupItems(items, groupProp, ctx.view.columns)) {
     renderColumn(board, column, groupProp, ctx);
   }
@@ -57,7 +64,7 @@ function renderColumn(
   const list = colEl.createDiv({ cls: 'rb-kanban-list' });
   if (collapsed) return;
 
-  renderPaged(list, byScoreDesc(column.items), ctx.view.limit ?? 50, (item, host) =>
+  renderPaged(list, column.items, ctx.view.limit ?? 50, (item, host) =>
     renderCard(host, item, ctx),
   );
 
@@ -81,6 +88,7 @@ function renderCard(list: HTMLElement, item: BoardItem, ctx: RenderContext): voi
 
   const card = list.createDiv({ cls: 'rb-card rb-kanban-card', attr: { draggable: 'true' } });
   card.dataset.path = item.file.path;
+  card.onclick = (e) => openNote(ctx.app, item, e.ctrlKey || e.metaKey);
 
   card.addEventListener('dragstart', (e) => {
     e.dataTransfer?.setData('text/plain', item.file.path);
@@ -95,6 +103,10 @@ function renderCard(list: HTMLElement, item: BoardItem, ctx: RenderContext): voi
   for (const prop of fields) {
     const row = body.createDiv({ cls: 'rb-field' });
     if (!renderField(ctx.app, row, item, prop)) row.remove();
+  }
+  if (ctx.view.showContent) {
+    const content = body.createDiv({ cls: 'rb-card-content' });
+    void renderNoteExcerpt(ctx.app, content, item.file, ctx.component);
   }
 }
 

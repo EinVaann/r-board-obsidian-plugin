@@ -16,7 +16,14 @@ A database is a single `.board` file (JSON). Opening it shows the board pane wit
 
 > **File naming.** Obsidian identifies a file by the extension after its last dot, so a `.board.json` file would register as a generic `.json` file (hijacking every JSON file in the vault). R Board uses the single `.board` extension instead — content is still JSON, exactly like Obsidian's own `.canvas` files. Name databases e.g. `Games.board`.
 
-Run the **"Create new database"** command to drop a starter `.board` file and open it.
+## Using it
+
+- **Ribbon icon** (or the **"Open R Board"** command) opens the **home** screen, which lists every board in your vault and has a **Create board** button.
+- **Create board** opens a **setup wizard**: name the database, choose the base tag, and define properties. (The **"Create new database"** command opens the same wizard.) New boards start with **no views**.
+- Opening an empty/unconfigured `.board` file shows the same wizard.
+- **Add a view** with the **＋** button next to the view tabs, then pick Gallery / Kanban / Table — the view's settings open so you can configure it.
+- The board toolbar's right side has **Sort**, **Filter**, **View settings** (gear), and **Board settings** buttons. Board settings edit the name/tag/properties; view settings edit everything about the active view.
+- You don't have to hand-edit JSON — everything is editable through these dialogs (the `.board` file is just where it's saved).
 
 ## Schema
 
@@ -78,6 +85,10 @@ Run the **"Create new database"** command to drop a starter `.board` file and op
 - **`filter`** — array of `{ "property", "op", "value" }`, combined with AND. Operators: `eq`, `ne`, `contains`, `gt`, `gte`, `lt`, `lte`, `empty`, `notempty`.
 - **`group`** — a property name. In Gallery/Table it splits items into labelled sections; in Kanban it is **required** and defines the columns (each distinct value = a column, plus an Uncategorized column).
 - **`columns`** — optional explicit order of group/column values; any others follow, sorted; Uncategorized is last.
+- **`sort`** — `{ "property", "dir" }` where `property` is a property name or `"$title"`, and `dir` is `"asc"` / `"desc"`. **Defaults to title ascending.** Applies to every view type (clicking a table header sets it too).
+- **`cardSize`** (gallery/kanban) — `"small"` | `"medium"` | `"large"`. Kanban cards are a fixed size per setting.
+- **`showContent`** (gallery/kanban) — `true` renders an excerpt of each note's body on the card.
+- **`layout`** (gallery) — `"masonry"` (default) or `"grid"` (fixed tiles).
 
 ## Data source
 
@@ -86,11 +97,11 @@ Run the **"Create new database"** command to drop a starter `.board` file and op
 
 ## Views
 
-- **Gallery** — masonry (CSS `column-count`) of cards; click a cover to open it fullscreen. Not draggable.
-- **Kanban** — one column per value of the `group` property, plus an Uncategorized column. Cards are sorted by `score` descending and can be dragged between columns, which **rewrites the group property** in the note's frontmatter (dropping into Uncategorized clears it).
+- **Gallery** — masonry or fixed grid of cards; optional note-content excerpts. Not draggable.
+- **Kanban** — one column per value of the `group` property, plus an Uncategorized column. Cards can be dragged between columns, which **rewrites the group property** in the note's frontmatter (dropping into Uncategorized clears it). Fixed card size.
 - **Table** — one row per note, a column per visible property; click a header to sort.
 
-Shared across views: a search bar, "View More" pagination, and note titles that link to the source note. The active view is remembered per database.
+Shared across views: a search bar, "View More" pagination, sort & filter, and grouping. **Clicking an item opens its note** in every view (Ctrl/Cmd-click opens in a new tab); clicking a cover image opens it fullscreen instead. The active view is remembered per database.
 
 ## Development
 

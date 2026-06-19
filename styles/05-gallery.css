@@ -1,15 +1,25 @@
-/* ===================== Gallery (masonry) ===================== */
-.rb-gallery {
-  column-count: 4;
+/* ===================== Gallery ===================== */
+/* Card width per size (drives masonry column width and grid track size). */
+.rb-gallery.rb-size-small { --rb-card-w: 160px; }
+.rb-gallery.rb-size-medium { --rb-card-w: 220px; }
+.rb-gallery.rb-size-large { --rb-card-w: 300px; }
+
+/* Masonry: CSS multi-column, sized by card width. */
+.rb-gallery-masonry {
+  column-width: var(--rb-card-w, 220px);
   column-gap: 14px;
 }
-.rb-gallery-card {
+.rb-gallery-masonry .rb-gallery-card {
   display: inline-block;
   width: 100%;
   margin: 0 0 14px;
   break-inside: avoid;
 }
 
-@media (max-width: 1100px) { .rb-gallery { column-count: 3; } }
-@media (max-width: 800px) { .rb-gallery { column-count: 2; } }
-@media (max-width: 500px) { .rb-gallery { column-count: 1; } }
+/* Grid: fixed-size tiles. */
+.rb-gallery-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(var(--rb-card-w, 220px), 1fr));
+  gap: 14px;
+  align-items: start;
+}
