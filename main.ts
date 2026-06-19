@@ -1,25 +1,45 @@
 import { Notice, Plugin, TFolder, normalizePath } from 'obsidian';
 import { BOARD_EXTENSION, BOARD_VIEW_TYPE, BoardView } from './src/BoardView';
-import type { ViewMode } from './src/types';
 
 interface RBoardData {
-  /** Active view mode chosen per board, keyed by the `.board` file path. */
-  boardViews?: Record<string, ViewMode>;
+  /** Active view name chosen per database, keyed by the `.board` file path. */
+  activeViews?: Record<string, string>;
 }
 
-/** A starter `.board` config written by the "Create board" command. */
-const STARTER_BOARD = {
-  name: 'New Board',
+/** A starter `.board` database written by the "Create database" command. */
+const STARTER_DATABASE = {
+  name: 'Game Backlog',
   sourceTag: 'backlog',
-  fields: [
+  properties: [
     { name: 'cover', type: 'image', render: 'fill' },
-    { name: 'title', type: 'text' },
     { name: 'genre', type: 'multi', render: 'pills' },
+    { name: 'status', type: 'text', render: 'badge' },
     { name: 'rating', type: 'number', render: 'stars', max: 5 },
     { name: 'score', type: 'number', render: 'bar', max: 100 },
   ],
-  kanban: { groups: ['to-play', 'playing', 'completed', 'on-hold', 'dropped'] },
-  defaultView: 'gallery',
+  views: [
+    {
+      name: 'Gallery',
+      type: 'gallery',
+      limit: 50,
+      properties: ['cover', 'genre', 'rating', 'score'],
+    },
+    {
+      name: 'Board',
+      type: 'kanban',
+      limit: 'none',
+      group: 'status',
+      columns: ['to-play', 'playing', 'completed', 'on-hold', 'dropped'],
+      properties: ['cover', 'score'],
+    },
+    {
+      name: 'Table',
+      type: 'table',
+      limit: 100,
+      properties: ['status', 'genre', 'rating', 'score'],
+    },
+  ],
+  defaultView: 'Gallery',
 };
 
 export default class RBoardPlugin extends Plugin {
@@ -32,39 +52,40 @@ export default class RBoardPlugin extends Plugin {
     this.registerExtensions([BOARD_EXTENSION], BOARD_VIEW_TYPE);
 
     this.addCommand({
-      id: 'create-board',
-      name: 'Create new board',
-      callback: () => void this.createBoard(),
+      id: 'create-database',
+      name: 'Create new database',
+      callback: () => void this.createDatabase(),
     });
   }
 
-  /** The view mode last chosen for a given board file, if any. */
-  getBoardView(path: string): ViewMode | undefined {
-    return this.data.boardViews?.[path];
+  /** The view name last chosen for a given database file, if any. */
+  getActiveView(path: string): string | undefined {
+    return this.data.activeViews?.[path];
   }
 
-  /** Persist the chosen view mode for a board file. */
-  async setBoardView(path: string, mode: ViewMode): Promise<void> {
-    if (!this.data.boardViews) this.data.boardViews = {};
-    if (this.data.boardViews[path] === mode) return;
-    this.data.boardViews[path] = mode;
+  /** Persist the chosen view name for a database file. */
+  async setActiveView(path: string, name: string): Promise<void> {
+    if (!this.data.activeViews) this.data.activeViews = {};
+    if (this.data.activeViews[path] === name) return;
+    this.data.activeViews[path] = name;
     await this.saveData(this.data);
   }
 
-  /** Create a starter `.board` file at the vault root and open it. */
-  private async createBoard(): Promise<void> {
+  /** Create a starter `.board` database at the vault root and open it. */
+  private async createDatabase(): Promise<void> {
     const folder = this.app.fileManager.getNewFileParent('');
     const base = folder instanceof TFolder ? folder.path : '';
-    let path = normalizePath(`${base ? base + '/' : ''}New Board.${BOARD_EXTENSION}`);
+    const dir = base ? `${base}/` : '';
+    let path = normalizePath(`${dir}New Database.${BOARD_EXTENSION}`);
     let i = 2;
     while (this.app.vault.getAbstractFileByPath(path)) {
-      path = normalizePath(`${base ? base + '/' : ''}New Board ${i++}.${BOARD_EXTENSION}`);
+      path = normalizePath(`${dir}New Database ${i++}.${BOARD_EXTENSION}`);
     }
     try {
-      const file = await this.app.vault.create(path, JSON.stringify(STARTER_BOARD, null, 2));
+      const file = await this.app.vault.create(path, JSON.stringify(STARTER_DATABASE, null, 2));
       await this.app.workspace.getLeaf(true).openFile(file);
     } catch (e) {
-      new Notice(`R Board: could not create board — ${(e as Error).message}`);
+      new Notice(`R Board: could not create database — ${(e as Error).message}`);
     }
   }
 }

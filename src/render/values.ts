@@ -1,9 +1,9 @@
 import { type App, type TFile } from 'obsidian';
-import type { BoardItem, FieldConfig } from '../types';
+import type { BoardItem, PropertyConfig } from '../types';
 
-/** Raw frontmatter value for a field. */
-export function fieldValue(item: BoardItem, field: FieldConfig): unknown {
-  return item.frontmatter[field.name];
+/** Raw frontmatter value for a property. */
+export function fieldValue(item: BoardItem, prop: PropertyConfig): unknown {
+  return item.frontmatter[prop.name];
 }
 
 /** Coerce a frontmatter value to a number, or null if not numeric. */
@@ -59,9 +59,9 @@ export function resolveImageSrc(
   return null;
 }
 
-/** A lower-cased string blob of a field's value, for search matching. */
-export function fieldSearchText(item: BoardItem, field: FieldConfig): string {
-  const v = fieldValue(item, field);
+/** A lower-cased string blob of a property's value, for search matching. */
+export function fieldSearchText(item: BoardItem, prop: PropertyConfig): string {
+  const v = fieldValue(item, prop);
   if (v === undefined || v === null) return '';
   if (Array.isArray(v)) return v.join(' ').toLowerCase();
   return String(v).toLowerCase();

@@ -1,36 +1,34 @@
-import type { BoardItem } from '../types';
-
-/** Items shown before the "View More" button appears. */
-export const PAGE_SIZE = 50;
+import type { BoardItem, LoadLimit } from '../types';
 
 /**
- * Render items in pages: draw the first `PAGE_SIZE`, then a "View More" button
- * that reveals the next page in place. `drawItem` appends one item to `host`.
+ * Render items in pages of `limit`: draw the first page, then a "View More"
+ * button that reveals the next page in place. `limit === 'none'` renders all
+ * items with no button. `drawItem` appends one item to `host`.
  */
 export function renderPaged(
   host: HTMLElement,
   items: BoardItem[],
+  limit: LoadLimit,
   drawItem: (item: BoardItem, host: HTMLElement) => void,
 ): void {
-  let shown = 0;
+  if (limit === 'none') {
+    for (const item of items) drawItem(item, host);
+    return;
+  }
 
-  const drawNext = (): void => {
-    const end = Math.min(shown + PAGE_SIZE, items.length);
-    for (let i = shown; i < end; i++) drawItem(items[i], host);
-    shown = end;
-  };
+  const pageSize = limit;
+  const page = items.slice(0, pageSize);
+  for (const item of page) drawItem(item, host);
 
-  drawNext();
-
-  if (shown < items.length) {
-    const remaining = items.length - shown;
+  if (items.length > pageSize) {
+    const rest = items.slice(pageSize);
     const more = host.createEl('button', {
       cls: 'rb-view-more',
-      text: `View More (${remaining})`,
+      text: `View More (${rest.length})`,
     });
     more.onclick = () => {
       more.remove();
-      renderPaged(host, items.slice(shown), drawItem);
+      renderPaged(host, rest, limit, drawItem);
     };
   }
 }

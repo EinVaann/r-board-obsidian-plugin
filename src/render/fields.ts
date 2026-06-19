@@ -1,5 +1,5 @@
 import type { App } from 'obsidian';
-import type { BoardItem, FieldConfig } from '../types';
+import type { BoardItem, PropertyConfig } from '../types';
 import { asArray, asNumber, fieldValue, resolveImageSrc } from './values';
 import { openImageModal } from '../ui/ImageModal';
 
@@ -12,7 +12,7 @@ export function renderField(
   app: App,
   parent: HTMLElement,
   item: BoardItem,
-  field: FieldConfig,
+  field: PropertyConfig,
 ): boolean {
   switch (field.type) {
     case 'image':
@@ -27,7 +27,7 @@ export function renderField(
   }
 }
 
-function renderImage(app: App, parent: HTMLElement, item: BoardItem, field: FieldConfig): boolean {
+function renderImage(app: App, parent: HTMLElement, item: BoardItem, field: PropertyConfig): boolean {
   const url = resolveImageSrc(app, item.file, fieldValue(item, field));
   if (!url) return false;
 
@@ -41,7 +41,7 @@ function renderImage(app: App, parent: HTMLElement, item: BoardItem, field: Fiel
   return true;
 }
 
-function renderText(parent: HTMLElement, item: BoardItem, field: FieldConfig): boolean {
+function renderText(parent: HTMLElement, item: BoardItem, field: PropertyConfig): boolean {
   const v = fieldValue(item, field);
   if (v === undefined || v === null || v === '') return false;
   const text = String(v);
@@ -56,7 +56,7 @@ function renderText(parent: HTMLElement, item: BoardItem, field: FieldConfig): b
   return true;
 }
 
-function renderMulti(parent: HTMLElement, item: BoardItem, field: FieldConfig): boolean {
+function renderMulti(parent: HTMLElement, item: BoardItem, field: PropertyConfig): boolean {
   const arr = asArray(fieldValue(item, field));
   if (arr.length === 0) return false;
   const asTags = field.render === 'tags';
@@ -70,7 +70,7 @@ function renderMulti(parent: HTMLElement, item: BoardItem, field: FieldConfig): 
   return true;
 }
 
-function renderNumber(parent: HTMLElement, item: BoardItem, field: FieldConfig): boolean {
+function renderNumber(parent: HTMLElement, item: BoardItem, field: PropertyConfig): boolean {
   const n = asNumber(fieldValue(item, field));
   if (n === null) return false;
   const render = field.render ?? 'text';

@@ -1,63 +1,96 @@
 # R Board
 
-A native Obsidian plugin that renders configurable **board views** (Gallery, Kanban, Table) driven by your notes' frontmatter and tags. No Datacore, no dataview queries — boards are plain `.board` config files read through Obsidian's own metadata cache.
+A native Obsidian plugin that turns your notes into **databases** with multiple configurable **views** (Gallery, Kanban, Table), driven by note frontmatter and tags. No Datacore, no dataview queries — a database is a plain `.board` config file read through Obsidian's own metadata cache.
 
-## How it works
+## Concepts
 
-A board is a `.board` file (JSON) stored anywhere in your vault. Opening it shows a board pane with a toolbar to switch between Gallery, Kanban, and Table views.
+- **Database** — pick a base tag (`sourceTag`) and define its **properties**. Every note carrying that tag is a row in the database.
+- **Property** — a frontmatter key with a type and render style (e.g. `rating` as stars). Defined once on the database.
+- **View** — a saved layout over the database (Gallery / Kanban / Table). Each view has its own:
+  - **property visibility** (which properties show, and in what order)
+  - **load limit** (`10`, `50`, `100`, or `"none"`)
+  - **filter** (conditions on properties)
+  - **group** (a property to split items into sections — and, for Kanban, the column field)
 
-> **File naming.** Obsidian identifies a file by the extension after its last dot, so a `.board.json` file would register as a generic `.json` file (and hijack every JSON file in the vault). R Board instead uses the single `.board` extension — the file content is still JSON, exactly like Obsidian's own `.canvas` files. Name your boards e.g. `Games.board`.
+A database is a single `.board` file (JSON). Opening it shows the board pane with a tab per view.
 
-Run the **"Create new board"** command to drop a starter `.board` file and open it.
+> **File naming.** Obsidian identifies a file by the extension after its last dot, so a `.board.json` file would register as a generic `.json` file (hijacking every JSON file in the vault). R Board uses the single `.board` extension instead — content is still JSON, exactly like Obsidian's own `.canvas` files. Name databases e.g. `Games.board`.
 
-## Board config
+Run the **"Create new database"** command to drop a starter `.board` file and open it.
+
+## Schema
 
 ```json
 {
   "name": "Game Backlog",
   "sourceTag": "backlog",
-  "fields": [
+  "properties": [
     { "name": "cover", "type": "image", "render": "fill" },
-    { "name": "title", "type": "text" },
     { "name": "genre", "type": "multi", "render": "pills" },
+    { "name": "status", "type": "text", "render": "badge" },
     { "name": "rating", "type": "number", "render": "stars", "max": 5 },
-    { "name": "score", "type": "number", "render": "bar", "max": 100 },
-    { "name": "progress", "type": "number", "render": "circle", "max": 100 }
+    { "name": "score", "type": "number", "render": "bar", "max": 100 }
   ],
-  "kanban": {
-    "groups": ["to-play", "playing", "completed", "on-hold", "dropped"]
-  },
-  "defaultView": "gallery"
+  "views": [
+    {
+      "name": "Gallery",
+      "type": "gallery",
+      "limit": 50,
+      "properties": ["cover", "genre", "rating", "score"],
+      "filter": [{ "property": "rating", "op": "gte", "value": 4 }]
+    },
+    {
+      "name": "Board",
+      "type": "kanban",
+      "limit": "none",
+      "group": "status",
+      "columns": ["to-play", "playing", "completed", "on-hold", "dropped"],
+      "properties": ["cover", "score"]
+    },
+    {
+      "name": "Table",
+      "type": "table",
+      "limit": 100,
+      "properties": ["status", "genre", "rating", "score"]
+    }
+  ],
+  "defaultView": "Gallery"
 }
 ```
 
-### Field types
+### Property types
 
-| Type     | Description                       | Render options                  |
-|----------|-----------------------------------|---------------------------------|
-| `image`  | Wikilink/path/URL to an image     | `fill` (default), `fit`         |
-| `text`   | Plain string                      | `plain`, `badge`, `pill`        |
-| `multi`  | Array of strings                  | `pills`, `tags`                 |
-| `number` | Numeric value                     | `text`, `stars`, `bar`, `circle`|
+| Type     | Description                     | Render options                  |
+|----------|---------------------------------|---------------------------------|
+| `image`  | Wikilink / path / URL to image  | `fill` (default), `fit`         |
+| `text`   | Plain string                    | `plain`, `badge`, `pill`        |
+| `multi`  | Array of strings                | `pills`, `tags`                 |
+| `number` | Numeric value                   | `text`, `stars`, `bar`, `circle`|
 
-- Image `fill` crops to fill the card (`object-fit: cover`); `fit` shrinks to fit without cropping (`object-fit: contain`).
-- `stars` / `bar` / `circle` use the field's `max`.
-- Add `"searchable": true` to a field to include it in the search bar (by default the title plus all text/multi fields are searched).
+- Image `fill` crops to fill (`object-fit: cover`); `fit` shrinks without cropping (`object-fit: contain`).
+- `stars` / `bar` / `circle` use the property's `max`.
+- Add `"searchable": true` to a property to include it in the search bar (by default the title plus all visible text/multi properties are searched).
+
+### View config
+
+- **`properties`** — names of the properties to show, in order. Omit to show all. An `image` property becomes the card cover; `title` is always shown as a link.
+- **`limit`** — `10` | `50` | `100` | `"none"`. Page size for the "View More" button (applied per column/section when grouped). `"none"` shows everything.
+- **`filter`** — array of `{ "property", "op", "value" }`, combined with AND. Operators: `eq`, `ne`, `contains`, `gt`, `gte`, `lt`, `lte`, `empty`, `notempty`.
+- **`group`** — a property name. In Gallery/Table it splits items into labelled sections; in Kanban it is **required** and defines the columns (each distinct value = a column, plus an Uncategorized column).
+- **`columns`** — optional explicit order of group/column values; any others follow, sorted; Uncategorized is last.
 
 ## Data source
 
 - Notes are matched via Obsidian's native metadata cache — any note whose tags include `sourceTag` (frontmatter `tags` or inline `#tags`).
-- Notes named `_template` are excluded from every board.
+- Notes named `_template` are excluded from every database.
 
 ## Views
 
 - **Gallery** — masonry (CSS `column-count`) of cards; click a cover to open it fullscreen. Not draggable.
-- **Kanban** — one column per `kanban.groups` entry (group `playing` → tag `#playing`), plus an **Uncategorized** column for notes with the source tag but no group tag. Cards are sorted by `score` descending and can be dragged between columns, which rewrites the note's group tag in frontmatter (the base `sourceTag` is always kept). Columns are collapsible.
-- **Table** — one row per note, a column per field; click a header to sort.
+- **Kanban** — one column per value of the `group` property, plus an Uncategorized column. Cards are sorted by `score` descending and can be dragged between columns, which **rewrites the group property** in the note's frontmatter (dropping into Uncategorized clears it).
+- **Table** — one row per note, a column per visible property; click a header to sort.
 
-Shared across views: a search bar, "View More" pagination (50 items per page), and note titles that link to the source note.
-
-The active view is remembered per board.
+Shared across views: a search bar, "View More" pagination, and note titles that link to the source note. The active view is remembered per database.
 
 ## Development
 
@@ -71,4 +104,4 @@ CSS lives as numbered partials under `styles/` and is concatenated into `styles.
 
 ## Out of scope (v0.1)
 
-Chart view, single-note ingestion, formulas, cross-board references, mobile layout tuning.
+Chart view, single-note ingestion, formulas, cross-database references, mobile layout tuning.

@@ -1,35 +1,35 @@
 import { TextFileView, WorkspaceLeaf, debounce, setIcon } from 'obsidian';
 import type RBoardPlugin from '../main';
-import type { BoardConfig, BoardItem, ViewMode } from './types';
-import { parseBoardConfig } from './config';
+import type { BoardItem, DatabaseConfig, ViewConfig, ViewType } from './types';
+import { parseDatabaseConfig, visibleProperties } from './config';
 import { queryItems } from './data/query';
+import { applyFilter } from './data/filter';
 import { filterBySearch, type BoardUiState, type RenderContext } from './render/common';
 import { renderGallery } from './views/gallery';
 import { renderKanban } from './views/kanban';
 import { renderTable } from './views/table';
 
 export const BOARD_VIEW_TYPE = 'r-board-view';
-/** File extension that opens as a board (a JSON document, like `.canvas`). */
+/** File extension that opens as a database board (JSON content, like `.canvas`). */
 export const BOARD_EXTENSION = 'board';
 
-const VIEW_LABELS: Record<ViewMode, { label: string; icon: string }> = {
-  gallery: { label: 'Gallery', icon: 'layout-grid' },
-  kanban: { label: 'Kanban', icon: 'columns-3' },
-  table: { label: 'Table', icon: 'table' },
+const TYPE_ICON: Record<ViewType, string> = {
+  gallery: 'layout-grid',
+  kanban: 'columns-3',
+  table: 'table',
 };
 
-/** A board pane: parses a `.board` config file and renders the active view. */
+/** A board pane: parses a `.board` database config and renders the active view. */
 export class BoardView extends TextFileView {
   plugin: RBoardPlugin;
 
-  private config: BoardConfig | null = null;
+  private config: DatabaseConfig | null = null;
   private parseError: string | null = null;
-  private mode: ViewMode = 'gallery';
+  private activeView = '';
   private searchQuery = '';
-  private ui: BoardUiState = { kanbanCollapsed: new Set() };
+  private ui: BoardUiState = { collapsed: new Set() };
 
   private bodyEl: HTMLElement | null = null;
-  private toolbarEl: HTMLElement | null = null;
 
   constructor(leaf: WorkspaceLeaf, plugin: RBoardPlugin) {
     super(leaf);
@@ -57,13 +57,14 @@ export class BoardView extends TextFileView {
 
   setViewData(data: string, _clear: boolean): void {
     this.data = data;
-    const result = parseBoardConfig(data);
+    const result = parseDatabaseConfig(data);
     if (result.ok) {
       this.config = result.config;
       this.parseError = null;
-      // Restore the saved view for this board, else fall back to its default.
-      const saved = this.file ? this.plugin.getBoardView(this.file.path) : undefined;
-      this.mode = saved ?? this.config.defaultView ?? 'gallery';
+      // Restore the saved view for this database, else its default.
+      const saved = this.file ? this.plugin.getActiveView(this.file.path) : undefined;
+      const exists = saved && this.config.views.some((v) => v.name === saved);
+      this.activeView = exists ? (saved as string) : this.config.defaultView ?? this.config.views[0].name;
     } else {
       this.config = null;
       this.parseError = result.error;
@@ -89,9 +90,16 @@ export class BoardView extends TextFileView {
 
   // --- Rendering -------------------------------------------------------------
 
-  private setMode(mode: ViewMode): void {
-    this.mode = mode;
-    if (this.file) void this.plugin.setBoardView(this.file.path, mode);
+  private currentView(): ViewConfig | null {
+    if (!this.config) return null;
+    return this.config.views.find((v) => v.name === this.activeView) ?? this.config.views[0] ?? null;
+  }
+
+  private setActiveView(name: string): void {
+    if (this.activeView === name) return;
+    this.activeView = name;
+    this.ui.collapsed.clear();
+    if (this.file) void this.plugin.setActiveView(this.file.path, name);
     this.render();
   }
 
@@ -102,7 +110,7 @@ export class BoardView extends TextFileView {
 
     if (this.parseError) {
       const err = root.createDiv({ cls: 'rb-error' });
-      err.createEl('h3', { text: 'Invalid board config' });
+      err.createEl('h3', { text: 'Invalid database config' });
       err.createEl('p', { text: this.parseError });
       return;
     }
@@ -115,9 +123,11 @@ export class BoardView extends TextFileView {
 
   private renderToolbar(root: HTMLElement): void {
     const bar = root.createDiv({ cls: 'rb-toolbar' });
-    this.toolbarEl = bar;
 
-    bar.createDiv({ cls: 'rb-toolbar-title', text: this.config?.name ?? this.file?.basename ?? 'Board' });
+    bar.createDiv({
+      cls: 'rb-toolbar-title',
+      text: this.config?.name ?? this.file?.basename ?? 'Board',
+    });
 
     const search = bar.createEl('input', {
       cls: 'rb-search',
@@ -129,39 +139,44 @@ export class BoardView extends TextFileView {
       this.renderBody();
     };
 
-    const switcher = bar.createDiv({ cls: 'rb-view-switch' });
-    const modes: ViewMode[] = ['gallery', 'kanban', 'table'];
-    for (const mode of modes) {
-      const { label, icon } = VIEW_LABELS[mode];
-      const btn = switcher.createEl('button', {
-        cls: mode === this.mode ? 'rb-view-btn rb-active' : 'rb-view-btn',
-        attr: { 'aria-label': label, title: label },
+    // One tab per saved view.
+    const tabs = bar.createDiv({ cls: 'rb-view-switch' });
+    for (const view of this.config?.views ?? []) {
+      const btn = tabs.createEl('button', {
+        cls: view.name === this.activeView ? 'rb-view-btn rb-active' : 'rb-view-btn',
+        attr: { title: `${view.name} (${view.type})` },
       });
       const ic = btn.createSpan({ cls: 'rb-view-btn-icon' });
-      setIcon(ic, icon);
-      btn.createSpan({ text: label });
-      btn.onclick = () => this.setMode(mode);
+      setIcon(ic, TYPE_ICON[view.type]);
+      btn.createSpan({ text: view.name });
+      btn.onclick = () => this.setActiveView(view.name);
     }
   }
 
   /** Re-query the vault and draw the active view into the body. */
   private renderBody(): void {
     const body = this.bodyEl;
-    if (!body || !this.config) return;
+    const view = this.currentView();
+    if (!body || !this.config || !view) return;
     body.empty();
 
-    const all = queryItems(this.app, this.config);
-    const items: BoardItem[] = filterBySearch(all, this.config, this.searchQuery);
+    const properties = visibleProperties(this.config, view);
+
+    let items: BoardItem[] = queryItems(this.app, this.config);
+    items = applyFilter(items, view.filter, this.config.properties);
+    items = filterBySearch(items, properties, this.searchQuery);
 
     const ctx: RenderContext = {
       app: this.app,
       config: this.config,
+      view,
+      properties,
       boardFile: this.file!,
       refresh: () => this.renderBody(),
       ui: this.ui,
     };
 
-    switch (this.mode) {
+    switch (view.type) {
       case 'kanban':
         renderKanban(body, items, ctx);
         break;
