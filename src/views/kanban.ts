@@ -1,6 +1,6 @@
-import { Notice, TFile, setIcon } from 'obsidian';
+import { Menu, Notice, TFile, setIcon } from 'obsidian';
 import type { BoardItem, PropertyConfig } from '../types';
-import { groupItems, type ItemGroup } from '../data/group';
+import { groupItems, groupValueOf, type ItemGroup } from '../data/group';
 import { setProperty } from '../data/properties';
 import { renderField } from '../render/fields';
 import {
@@ -19,6 +19,12 @@ const COLUMN_MIME = 'application/x-rb-column';
 
 /** Reorders the view's columns; persists and re-renders. */
 type Reorder = (draggedKey: string, beforeKey: string | null) => void;
+
+/** A column the "Move to group" menu can send a card to. */
+interface ColumnTarget {
+  key: string | null;
+  label: string;
+}
 
 /**
  * Kanban board: one column per distinct value of the view's group property,
@@ -49,6 +55,8 @@ export function renderKanban(host: HTMLElement, items: BoardItem[], ctx: RenderC
 
   const columns = groupItems(items, groupProp, ctx.view.columns);
   const realKeys = columns.filter((c) => c.key !== null).map((c) => c.key as string);
+  // Destinations offered by the card's "Move to group" menu.
+  const targets: ColumnTarget[] = columns.map((c) => ({ key: c.key, label: c.label }));
 
   const reorder: Reorder = (draggedKey, beforeKey) => {
     const order = realKeys.filter((k) => k !== draggedKey);
@@ -61,7 +69,7 @@ export function renderKanban(host: HTMLElement, items: BoardItem[], ctx: RenderC
     ctx.commit();
   };
 
-  for (const column of columns) renderColumn(board, column, groupProp, ctx, reorder);
+  for (const column of columns) renderColumn(board, column, groupProp, ctx, reorder, targets);
   renderAddGroup(board, realKeys, ctx);
 
   wireTopScrollbar(topbar, topInner, board);
@@ -96,6 +104,7 @@ function renderColumn(
   groupProp: PropertyConfig,
   ctx: RenderContext,
   reorder: Reorder,
+  targets: ColumnTarget[],
 ): void {
   const collapsed = ctx.ui.collapsed.has(column.label);
   const colEl = board.createDiv({ cls: 'rb-kanban-col' });
@@ -147,7 +156,7 @@ function renderColumn(
     list.createDiv({ cls: 'rb-kanban-empty-drop', text: 'Drop cards here' });
   } else {
     renderPaged(list, column.items, ctx.view.limit ?? 50, (item, host) =>
-      renderCard(host, item, ctx),
+      renderCard(host, item, ctx, groupProp, targets),
     );
   }
 
@@ -205,13 +214,31 @@ function renderAddGroup(board: HTMLElement, realKeys: string[], ctx: RenderConte
   };
 }
 
-function renderCard(list: HTMLElement, item: BoardItem, ctx: RenderContext): void {
+function renderCard(
+  list: HTMLElement,
+  item: BoardItem,
+  ctx: RenderContext,
+  groupProp: PropertyConfig,
+  targets: ColumnTarget[],
+): void {
   const cover = coverProperty(ctx.properties);
   const fields = bodyProperties(ctx.properties);
 
   const card = list.createDiv({ cls: 'rb-card rb-kanban-card', attr: { draggable: 'true' } });
   card.dataset.path = item.file.path;
   card.onclick = (e) => openNote(ctx.app, item, e.ctrlKey || e.metaKey);
+  card.oncontextmenu = (e) => {
+    e.preventDefault();
+    openCardMenu(e, item, groupProp, targets, ctx);
+  };
+
+  // Hover "⋯" button — opens the same menu without opening the note.
+  const menuBtn = card.createEl('button', { cls: 'rb-card-menu', attr: { 'aria-label': 'Card actions' } });
+  setIcon(menuBtn, 'more-horizontal');
+  menuBtn.onclick = (e) => {
+    e.stopPropagation();
+    openCardMenu(e, item, groupProp, targets, ctx);
+  };
 
   card.addEventListener('dragstart', (e) => {
     e.dataTransfer?.setData('text/plain', item.file.path);
@@ -238,6 +265,53 @@ function renderCard(list: HTMLElement, item: BoardItem, ctx: RenderContext): voi
   if (ctx.view.showContent) {
     const content = body.createDiv({ cls: 'rb-card-content' });
     void renderNoteExcerpt(ctx.app, content, item.file, ctx.component);
+  }
+}
+
+/** Context menu for a card: a "Move to group" submenu of every column. */
+function openCardMenu(
+  e: MouseEvent,
+  item: BoardItem,
+  groupProp: PropertyConfig,
+  targets: ColumnTarget[],
+  ctx: RenderContext,
+): void {
+  const current = groupValueOf(item, groupProp);
+  const menu = new Menu();
+
+  menu.addItem((it) => {
+    it.setTitle('Move to group').setIcon('arrow-right-circle');
+    // setSubmenu() exists at runtime (Obsidian 1.4+) but isn't in the bundled types.
+    const sub = (it as unknown as { setSubmenu: () => Menu }).setSubmenu();
+    for (const t of targets) {
+      sub.addItem((si) => {
+        si.setTitle(t.label);
+        if ((t.key ?? null) === (current ?? null)) si.setChecked(true);
+        si.onClick(() => void moveCardToGroup(item, t.key, groupProp, ctx));
+      });
+    }
+  });
+
+  menu.addSeparator();
+  menu.addItem((it) =>
+    it.setTitle('Open note').setIcon('file-text').onClick(() => openNote(ctx.app, item, false)),
+  );
+
+  menu.showAtMouseEvent(e);
+}
+
+/** Write the group property on a card's note and refresh. */
+async function moveCardToGroup(
+  item: BoardItem,
+  targetKey: string | null,
+  groupProp: PropertyConfig,
+  ctx: RenderContext,
+): Promise<void> {
+  try {
+    await setProperty(ctx.app, item.file, groupProp, targetKey);
+    ctx.refresh();
+  } catch (e) {
+    new Notice(`R Board: could not move note — ${(e as Error).message}`);
   }
 }
 
