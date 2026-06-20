@@ -35,6 +35,8 @@ export function openNote(app: App, item: BoardItem, newLeaf: boolean): void {
 export interface BoardUiState {
   /** Group labels the user has collapsed (kanban columns / view sections). */
   collapsed: Set<string>;
+  /** Last horizontal scroll of the kanban board, restored across re-renders. */
+  kanbanScroll?: number;
 }
 
 /** Open a note in a new or existing leaf via Obsidian's native navigation. */

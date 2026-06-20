@@ -72,25 +72,39 @@ export function renderKanban(host: HTMLElement, items: BoardItem[], ctx: RenderC
   for (const column of columns) renderColumn(board, column, groupProp, ctx, reorder, targets);
   renderAddGroup(board, realKeys, ctx);
 
-  wireTopScrollbar(topbar, topInner, board);
+  wireTopScrollbar(topbar, topInner, board, ctx);
 }
 
-/** Mirror the board's horizontal scroll to a thin scrollbar above it. */
-function wireTopScrollbar(topbar: HTMLElement, topInner: HTMLElement, board: HTMLElement): void {
+/** Mirror the board's horizontal scroll to a thin scrollbar above it, and
+ *  preserve the scroll position across re-renders (e.g. after moving a card). */
+function wireTopScrollbar(
+  topbar: HTMLElement,
+  topInner: HTMLElement,
+  board: HTMLElement,
+  ctx: RenderContext,
+): void {
   const sync = (): void => {
     topInner.style.width = `${board.scrollWidth}px`;
     topbar.toggleClass('rb-hidden', board.scrollWidth <= board.clientWidth + 1);
+    // Restore the scroll position saved before the last re-render.
+    const saved = ctx.ui.kanbanScroll ?? 0;
+    if (saved) {
+      board.scrollLeft = saved;
+      topbar.scrollLeft = saved;
+    }
   };
   window.requestAnimationFrame(sync);
 
   let lock = false;
   topbar.addEventListener('scroll', () => {
+    ctx.ui.kanbanScroll = topbar.scrollLeft;
     if (lock) return;
     lock = true;
     board.scrollLeft = topbar.scrollLeft;
     lock = false;
   });
   board.addEventListener('scroll', () => {
+    ctx.ui.kanbanScroll = board.scrollLeft;
     if (lock) return;
     lock = true;
     topbar.scrollLeft = board.scrollLeft;
@@ -307,12 +321,63 @@ async function moveCardToGroup(
   groupProp: PropertyConfig,
   ctx: RenderContext,
 ): Promise<void> {
+  await moveItemToGroup(item.file, targetKey, groupProp, ctx);
+}
+
+/**
+ * Write the group property, wait for Obsidian's metadata cache to reflect the
+ * change (so the re-render reads fresh data, not the pre-write cache), then
+ * re-render. The kanban scroll position is preserved across the re-render.
+ */
+async function moveItemToGroup(
+  file: TFile,
+  targetKey: string | null,
+  groupProp: PropertyConfig,
+  ctx: RenderContext,
+): Promise<void> {
   try {
-    await setProperty(ctx.app, item.file, groupProp, targetKey);
-    ctx.refresh();
+    await setProperty(ctx.app, file, groupProp, targetKey);
+    await waitForFrontmatter(ctx, file, groupProp.name, targetKey);
   } catch (e) {
     new Notice(`R Board: could not move note — ${(e as Error).message}`);
+    return;
   }
+  ctx.refresh();
+}
+
+/** Resolve once the file's cached frontmatter shows `expected` for `key`. */
+function waitForFrontmatter(
+  ctx: RenderContext,
+  file: TFile,
+  key: string,
+  expected: string | null,
+): Promise<void> {
+  const matches = (): boolean => {
+    const v = ctx.app.metadataCache.getFileCache(file)?.frontmatter?.[key];
+    if (expected === null) return v === undefined || v === null || v === '';
+    if (Array.isArray(v)) return v.map(String).includes(String(expected));
+    return String(v) === String(expected);
+  };
+
+  return new Promise((resolve) => {
+    if (matches()) return resolve();
+    const ref = ctx.app.metadataCache.on('changed', (f) => {
+      if (f.path === file.path && matches()) {
+        ctx.app.metadataCache.offref(ref);
+        window.clearInterval(timer);
+        resolve();
+      }
+    });
+    // Fallback poll in case the 'changed' event already fired (cap ~1.5s).
+    let tries = 0;
+    const timer = window.setInterval(() => {
+      if (matches() || ++tries > 30) {
+        ctx.app.metadataCache.offref(ref);
+        window.clearInterval(timer);
+        resolve();
+      }
+    }, 50);
+  });
 }
 
 /** Whether a drag event carries the given data type. */
@@ -328,10 +393,5 @@ async function handleDrop(
 ): Promise<void> {
   const file = ctx.app.vault.getAbstractFileByPath(path);
   if (!(file instanceof TFile)) return;
-  try {
-    await setProperty(ctx.app, file, groupProp, column.key);
-    ctx.refresh();
-  } catch (e) {
-    new Notice(`R Board: could not move note — ${(e as Error).message}`);
-  }
+  await moveItemToGroup(file, column.key, groupProp, ctx);
 }
