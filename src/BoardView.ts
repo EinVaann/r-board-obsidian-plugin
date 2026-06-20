@@ -1,4 +1,4 @@
-import { Menu, TextFileView, WorkspaceLeaf, debounce, setIcon } from 'obsidian';
+import { Menu, Notice, TFolder, TextFileView, WorkspaceLeaf, debounce, normalizePath, setIcon } from 'obsidian';
 import type RBoardPlugin from '../main';
 import type { BoardItem, DatabaseConfig, SortSpec, ViewConfig, ViewType } from './types';
 import {
@@ -228,6 +228,12 @@ export class BoardView extends TextFileView {
       this.renderSortChip(ctrlRow, view);
       this.renderFilterChip(ctrlRow, view);
     }
+
+    ctrlRow.createDiv({ cls: 'rb-spacer' });
+    const newNote = ctrlRow.createEl('button', { cls: 'rb-new-note', attr: { title: 'Create a new note in this database' } });
+    setIcon(newNote.createSpan({ cls: 'rb-new-note-icon' }), 'file-plus');
+    newNote.createSpan({ text: 'New note' });
+    newNote.onclick = () => void this.createNewNote();
   }
 
   private renderSortChip(parent: HTMLElement, view: ViewConfig): void {
@@ -293,6 +299,43 @@ export class BoardView extends TextFileView {
       );
     });
     menu.showAtMouseEvent(e);
+  }
+
+  /**
+   * Create a new note (carrying the database's source tag) in the configured
+   * "New note location" and open it. If that location isn't set, open Board
+   * settings so the user can set it first.
+   */
+  private async createNewNote(): Promise<void> {
+    if (!this.config) return;
+    const folder = this.config.newNoteFolder?.trim();
+    if (!folder) {
+      new Notice('R Board: set a "New note location" in board settings to use this.');
+      this.toggleSidebar('board', true);
+      return;
+    }
+
+    try {
+      // Ensure the folder exists.
+      const dir = normalizePath(folder);
+      if (!(this.app.vault.getAbstractFileByPath(dir) instanceof TFolder)) {
+        await this.app.vault.createFolder(dir).catch(() => undefined);
+      }
+
+      // Pick a unique filename.
+      let path = normalizePath(`${dir}/Untitled.md`);
+      let i = 1;
+      while (this.app.vault.getAbstractFileByPath(path)) {
+        path = normalizePath(`${dir}/Untitled ${i++}.md`);
+      }
+
+      const content = `---\ntags:\n  - ${this.config.sourceTag}\n---\n`;
+      const file = await this.app.vault.create(path, content);
+      // Open in a new tab so the board stays put.
+      await this.app.workspace.getLeaf('tab').openFile(file);
+    } catch (e) {
+      new Notice(`R Board: could not create note — ${(e as Error).message}`);
+    }
   }
 
   private openTabMenu(e: MouseEvent, view: ViewConfig): void {

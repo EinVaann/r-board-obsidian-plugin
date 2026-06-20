@@ -31,6 +31,10 @@ export interface PropertyConfig {
   label?: string;
   /** Include this property's value in search matching. */
   searchable?: boolean;
+  /** Text shown before the value on cards (e.g. "Score: "). */
+  prefix?: string;
+  /** Text shown after the value on cards (e.g. "%"). */
+  suffix?: string;
 }
 
 /** How many items a view loads per page. `'none'` shows them all. */
@@ -126,6 +130,8 @@ export interface DatabaseConfig {
   views: ViewConfig[];
   /** Name of the view shown first; defaults to the first view. */
   defaultView?: string;
+  /** Vault folder where the "New note" button creates notes. */
+  newNoteFolder?: string;
 }
 
 /** A note matched into the database, with its parsed frontmatter. */

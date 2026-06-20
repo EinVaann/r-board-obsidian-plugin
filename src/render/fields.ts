@@ -41,10 +41,22 @@ function renderImage(app: App, parent: HTMLElement, item: BoardItem, field: Prop
   return true;
 }
 
+/** Wrap a string with the property's optional prefix / suffix. */
+function affix(field: PropertyConfig, value: string): string {
+  return `${field.prefix ?? ''}${value}${field.suffix ?? ''}`;
+}
+
+/** Add the prefix (before) / suffix (after) as muted spans around visual fields. */
+function addAffixSpans(parent: HTMLElement, field: PropertyConfig, draw: () => void): void {
+  if (field.prefix) parent.createSpan({ cls: 'rb-affix', text: field.prefix });
+  draw();
+  if (field.suffix) parent.createSpan({ cls: 'rb-affix', text: field.suffix });
+}
+
 function renderText(parent: HTMLElement, item: BoardItem, field: PropertyConfig): boolean {
   const v = fieldValue(item, field);
   if (v === undefined || v === null || v === '') return false;
-  const text = String(v);
+  const text = affix(field, String(v));
   const render = field.render ?? 'plain';
   if (render === 'badge') {
     parent.createSpan({ cls: 'rb-badge', text });
@@ -61,12 +73,14 @@ function renderMulti(parent: HTMLElement, item: BoardItem, field: PropertyConfig
   if (arr.length === 0) return false;
   const asTags = field.render === 'tags';
   const wrap = parent.createDiv({ cls: 'rb-multi' });
-  for (const entry of arr) {
-    wrap.createSpan({
-      cls: asTags ? 'rb-tag' : 'rb-pill',
-      text: asTags ? `#${entry}` : entry,
-    });
-  }
+  addAffixSpans(wrap, field, () => {
+    for (const entry of arr) {
+      wrap.createSpan({
+        cls: asTags ? 'rb-tag' : 'rb-pill',
+        text: asTags ? `#${entry}` : entry,
+      });
+    }
+  });
   return true;
 }
 
@@ -78,17 +92,17 @@ function renderNumber(parent: HTMLElement, item: BoardItem, field: PropertyConfi
 
   switch (render) {
     case 'stars':
-      renderStars(parent, n, field.max ?? 5);
+      addAffixSpans(parent, field, () => renderStars(parent, n, field.max ?? 5));
       return true;
     case 'bar':
-      renderBar(parent, n, max);
+      addAffixSpans(parent, field, () => renderBar(parent, n, max));
       return true;
     case 'circle':
-      renderCircle(parent, n, max);
+      addAffixSpans(parent, field, () => renderCircle(parent, n, max));
       return true;
     case 'text':
     default:
-      parent.createSpan({ cls: 'rb-text rb-number', text: String(n) });
+      parent.createSpan({ cls: 'rb-text rb-number', text: affix(field, String(n)) });
       return true;
   }
 }

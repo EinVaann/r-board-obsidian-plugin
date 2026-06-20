@@ -91,6 +91,29 @@ export function renderPropertyEditor(
         onChange();
       };
     }
+
+    // Prefix / suffix text shown around the value on cards (not for images).
+    if (prop.type !== 'image') {
+      const affixRow = card.createDiv({ cls: 'rb-prop-affix' });
+      const prefix = affixRow.createEl('input', {
+        cls: 'rb-prop-input',
+        attr: { type: 'text', placeholder: 'prefix (e.g. "Score: ")' },
+      });
+      prefix.value = prop.prefix ?? '';
+      prefix.oninput = () => {
+        prop.prefix = prefix.value || undefined;
+        onChange();
+      };
+      const suffix = affixRow.createEl('input', {
+        cls: 'rb-prop-input',
+        attr: { type: 'text', placeholder: 'suffix (e.g. "%")' },
+      });
+      suffix.value = prop.suffix ?? '';
+      suffix.oninput = () => {
+        prop.suffix = suffix.value || undefined;
+        onChange();
+      };
+    }
   });
 
   const add = container.createEl('button', { cls: 'rb-prop-add', text: '+ Add property' });

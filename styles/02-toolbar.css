@@ -106,3 +106,22 @@
   color: var(--text-accent);
 }
 .rb-tool-btn svg { width: 20px; height: 20px; }
+
+/* "New note" button */
+.rb-new-note {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 13px;
+  border: none;
+  border-radius: 8px;
+  background: var(--interactive-accent);
+  color: var(--text-on-accent);
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+.rb-new-note:hover { background: var(--interactive-accent-hover); }
+.rb-new-note-icon { display: inline-flex; }
+.rb-new-note-icon svg { width: 15px; height: 15px; }

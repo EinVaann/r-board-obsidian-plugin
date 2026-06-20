@@ -179,6 +179,16 @@ export function renderDatabaseSettings(
       }),
     );
 
+  new Setting(container)
+    .setName('New note location')
+    .setDesc('Folder where the "New note" button creates notes. Required for that button.')
+    .addText((t) =>
+      t.setPlaceholder('e.g. Games/Backlog').setValue(config.newNoteFolder ?? '').onChange((v) => {
+        config.newNoteFolder = v.trim() || undefined;
+        hooks.onChange();
+      }),
+    );
+
   container.createEl('h4', { text: 'Properties' });
   renderPropertyEditor(container.createDiv(), config.properties, hooks.onChange);
 }

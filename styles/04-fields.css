@@ -1,6 +1,8 @@
 /* ===================== Field renders ===================== */
 .rb-text { color: var(--text-muted); font-size: 13px; }
 .rb-number { font-variant-numeric: tabular-nums; }
+/* Prefix / suffix text around a value. */
+.rb-affix { color: var(--text-faint); font-size: 12px; }
 
 .rb-badge {
   display: inline-block;

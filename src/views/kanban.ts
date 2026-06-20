@@ -16,6 +16,8 @@ import { renderNoteExcerpt } from '../render/content';
 
 /** dataTransfer MIME marking a column-reorder drag (vs. a card drag). */
 const COLUMN_MIME = 'application/x-rb-column';
+/** Console prefix for move diagnostics. */
+const MLOG = '[R Board move]';
 
 /** Reorders the view's columns; persists and re-renders. */
 type Reorder = (draggedKey: string, beforeKey: string | null) => void;
@@ -335,14 +337,39 @@ async function moveItemToGroup(
   groupProp: PropertyConfig,
   ctx: RenderContext,
 ): Promise<void> {
+  const key = groupProp.name;
+  const before = ctx.app.metadataCache.getFileCache(file)?.frontmatter?.[key];
+  console.log(
+    `${MLOG} move: "${file.path}" → ${targetKey === null ? '(Uncategorized)' : `"${targetKey}"`}` +
+      ` | prop="${key}" type=${groupProp.type} | before=${JSON.stringify(before)}`,
+  );
   try {
     await setProperty(ctx.app, file, groupProp, targetKey);
-    await waitForFrontmatter(ctx, file, groupProp.name, targetKey);
+    const afterWrite = ctx.app.metadataCache.getFileCache(file)?.frontmatter?.[key];
+    console.log(`${MLOG} wrote frontmatter; cache value right after write = ${JSON.stringify(afterWrite)}`);
+    await waitForFrontmatter(ctx, file, key, targetKey);
   } catch (e) {
+    console.error(`${MLOG} FAILED for "${file.path}":`, e);
     new Notice(`R Board: could not move note — ${(e as Error).message}`);
     return;
   }
+  const after = ctx.app.metadataCache.getFileCache(file)?.frontmatter?.[key];
+  // What grouping will compute for this note now, and which column it expects.
+  const computed = groupValueOf({ file, frontmatter: ctx.app.metadataCache.getFileCache(file)?.frontmatter ?? {} } as BoardItem, groupProp);
+  const inView = ctx.config.properties.some((p) => p.name === ctx.view.group);
+  console.log(
+    `${MLOG} done: "${file.basename}" final value=${JSON.stringify(after)}` +
+      ` | groupValueOf="${computed}" expected="${targetKey}"` +
+      ` | view.group="${ctx.view.group}" groupPropInConfig=${inView} matches=${(computed ?? null) === (targetKey ?? null)}`,
+  );
   ctx.refresh();
+  // After the synchronous re-render, report which column the card landed in.
+  window.requestAnimationFrame(() => {
+    const cards = Array.from(document.querySelectorAll<HTMLElement>('.rb-kanban-card'));
+    const el = cards.find((c) => c.dataset.path === file.path);
+    const col = el?.closest('.rb-kanban-col')?.querySelector('.rb-kanban-title')?.textContent;
+    console.log(`${MLOG} after re-render: card ${el ? `in column "${col}"` : 'NOT FOUND in DOM (filtered out / not visible?)'}`);
+  });
 }
 
 /** Resolve once the file's cached frontmatter shows `expected` for `key`. */
@@ -360,9 +387,13 @@ function waitForFrontmatter(
   };
 
   return new Promise((resolve) => {
-    if (matches()) return resolve();
+    if (matches()) {
+      console.log(`${MLOG} waitForFrontmatter: matched immediately`);
+      return resolve();
+    }
     const ref = ctx.app.metadataCache.on('changed', (f) => {
       if (f.path === file.path && matches()) {
+        console.log(`${MLOG} waitForFrontmatter: matched via 'changed' event`);
         ctx.app.metadataCache.offref(ref);
         window.clearInterval(timer);
         resolve();
@@ -371,7 +402,14 @@ function waitForFrontmatter(
     // Fallback poll in case the 'changed' event already fired (cap ~1.5s).
     let tries = 0;
     const timer = window.setInterval(() => {
-      if (matches() || ++tries > 30) {
+      if (matches()) {
+        console.log(`${MLOG} waitForFrontmatter: matched via poll after ${tries * 50}ms`);
+        ctx.app.metadataCache.offref(ref);
+        window.clearInterval(timer);
+        resolve();
+      } else if (++tries > 30) {
+        const v = ctx.app.metadataCache.getFileCache(file)?.frontmatter?.[key];
+        console.warn(`${MLOG} waitForFrontmatter: TIMED OUT after 1.5s; cache value=${JSON.stringify(v)}, expected=${JSON.stringify(expected)}`);
         ctx.app.metadataCache.offref(ref);
         window.clearInterval(timer);
         resolve();

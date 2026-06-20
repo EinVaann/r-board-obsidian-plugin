@@ -43,6 +43,8 @@ function parseProperty(raw: unknown): PropertyConfig | null {
     max: typeof f.max === 'number' ? f.max : undefined,
     label: typeof f.label === 'string' ? f.label : undefined,
     searchable: typeof f.searchable === 'boolean' ? f.searchable : undefined,
+    prefix: typeof f.prefix === 'string' && f.prefix !== '' ? f.prefix : undefined,
+    suffix: typeof f.suffix === 'string' && f.suffix !== '' ? f.suffix : undefined,
   };
 }
 
@@ -146,6 +148,10 @@ export function parseDatabaseConfig(raw: string): ParseResult {
       properties,
       views,
       defaultView,
+      newNoteFolder:
+        typeof obj.newNoteFolder === 'string' && obj.newNoteFolder.trim() !== ''
+          ? obj.newNoteFolder.trim()
+          : undefined,
     },
   };
 }
@@ -183,6 +189,7 @@ export function serializeDatabase(config: DatabaseConfig): string {
     return view;
   });
   if (config.defaultView) out.defaultView = config.defaultView;
+  if (config.newNoteFolder) out.newNoteFolder = config.newNoteFolder;
   return JSON.stringify(out, null, 2);
 }
 
