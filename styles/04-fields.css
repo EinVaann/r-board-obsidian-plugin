@@ -30,6 +30,15 @@
   font-size: 12px;
 }
 .rb-multi { display: flex; flex-wrap: wrap; gap: 5px; }
+/* Per-value colored pills/tags in multi fields (hue set inline via --pc). */
+.rb-multi .rb-pill {
+  background: hsla(var(--pc, 220), 55%, 50%, 0.28);
+  color: hsl(var(--pc, 220), 70%, 82%);
+}
+.rb-multi .rb-tag {
+  border-color: hsla(var(--pc, 220), 55%, 55%, 0.55);
+  color: hsl(var(--pc, 220), 70%, 80%);
+}
 
 /* Stars */
 .rb-stars { display: inline-flex; gap: 1px; font-size: 14px; line-height: 1; }

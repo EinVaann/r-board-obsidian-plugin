@@ -68,6 +68,16 @@ function renderText(parent: HTMLElement, item: BoardItem, field: PropertyConfig)
   return true;
 }
 
+/** Curated, evenly-spaced hues so each value gets a distinct, pleasant color. */
+const PILL_HUES = [0, 25, 45, 95, 150, 190, 215, 260, 290, 330];
+
+/** Deterministic hue for a value, so the same value is always the same color. */
+function pillHue(s: string): number {
+  let h = 0;
+  for (let i = 0; i < s.length; i++) h = (Math.imul(h, 31) + s.charCodeAt(i)) >>> 0;
+  return PILL_HUES[h % PILL_HUES.length];
+}
+
 function renderMulti(parent: HTMLElement, item: BoardItem, field: PropertyConfig): boolean {
   const arr = asArray(fieldValue(item, field));
   if (arr.length === 0) return false;
@@ -75,10 +85,12 @@ function renderMulti(parent: HTMLElement, item: BoardItem, field: PropertyConfig
   const wrap = parent.createDiv({ cls: 'rb-multi' });
   addAffixSpans(wrap, field, () => {
     for (const entry of arr) {
-      wrap.createSpan({
+      const el = wrap.createSpan({
         cls: asTags ? 'rb-tag' : 'rb-pill',
         text: asTags ? `#${entry}` : entry,
       });
+      // Per-value color (read by the .rb-multi pill/tag CSS).
+      el.style.setProperty('--pc', String(pillHue(entry)));
     }
   });
   return true;

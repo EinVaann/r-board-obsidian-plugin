@@ -1,6 +1,6 @@
 {
   "name": "r-board",
-  "version": "0.1.12",
+  "version": "0.1.13",
   "description": "Configurable board views for Obsidian",
   "main": "main.js",
   "scripts": {
