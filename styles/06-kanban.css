@@ -143,27 +143,29 @@
   transition: transform 0.12s ease, box-shadow 0.12s ease, opacity 0.12s ease;
 }
 .rb-kanban-card:active { cursor: grabbing; }
-/* "⋯" actions — just the dots, bottom-right of the card (no button chrome). */
-.rb-kanban-card { position: relative; }
-.rb-kanban-card .rb-card-body { padding-right: 26px; }
+/* "⋯" actions row — its own line at the bottom of the card. */
+.rb-card-actions {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 6px;
+  padding-top: 6px;
+  border-top: 1px solid var(--background-modifier-border);
+}
 .rb-card-menu {
-  position: absolute;
-  bottom: 6px;
-  right: 8px;
-  z-index: 1;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  padding: 0;
+  padding: 2px 6px;
   border: none;
+  border-radius: 6px;
   background: transparent;
   box-shadow: none;
   color: var(--text-muted);
   cursor: pointer;
-  opacity: 0.55;
-  transition: opacity 0.1s ease, color 0.1s ease;
+  opacity: 0.7;
+  transition: opacity 0.1s ease, color 0.1s ease, background 0.1s ease;
 }
-.rb-card-menu:hover { color: var(--text-normal); opacity: 1; }
+.rb-card-menu:hover { color: var(--text-normal); opacity: 1; background: var(--background-modifier-hover); }
 .rb-card-menu svg { width: 18px; height: 18px; }
 .rb-kanban-card.rb-dragging {
   opacity: 0.4;

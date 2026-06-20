@@ -248,14 +248,6 @@ function renderCard(
     openCardMenu(e, item, groupProp, targets, ctx);
   };
 
-  // Hover "⋯" button — opens the same menu without opening the note.
-  const menuBtn = card.createEl('button', { cls: 'rb-card-menu', attr: { 'aria-label': 'Card actions' } });
-  setIcon(menuBtn, 'more-horizontal');
-  menuBtn.onclick = (e) => {
-    e.stopPropagation();
-    openCardMenu(e, item, groupProp, targets, ctx);
-  };
-
   card.addEventListener('dragstart', (e) => {
     e.dataTransfer?.setData('text/plain', item.file.path);
     e.dataTransfer!.effectAllowed = 'move';
@@ -282,6 +274,15 @@ function renderCard(
     const content = body.createDiv({ cls: 'rb-card-content' });
     void renderNoteExcerpt(ctx.app, content, item.file, ctx.component);
   }
+
+  // Actions row on its own line at the bottom — the "⋯" menu.
+  const actions = body.createDiv({ cls: 'rb-card-actions' });
+  const menuBtn = actions.createEl('button', { cls: 'rb-card-menu', attr: { 'aria-label': 'Card actions' } });
+  setIcon(menuBtn, 'more-horizontal');
+  menuBtn.onclick = (e) => {
+    e.stopPropagation();
+    openCardMenu(e, item, groupProp, targets, ctx);
+  };
 }
 
 /** Context menu for a card: a "Move to group" submenu of every column. */
