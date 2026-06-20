@@ -48,12 +48,29 @@ export type FilterOp =
   | 'empty'
   | 'notempty';
 
-/** A single filter condition on a property (rules combine with AND). */
+/** A single filter condition on a property. */
 export interface FilterRule {
   property: string;
   op: FilterOp;
   /** Compared value; unused for `empty` / `notempty`. */
   value?: unknown;
+}
+
+/** How the conditions in a group combine. */
+export type FilterConjunction = 'and' | 'or';
+
+/** A node in a filter tree: either a leaf rule or a nested group. */
+export type FilterNode = FilterRule | FilterGroup;
+
+/** A group of conditions combined with a single conjunction (and/or). */
+export interface FilterGroup {
+  conjunction: FilterConjunction;
+  conditions: FilterNode[];
+}
+
+/** Type guard: is this filter node a nested group? */
+export function isFilterGroup(node: FilterNode): node is FilterGroup {
+  return (node as FilterGroup).conditions !== undefined;
 }
 
 export type SortDir = 'asc' | 'desc';
@@ -81,8 +98,8 @@ export interface ViewConfig {
   properties?: string[];
   /** Page size; defaults to 50. */
   limit?: LoadLimit;
-  /** Filter conditions (AND). */
-  filter?: FilterRule[];
+  /** Root filter group (nested AND/OR conditions). */
+  filter?: FilterGroup;
   /**
    * Property name to group by. Creates section headers in gallery/table; for
    * kanban this property is required and defines the columns.

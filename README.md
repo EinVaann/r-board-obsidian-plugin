@@ -44,7 +44,10 @@ A database is a single `.board` file (JSON). Opening it shows the board pane wit
       "type": "gallery",
       "limit": 50,
       "properties": ["cover", "genre", "rating", "score"],
-      "filter": [{ "property": "rating", "op": "gte", "value": 4 }]
+      "filter": {
+        "conjunction": "and",
+        "conditions": [{ "property": "rating", "op": "gte", "value": 4 }]
+      }
     },
     {
       "name": "Board",
@@ -82,7 +85,7 @@ A database is a single `.board` file (JSON). Opening it shows the board pane wit
 
 - **`properties`** — names of the properties to show, in order. Omit to show all. An `image` property becomes the card cover; `title` is always shown as a link.
 - **`limit`** — `10` | `50` | `100` | `"none"`. Page size for the "View More" button (applied per column/section when grouped). `"none"` shows everything.
-- **`filter`** — array of `{ "property", "op", "value" }`, combined with AND. Operators: `eq`, `ne`, `contains`, `gt`, `gte`, `lt`, `lte`, `empty`, `notempty`.
+- **`filter`** — a nested filter group: `{ "conjunction": "and" | "or", "conditions": [...] }`, where each condition is a rule `{ "property", "op", "value" }` or another group. Operators: `eq`, `ne`, `contains`, `gt`, `gte`, `lt`, `lte`, `empty`, `notempty`. (A legacy flat array of rules is still accepted and read as one AND group.) Edit it visually with the **Filter** button — a Notion-style builder with AND/OR and nested groups.
 - **`group`** — a property name. In Gallery/Table it splits items into labelled sections; in Kanban it is **required** and defines the columns (each distinct value = a column, plus an Uncategorized column).
 - **`columns`** — optional explicit order of group/column values; any others follow, sorted; Uncategorized is last.
 - **`sort`** — `{ "property", "dir" }` where `property` is a property name or `"$title"`, and `dir` is `"asc"` / `"desc"`. **Defaults to title ascending.** Applies to every view type (clicking a table header sets it too).

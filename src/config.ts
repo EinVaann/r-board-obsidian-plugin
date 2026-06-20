@@ -1,6 +1,8 @@
 import type {
   CardSize,
   DatabaseConfig,
+  FilterGroup,
+  FilterNode,
   FilterOp,
   FilterRule,
   GalleryLayout,
@@ -44,12 +46,34 @@ function parseProperty(raw: unknown): PropertyConfig | null {
   };
 }
 
-function parseFilter(raw: unknown): FilterRule | null {
+function parseFilterRule(raw: unknown): FilterRule | null {
   if (typeof raw !== 'object' || raw === null) return null;
   const r = raw as Record<string, unknown>;
   if (typeof r.property !== 'string') return null;
   if (typeof r.op !== 'string' || !FILTER_OPS.has(r.op as FilterOp)) return null;
   return { property: r.property, op: r.op as FilterOp, value: r.value };
+}
+
+/** Parse one filter node: a nested group (has `conditions`) or a leaf rule. */
+function parseFilterNode(raw: unknown): FilterNode | null {
+  if (typeof raw === 'object' && raw !== null && Array.isArray((raw as Record<string, unknown>).conditions)) {
+    return parseFilterGroup(raw) ?? null;
+  }
+  return parseFilterRule(raw);
+}
+
+/** Parse a filter group; also accepts the legacy `FilterRule[]` (AND) form. */
+function parseFilterGroup(raw: unknown): FilterGroup | undefined {
+  if (Array.isArray(raw)) {
+    const conditions = raw.map(parseFilterNode).filter((n): n is FilterNode => n !== null);
+    return conditions.length ? { conjunction: 'and', conditions } : undefined;
+  }
+  if (typeof raw !== 'object' || raw === null) return undefined;
+  const g = raw as Record<string, unknown>;
+  if (!Array.isArray(g.conditions)) return undefined;
+  const conjunction = g.conjunction === 'or' ? 'or' : 'and';
+  const conditions = g.conditions.map(parseFilterNode).filter((n): n is FilterNode => n !== null);
+  return { conjunction, conditions };
 }
 
 function parseSort(raw: unknown): SortSpec | undefined {
@@ -71,9 +95,7 @@ function parseView(raw: unknown, index: number): ViewConfig | null {
       ? v.properties.filter((p): p is string => typeof p === 'string')
       : undefined,
     limit,
-    filter: Array.isArray(v.filter)
-      ? v.filter.map(parseFilter).filter((r): r is FilterRule => r !== null)
-      : undefined,
+    filter: parseFilterGroup(v.filter),
     group: typeof v.group === 'string' && v.group.trim() !== '' ? v.group : undefined,
     columns: Array.isArray(v.columns)
       ? v.columns.filter((c): c is string => typeof c === 'string')
@@ -151,7 +173,7 @@ export function serializeDatabase(config: DatabaseConfig): string {
     const view: Record<string, unknown> = { name: v.name, type: v.type };
     if (v.properties && v.properties.length) view.properties = v.properties;
     if (v.limit !== undefined) view.limit = v.limit;
-    if (v.filter && v.filter.length) view.filter = v.filter;
+    if (v.filter && v.filter.conditions.length) view.filter = v.filter;
     if (v.group) view.group = v.group;
     if (v.columns && v.columns.length) view.columns = v.columns;
     if (v.sort) view.sort = v.sort;

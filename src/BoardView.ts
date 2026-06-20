@@ -11,7 +11,7 @@ import {
   visibleProperties,
 } from './config';
 import { queryItems } from './data/query';
-import { applyFilter } from './data/filter';
+import { applyFilter, countFilterRules } from './data/filter';
 import { filterBySearch, openNote, type BoardUiState, type RenderContext } from './render/common';
 import { applySort } from './render/sort';
 import { renderGallery } from './views/gallery';
@@ -241,7 +241,7 @@ export class BoardView extends TextFileView {
   }
 
   private renderFilterChip(parent: HTMLElement, view: ViewConfig): void {
-    const count = view.filter?.length ?? 0;
+    const count = countFilterRules(view.filter);
     const chip = this.chip(parent, 'filter', count ? `Filter · ${count}` : 'Filter', count > 0);
     chip.onclick = () => this.openFilter(view);
   }
@@ -328,8 +328,8 @@ export class BoardView extends TextFileView {
 
   private openFilter(view: ViewConfig): void {
     if (!this.config) return;
-    new FilterModal(this.app, view.filter ?? [], this.config.properties, (rules) => {
-      view.filter = rules.length ? rules : undefined;
+    new FilterModal(this.app, view.filter, this.config.properties, (group) => {
+      view.filter = group;
       this.saveConfig();
     }).open();
   }

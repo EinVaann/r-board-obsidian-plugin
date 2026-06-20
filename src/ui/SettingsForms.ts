@@ -1,6 +1,7 @@
 import { App, Setting } from 'obsidian';
 import type { CardSize, DatabaseConfig, GalleryLayout, SortDir, ViewConfig, ViewType } from '../types';
 import { propertyLabel, TITLE_SORT_KEY } from '../config';
+import { countFilterRules } from '../data/filter';
 import { renderPropertyEditor } from './PropertyEditor';
 import { FilterModal } from './FilterModal';
 
@@ -124,11 +125,11 @@ export function renderViewSettings(
   // Filters
   new Setting(container)
     .setName('Filters')
-    .setDesc(`${(view.filter ?? []).length} active`)
+    .setDesc(`${countFilterRules(view.filter)} active`)
     .addButton((b) =>
       b.setButtonText('Edit filters…').onClick(() => {
-        new FilterModal(app, view.filter ?? [], config.properties, (rules) => {
-          view.filter = rules.length ? rules : undefined;
+        new FilterModal(app, view.filter, config.properties, (group) => {
+          view.filter = group;
           hooks.onStructureChange();
         }).open();
       }),

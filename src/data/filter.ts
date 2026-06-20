@@ -1,4 +1,4 @@
-import type { BoardItem, FilterRule, PropertyConfig } from '../types';
+import { isFilterGroup, type BoardItem, type FilterGroup, type FilterNode, type FilterRule, type PropertyConfig } from '../types';
 import { asArray, asNumber } from '../render/values';
 
 /** Whether a value counts as "empty" for filter purposes. */
@@ -46,13 +46,43 @@ function matches(item: BoardItem, rule: FilterRule, prop: PropertyConfig | undef
   }
 }
 
-/** Apply all rules (combined with AND) to a list of items. */
+/** Evaluate a node (rule or nested group) against an item. */
+function matchesNode(
+  item: BoardItem,
+  node: FilterNode,
+  byName: Map<string, PropertyConfig>,
+): boolean {
+  if (isFilterGroup(node)) return matchesGroup(item, node, byName);
+  return matches(item, node, byName.get(node.property));
+}
+
+/** Evaluate a group: AND = every condition, OR = some condition. */
+function matchesGroup(
+  item: BoardItem,
+  group: FilterGroup,
+  byName: Map<string, PropertyConfig>,
+): boolean {
+  if (group.conditions.length === 0) return true;
+  const results = group.conditions.map((c) => matchesNode(item, c, byName));
+  return group.conjunction === 'or' ? results.some(Boolean) : results.every(Boolean);
+}
+
+/** Apply the root filter group to a list of items. */
 export function applyFilter(
   items: BoardItem[],
-  rules: FilterRule[] | undefined,
+  filter: FilterGroup | undefined,
   properties: PropertyConfig[],
 ): BoardItem[] {
-  if (!rules || rules.length === 0) return items;
+  if (!filter || filter.conditions.length === 0) return items;
   const byName = new Map(properties.map((p) => [p.name, p]));
-  return items.filter((item) => rules.every((rule) => matches(item, rule, byName.get(rule.property))));
+  return items.filter((item) => matchesGroup(item, filter, byName));
+}
+
+/** Count the leaf rules in a filter group (for the "N active" label / chip). */
+export function countFilterRules(group: FilterGroup | undefined): number {
+  if (!group) return 0;
+  return group.conditions.reduce(
+    (n, c) => n + (isFilterGroup(c) ? countFilterRules(c) : 1),
+    0,
+  );
 }
