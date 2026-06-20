@@ -1,4 +1,3 @@
-import { Setting } from 'obsidian';
 import type { PropertyConfig, PropertyType } from '../types';
 
 /** Render options offered per property type. */
@@ -14,10 +13,21 @@ function needsMax(prop: PropertyConfig): boolean {
   return prop.type === 'number' && ['stars', 'bar', 'circle'].includes(prop.render ?? '');
 }
 
+/** A labelled `<select>` populated from `options`. */
+function makeSelect(parent: HTMLElement, options: string[], value: string): HTMLSelectElement {
+  const sel = parent.createEl('select', { cls: 'dropdown rb-prop-select' });
+  for (const opt of options) {
+    const o = sel.createEl('option', { text: opt });
+    o.value = opt;
+  }
+  sel.value = value;
+  return sel;
+}
+
 /**
  * Render an editable list of properties into `container`. Mutates `properties`
- * in place; calls `onChange` after structural edits so callers can refresh
- * dependent UI. Re-renders itself on every edit.
+ * in place and calls `onChange` after every edit; re-renders itself on changes
+ * that affect available options (type/render) or the list (add/remove).
  */
 export function renderPropertyEditor(
   container: HTMLElement,
@@ -33,59 +43,59 @@ export function renderPropertyEditor(
 
   properties.forEach((prop, i) => {
     const card = container.createDiv({ cls: 'rb-prop-card' });
-    const setting = new Setting(card).setClass('rb-prop-row');
 
-    setting.addText((t) =>
-      t.setPlaceholder('name').setValue(prop.name).onChange((v) => {
-        prop.name = v;
-        onChange();
-      }),
-    );
-
-    setting.addDropdown((d) => {
-      d.addOptions({ image: 'image', text: 'text', multi: 'multi', number: 'number' });
-      d.setValue(prop.type);
-      d.onChange((v) => {
-        prop.type = v as PropertyType;
-        prop.render = RENDER_OPTIONS[prop.type][0] as PropertyConfig['render'];
-        rerender();
-      });
+    // Header: name input + remove button.
+    const head = card.createDiv({ cls: 'rb-prop-head' });
+    const name = head.createEl('input', {
+      cls: 'rb-prop-name',
+      attr: { type: 'text', placeholder: 'field name' },
     });
+    name.value = prop.name;
+    name.oninput = () => {
+      prop.name = name.value;
+      onChange();
+    };
+    const remove = head.createEl('button', { cls: 'rb-prop-remove', text: 'Remove' });
+    remove.onclick = () => {
+      properties.splice(i, 1);
+      rerender();
+    };
 
-    setting.addDropdown((d) => {
-      for (const opt of RENDER_OPTIONS[prop.type]) d.addOption(opt, opt);
-      d.setValue(prop.render ?? RENDER_OPTIONS[prop.type][0]);
-      d.onChange((v) => {
-        prop.render = v as PropertyConfig['render'];
-        rerender();
-      });
-    });
+    card.createDiv({ cls: 'rb-prop-config-label', text: 'CONFIG' });
 
+    // Type.
+    const typeSel = makeSelect(card, ['image', 'text', 'multi', 'number'], prop.type);
+    typeSel.onchange = () => {
+      prop.type = typeSel.value as PropertyType;
+      prop.render = RENDER_OPTIONS[prop.type][0] as PropertyConfig['render'];
+      rerender();
+    };
+
+    // Render style.
+    const renderSel = makeSelect(card, RENDER_OPTIONS[prop.type], prop.render ?? RENDER_OPTIONS[prop.type][0]);
+    renderSel.onchange = () => {
+      prop.render = renderSel.value as PropertyConfig['render'];
+      rerender();
+    };
+
+    // Max (only for stars / bar / circle).
     if (needsMax(prop)) {
-      setting.addText((t) => {
-        t.inputEl.type = 'number';
-        t.inputEl.addClass('rb-prop-max');
-        t.setPlaceholder('max').setValue(prop.max != null ? String(prop.max) : '');
-        t.onChange((v) => {
-          const n = Number(v);
-          prop.max = Number.isNaN(n) ? undefined : n;
-          onChange();
-        });
+      const max = card.createEl('input', {
+        cls: 'rb-prop-input',
+        attr: { type: 'number', placeholder: 'max' },
       });
+      max.value = prop.max != null ? String(prop.max) : '';
+      max.oninput = () => {
+        const n = Number(max.value);
+        prop.max = Number.isNaN(n) ? undefined : n;
+        onChange();
+      };
     }
-
-    setting.addExtraButton((b) =>
-      b.setIcon('trash').setTooltip('Remove property').onClick(() => {
-        properties.splice(i, 1);
-        rerender();
-      }),
-    );
   });
 
-  new Setting(container).setClass('rb-add-row').addButton((b) =>
-    b.setButtonText('+ Add property').onClick(() => {
-      properties.push({ name: '', type: 'text', render: 'plain' });
-      rerender();
-    }),
-  );
+  const add = container.createEl('button', { cls: 'rb-prop-add', text: '+ Add property' });
+  add.onclick = () => {
+    properties.push({ name: '', type: 'text', render: 'plain' });
+    rerender();
+  };
 }

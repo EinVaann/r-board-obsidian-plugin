@@ -51,7 +51,7 @@
 /* Settings rows: label left, control right, light separators. */
 .rb-sidebar-content .setting-item {
   border: none;
-  padding: 9px 0;
+  padding: 9px 9px;
   align-items: center;
 }
 .rb-sidebar-content .setting-item:not(:last-child) {
