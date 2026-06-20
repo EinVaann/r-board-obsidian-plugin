@@ -15,7 +15,7 @@ function needsMax(prop: PropertyConfig): boolean {
 
 /** A labelled `<select>` populated from `options`. */
 function makeSelect(parent: HTMLElement, options: string[], value: string): HTMLSelectElement {
-  const sel = parent.createEl('select', { cls: 'dropdown rb-prop-select' });
+  const sel = parent.createEl('select', { cls: 'rb-prop-select' });
   for (const opt of options) {
     const o = sel.createEl('option', { text: opt });
     o.value = opt;

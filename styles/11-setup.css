@@ -82,11 +82,14 @@
   padding: 9px 12px;
   border-radius: 8px;
   border: 1px solid var(--background-modifier-border);
-  background: var(--background-primary);
+  background-color: var(--background-primary);
+  background-image: none;
   color: var(--text-normal);
   font-size: 13px;
   margin-bottom: 10px;
 }
+/* Native single caret on the select (no tiled Obsidian .dropdown background). */
+.rb-prop-select { appearance: auto; -webkit-appearance: auto; }
 .rb-prop-select:last-of-type,
 .rb-prop-input:last-of-type { margin-bottom: 0; }
 .rb-prop-add {
