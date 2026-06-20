@@ -32,7 +32,8 @@ export function renderPropertyEditor(
   container.empty();
 
   properties.forEach((prop, i) => {
-    const setting = new Setting(container).setClass('rb-prop-row');
+    const card = container.createDiv({ cls: 'rb-prop-card' });
+    const setting = new Setting(card).setClass('rb-prop-row');
 
     setting.addText((t) =>
       t.setPlaceholder('name').setValue(prop.name).onChange((v) => {
@@ -81,9 +82,9 @@ export function renderPropertyEditor(
     );
   });
 
-  new Setting(container).addButton((b) =>
-    b.setButtonText('Add property').onClick(() => {
-      properties.push({ name: 'new', type: 'text', render: 'plain' });
+  new Setting(container).setClass('rb-add-row').addButton((b) =>
+    b.setButtonText('+ Add property').onClick(() => {
+      properties.push({ name: '', type: 'text', render: 'plain' });
       rerender();
     }),
   );

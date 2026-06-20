@@ -82,15 +82,15 @@
   color: var(--text-accent);
 }
 
-/* Square tool buttons (settings gears) */
+/* Square tool buttons (add view / settings gears) */
 .rb-tool-btn {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 34px;
-  height: 34px;
+  width: 38px;
+  height: 38px;
   border: 1px solid var(--background-modifier-border);
-  border-radius: 8px;
+  border-radius: 9px;
   background: var(--background-primary);
   color: var(--text-muted);
   cursor: pointer;
@@ -100,4 +100,4 @@
   border-color: var(--interactive-accent);
   color: var(--text-accent);
 }
-.rb-tool-btn svg { width: 18px; height: 18px; }
+.rb-tool-btn svg { width: 20px; height: 20px; }

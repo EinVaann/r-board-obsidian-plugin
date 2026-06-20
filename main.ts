@@ -42,6 +42,8 @@ export default class RBoardPlugin extends Plugin {
           item
             .setTitle('New board')
             .setIcon('circuit-board')
+            // Group with the core "New note / New folder / New canvas" actions.
+            .setSection('action')
             .onClick(() => this.openCreateWizard(folder.path)),
         );
       }),

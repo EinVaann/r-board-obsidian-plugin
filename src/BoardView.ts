@@ -201,11 +201,18 @@ export class BoardView extends TextFileView {
       btn.onclick = () => this.setActiveView(view.name);
       btn.oncontextmenu = (e) => this.openTabMenu(e, view);
     }
-    const addBtn = tabs.createEl('button', { cls: 'rb-view-btn rb-view-add', attr: { title: 'Create view' } });
-    setIcon(addBtn.createSpan({ cls: 'rb-view-btn-icon' }), 'plus');
-    addBtn.onclick = (e) => this.openCreateViewMenu(e);
 
-    // Row 2: search + sort/filter chips (left), settings buttons (right).
+    // Row 1 right: add view + settings buttons.
+    tabsRow.createDiv({ cls: 'rb-spacer' });
+    const tools = tabsRow.createDiv({ cls: 'rb-tools' });
+    const view = this.currentView();
+    this.toolButton(tools, 'plus', 'Create view', (e) => this.openCreateViewMenu(e));
+    if (view) {
+      this.toolButton(tools, 'sliders-horizontal', 'View settings', () => this.toggleSidebar('view'), this.sidebar === 'view');
+    }
+    this.toolButton(tools, 'settings', 'Board settings', () => this.toggleSidebar('board'), this.sidebar === 'board');
+
+    // Row 2: search + sort/filter chips.
     const ctrlRow = bar.createDiv({ cls: 'rb-controls-row' });
     const search = ctrlRow.createEl('input', {
       cls: 'rb-search',
@@ -217,17 +224,10 @@ export class BoardView extends TextFileView {
       this.renderBody();
     };
 
-    const view = this.currentView();
     if (view) {
       this.renderSortChip(ctrlRow, view);
       this.renderFilterChip(ctrlRow, view);
     }
-    ctrlRow.createDiv({ cls: 'rb-spacer' });
-    const tools = ctrlRow.createDiv({ cls: 'rb-tools' });
-    if (view) {
-      this.toolButton(tools, 'sliders-horizontal', 'View settings', () => this.toggleSidebar('view'), this.sidebar === 'view');
-    }
-    this.toolButton(tools, 'settings', 'Board settings', () => this.toggleSidebar('board'), this.sidebar === 'board');
   }
 
   private renderSortChip(parent: HTMLElement, view: ViewConfig): void {

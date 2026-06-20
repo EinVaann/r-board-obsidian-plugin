@@ -1,16 +1,30 @@
 /* ===================== Kanban ===================== */
+/* Wrapper stacks a top scrollbar above the board, both filling the body. */
+.rb-kanban-wrap {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+.rb-kanban-scrolltop {
+  flex: 0 0 auto;
+  overflow-x: auto;
+  overflow-y: hidden;
+  margin-bottom: 6px;
+}
+.rb-kanban-scrolltop.rb-hidden { display: none; }
+.rb-kanban-scrolltop-inner { height: 1px; }
+
 .rb-kanban {
+  flex: 1 1 auto;
+  min-height: 0;
   display: flex;
   gap: 14px;
   align-items: flex-start;
-  height: 100%;
   overflow-x: auto;
-  padding-top: 8px;
-  /* Put the horizontal scrollbar at the TOP: flip the scroller vertically and
-     flip each column back so content stays upright. */
-  transform: rotateX(180deg);
+  overflow-y: hidden;
 }
-.rb-kanban > .rb-kanban-col { transform: rotateX(180deg); }
+/* Hide the board's own bottom scrollbar — the synced top one is used instead. */
+.rb-kanban::-webkit-scrollbar { height: 0; }
 .rb-kanban { --rb-col-w: 280px; --rb-cover-h: 120px; }
 .rb-kanban.rb-size-small { --rb-col-w: 220px; --rb-cover-h: 90px; }
 .rb-kanban.rb-size-medium { --rb-col-w: 280px; --rb-cover-h: 120px; }
@@ -98,7 +112,24 @@
   overflow-y: auto;
   /* Let the list take the column's remaining height and scroll inside it. */
   flex: 1 1 auto;
-  min-height: 0;
+  min-height: 60px;
+}
+/* Big, obvious drop target for an empty group. */
+.rb-kanban-empty-drop {
+  flex: 1 1 auto;
+  min-height: 90px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 4px 0 8px;
+  border: 1px dashed var(--background-modifier-border);
+  border-radius: 8px;
+  color: var(--text-faint);
+  font-size: 12px;
+}
+.rb-kanban-list.rb-drop-active .rb-kanban-empty-drop {
+  border-color: var(--interactive-accent);
+  color: var(--text-accent);
 }
 .rb-kanban-list.rb-drop-active {
   outline: 2px dashed var(--text-accent);

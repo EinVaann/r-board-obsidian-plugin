@@ -36,14 +36,25 @@
   color: var(--text-muted);
 }
 
+/* Each property sits in its own bordered card. */
+.rb-prop-card {
+  border: 1px solid var(--background-modifier-border);
+  border-radius: 10px;
+  background: var(--background-secondary);
+  padding: 8px 10px;
+  margin-bottom: 10px;
+}
+
 /* Property + filter rows: hide the empty info column, lay controls in a row. */
 .rb-prop-row.setting-item,
-.rb-filter-row.setting-item {
+.rb-filter-row.setting-item,
+.rb-add-row.setting-item {
   border: none;
-  padding: 6px 0;
+  padding: 2px 0;
 }
 .rb-prop-row .setting-item-info,
-.rb-filter-row .setting-item-info { display: none; }
+.rb-filter-row .setting-item-info,
+.rb-add-row .setting-item-info { display: none; }
 .rb-prop-row .setting-item-control,
 .rb-filter-row .setting-item-control {
   width: 100%;
@@ -52,6 +63,9 @@
   flex-wrap: wrap;
 }
 .rb-prop-row .setting-item-control input[type='text'] { flex: 1 1 140px; }
+.rb-prop-row .setting-item-control select { flex: 1 1 120px; }
 .rb-prop-row .rb-prop-max { flex: 0 0 80px !important; }
+.rb-prop-row .setting-item-control .clickable-icon { margin-left: auto; }
 .rb-filter-row .setting-item-control select,
 .rb-filter-row .setting-item-control input { flex: 1 1 120px; }
+.rb-add-row .setting-item-control { width: 100%; justify-content: flex-start; }

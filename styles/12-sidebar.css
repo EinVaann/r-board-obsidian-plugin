@@ -46,7 +46,27 @@
 .rb-sidebar-content {
   flex: 1 1 auto;
   overflow-y: auto;
-  padding: 8px 14px 24px;
+  padding: 10px 14px 28px;
 }
-.rb-sidebar-content .setting-item { padding: 10px 0; border-top: 1px solid var(--background-modifier-border); }
-.rb-sidebar-content h4 { margin: 16px 0 4px; font-size: 12px; text-transform: uppercase; letter-spacing: 0.04em; color: var(--text-muted); }
+/* Settings rows: label left, control right, light separators. */
+.rb-sidebar-content .setting-item {
+  border: none;
+  padding: 9px 0;
+  align-items: center;
+}
+.rb-sidebar-content .setting-item:not(:last-child) {
+  border-bottom: 1px solid var(--background-modifier-border);
+}
+.rb-sidebar-content .setting-item-name { font-size: 13px; font-weight: 500; }
+.rb-sidebar-content .setting-item-description { font-size: 11px; }
+.rb-sidebar-content .setting-item-control select,
+.rb-sidebar-content .setting-item-control input[type='text'] { max-width: 160px; }
+/* Property cards inside Board settings span the full width. */
+.rb-sidebar-content .rb-prop-card .setting-item { border-bottom: none; }
+.rb-sidebar-content h4 {
+  margin: 18px 0 8px;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--text-muted);
+}

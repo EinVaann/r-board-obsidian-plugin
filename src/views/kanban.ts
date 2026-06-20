@@ -40,7 +40,13 @@ export function renderKanban(host: HTMLElement, items: BoardItem[], ctx: RenderC
     return;
   }
 
-  const board = host.createDiv({ cls: `rb-kanban ${cardSizeClass(ctx.view)}` });
+  // A horizontal scrollbar pinned to the TOP, kept in sync with the board's
+  // own horizontal scroll (whose native scrollbar is hidden via CSS).
+  const wrap = host.createDiv({ cls: 'rb-kanban-wrap' });
+  const topbar = wrap.createDiv({ cls: 'rb-kanban-scrolltop' });
+  const topInner = topbar.createDiv({ cls: 'rb-kanban-scrolltop-inner' });
+  const board = wrap.createDiv({ cls: `rb-kanban ${cardSizeClass(ctx.view)}` });
+
   const columns = groupItems(items, groupProp, ctx.view.columns);
   const realKeys = columns.filter((c) => c.key !== null).map((c) => c.key as string);
 
@@ -57,6 +63,31 @@ export function renderKanban(host: HTMLElement, items: BoardItem[], ctx: RenderC
 
   for (const column of columns) renderColumn(board, column, groupProp, ctx, reorder);
   renderAddGroup(board, realKeys, ctx);
+
+  wireTopScrollbar(topbar, topInner, board);
+}
+
+/** Mirror the board's horizontal scroll to a thin scrollbar above it. */
+function wireTopScrollbar(topbar: HTMLElement, topInner: HTMLElement, board: HTMLElement): void {
+  const sync = (): void => {
+    topInner.style.width = `${board.scrollWidth}px`;
+    topbar.toggleClass('rb-hidden', board.scrollWidth <= board.clientWidth + 1);
+  };
+  window.requestAnimationFrame(sync);
+
+  let lock = false;
+  topbar.addEventListener('scroll', () => {
+    if (lock) return;
+    lock = true;
+    board.scrollLeft = topbar.scrollLeft;
+    lock = false;
+  });
+  board.addEventListener('scroll', () => {
+    if (lock) return;
+    lock = true;
+    topbar.scrollLeft = board.scrollLeft;
+    lock = false;
+  });
 }
 
 function renderColumn(
@@ -111,9 +142,14 @@ function renderColumn(
   const list = colEl.createDiv({ cls: 'rb-kanban-list' });
   if (collapsed) return;
 
-  renderPaged(list, column.items, ctx.view.limit ?? 50, (item, host) =>
-    renderCard(host, item, ctx),
-  );
+  if (column.items.length === 0) {
+    // A roomy placeholder so the drop target is easy to hit on empty groups.
+    list.createDiv({ cls: 'rb-kanban-empty-drop', text: 'Drop cards here' });
+  } else {
+    renderPaged(list, column.items, ctx.view.limit ?? 50, (item, host) =>
+      renderCard(host, item, ctx),
+    );
+  }
 
   // Card drop zone (ignores column-reorder drags, which the column handles).
   list.addEventListener('dragover', (e) => {
