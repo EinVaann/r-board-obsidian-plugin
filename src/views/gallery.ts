@@ -36,15 +36,15 @@ export function renderGallery(host: HTMLElement, items: BoardItem[], ctx: Render
       const header = section.createDiv({ cls: 'rb-section-header' });
       header.createSpan({ cls: 'rb-section-title', text: group.label });
       header.createSpan({ cls: 'rb-section-count', text: String(group.items.length) });
-      renderGrid(section, group.items, ctx);
+      renderGrid(section, group.items, ctx, `g:${group.label}`);
     }
     return;
   }
 
-  renderGrid(host, items, ctx);
+  renderGrid(host, items, ctx, 'g');
 }
 
-function renderGrid(parent: HTMLElement, items: BoardItem[], ctx: RenderContext): void {
+function renderGrid(parent: HTMLElement, items: BoardItem[], ctx: RenderContext, pageKey: string): void {
   const cover = coverProperty(ctx.properties);
   const fields = bodyProperties(ctx.properties);
   const layout = ctx.view.layout ?? 'masonry';
@@ -68,5 +68,5 @@ function renderGrid(parent: HTMLElement, items: BoardItem[], ctx: RenderContext)
       const content = body.createDiv({ cls: 'rb-card-content' });
       void renderNoteExcerpt(ctx.app, content, item.file, ctx.component);
     }
-  });
+  }, { key: pageKey, store: ctx.ui.pages });
 }

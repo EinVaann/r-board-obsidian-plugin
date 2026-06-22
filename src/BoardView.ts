@@ -42,7 +42,7 @@ export class BoardView extends TextFileView {
   private activeView = '';
   private searchQuery = '';
   private sidebar: SidebarMode = null;
-  private ui: BoardUiState = { collapsed: new Set() };
+  private ui: BoardUiState = { collapsed: new Set(), pages: {} };
 
   private bodyEl: HTMLElement | null = null;
   private toolbarEl: HTMLElement | null = null;
@@ -127,6 +127,8 @@ export class BoardView extends TextFileView {
     if (this.activeView === name) return;
     this.activeView = name;
     this.ui.collapsed.clear();
+    this.ui.pages = {};
+    this.ui.kanbanScroll = 0;
     if (this.file) void this.plugin.setActiveView(this.file.path, name);
     this.render();
   }

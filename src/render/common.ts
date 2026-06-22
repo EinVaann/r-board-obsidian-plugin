@@ -37,6 +37,8 @@ export interface BoardUiState {
   collapsed: Set<string>;
   /** Last horizontal scroll of the kanban board, restored across re-renders. */
   kanbanScroll?: number;
+  /** Revealed item count per paginated list (column/section), keyed stably. */
+  pages: Record<string, number>;
 }
 
 /** Open a note in a new or existing leaf via Obsidian's native navigation. */

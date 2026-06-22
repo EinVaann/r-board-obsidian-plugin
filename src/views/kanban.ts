@@ -171,8 +171,12 @@ function renderColumn(
     // A roomy placeholder so the drop target is easy to hit on empty groups.
     list.createDiv({ cls: 'rb-kanban-empty-drop', text: 'Drop cards here' });
   } else {
-    renderPaged(list, column.items, ctx.view.limit ?? 50, (item, host) =>
-      renderCard(host, item, ctx, groupProp, targets),
+    renderPaged(
+      list,
+      column.items,
+      ctx.view.limit ?? 50,
+      (item, host) => renderCard(host, item, ctx, groupProp, targets),
+      { key: `k:${column.label}`, store: ctx.ui.pages },
     );
   }
 

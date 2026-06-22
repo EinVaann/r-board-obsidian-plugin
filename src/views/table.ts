@@ -26,12 +26,12 @@ export function renderTable(host: HTMLElement, items: BoardItem[], ctx: RenderCo
       const header = section.createDiv({ cls: 'rb-section-header' });
       header.createSpan({ cls: 'rb-section-title', text: group.label });
       header.createSpan({ cls: 'rb-section-count', text: String(group.items.length) });
-      renderTableEl(section, group.items, props, ctx);
+      renderTableEl(section, group.items, props, ctx, `t:${group.label}`);
     }
     return;
   }
 
-  renderTableEl(host, items, props, ctx);
+  renderTableEl(host, items, props, ctx, 't');
 }
 
 function renderTableEl(
@@ -39,6 +39,7 @@ function renderTableEl(
   items: BoardItem[],
   props: PropertyConfig[],
   ctx: RenderContext,
+  pageKey: string,
 ): void {
   const table = parent.createEl('table', { cls: 'rb-table' });
   const headRow = table.createEl('thead').createEl('tr');
@@ -67,5 +68,5 @@ function renderTableEl(
     for (const prop of props) {
       renderField(ctx.app, tr.createEl('td', { cls: 'rb-td' }), item, prop);
     }
-  });
+  }, { key: pageKey, store: ctx.ui.pages });
 }
