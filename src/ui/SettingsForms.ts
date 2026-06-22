@@ -1,5 +1,5 @@
 import { App, Setting } from 'obsidian';
-import type { CardSize, DatabaseConfig, GalleryLayout, SortDir, ViewConfig, ViewType } from '../types';
+import type { CardSize, DatabaseConfig, GalleryLayout, GroupColumnConfig, SortDir, ViewConfig, ViewType } from '../types';
 import { propertyLabel, TITLE_SORT_KEY } from '../config';
 import { countFilterRules } from '../data/filter';
 import { renderPropertyEditor } from './PropertyEditor';
@@ -91,6 +91,11 @@ export function renderViewSettings(
       });
     });
 
+  // Kanban column config (order, label, color, visibility).
+  if (view.type === 'kanban') {
+    renderColumnConfig(container, view, hooks);
+  }
+
   // Per-type options
   if (view.type === 'gallery' || view.type === 'kanban') {
     new Setting(container).setName('Card size').addDropdown((d) => {
@@ -152,6 +157,110 @@ export function renderViewSettings(
   new Setting(container).addButton((b) =>
     b.setButtonText('Delete view').setWarning().onClick(onDelete),
   );
+}
+
+/** Editable list of kanban column overrides: order, label, color, visibility. */
+function renderColumnConfig(container: HTMLElement, view: ViewConfig, hooks: FormHooks): void {
+  container.createEl('h4', { text: 'Column settings' });
+
+  const cols = view.columns ?? [];
+  const cfg = (): Record<string, GroupColumnConfig> => (view.groupConfig ??= {});
+
+  const rerender = (): void => renderColumnConfig(container.parentElement!.createDiv(), view, hooks);
+
+  const list = container.createDiv({ cls: 'rb-col-config-list' });
+
+  cols.forEach((key, idx) => {
+    const row = list.createDiv({ cls: 'rb-col-config-row' });
+
+    // Order number — editing moves the column to that position.
+    const orderWrap = row.createDiv({ cls: 'rb-col-order-wrap' });
+    const orderInput = orderWrap.createEl('input', {
+      cls: 'rb-col-order-input',
+      attr: { type: 'number', min: '1', max: String(cols.length), value: String(idx + 1) },
+    });
+    orderInput.onchange = () => {
+      const target = Math.max(1, Math.min(cols.length, parseInt(orderInput.value) || 1)) - 1;
+      if (target === idx) return;
+      const next = [...cols];
+      const [item] = next.splice(idx, 1);
+      next.splice(target, 0, item);
+      view.columns = next;
+      hooks.onStructureChange();
+    };
+
+    const fields = row.createDiv({ cls: 'rb-col-config-fields' });
+
+    // Raw key as reference label.
+    fields.createSpan({ cls: 'rb-col-key-label', text: key });
+
+    // Custom display label.
+    const labelInput = fields.createEl('input', {
+      cls: 'rb-col-field-input',
+      attr: { type: 'text', placeholder: 'Custom label…' },
+    });
+    labelInput.value = cfg()[key]?.label ?? '';
+    labelInput.oninput = () => {
+      cfg()[key] = { ...cfg()[key], label: labelInput.value.trim() || undefined };
+      hooks.onChange();
+    };
+
+    // Color for the label text.
+    const colorWrap = fields.createDiv({ cls: 'rb-col-color-wrap' });
+    colorWrap.createSpan({ cls: 'rb-col-color-label', text: 'Color' });
+    const colorInput = colorWrap.createEl('input', {
+      cls: 'rb-col-color-input',
+      attr: { type: 'color', value: cfg()[key]?.color ?? '#888888' },
+    });
+    const clearColor = colorWrap.createEl('button', { cls: 'rb-col-clear-color', text: '✕' });
+    if (!cfg()[key]?.color) clearColor.style.visibility = 'hidden';
+    colorInput.oninput = () => {
+      cfg()[key] = { ...cfg()[key], color: colorInput.value };
+      clearColor.style.visibility = 'visible';
+      hooks.onChange();
+    };
+    clearColor.onclick = () => {
+      cfg()[key] = { ...cfg()[key], color: undefined };
+      clearColor.style.visibility = 'hidden';
+      hooks.onChange();
+    };
+
+    // Hidden toggle.
+    const hiddenWrap = fields.createDiv({ cls: 'rb-col-hidden-wrap' });
+    hiddenWrap.createSpan({ cls: 'rb-col-hidden-label', text: 'Hide' });
+    const hiddenCheck = hiddenWrap.createEl('input', { attr: { type: 'checkbox' } });
+    hiddenCheck.checked = cfg()[key]?.hidden ?? false;
+    hiddenCheck.onchange = () => {
+      cfg()[key] = { ...cfg()[key], hidden: hiddenCheck.checked || undefined };
+      hooks.onChange();
+    };
+
+    // Remove from explicit order list.
+    const removeBtn = row.createEl('button', { cls: 'rb-col-remove-btn', text: '×' });
+    removeBtn.onclick = () => {
+      view.columns = cols.filter((_, i) => i !== idx);
+      hooks.onStructureChange();
+    };
+  });
+
+  // Add a column value to the explicit order list.
+  const addRow = container.createDiv({ cls: 'rb-col-add-row' });
+  const addInput = addRow.createEl('input', {
+    cls: 'rb-col-add-input',
+    attr: { type: 'text', placeholder: 'Column value…' },
+  });
+  const addBtn = addRow.createEl('button', { cls: 'rb-col-add-btn', text: '+ Add' });
+  const doAdd = (): void => {
+    const val = addInput.value.trim();
+    if (val && !cols.includes(val)) {
+      view.columns = [...cols, val];
+      hooks.onStructureChange();
+    }
+    addInput.value = '';
+  };
+  addBtn.onclick = doAdd;
+  addInput.addEventListener('keydown', (e) => { if (e.key === 'Enter') doAdd(); });
+  void rerender; // referenced to keep TS happy; re-render happens via onStructureChange
 }
 
 /** Render database-level settings (name, base tag, properties) into `container`. */

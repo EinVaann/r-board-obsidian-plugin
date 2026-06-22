@@ -77,3 +77,113 @@
   letter-spacing: 0.06em;
   color: var(--text-muted);
 }
+
+/* ── Column config (kanban view settings) ── */
+.rb-col-config-list { display: flex; flex-direction: column; gap: 8px; margin-bottom: 10px; }
+.rb-col-config-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 10px;
+  border: 1px solid var(--background-modifier-border);
+  border-radius: 8px;
+  background: var(--background-secondary);
+}
+.rb-col-order-wrap { flex: 0 0 auto; }
+.rb-col-order-input {
+  width: 42px;
+  padding: 5px 6px;
+  border-radius: 6px;
+  border: 1px solid var(--background-modifier-border);
+  background: var(--background-primary);
+  color: var(--text-normal);
+  font-size: 13px;
+  text-align: center;
+}
+.rb-col-config-fields {
+  flex: 1 1 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+}
+.rb-col-key-label {
+  font-size: 11px;
+  color: var(--text-muted);
+  font-family: var(--font-monospace);
+}
+.rb-col-field-input {
+  width: 100%;
+  padding: 5px 9px;
+  border-radius: 6px;
+  border: 1px solid var(--background-modifier-border);
+  background: var(--background-primary);
+  color: var(--text-normal);
+  font-size: 13px;
+}
+.rb-col-color-wrap,
+.rb-col-hidden-wrap {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.rb-col-color-label,
+.rb-col-hidden-label { font-size: 12px; color: var(--text-muted); }
+.rb-col-color-input {
+  width: 32px;
+  height: 24px;
+  padding: 2px;
+  border-radius: 6px;
+  border: 1px solid var(--background-modifier-border);
+  background: transparent;
+  cursor: pointer;
+}
+.rb-col-clear-color {
+  padding: 2px 6px;
+  border-radius: 5px;
+  border: 1px solid var(--background-modifier-border);
+  background: transparent;
+  color: var(--text-muted);
+  cursor: pointer;
+  font-size: 11px;
+}
+.rb-col-clear-color:hover { color: var(--text-error); border-color: var(--text-error); }
+.rb-col-remove-btn {
+  flex: 0 0 auto;
+  padding: 4px 8px;
+  border-radius: 6px;
+  border: 1px solid var(--background-modifier-border);
+  background: transparent;
+  color: var(--text-muted);
+  cursor: pointer;
+  font-size: 14px;
+  line-height: 1;
+}
+.rb-col-remove-btn:hover { color: var(--text-error); border-color: var(--text-error); }
+
+.rb-col-add-row {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  margin-top: 4px;
+}
+.rb-col-add-input {
+  flex: 1 1 auto;
+  padding: 6px 10px;
+  border-radius: 7px;
+  border: 1px solid var(--background-modifier-border);
+  background: var(--background-primary);
+  color: var(--text-normal);
+  font-size: 13px;
+}
+.rb-col-add-btn {
+  flex: 0 0 auto;
+  padding: 6px 12px;
+  border-radius: 7px;
+  border: 1px solid var(--background-modifier-border);
+  background: var(--background-primary);
+  color: var(--text-normal);
+  cursor: pointer;
+  font-size: 13px;
+}
+.rb-col-add-btn:hover { background: var(--background-modifier-hover); }

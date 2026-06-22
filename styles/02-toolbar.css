@@ -107,6 +107,15 @@
 }
 .rb-tool-btn svg { width: 20px; height: 20px; }
 
+/* On narrow screens: hide text labels, keep icons only. */
+@media (max-width: 480px) {
+  .rb-chip > span:not(.rb-chip-icon) { display: none; }
+  .rb-chip { padding: 6px 8px; }
+  .rb-new-note > span:not(.rb-new-note-icon) { display: none; }
+  .rb-new-note { padding: 7px 9px; }
+  .rb-search { min-width: 80px; flex-basis: 120px; }
+}
+
 /* "New note" button */
 .rb-new-note {
   display: inline-flex;

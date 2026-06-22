@@ -103,7 +103,14 @@
 }
 .rb-prop-select:last-of-type,
 .rb-prop-input:last-of-type { margin-bottom: 0; }
-/* Prefix + suffix inputs side by side. */
+/* Prefix + suffix inputs side by side, with a small section label. */
+.rb-prop-affix-label {
+  font-size: 11px;
+  color: var(--text-muted);
+  margin-top: 14px;
+  margin-bottom: 6px;
+  letter-spacing: 0.04em;
+}
 .rb-prop-affix { display: flex; gap: 8px; }
 .rb-prop-affix .rb-prop-input { flex: 1 1 0; min-width: 0; margin-bottom: 0; }
 .rb-prop-add {

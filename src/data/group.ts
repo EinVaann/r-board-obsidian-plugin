@@ -1,4 +1,4 @@
-import type { BoardItem, PropertyConfig } from '../types';
+import type { BoardItem, GroupColumnConfig, PropertyConfig } from '../types';
 import { asArray } from '../render/values';
 
 /** Label for the bucket of items missing the group property. */
@@ -27,12 +27,14 @@ export function groupValueOf(item: BoardItem, prop: PropertyConfig): string | nu
  * Partition items into groups by a property. With `order`, those values lead
  * (in the given order, always present even when empty); remaining values follow
  * sorted alphabetically; the Uncategorized bucket is last (omitted when empty
- * and not explicitly ordered).
+ * and not explicitly ordered). `groupConfig` applies custom labels and hides
+ * columns marked hidden (their items are not shown).
  */
 export function groupItems(
   items: BoardItem[],
   prop: PropertyConfig,
   order?: string[],
+  groupConfig?: Record<string, GroupColumnConfig>,
 ): ItemGroup[] {
   const buckets = new Map<string, BoardItem[]>();
   const uncategorized: BoardItem[] = [];
@@ -48,13 +50,17 @@ export function groupItems(
     else buckets.set(value, [item]);
   }
 
+  const colLabel = (key: string): string => groupConfig?.[key]?.label ?? key;
+  const isHidden = (key: string): boolean => groupConfig?.[key]?.hidden === true;
+
   const groups: ItemGroup[] = [];
   const seen = new Set<string>();
 
   if (order) {
     for (const value of order) {
-      groups.push({ key: value, label: value, items: buckets.get(value) ?? [] });
       seen.add(value);
+      if (isHidden(value)) continue;
+      groups.push({ key: value, label: colLabel(value), items: buckets.get(value) ?? [] });
     }
   }
 
@@ -62,7 +68,8 @@ export function groupItems(
     .filter((k) => !seen.has(k))
     .sort((a, b) => a.localeCompare(b));
   for (const value of rest) {
-    groups.push({ key: value, label: value, items: buckets.get(value) ?? [] });
+    if (isHidden(value)) continue;
+    groups.push({ key: value, label: colLabel(value), items: buckets.get(value) ?? [] });
   }
 
   if (uncategorized.length > 0) {

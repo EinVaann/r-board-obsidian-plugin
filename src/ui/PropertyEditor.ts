@@ -94,6 +94,7 @@ export function renderPropertyEditor(
 
     // Prefix / suffix text shown around the value on cards (not for images).
     if (prop.type !== 'image') {
+      card.createDiv({ cls: 'rb-prop-affix-label', text: 'Prefix / Suffix' });
       const affixRow = card.createDiv({ cls: 'rb-prop-affix' });
       const prefix = affixRow.createEl('input', {
         cls: 'rb-prop-input',

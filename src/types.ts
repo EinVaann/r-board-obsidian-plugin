@@ -111,6 +111,8 @@ export interface ViewConfig {
   group?: string;
   /** Optional explicit order of group/column values; others follow, sorted. */
   columns?: string[];
+  /** Per-column display overrides (label, color, visibility). */
+  groupConfig?: Record<string, GroupColumnConfig>;
   /** Sort key; defaults to title ascending. */
   sort?: SortSpec;
   /** Card size for gallery / kanban (defaults to `medium`). */
@@ -119,6 +121,16 @@ export interface ViewConfig {
   showContent?: boolean;
   /** Gallery tiling (defaults to `masonry`). */
   layout?: GalleryLayout;
+}
+
+/** Per-column display overrides for a kanban view. */
+export interface GroupColumnConfig {
+  /** Custom label shown in the column header instead of the raw value. */
+  label?: string;
+  /** CSS color applied to the column header text. */
+  color?: string;
+  /** Hide this column entirely (its cards are not shown). */
+  hidden?: boolean;
 }
 
 /** The full schema stored in a `.board` file: a database with views. */
