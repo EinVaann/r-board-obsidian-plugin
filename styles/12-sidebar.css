@@ -16,6 +16,13 @@
   box-shadow: -8px 0 24px rgba(0, 0, 0, 0.28);
   overflow: hidden;
 }
+@media (max-width: 480px) {
+  .rb-sidebar {
+    left: 0;
+    width: 100%;
+    border-left: none;
+  }
+}
 .rb-root:not(.rb-has-sidebar) .rb-sidebar { display: none; }
 
 .rb-sidebar-header {
