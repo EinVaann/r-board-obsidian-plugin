@@ -39,6 +39,8 @@ export interface BoardUiState {
   kanbanScroll?: number;
   /** Revealed item count per paginated list (column/section), keyed stably. */
   pages: Record<string, number>;
+  /** Vertical scroll of each kanban column list, keyed by column label. */
+  listScroll: Record<string, number>;
 }
 
 /** Open a note in a new or existing leaf via Obsidian's native navigation. */

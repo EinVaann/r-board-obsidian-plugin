@@ -167,6 +167,12 @@ function renderColumn(
   const list = colEl.createDiv({ cls: 'rb-kanban-list' });
   if (collapsed) return;
 
+  // Preserve this column's vertical scroll across re-renders.
+  const scrollKey = column.label;
+  list.addEventListener('scroll', () => {
+    ctx.ui.listScroll[scrollKey] = list.scrollTop;
+  });
+
   if (column.items.length === 0) {
     // A roomy placeholder so the drop target is easy to hit on empty groups.
     list.createDiv({ cls: 'rb-kanban-empty-drop', text: 'Drop cards here' });
@@ -179,6 +185,10 @@ function renderColumn(
       { key: `k:${column.label}`, store: ctx.ui.pages },
     );
   }
+
+  // Restore the saved vertical scroll after layout.
+  const savedTop = ctx.ui.listScroll[scrollKey];
+  if (savedTop) window.requestAnimationFrame(() => { list.scrollTop = savedTop; });
 
   // Card drop zone (ignores column-reorder drags, which the column handles).
   list.addEventListener('dragover', (e) => {
