@@ -157,8 +157,8 @@ function renderLinks(app: App, parent: HTMLElement, item: BoardItem, field: Prop
 }
 
 function renderCheckbox(parent: HTMLElement, item: BoardItem, field: PropertyConfig): boolean {
-  const b = asBoolean(fieldValue(item, field));
-  if (b === null) return false;
+  // A missing or unrecognized value renders as unchecked (false), never blank.
+  const b = asBoolean(fieldValue(item, field)) ?? false;
   const render = field.render ?? 'check';
 
   addAffixSpans(parent, field, () => {
