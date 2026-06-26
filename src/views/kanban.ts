@@ -4,11 +4,10 @@ import { groupItems, groupValueOf, type ItemGroup } from '../data/group';
 import { setProperty } from '../data/properties';
 import { renderField } from '../render/fields';
 import {
-  attachHoverEditor,
+  attachItemClick,
   bodyProperties,
   cardSizeClass,
   coverProperty,
-  createEditButton,
   createTitleLink,
   openNote,
   type RenderContext,
@@ -265,15 +264,13 @@ function renderCard(
   const card = list.createDiv({ cls: 'rb-card rb-kanban-card' });
   if (!Platform.isMobile) card.setAttr('draggable', 'true');
   card.dataset.path = item.file.path;
-  card.onclick = (e) => openNote(ctx.app, item, e.ctrlKey || e.metaKey);
+  attachItemClick(ctx, card, item);
   card.oncontextmenu = (e) => {
     e.preventDefault();
     openCardMenu(e, item, groupProp, targets, ctx);
   };
-  attachHoverEditor(ctx, card, item);
 
-  // Floating overlay actions (top-right): edit + "⋯" menu.
-  createEditButton(ctx, card, item);
+  // Floating "⋯" overlay (top-right), doesn't take layout space.
   const menuBtn = card.createEl('button', { cls: 'rb-card-menu', attr: { 'aria-label': 'Card actions' } });
   setIcon(menuBtn, 'more-horizontal');
   menuBtn.onclick = (e) => {

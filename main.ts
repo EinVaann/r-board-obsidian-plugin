@@ -2,7 +2,6 @@ import { Notice, Plugin, TFile, TFolder, WorkspaceLeaf, normalizePath } from 'ob
 import { BOARD_EXTENSION, BOARD_VIEW_TYPE, BoardView } from './src/BoardView';
 import { BoardHomeView, HOME_VIEW_TYPE } from './src/home/HomeView';
 import { serializeDatabase } from './src/config';
-import { registerHoverSource } from './src/render/hover';
 import type { DatabaseConfig } from './src/types';
 import { WizardModal } from './src/ui/WizardModal';
 
@@ -16,9 +15,6 @@ export default class RBoardPlugin extends Plugin {
 
   async onload(): Promise<void> {
     this.data = ((await this.loadData()) as RBoardData) ?? {};
-
-    // Lets cards/rows open an (editable, with Hover Editor) note popover.
-    registerHoverSource(this);
 
     this.registerView(BOARD_VIEW_TYPE, (leaf) => new BoardView(leaf, this));
     this.registerView(HOME_VIEW_TYPE, (leaf) => new BoardHomeView(leaf, this));

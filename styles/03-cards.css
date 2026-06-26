@@ -10,34 +10,7 @@
   border-color: var(--background-modifier-border-hover);
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.12);
 }
-.rb-gallery-card, .rb-kanban-card { cursor: pointer; position: relative; }
-
-/* Floating "edit" (pencil) overlay button on cards (opens the note popover). */
-.rb-card-edit {
-  position: absolute;
-  top: 8px;
-  right: 8px;
-  z-index: 2;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 28px;
-  height: 28px;
-  padding: 0;
-  border: none;
-  border-radius: 8px;
-  background: rgba(0, 0, 0, 0.55);
-  backdrop-filter: blur(4px);
-  color: #fff;
-  cursor: pointer;
-  opacity: 0;
-  transition: opacity 0.12s ease, background 0.12s ease;
-}
-.rb-card:hover .rb-card-edit { opacity: 1; }
-.rb-card-edit:hover { background: rgba(0, 0, 0, 0.75); }
-.rb-card-edit svg { width: 16px; height: 16px; }
-/* On kanban the edit button sits left of the "⋯" menu button. */
-.rb-kanban-card .rb-card-edit { right: 42px; }
+.rb-gallery-card, .rb-kanban-card { cursor: pointer; }
 
 /* Note-content excerpt on a card. */
 .rb-card-content {

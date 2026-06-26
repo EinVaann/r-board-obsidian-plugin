@@ -1,0 +1,43 @@
+/* ===================== In-place note edit modal ===================== */
+.rb-edit-modal .rb-edit-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 12px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--background-modifier-border);
+}
+.rb-edit-title {
+  flex: 1 1 auto;
+  margin: 0;
+  font-size: 18px;
+  line-height: 1.3;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.rb-edit-open {
+  flex: 0 0 auto;
+  cursor: pointer;
+}
+.rb-edit-empty {
+  color: var(--text-muted);
+  padding: 16px 0;
+  text-align: center;
+}
+
+/* Field rows: reuse Obsidian's Setting layout, just tighten spacing. */
+.rb-edit-fields .setting-item {
+  padding: 10px 0;
+  border-top: 1px solid var(--background-modifier-border);
+}
+.rb-edit-fields .setting-item:first-child { border-top: none; }
+
+/* Multi / links editors get a full-width, multi-line text area. */
+.rb-edit-list.setting-item { flex-wrap: wrap; }
+.rb-edit-list .setting-item-control { flex-basis: 100%; justify-content: stretch; }
+.rb-edit-list textarea {
+  width: 100%;
+  min-height: 64px;
+  resize: vertical;
+  font-family: inherit;
+}

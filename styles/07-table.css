@@ -21,18 +21,5 @@
   vertical-align: middle;
 }
 .rb-tr:hover { background: var(--background-modifier-hover); }
-/* Title cell: title link + inline (non-floating) edit button. */
-.rb-td-title { display: flex; align-items: center; gap: 6px; }
-.rb-td-title .rb-card-edit {
-  position: static;
-  width: 22px;
-  height: 22px;
-  background: transparent;
-  backdrop-filter: none;
-  color: var(--text-muted);
-  opacity: 0;
-}
-.rb-tr:hover .rb-td-title .rb-card-edit { opacity: 1; }
-.rb-td-title .rb-card-edit:hover { background: var(--background-modifier-hover); color: var(--text-normal); }
 .rb-td .rb-img { width: 48px; }
 .rb-td .rb-img img { aspect-ratio: 3 / 4; object-fit: cover; border-radius: 4px; }

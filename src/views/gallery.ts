@@ -1,13 +1,11 @@
 import type { BoardItem } from '../types';
 import { renderField } from '../render/fields';
 import {
-  attachHoverEditor,
+  attachItemClick,
   bodyProperties,
   cardSizeClass,
   coverProperty,
-  createEditButton,
   createTitleLink,
-  openNote,
   type RenderContext,
 } from '../render/common';
 import { renderPaged } from '../render/paginate';
@@ -56,9 +54,7 @@ function renderGrid(parent: HTMLElement, items: BoardItem[], ctx: RenderContext,
 
   renderPaged(grid, items, ctx.view.limit ?? 50, (item, host) => {
     const card = host.createDiv({ cls: 'rb-card rb-gallery-card' });
-    card.onclick = (e) => openNote(ctx.app, item, e.ctrlKey || e.metaKey);
-    attachHoverEditor(ctx, card, item);
-    createEditButton(ctx, card, item);
+    attachItemClick(ctx, card, item);
 
     if (cover) renderField(ctx.app, card, item, cover);
 

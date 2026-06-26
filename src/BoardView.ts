@@ -1,5 +1,5 @@
 import { Menu, Notice, TFolder, TextFileView, WorkspaceLeaf, debounce, normalizePath, setIcon } from 'obsidian';
-import type { HoverParent, HoverPopover } from 'obsidian';
+import { NoteEditModal } from './ui/NoteEditModal';
 import type RBoardPlugin from '../main';
 import type { BoardItem, DatabaseConfig, SortSpec, ViewConfig, ViewType } from './types';
 import {
@@ -35,11 +35,11 @@ const TYPE_ICON: Record<ViewType, string> = {
 type SidebarMode = 'view' | 'board' | null;
 
 /** A board pane: parses a `.board` database config and renders the active view. */
-export class BoardView extends TextFileView implements HoverParent {
+export class BoardView extends TextFileView {
   plugin: RBoardPlugin;
 
-  /** Active hover popover, owned by this view (HoverParent contract). */
-  hoverPopover: HoverPopover | null = null;
+  /** While an edit modal is open, suppress re-renders until it closes. */
+  private renderSuspended = false;
 
   private config: DatabaseConfig | null = null;
   private parseError: string | null = null;
@@ -462,7 +462,21 @@ export class BoardView extends TextFileView implements HoverParent {
 
   // --- Body ------------------------------------------------------------------
 
+  /**
+   * Open the in-place edit modal for an item. Re-renders are suspended while
+   * the modal is open, so the view repaints exactly once, on close.
+   */
+  private openEditModal(item: BoardItem): void {
+    if (!this.config) return;
+    this.renderSuspended = true;
+    new NoteEditModal(this.app, item, this.config.properties, this.file!, () => {
+      this.renderSuspended = false;
+      this.renderBody();
+    }).open();
+  }
+
   private renderBody(): void {
+    if (this.renderSuspended) return;
     const body = this.bodyEl;
     const view = this.currentView();
     if (!body || !this.config || !view) return;
@@ -483,7 +497,7 @@ export class BoardView extends TextFileView implements HoverParent {
       properties,
       boardFile: this.file!,
       component: this,
-      hoverParent: this,
+      editItem: (item: BoardItem) => this.openEditModal(item),
       sort,
       setSort: (s: SortSpec) => {
         view.sort = s;

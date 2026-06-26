@@ -1,7 +1,6 @@
-import { setIcon, type App, type Component, type HoverParent, type TFile } from 'obsidian';
+import type { App, Component, TFile } from 'obsidian';
 import type { BoardItem, DatabaseConfig, PropertyConfig, SortSpec, ViewConfig } from '../types';
 import { fieldSearchText } from './values';
-import { openHoverEditor } from './hover';
 
 /** Shared context passed to each view renderer. */
 export interface RenderContext {
@@ -15,8 +14,8 @@ export interface RenderContext {
   boardFile: TFile;
   /** Component that owns any async markdown rendering (the BoardView). */
   component: Component;
-  /** Hover-popover owner (the BoardView), for opening note previews/editors. */
-  hoverParent: HoverParent;
+  /** Open the in-place edit modal for an item (re-renders the view on close). */
+  editItem: (item: BoardItem) => void;
   /** Effective sort for this view (already applied to the items list). */
   sort: SortSpec;
   /** Change the sort and persist it (used by table headers). */
@@ -63,30 +62,14 @@ export function createTitleLink(
 }
 
 /**
- * Make `el` open the note's hover popover on Ctrl/Cmd-hover. With the Hover
- * Editor plugin the popover is editable, so the user can toggle checkboxes,
- * rename, and edit fields in place; edits flow back into the card via the
- * board's metadata listener.
+ * Wire an element so a plain click opens the in-place edit modal, while a
+ * Ctrl/Cmd-click opens the note directly (power-user shortcut).
  */
-export function attachHoverEditor(ctx: RenderContext, el: HTMLElement, item: BoardItem): void {
-  el.addEventListener('mouseover', (e) => {
-    openHoverEditor(ctx.app, ctx.hoverParent, el, item.file, ctx.boardFile.path, e);
-  });
-}
-
-/** A pencil button that always opens the note's (editable) hover popover. */
-export function createEditButton(ctx: RenderContext, parent: HTMLElement, item: BoardItem): HTMLElement {
-  const btn = parent.createEl('button', {
-    cls: 'rb-card-edit',
-    attr: { 'aria-label': 'Edit note' },
-  });
-  setIcon(btn, 'pencil');
-  btn.onclick = (e) => {
-    e.preventDefault();
-    e.stopPropagation();
-    openHoverEditor(ctx.app, ctx.hoverParent, btn, item.file, ctx.boardFile.path, e, true);
+export function attachItemClick(ctx: RenderContext, el: HTMLElement, item: BoardItem): void {
+  el.onclick = (e) => {
+    if (e.ctrlKey || e.metaKey) openNote(ctx.app, item, true);
+    else ctx.editItem(item);
   };
-  return btn;
 }
 
 /** CSS modifier class for a view's card size (defaults to medium). */
