@@ -13,7 +13,7 @@ import type {
   ViewType,
 } from './types';
 
-const PROPERTY_TYPES = new Set(['image', 'text', 'multi', 'number']);
+const PROPERTY_TYPES = new Set(['image', 'text', 'multi', 'number', 'checkbox', 'links']);
 const VIEW_TYPES = new Set(['gallery', 'kanban', 'table']);
 const CARD_SIZES = new Set<CardSize>(['small', 'medium', 'large']);
 const LIMITS = new Set<LoadLimit>([10, 50, 100, 'none']);

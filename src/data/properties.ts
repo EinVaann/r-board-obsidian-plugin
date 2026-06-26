@@ -22,6 +22,9 @@ export async function setProperty(
     if (prop.type === 'number') {
       const n = Number(value);
       fm[prop.name] = Number.isNaN(n) ? value : n;
+    } else if (prop.type === 'checkbox') {
+      const s = value.trim().toLowerCase();
+      fm[prop.name] = ['true', 'yes', 'y', '1', 'on'].includes(s);
     } else {
       fm[prop.name] = value;
     }

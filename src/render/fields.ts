@@ -1,6 +1,6 @@
 import type { App } from 'obsidian';
 import type { BoardItem, PropertyConfig } from '../types';
-import { asArray, asNumber, fieldValue, resolveImageSrc } from './values';
+import { asArray, asBoolean, asNumber, fieldValue, parseLink, resolveImageSrc } from './values';
 import { openImageModal } from '../ui/ImageModal';
 
 /**
@@ -21,6 +21,10 @@ export function renderField(
       return renderMulti(parent, item, field);
     case 'number':
       return renderNumber(parent, item, field);
+    case 'checkbox':
+      return renderCheckbox(parent, item, field);
+    case 'links':
+      return renderLinks(app, parent, item, field);
     case 'text':
     default:
       return renderText(parent, item, field);
@@ -117,6 +121,64 @@ function renderNumber(parent: HTMLElement, item: BoardItem, field: PropertyConfi
       parent.createSpan({ cls: 'rb-text rb-number', text: affix(field, String(n)) });
       return true;
   }
+}
+
+function renderLinks(app: App, parent: HTMLElement, item: BoardItem, field: PropertyConfig): boolean {
+  const links = asArray(fieldValue(item, field))
+    .map(parseLink)
+    .filter((l): l is NonNullable<typeof l> => l !== null);
+  if (links.length === 0) return false;
+
+  const asPills = field.render === 'pills';
+  const wrap = parent.createDiv({ cls: 'rb-links' });
+  addAffixSpans(wrap, field, () => {
+    for (const link of links) {
+      const a = wrap.createEl('a', {
+        cls: asPills ? 'rb-link rb-link-pill' : 'rb-link',
+        text: link.text,
+        href: link.url ?? '#',
+      });
+      if (link.url) {
+        // External URL: open in the browser, don't trigger the card click.
+        a.setAttr('target', '_blank');
+        a.setAttr('rel', 'noopener');
+        a.onclick = (e) => e.stopPropagation();
+      } else {
+        // Internal note: navigate via Obsidian, honoring ctrl/cmd for a new tab.
+        a.onclick = (e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          void app.workspace.openLinkText(link.linkpath, item.file.path, e.ctrlKey || e.metaKey);
+        };
+      }
+    }
+  });
+  return true;
+}
+
+function renderCheckbox(parent: HTMLElement, item: BoardItem, field: PropertyConfig): boolean {
+  const b = asBoolean(fieldValue(item, field));
+  if (b === null) return false;
+  const render = field.render ?? 'check';
+
+  addAffixSpans(parent, field, () => {
+    if (render === 'toggle') {
+      const wrap = parent.createDiv({
+        cls: `rb-toggle ${b ? 'rb-toggle-on' : 'rb-toggle-off'}`,
+        attr: { 'aria-label': b ? 'true' : 'false' },
+      });
+      wrap.createDiv({ cls: 'rb-toggle-knob' });
+      return;
+    }
+    // 'check' uses tick / dash glyphs; 'box' uses filled / empty boxes.
+    const glyph = render === 'box' ? (b ? '☑' : '☐') : b ? '✓' : '✕';
+    parent.createSpan({
+      cls: `rb-check ${b ? 'rb-check-on' : 'rb-check-off'}`,
+      text: glyph,
+      attr: { 'aria-label': b ? 'true' : 'false' },
+    });
+  });
+  return true;
 }
 
 function renderStars(parent: HTMLElement, value: number, max: number): void {

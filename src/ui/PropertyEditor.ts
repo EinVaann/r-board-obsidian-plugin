@@ -6,6 +6,8 @@ const RENDER_OPTIONS: Record<PropertyType, string[]> = {
   text: ['plain', 'badge', 'pill'],
   multi: ['pills', 'tags'],
   number: ['text', 'stars', 'bar', 'circle'],
+  checkbox: ['check', 'box', 'toggle'],
+  links: ['list', 'pills'],
 };
 
 /** Whether a number render needs a `max` value. */
@@ -64,7 +66,7 @@ export function renderPropertyEditor(
     card.createDiv({ cls: 'rb-prop-config-label', text: 'CONFIG' });
 
     // Type.
-    const typeSel = makeSelect(card, ['image', 'text', 'multi', 'number'], prop.type);
+    const typeSel = makeSelect(card, ['image', 'text', 'multi', 'number', 'checkbox', 'links'], prop.type);
     typeSel.onchange = () => {
       prop.type = typeSel.value as PropertyType;
       prop.render = RENDER_OPTIONS[prop.type][0] as PropertyConfig['render'];

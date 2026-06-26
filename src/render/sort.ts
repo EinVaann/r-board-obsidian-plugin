@@ -1,6 +1,6 @@
 import type { BoardItem, PropertyConfig, SortSpec } from '../types';
 import { TITLE_SORT_KEY } from '../config';
-import { asNumber, fieldValue } from './values';
+import { asBoolean, asNumber, fieldValue } from './values';
 
 /** Return a new array of items sorted by `sort`. */
 export function applySort(
@@ -23,6 +23,10 @@ export function applySort(
     } else if (prop.type === 'number') {
       av = asNumber(fieldValue(a, prop)) ?? Number.NEGATIVE_INFINITY;
       bv = asNumber(fieldValue(b, prop)) ?? Number.NEGATIVE_INFINITY;
+    } else if (prop.type === 'checkbox') {
+      // Unchecked (false/absent) sorts before checked.
+      av = asBoolean(fieldValue(a, prop)) ? 1 : 0;
+      bv = asBoolean(fieldValue(b, prop)) ? 1 : 0;
     } else {
       av = String(fieldValue(a, prop) ?? '').toLowerCase();
       bv = String(fieldValue(b, prop) ?? '').toLowerCase();

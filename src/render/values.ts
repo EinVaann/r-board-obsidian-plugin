@@ -16,12 +16,57 @@ export function asNumber(value: unknown): number | null {
   return null;
 }
 
+/**
+ * Coerce a frontmatter value to a boolean. Accepts real booleans and the
+ * common stringy forms (`true`/`false`, `yes`/`no`, `1`/`0`). Returns null
+ * when the value is absent or unrecognized.
+ */
+export function asBoolean(value: unknown): boolean | null {
+  if (typeof value === 'boolean') return value;
+  if (typeof value === 'number') return value !== 0;
+  if (typeof value === 'string') {
+    const s = value.trim().toLowerCase();
+    if (['true', 'yes', 'y', '1', 'on', '✓'].includes(s)) return true;
+    if (['false', 'no', 'n', '0', 'off', ''].includes(s)) return false;
+  }
+  return null;
+}
+
 /** Coerce a frontmatter value to a string array, dropping empty/null entries. */
 export function asArray(value: unknown): string[] {
   const raw = Array.isArray(value) ? value : value === undefined || value === null || value === '' ? [] : [value];
   return raw
     .filter((v) => v !== null && v !== undefined && String(v).trim() !== '')
     .map((v) => String(v));
+}
+
+/** A single parsed link entry from a `links` property. */
+export interface ParsedLink {
+  /** Display text (alias if given, else the link target / URL). */
+  text: string;
+  /** External URL (http/https), or null for an internal note link. */
+  url: string | null;
+  /** Linkpath to resolve against the vault, for internal links. */
+  linkpath: string;
+}
+
+/**
+ * Parse one entry of a `links` property. Accepts an Obsidian wikilink
+ * (`[[Note|alias]]`), a bare note name/path, or an http(s) URL.
+ */
+export function parseLink(value: unknown): ParsedLink | null {
+  if (typeof value !== 'string' || value.trim() === '') return null;
+  const raw = value.trim();
+
+  if (/^https?:\/\//i.test(raw)) {
+    return { text: raw.replace(/^https?:\/\//i, ''), url: raw, linkpath: raw };
+  }
+
+  // Strip wikilink wrapping: [[path|alias]] → path + optional alias.
+  const inner = raw.replace(/^!?\[\[/, '').replace(/\]\]$/, '');
+  const [target, alias] = inner.split('|');
+  const linkpath = target.split('#')[0].trim();
+  return { text: (alias ?? linkpath).trim(), url: null, linkpath };
 }
 
 /**

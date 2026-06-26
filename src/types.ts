@@ -4,7 +4,7 @@ import type { TFile } from 'obsidian';
 export type ViewType = 'gallery' | 'kanban' | 'table';
 
 /** A property's data type. */
-export type PropertyType = 'image' | 'text' | 'multi' | 'number';
+export type PropertyType = 'image' | 'text' | 'multi' | 'number' | 'checkbox' | 'links';
 
 /** How an image property fills its card area. */
 export type ImageRender = 'fill' | 'fit';
@@ -14,6 +14,10 @@ export type TextRender = 'plain' | 'badge' | 'pill';
 export type MultiRender = 'pills' | 'tags';
 /** How a numeric property is presented. */
 export type NumberRender = 'text' | 'stars' | 'bar' | 'circle';
+/** How a boolean (checkbox) property is presented. */
+export type CheckboxRender = 'check' | 'box' | 'toggle';
+/** How a links (list of links) property is presented. */
+export type LinksRender = 'list' | 'pills';
 
 /**
  * A property of the database, read from note frontmatter. Defined once at the
@@ -24,7 +28,7 @@ export interface PropertyConfig {
   name: string;
   type: PropertyType;
   /** Render style; meaning depends on `type`. */
-  render?: ImageRender | TextRender | MultiRender | NumberRender;
+  render?: ImageRender | TextRender | MultiRender | NumberRender | CheckboxRender | LinksRender;
   /** Upper bound for stars / bar / circle number renders. */
   max?: number;
   /** Human label shown in headers / cards (defaults to `name`). */
