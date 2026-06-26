@@ -469,7 +469,7 @@ export class BoardView extends TextFileView {
   private openEditModal(item: BoardItem): void {
     if (!this.config) return;
     this.renderSuspended = true;
-    new NoteEditModal(this.app, item, this.config.properties, this.file!, () => {
+    new NoteEditModal(this.app, item.file, item.title, () => {
       this.renderSuspended = false;
       this.renderBody();
     }).open();

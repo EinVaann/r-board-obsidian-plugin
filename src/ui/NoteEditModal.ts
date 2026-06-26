@@ -1,122 +1,81 @@
-import { App, Modal, Setting, TFile } from 'obsidian';
-import type { BoardItem, PropertyConfig } from '../types';
-import { propertyLabel } from '../config';
-import { asArray, asBoolean, asNumber } from '../render/values';
+import { Component, MarkdownRenderer, Modal, TFile, WorkspaceLeaf, type App } from 'obsidian';
 
 /**
- * In-place note editor. Opens when a card/row is clicked instead of opening
- * the note. Edits the note's frontmatter properties with the right control per
- * type (toggle, number, text, one-per-line list); a header button opens the
- * full note. Edits are batched and flushed to the file on close, so the board
- * (whose re-render is suspended by the caller) repaints exactly once.
+ * In-place note editor. Opens when a card/row is clicked instead of opening the
+ * note. Embeds a real Obsidian editor leaf so the note looks and edits exactly
+ * like the native editor (Properties widget + live-preview body). A header
+ * button opens the note in the main workspace.
+ *
+ * The board (whose re-render is suspended by the caller) repaints once on close.
  */
 export class NoteEditModal extends Modal {
-  /** Pending property writes, keyed by frontmatter name (null = delete key). */
-  private dirty = new Map<string, unknown>();
+  private leaf: WorkspaceLeaf | null = null;
+  private fallback: Component | null = null;
 
   constructor(
     app: App,
-    private item: BoardItem,
-    private properties: PropertyConfig[],
-    private boardFile: TFile,
+    private file: TFile,
+    private noteTitle: string,
     private onDone: () => void,
   ) {
     super(app);
   }
 
-  onOpen(): void {
+  async onOpen(): Promise<void> {
     const { contentEl, modalEl } = this;
     modalEl.addClass('rb-edit-modal');
 
-    // Header: note title + a button to open the full note.
+    // Header: note title + a button to open the note in the workspace.
     const header = contentEl.createDiv({ cls: 'rb-edit-header' });
-    header.createEl('h2', { cls: 'rb-edit-title', text: this.item.title });
+    header.createEl('h2', { cls: 'rb-edit-title', text: this.noteTitle });
     const open = header.createEl('button', { cls: 'mod-cta rb-edit-open', text: 'Open note' });
-    open.onclick = async () => {
-      await this.flush();
+    open.onclick = () => {
       this.close();
-      void this.app.workspace.openLinkText(this.item.file.path, this.boardFile.path, false);
+      void this.app.workspace.getLeaf(false).openFile(this.file);
     };
 
-    if (this.properties.length === 0) {
-      contentEl.createDiv({ cls: 'rb-edit-empty', text: 'This database has no properties to edit.' });
-      return;
-    }
-
-    const fields = contentEl.createDiv({ cls: 'rb-edit-fields' });
-    for (const prop of this.properties) this.renderEditor(fields, prop);
+    const embed = contentEl.createDiv({ cls: 'rb-edit-embed' });
+    await this.embedEditor(embed);
   }
 
-  /** One labelled editor row for a property, control chosen by its type. */
-  private renderEditor(parent: HTMLElement, prop: PropertyConfig): void {
-    const raw = this.item.frontmatter[prop.name];
-    const setting = new Setting(parent).setName(propertyLabel(prop));
-
-    switch (prop.type) {
-      case 'checkbox':
-        setting.addToggle((t) =>
-          t.setValue(asBoolean(raw) ?? false).onChange((v) => this.queue(prop, v)),
-        );
-        break;
-
-      case 'number':
-        setting.addText((t) => {
-          t.inputEl.type = 'number';
-          const n = asNumber(raw);
-          t.setValue(n != null ? String(n) : '').onChange((v) => {
-            const parsed = Number(v);
-            this.queue(prop, v.trim() === '' || Number.isNaN(parsed) ? null : parsed);
-          });
-        });
-        break;
-
-      case 'multi':
-      case 'links':
-        setting.setClass('rb-edit-list');
-        setting.addTextArea((t) => {
-          t.setPlaceholder('one per line');
-          t.setValue(asArray(raw).join('\n')).onChange((v) => {
-            const arr = v.split('\n').map((s) => s.trim()).filter((s) => s !== '');
-            this.queue(prop, arr.length ? arr : null);
-          });
-        });
-        break;
-
-      case 'image':
-      case 'text':
-      default:
-        setting.addText((t) =>
-          t.setValue(raw == null ? '' : String(raw)).onChange((v) =>
-            this.queue(prop, v.trim() === '' ? null : v),
-          ),
-        );
+  /** Mount a real editor leaf for the file; fall back to a rendered preview. */
+  private async embedEditor(parent: HTMLElement): Promise<void> {
+    try {
+      // WorkspaceLeaf's constructor isn't in the public typings, but a detached
+      // leaf is the supported way to host an editor outside the layout.
+      const LeafCtor = WorkspaceLeaf as unknown as new (app: App) => WorkspaceLeaf;
+      const leaf = new LeafCtor(this.app);
+      this.leaf = leaf;
+      // Live-preview mode = the same view you get when opening the note.
+      await leaf.openFile(this.file, { active: false, state: { mode: 'source', source: false } });
+      parent.appendChild(leaf.containerEl);
+      // Let the embedded editor lay out to its new container size.
+      window.setTimeout(() => leaf.view?.onResize?.(), 0);
+    } catch (e) {
+      console.error('[r-board] could not embed editor, falling back to preview', e);
+      this.leaf?.detach();
+      this.leaf = null;
+      await this.renderPreview(parent);
     }
   }
 
-  /** Record a pending change and mirror it onto the in-memory item. */
-  private queue(prop: PropertyConfig, value: unknown): void {
-    const v = value === null || value === undefined || value === '' ? null : value;
-    this.dirty.set(prop.name, v);
-    if (v === null) delete this.item.frontmatter[prop.name];
-    else this.item.frontmatter[prop.name] = v;
-  }
-
-  /** Write all pending changes to the note's frontmatter in one pass. */
-  private async flush(): Promise<void> {
-    if (this.dirty.size === 0) return;
-    const entries = [...this.dirty];
-    this.dirty.clear();
-    await this.app.fileManager.processFrontMatter(this.item.file, (fm) => {
-      for (const [name, value] of entries) {
-        if (value === null) delete fm[name];
-        else fm[name] = value;
-      }
-    });
+  /** Read-only fallback if the editor leaf can't be embedded. */
+  private async renderPreview(parent: HTMLElement): Promise<void> {
+    parent.addClass('rb-edit-preview');
+    const comp = new Component();
+    comp.load();
+    this.fallback = comp;
+    const content = await this.app.vault.cachedRead(this.file);
+    await MarkdownRenderer.render(this.app, content, parent, this.file.path, comp);
   }
 
   onClose(): void {
+    this.leaf?.detach();
+    this.leaf = null;
+    this.fallback?.unload();
+    this.fallback = null;
     this.contentEl.empty();
-    // Persist edits, then let the board repaint once.
-    void this.flush().finally(() => this.onDone());
+    // The embedded editor autosaves; let the board repaint once now.
+    this.onDone();
   }
 }
