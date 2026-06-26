@@ -1,6 +1,6 @@
 import type { BoardItem, PropertyConfig, SortDir } from '../types';
 import { renderField } from '../render/fields';
-import { createTitleLink, openNote, type RenderContext } from '../render/common';
+import { attachHoverEditor, createEditButton, createTitleLink, openNote, type RenderContext } from '../render/common';
 import { propertyLabel, TITLE_SORT_KEY } from '../config';
 import { renderPaged } from '../render/paginate';
 import { groupItems } from '../data/group';
@@ -64,7 +64,10 @@ function renderTableEl(
   renderPaged(tbody, items, ctx.view.limit ?? 50, (item) => {
     const tr = tbody.createEl('tr', { cls: 'rb-tr' });
     tr.onclick = (e) => openNote(ctx.app, item, e.ctrlKey || e.metaKey);
-    createTitleLink(ctx.app, tr.createEl('td', { cls: 'rb-td' }), item);
+    attachHoverEditor(ctx, tr, item);
+    const titleTd = tr.createEl('td', { cls: 'rb-td rb-td-title' });
+    createTitleLink(ctx.app, titleTd, item);
+    createEditButton(ctx, titleTd, item);
     for (const prop of props) {
       renderField(ctx.app, tr.createEl('td', { cls: 'rb-td' }), item, prop);
     }

@@ -1,4 +1,5 @@
 import { Menu, Notice, TFolder, TextFileView, WorkspaceLeaf, debounce, normalizePath, setIcon } from 'obsidian';
+import type { HoverParent, HoverPopover } from 'obsidian';
 import type RBoardPlugin from '../main';
 import type { BoardItem, DatabaseConfig, SortSpec, ViewConfig, ViewType } from './types';
 import {
@@ -34,8 +35,11 @@ const TYPE_ICON: Record<ViewType, string> = {
 type SidebarMode = 'view' | 'board' | null;
 
 /** A board pane: parses a `.board` database config and renders the active view. */
-export class BoardView extends TextFileView {
+export class BoardView extends TextFileView implements HoverParent {
   plugin: RBoardPlugin;
+
+  /** Active hover popover, owned by this view (HoverParent contract). */
+  hoverPopover: HoverPopover | null = null;
 
   private config: DatabaseConfig | null = null;
   private parseError: string | null = null;
@@ -479,6 +483,7 @@ export class BoardView extends TextFileView {
       properties,
       boardFile: this.file!,
       component: this,
+      hoverParent: this,
       sort,
       setSort: (s: SortSpec) => {
         view.sort = s;
