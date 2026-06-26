@@ -1,7 +1,7 @@
 {
   "id": "r-board",
   "name": "R Board",
-  "version": "0.2.4",
+  "version": "0.2.5",
   "minAppVersion": "1.4.0",
   "description": "Configurable board views (Kanban, Gallery, Table) driven by note frontmatter and tag queries, defined by .board config files.",
   "author": "EinVaann",

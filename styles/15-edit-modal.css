@@ -33,8 +33,8 @@
   flex: 0 0 auto;
   cursor: pointer;
 }
-/* Red, circular close button sitting next to "Open note". */
-.rb-edit-close {
+/* Red, square close button sitting next to "Open note". */
+.rb-edit-modal .rb-edit-close {
   flex: 0 0 auto;
   display: inline-flex;
   align-items: center;
@@ -43,16 +43,16 @@
   height: 32px;
   padding: 0;
   border: none;
-  border-radius: 50%;
-  background: var(--color-red, #e5484d);
+  border-radius: 6px;
+  background-color: var(--color-red, #e5484d);
   color: #fff;
   font-size: 14px;
   line-height: 1;
   cursor: pointer;
   box-shadow: none;
 }
-.rb-edit-close:hover {
-  background: var(--color-red, #e5484d);
+.rb-edit-modal .rb-edit-close:hover {
+  background-color: var(--color-red, #e5484d);
   filter: brightness(1.1);
 }
 
