@@ -1,11 +1,11 @@
 import type { BoardItem } from '../types';
 import { renderField } from '../render/fields';
 import {
-  attachItemClick,
   bodyProperties,
   cardSizeClass,
   coverProperty,
   createTitleLink,
+  renderSectionHeader,
   type RenderContext,
 } from '../render/common';
 import { renderPaged } from '../render/paginate';
@@ -33,10 +33,8 @@ export function renderGallery(host: HTMLElement, items: BoardItem[], ctx: Render
   if (groupProp) {
     for (const group of groupItems(items, groupProp, ctx.view.columns)) {
       const section = host.createDiv({ cls: 'rb-section' });
-      const header = section.createDiv({ cls: 'rb-section-header' });
-      header.createSpan({ cls: 'rb-section-title', text: group.label });
-      header.createSpan({ cls: 'rb-section-count', text: String(group.items.length) });
-      renderGrid(section, group.items, ctx, `g:${group.label}`);
+      const collapsed = renderSectionHeader(ctx, section, group.label, group.items.length);
+      if (!collapsed) renderGrid(section, group.items, ctx, `g:${group.label}`);
     }
     return;
   }
@@ -54,12 +52,11 @@ function renderGrid(parent: HTMLElement, items: BoardItem[], ctx: RenderContext,
 
   renderPaged(grid, items, ctx.view.limit ?? 50, (item, host) => {
     const card = host.createDiv({ cls: 'rb-card rb-gallery-card' });
-    attachItemClick(ctx, card, item);
 
     if (cover) renderField(ctx.app, card, item, cover);
 
     const body = card.createDiv({ cls: 'rb-card-body' });
-    createTitleLink(ctx.app, body, item);
+    createTitleLink(ctx, body, item);
     for (const prop of fields) {
       const row = body.createDiv({ cls: 'rb-field' });
       if (!renderField(ctx.app, row, item, prop)) row.remove();

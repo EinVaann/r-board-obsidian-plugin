@@ -4,7 +4,6 @@ import { groupItems, groupValueOf, type ItemGroup } from '../data/group';
 import { setProperty } from '../data/properties';
 import { renderField } from '../render/fields';
 import {
-  attachItemClick,
   bodyProperties,
   cardSizeClass,
   coverProperty,
@@ -264,7 +263,6 @@ function renderCard(
   const card = list.createDiv({ cls: 'rb-card rb-kanban-card' });
   if (!Platform.isMobile) card.setAttr('draggable', 'true');
   card.dataset.path = item.file.path;
-  attachItemClick(ctx, card, item);
   card.oncontextmenu = (e) => {
     e.preventDefault();
     openCardMenu(e, item, groupProp, targets, ctx);
@@ -296,7 +294,7 @@ function renderCard(
   if (cover) renderField(ctx.app, card, item, cover);
 
   const body = card.createDiv({ cls: 'rb-card-body' });
-  createTitleLink(ctx.app, body, item);
+  createTitleLink(ctx, body, item);
   for (const prop of fields) {
     const row = body.createDiv({ cls: 'rb-field' });
     if (!renderField(ctx.app, row, item, prop)) row.remove();

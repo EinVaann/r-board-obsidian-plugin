@@ -1,6 +1,6 @@
 import type { BoardItem, PropertyConfig, SortDir } from '../types';
 import { renderField } from '../render/fields';
-import { attachItemClick, createTitleLink, type RenderContext } from '../render/common';
+import { createTitleLink, renderSectionHeader, type RenderContext } from '../render/common';
 import { propertyLabel, TITLE_SORT_KEY } from '../config';
 import { renderPaged } from '../render/paginate';
 import { groupItems } from '../data/group';
@@ -23,10 +23,8 @@ export function renderTable(host: HTMLElement, items: BoardItem[], ctx: RenderCo
   if (groupProp) {
     for (const group of groupItems(items, groupProp, ctx.view.columns)) {
       const section = host.createDiv({ cls: 'rb-section' });
-      const header = section.createDiv({ cls: 'rb-section-header' });
-      header.createSpan({ cls: 'rb-section-title', text: group.label });
-      header.createSpan({ cls: 'rb-section-count', text: String(group.items.length) });
-      renderTableEl(section, group.items, props, ctx, `t:${group.label}`);
+      const collapsed = renderSectionHeader(ctx, section, group.label, group.items.length);
+      if (!collapsed) renderTableEl(section, group.items, props, ctx, `t:${group.label}`);
     }
     return;
   }
@@ -63,8 +61,7 @@ function renderTableEl(
   const tbody = table.createEl('tbody');
   renderPaged(tbody, items, ctx.view.limit ?? 50, (item) => {
     const tr = tbody.createEl('tr', { cls: 'rb-tr' });
-    attachItemClick(ctx, tr, item);
-    createTitleLink(ctx.app, tr.createEl('td', { cls: 'rb-td' }), item);
+    createTitleLink(ctx, tr.createEl('td', { cls: 'rb-td' }), item);
     for (const prop of props) {
       renderField(ctx.app, tr.createEl('td', { cls: 'rb-td' }), item, prop);
     }

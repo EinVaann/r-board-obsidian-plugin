@@ -7,7 +7,16 @@
   margin: 4px 0 10px;
   padding-bottom: 6px;
   border-bottom: 1px solid var(--background-modifier-border);
+  cursor: pointer;
+  user-select: none;
 }
+.rb-section-header:hover .rb-section-title { color: var(--text-normal); }
+.rb-section-caret {
+  display: inline-flex;
+  align-items: center;
+  color: var(--text-muted);
+}
+.rb-section-caret svg { width: 16px; height: 16px; }
 .rb-section-title {
   font-weight: 600;
   font-size: 13px;

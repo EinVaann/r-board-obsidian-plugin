@@ -1,4 +1,4 @@
-import type { App, Component, TFile } from 'obsidian';
+import { setIcon, type App, type Component, type TFile } from 'obsidian';
 import type { BoardItem, DatabaseConfig, PropertyConfig, SortSpec, ViewConfig } from '../types';
 import { fieldSearchText } from './values';
 
@@ -45,9 +45,12 @@ export interface BoardUiState {
   listScroll: Record<string, number>;
 }
 
-/** Open a note in a new or existing leaf via Obsidian's native navigation. */
+/**
+ * The clickable title. A plain click opens the in-place edit modal; a
+ * Ctrl/Cmd-click opens the note in a new tab (power-user shortcut).
+ */
 export function createTitleLink(
-  app: App,
+  ctx: RenderContext,
   parent: HTMLElement,
   item: BoardItem,
   cls = 'rb-title',
@@ -56,20 +59,36 @@ export function createTitleLink(
   link.onclick = (e) => {
     e.preventDefault();
     e.stopPropagation();
-    void app.workspace.openLinkText(item.file.path, item.file.path, e.ctrlKey || e.metaKey);
+    if (e.ctrlKey || e.metaKey) openNote(ctx.app, item, true);
+    else ctx.editItem(item);
   };
   return link;
 }
 
 /**
- * Wire an element so a plain click opens the in-place edit modal, while a
- * Ctrl/Cmd-click opens the note directly (power-user shortcut).
+ * Render a collapsible group/section header (gallery & table). Toggles the
+ * group's collapsed state (keyed by `label`, shared with kanban columns) and
+ * re-renders. Returns whether the group is currently collapsed, so the caller
+ * can skip drawing the body.
  */
-export function attachItemClick(ctx: RenderContext, el: HTMLElement, item: BoardItem): void {
-  el.onclick = (e) => {
-    if (e.ctrlKey || e.metaKey) openNote(ctx.app, item, true);
-    else ctx.editItem(item);
+export function renderSectionHeader(
+  ctx: RenderContext,
+  section: HTMLElement,
+  label: string,
+  count: number,
+): boolean {
+  const collapsed = ctx.ui.collapsed.has(label);
+  const header = section.createDiv({ cls: 'rb-section-header' });
+  const caret = header.createSpan({ cls: 'rb-section-caret' });
+  setIcon(caret, collapsed ? 'chevron-right' : 'chevron-down');
+  header.createSpan({ cls: 'rb-section-title', text: label });
+  header.createSpan({ cls: 'rb-section-count', text: String(count) });
+  header.onclick = () => {
+    if (collapsed) ctx.ui.collapsed.delete(label);
+    else ctx.ui.collapsed.add(label);
+    ctx.refresh();
   };
+  return collapsed;
 }
 
 /** CSS modifier class for a view's card size (defaults to medium). */
