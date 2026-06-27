@@ -31,9 +31,10 @@ export function renderGallery(host: HTMLElement, items: BoardItem[], ctx: Render
     : undefined;
 
   if (groupProp) {
-    for (const group of groupItems(items, groupProp, ctx.view.columns)) {
+    for (const group of groupItems(items, groupProp, ctx.view.columns, ctx.view.groupConfig)) {
       const section = host.createDiv({ cls: 'rb-section' });
-      const collapsed = renderSectionHeader(ctx, section, group.label, group.items.length);
+      const color = group.key != null ? ctx.view.groupConfig?.[group.key]?.color : undefined;
+      const collapsed = renderSectionHeader(ctx, section, group.label, group.items.length, color);
       if (!collapsed) renderGrid(section, group.items, ctx, `g:${group.label}`);
     }
     return;
@@ -53,13 +54,13 @@ function renderGrid(parent: HTMLElement, items: BoardItem[], ctx: RenderContext,
   renderPaged(grid, items, ctx.view.limit ?? 50, (item, host) => {
     const card = host.createDiv({ cls: 'rb-card rb-gallery-card' });
 
-    if (cover) renderField(ctx.app, card, item, cover);
+    if (cover) renderField(ctx, card, item, cover);
 
     const body = card.createDiv({ cls: 'rb-card-body' });
     createTitleLink(ctx, body, item);
     for (const prop of fields) {
       const row = body.createDiv({ cls: 'rb-field' });
-      if (!renderField(ctx.app, row, item, prop)) row.remove();
+      if (!renderField(ctx, row, item, prop)) row.remove();
     }
     if (ctx.view.showContent) {
       const content = body.createDiv({ cls: 'rb-card-content' });

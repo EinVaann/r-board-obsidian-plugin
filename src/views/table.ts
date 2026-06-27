@@ -21,9 +21,10 @@ export function renderTable(host: HTMLElement, items: BoardItem[], ctx: RenderCo
   const props = ctx.properties;
   const groupProp = ctx.view.group ? props.find((p) => p.name === ctx.view.group) : undefined;
   if (groupProp) {
-    for (const group of groupItems(items, groupProp, ctx.view.columns)) {
+    for (const group of groupItems(items, groupProp, ctx.view.columns, ctx.view.groupConfig)) {
       const section = host.createDiv({ cls: 'rb-section' });
-      const collapsed = renderSectionHeader(ctx, section, group.label, group.items.length);
+      const color = group.key != null ? ctx.view.groupConfig?.[group.key]?.color : undefined;
+      const collapsed = renderSectionHeader(ctx, section, group.label, group.items.length, color);
       if (!collapsed) renderTableEl(section, group.items, props, ctx, `t:${group.label}`);
     }
     return;
@@ -63,7 +64,7 @@ function renderTableEl(
     const tr = tbody.createEl('tr', { cls: 'rb-tr' });
     createTitleLink(ctx, tr.createEl('td', { cls: 'rb-td' }), item);
     for (const prop of props) {
-      renderField(ctx.app, tr.createEl('td', { cls: 'rb-td' }), item, prop);
+      renderField(ctx, tr.createEl('td', { cls: 'rb-td' }), item, prop);
     }
   }, { key: pageKey, store: ctx.ui.pages });
 }

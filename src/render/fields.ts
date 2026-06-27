@@ -1,22 +1,22 @@
 import type { App } from 'obsidian';
 import type { BoardItem, PropertyConfig } from '../types';
+import type { RenderContext } from './common';
 import { asArray, asBoolean, asNumber, fieldValue, parseLink, resolveImageSrc } from './values';
 import { openImageModal } from '../ui/ImageModal';
 
 /**
  * Render a single field's value into `parent`. Returns true if anything was
- * drawn (so callers can skip empty fields). `sourceFile` anchors wikilink
- * resolution for image fields.
+ * drawn (so callers can skip empty fields).
  */
 export function renderField(
-  app: App,
+  ctx: RenderContext,
   parent: HTMLElement,
   item: BoardItem,
   field: PropertyConfig,
 ): boolean {
   switch (field.type) {
     case 'image':
-      return renderImage(app, parent, item, field);
+      return renderImage(ctx.app, parent, item, field);
     case 'multi':
       return renderMulti(parent, item, field);
     case 'number':
@@ -24,7 +24,7 @@ export function renderField(
     case 'checkbox':
       return renderCheckbox(parent, item, field);
     case 'links':
-      return renderLinks(app, parent, item, field);
+      return renderLinks(ctx, parent, item, field);
     case 'text':
     default:
       return renderText(parent, item, field);
@@ -123,7 +123,7 @@ function renderNumber(parent: HTMLElement, item: BoardItem, field: PropertyConfi
   }
 }
 
-function renderLinks(app: App, parent: HTMLElement, item: BoardItem, field: PropertyConfig): boolean {
+function renderLinks(ctx: RenderContext, parent: HTMLElement, item: BoardItem, field: PropertyConfig): boolean {
   const links = asArray(fieldValue(item, field))
     .map(parseLink)
     .filter((l): l is NonNullable<typeof l> => l !== null);
@@ -144,11 +144,14 @@ function renderLinks(app: App, parent: HTMLElement, item: BoardItem, field: Prop
         a.setAttr('rel', 'noopener');
         a.onclick = (e) => e.stopPropagation();
       } else {
-        // Internal note: navigate via Obsidian, honoring ctrl/cmd for a new tab.
+        // Internal note: a plain click edits the linked note in the modal; a
+        // Ctrl/Cmd-click opens it as a note.
+        const dest = ctx.app.metadataCache.getFirstLinkpathDest(link.linkpath, item.file.path);
         a.onclick = (e) => {
           e.preventDefault();
           e.stopPropagation();
-          void app.workspace.openLinkText(link.linkpath, item.file.path, e.ctrlKey || e.metaKey);
+          if (dest && !(e.ctrlKey || e.metaKey)) ctx.editFile(dest);
+          else void ctx.app.workspace.openLinkText(link.linkpath, item.file.path, e.ctrlKey || e.metaKey);
         };
       }
     }

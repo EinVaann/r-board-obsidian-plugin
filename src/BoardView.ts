@@ -1,4 +1,5 @@
 import { Menu, Notice, TFolder, TextFileView, WorkspaceLeaf, debounce, normalizePath, setIcon } from 'obsidian';
+import type { TFile } from 'obsidian';
 import { NoteEditModal } from './ui/NoteEditModal';
 import type RBoardPlugin from '../main';
 import type { BoardItem, DatabaseConfig, SortSpec, ViewConfig, ViewType } from './types';
@@ -466,10 +467,10 @@ export class BoardView extends TextFileView {
    * Open the in-place edit modal for an item. Re-renders are suspended while
    * the modal is open, so the view repaints exactly once, on close.
    */
-  private openEditModal(item: BoardItem): void {
+  private openEditModal(file: TFile, title?: string): void {
     if (!this.config) return;
     this.renderSuspended = true;
-    new NoteEditModal(this.app, item.file, item.title, () => {
+    new NoteEditModal(this.app, file, title ?? file.basename, () => {
       this.renderSuspended = false;
       this.renderBody();
     }).open();
@@ -497,7 +498,7 @@ export class BoardView extends TextFileView {
       properties,
       boardFile: this.file!,
       component: this,
-      editItem: (item: BoardItem) => this.openEditModal(item),
+      editFile: (file: TFile, title?: string) => this.openEditModal(file, title),
       sort,
       setSort: (s: SortSpec) => {
         view.sort = s;

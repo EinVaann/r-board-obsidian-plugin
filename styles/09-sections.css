@@ -31,3 +31,13 @@
   border-radius: 999px;
   padding: 1px 8px;
 }
+
+/* Colored group-label pill (kanban columns + gallery/table sections). The
+   chosen color (--gc) tints the background and colors the text. */
+.rb-group-pill {
+  padding: 1px 10px;
+  border-radius: 999px;
+  background-color: color-mix(in srgb, var(--gc) 22%, transparent);
+  color: var(--gc);
+  border: 1px solid color-mix(in srgb, var(--gc) 40%, transparent);
+}

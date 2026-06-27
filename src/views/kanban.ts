@@ -4,6 +4,7 @@ import { groupItems, groupValueOf, type ItemGroup } from '../data/group';
 import { setProperty } from '../data/properties';
 import { renderField } from '../render/fields';
 import {
+  applyGroupColor,
   bodyProperties,
   cardSizeClass,
   coverProperty,
@@ -148,7 +149,7 @@ function renderColumn(
   setIcon(caret, collapsed ? 'chevron-right' : 'chevron-down');
   const titleSpan = header.createSpan({ cls: 'rb-kanban-title', text: column.label });
   const colCfg = column.key !== null ? ctx.view.groupConfig?.[column.key] : undefined;
-  if (colCfg?.color) titleSpan.style.color = colCfg.color;
+  applyGroupColor(titleSpan, colCfg?.color);
   header.createSpan({ cls: 'rb-kanban-count', text: String(column.items.length) });
   header.onclick = () => {
     if (collapsed) ctx.ui.collapsed.delete(column.label);
@@ -291,13 +292,13 @@ function renderCard(
     card.addEventListener('dragend', () => card.removeClass('rb-dragging'));
   }
 
-  if (cover) renderField(ctx.app, card, item, cover);
+  if (cover) renderField(ctx, card, item, cover);
 
   const body = card.createDiv({ cls: 'rb-card-body' });
   createTitleLink(ctx, body, item);
   for (const prop of fields) {
     const row = body.createDiv({ cls: 'rb-field' });
-    if (!renderField(ctx.app, row, item, prop)) row.remove();
+    if (!renderField(ctx, row, item, prop)) row.remove();
   }
   if (ctx.view.showContent) {
     const content = body.createDiv({ cls: 'rb-card-content' });

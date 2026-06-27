@@ -14,8 +14,8 @@ export interface RenderContext {
   boardFile: TFile;
   /** Component that owns any async markdown rendering (the BoardView). */
   component: Component;
-  /** Open the in-place edit modal for an item (re-renders the view on close). */
-  editItem: (item: BoardItem) => void;
+  /** Open the in-place edit modal for a file (re-renders the view on close). */
+  editFile: (file: TFile, title?: string) => void;
   /** Effective sort for this view (already applied to the items list). */
   sort: SortSpec;
   /** Change the sort and persist it (used by table headers). */
@@ -60,9 +60,19 @@ export function createTitleLink(
     e.preventDefault();
     e.stopPropagation();
     if (e.ctrlKey || e.metaKey) openNote(ctx.app, item, true);
-    else ctx.editItem(item);
+    else ctx.editFile(item.file, item.title);
   };
   return link;
+}
+
+/**
+ * Style a group label as a colored pill (tinted background + colored text).
+ * No-op when `color` is unset, leaving the default muted label.
+ */
+export function applyGroupColor(el: HTMLElement, color: string | undefined): void {
+  if (!color) return;
+  el.addClass('rb-group-pill');
+  el.style.setProperty('--gc', color);
 }
 
 /**
@@ -76,12 +86,14 @@ export function renderSectionHeader(
   section: HTMLElement,
   label: string,
   count: number,
+  color?: string,
 ): boolean {
   const collapsed = ctx.ui.collapsed.has(label);
   const header = section.createDiv({ cls: 'rb-section-header' });
   const caret = header.createSpan({ cls: 'rb-section-caret' });
   setIcon(caret, collapsed ? 'chevron-right' : 'chevron-down');
-  header.createSpan({ cls: 'rb-section-title', text: label });
+  const title = header.createSpan({ cls: 'rb-section-title', text: label });
+  applyGroupColor(title, color);
   header.createSpan({ cls: 'rb-section-count', text: String(count) });
   header.onclick = () => {
     if (collapsed) ctx.ui.collapsed.delete(label);
