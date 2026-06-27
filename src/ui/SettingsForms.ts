@@ -1,4 +1,4 @@
-import { App, Setting } from 'obsidian';
+import { App, Setting, debounce } from 'obsidian';
 import type { CardSize, DatabaseConfig, GalleryLayout, GroupColumnConfig, SortDir, ViewConfig, ViewType } from '../types';
 import { propertyLabel, TITLE_SORT_KEY } from '../config';
 import { countFilterRules } from '../data/filter';
@@ -166,6 +166,10 @@ function renderColumnConfig(container: HTMLElement, view: ViewConfig, hooks: For
   const cols = view.columns ?? [];
   const cfg = (): Record<string, GroupColumnConfig> => (view.groupConfig ??= {});
 
+  // Color inputs fire continuously while dragging the picker; debounce the
+  // persist/re-render so the board only repaints once the user settles.
+  const debouncedChange = debounce(() => hooks.onChange(), 250, true);
+
   const rerender = (): void => renderColumnConfig(container.parentElement!.createDiv(), view, hooks);
 
   const list = container.createDiv({ cls: 'rb-col-config-list' });
@@ -217,7 +221,7 @@ function renderColumnConfig(container: HTMLElement, view: ViewConfig, hooks: For
     colorInput.oninput = () => {
       cfg()[key] = { ...cfg()[key], color: colorInput.value };
       clearColor.style.visibility = 'visible';
-      hooks.onChange();
+      debouncedChange();
     };
     clearColor.onclick = () => {
       cfg()[key] = { ...cfg()[key], color: undefined };
