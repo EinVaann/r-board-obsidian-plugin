@@ -6,6 +6,7 @@ import type {
   FilterOp,
   FilterRule,
   GalleryLayout,
+  GroupColumnConfig,
   LoadLimit,
   PropertyConfig,
   SortSpec,
@@ -85,6 +86,22 @@ function parseSort(raw: unknown): SortSpec | undefined {
   return { property: s.property, dir: s.dir === 'desc' ? 'desc' : 'asc' };
 }
 
+/** Parse per-column overrides (label / color / hidden), dropping empty ones. */
+function parseGroupConfig(raw: unknown): Record<string, GroupColumnConfig> | undefined {
+  if (typeof raw !== 'object' || raw === null) return undefined;
+  const out: Record<string, GroupColumnConfig> = {};
+  for (const [key, value] of Object.entries(raw as Record<string, unknown>)) {
+    if (typeof value !== 'object' || value === null) continue;
+    const c = value as Record<string, unknown>;
+    const entry: GroupColumnConfig = {};
+    if (typeof c.label === 'string' && c.label.trim() !== '') entry.label = c.label;
+    if (typeof c.color === 'string' && c.color.trim() !== '') entry.color = c.color;
+    if (c.hidden === true) entry.hidden = true;
+    if (Object.keys(entry).length > 0) out[key] = entry;
+  }
+  return Object.keys(out).length > 0 ? out : undefined;
+}
+
 function parseView(raw: unknown, index: number): ViewConfig | null {
   if (typeof raw !== 'object' || raw === null) return null;
   const v = raw as Record<string, unknown>;
@@ -102,6 +119,7 @@ function parseView(raw: unknown, index: number): ViewConfig | null {
     columns: Array.isArray(v.columns)
       ? v.columns.filter((c): c is string => typeof c === 'string')
       : undefined,
+    groupConfig: parseGroupConfig(v.groupConfig),
     sort: parseSort(v.sort),
     cardSize: CARD_SIZES.has(v.cardSize as CardSize) ? (v.cardSize as CardSize) : undefined,
     showContent: typeof v.showContent === 'boolean' ? v.showContent : undefined,
@@ -182,6 +200,7 @@ export function serializeDatabase(config: DatabaseConfig): string {
     if (v.filter && v.filter.conditions.length) view.filter = v.filter;
     if (v.group) view.group = v.group;
     if (v.columns && v.columns.length) view.columns = v.columns;
+    if (v.groupConfig && Object.keys(v.groupConfig).length) view.groupConfig = v.groupConfig;
     if (v.sort) view.sort = v.sort;
     if (v.cardSize) view.cardSize = v.cardSize;
     if (v.showContent) view.showContent = v.showContent;
