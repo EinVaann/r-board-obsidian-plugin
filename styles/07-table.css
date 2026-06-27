@@ -15,6 +15,12 @@
 }
 .rb-th:hover { background: var(--background-modifier-hover); }
 .rb-sort-ind { color: var(--text-accent); }
+/* Draggable column headers (reorder by dragging). */
+.rb-th-draggable { cursor: grab; }
+.rb-th-draggable:active { cursor: grabbing; }
+.rb-th-dragging { opacity: 0.4; }
+/* Drop target: a colored line on the left edge where the column will land. */
+.rb-th-drop { box-shadow: inset 2px 0 0 0 var(--interactive-accent); }
 .rb-td {
   padding: 8px 10px;
   border-bottom: 1px solid var(--background-modifier-border);

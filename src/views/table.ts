@@ -1,9 +1,13 @@
+import { Platform } from 'obsidian';
 import type { BoardItem, PropertyConfig, SortDir } from '../types';
 import { renderField } from '../render/fields';
 import { createTitleLink, renderSectionHeader, type RenderContext } from '../render/common';
 import { propertyLabel, TITLE_SORT_KEY } from '../config';
 import { renderPaged } from '../render/paginate';
 import { groupItems } from '../data/group';
+
+/** dataTransfer MIME marking a table column-header reorder drag. */
+const COLUMN_MIME = 'application/x-rb-table-column';
 
 /**
  * Tabular view: one row per note, a column per visible property plus the title.
@@ -43,7 +47,20 @@ function renderTableEl(
   const table = parent.createEl('table', { cls: 'rb-table' });
   const headRow = table.createEl('thead').createEl('tr');
 
-  const makeHeader = (label: string, key: string): void => {
+  // Move column `dragged` to just before column `before`, then persist the new
+  // order on the view (materializing the current order if it wasn't explicit).
+  const reorderColumns = (dragged: string, before: string): void => {
+    const order = props.map((p) => p.name);
+    const from = order.indexOf(dragged);
+    if (from === -1) return;
+    order.splice(from, 1);
+    const to = order.indexOf(before);
+    order.splice(to === -1 ? order.length : to, 0, dragged);
+    ctx.view.properties = order;
+    ctx.commit();
+  };
+
+  const makeHeader = (label: string, key: string, draggable = false): void => {
     const th = headRow.createEl('th', { cls: 'rb-th' });
     th.createSpan({ text: label });
     if (ctx.sort.property === key) {
@@ -54,10 +71,35 @@ function renderTableEl(
         ctx.sort.property === key && ctx.sort.dir === 'asc' ? 'desc' : 'asc';
       ctx.setSort({ property: key, dir });
     };
+
+    // Property columns can be dragged by their header to reorder (desktop only).
+    if (draggable && !Platform.isMobile) {
+      th.addClass('rb-th-draggable');
+      th.setAttr('draggable', 'true');
+      th.addEventListener('dragstart', (e) => {
+        e.dataTransfer?.setData(COLUMN_MIME, key);
+        e.dataTransfer!.effectAllowed = 'move';
+        th.addClass('rb-th-dragging');
+      });
+      th.addEventListener('dragend', () => th.removeClass('rb-th-dragging'));
+      th.addEventListener('dragover', (e) => {
+        if (!e.dataTransfer?.types.includes(COLUMN_MIME)) return;
+        e.preventDefault();
+        th.addClass('rb-th-drop');
+      });
+      th.addEventListener('dragleave', () => th.removeClass('rb-th-drop'));
+      th.addEventListener('drop', (e) => {
+        if (!e.dataTransfer?.types.includes(COLUMN_MIME)) return;
+        e.preventDefault();
+        th.removeClass('rb-th-drop');
+        const dragged = e.dataTransfer.getData(COLUMN_MIME);
+        if (dragged && dragged !== key) reorderColumns(dragged, key);
+      });
+    }
   };
 
   makeHeader('Title', TITLE_SORT_KEY);
-  props.forEach((p) => makeHeader(propertyLabel(p), p.name));
+  props.forEach((p) => makeHeader(propertyLabel(p), p.name, true));
 
   const tbody = table.createEl('tbody');
   renderPaged(tbody, items, ctx.view.limit ?? 50, (item) => {
