@@ -426,6 +426,7 @@ export class BoardView extends TextFileView {
           this.saveConfig();
           this.renderSidebar();
         },
+        onRefresh: () => this.renderBody(),
       });
     } else {
       const view = this.currentView();

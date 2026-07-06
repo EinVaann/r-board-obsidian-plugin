@@ -11,6 +11,8 @@ export interface FormHooks {
   onChange: () => void;
   /** A change that requires re-rendering the form itself (e.g. view type). */
   onStructureChange: () => void;
+  /** Re-query notes from the vault (full refresh). */
+  onRefresh?: () => void;
 }
 
 /**
@@ -304,4 +306,14 @@ export function renderDatabaseSettings(
 
   container.createEl('h4', { text: 'Properties' });
   renderPropertyEditor(container.createDiv(), config.properties, hooks.onChange);
+
+  if (hooks.onRefresh) {
+    const refresh = hooks.onRefresh;
+    new Setting(container)
+      .setName('Refresh index')
+      .setDesc('Re-query notes from the vault.')
+      .addButton((b) =>
+        b.setButtonText('Refresh').onClick(() => refresh()),
+      );
+  }
 }
