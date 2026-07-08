@@ -9,7 +9,7 @@
   display: flex;
   align-items: center;
   gap: 10px;
-  margin-bottom: 10px;
+  margin-bottom: 6px;
 }
 .rb-recipe-title {
   font-weight: 600;
@@ -45,18 +45,27 @@
   font-size: 11px;
   font-weight: 600;
   color: var(--text-muted);
-  margin: 10px 0 4px;
+  margin: 12px 0 5px;
 }
-.rb-recipe-ing { margin: 0; padding-left: 1.3em; list-style: disc; }
-.rb-recipe-ing li { margin: 2px 0; }
+.rb-recipe-body > .rb-recipe-label:first-child { margin-top: 0; }
+
+/* Ingredients and method share one indent so bullets and numbers align.
+   Scoped + element-qualified to out-specify Obsidian's list resets. */
+.rb-recipe ul.rb-recipe-ing,
+.rb-recipe ol.rb-recipe-steps {
+  margin: 0;
+  padding-inline-start: 1.5em;
+}
+.rb-recipe ul.rb-recipe-ing { list-style: disc; }
+.rb-recipe ul.rb-recipe-ing li,
+.rb-recipe ol.rb-recipe-steps li { margin: 3px 0; padding-left: 2px; }
+
 .rb-recipe-amt {
   font-weight: 600;
   font-variant-numeric: tabular-nums;
   white-space: nowrap;
 }
 .rb-recipe-name { color: var(--text-muted); }
-.rb-recipe-steps { margin: 0; padding-left: 1.3em; }
-.rb-recipe-steps li { margin: 2px 0; }
 .rb-recipe-time {
   font-weight: 600;
   font-variant-numeric: tabular-nums;
@@ -71,7 +80,7 @@
   max-width: 680px;
 }
 .rb-recipe-card { cursor: default; }
-.rb-recipe-mount { margin-top: 8px; }
+.rb-recipe-mount { margin-top: 2px; }
 /* The card already frames the block, so drop the inner block's own border. */
 .rb-recipe-card .rb-recipe { border: none; border-radius: 0; padding: 0; margin: 0; }
 .rb-recipe-none { color: var(--text-muted); font-size: 12px; font-style: italic; margin-top: 6px; }
