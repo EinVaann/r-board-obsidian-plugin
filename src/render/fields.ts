@@ -186,9 +186,15 @@ function renderCheckbox(parent: HTMLElement, item: BoardItem, field: PropertyCon
 
 function renderStars(parent: HTMLElement, value: number, max: number): void {
   const wrap = parent.createDiv({ cls: 'rb-stars', attr: { 'aria-label': `${value} / ${max}` } });
-  const full = Math.round(value);
   for (let i = 1; i <= max; i++) {
-    wrap.createSpan({ cls: i <= full ? 'rb-star rb-star-on' : 'rb-star', text: '★' });
+    // Fractional fill for this star: 1 when fully earned, 0 when empty, or a
+    // decimal (e.g. 0.3, 0.5) for the partially-filled star at the boundary.
+    const fill = Math.max(0, Math.min(1, value - (i - 1)));
+    const star = wrap.createSpan({ cls: 'rb-star', text: '★' });
+    if (fill > 0) {
+      const on = star.createSpan({ cls: 'rb-star-on', text: '★' });
+      on.style.width = `${fill * 100}%`;
+    }
   }
 }
 

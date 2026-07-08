@@ -1,0 +1,1336 @@
+/* ===================== Board base ===================== */
+.rb-root {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  overflow: hidden;
+}
+/* Body + settings sidebar sit side by side below the toolbar. */
+.rb-main {
+  flex: 1 1 auto;
+  display: flex;
+  min-height: 0;
+  overflow: hidden;
+}
+.rb-body {
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding: 16px;
+}
+.rb-empty {
+  color: var(--text-muted);
+  padding: 32px 0;
+  text-align: center;
+}
+.rb-error {
+  padding: 24px;
+  color: var(--text-error);
+}
+.rb-error h3 { margin-top: 0; }
+.rb-error p {
+  font-family: var(--font-monospace);
+  color: var(--text-muted);
+  white-space: pre-wrap;
+}
+
+.rb-view-more {
+  display: block;
+  margin: 16px auto 0;
+  padding: 6px 16px;
+  border-radius: 6px;
+  background: var(--background-secondary);
+  color: var(--text-normal);
+  border: 1px solid var(--background-modifier-border);
+  cursor: pointer;
+  font-size: 13px;
+}
+.rb-view-more:hover { background: var(--background-modifier-hover); }
+
+/* ===================== Toolbar ===================== */
+.rb-toolbar {
+  flex: 0 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 10px 14px;
+  border-bottom: 1px solid var(--background-modifier-border);
+  background: var(--background-primary);
+}
+.rb-tabs-row,
+.rb-controls-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+/* Divider between the tabs row and the controls (search/sort/filter) row. */
+.rb-tabs-row {
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--background-modifier-border);
+}
+.rb-spacer { flex: 1 1 auto; }
+.rb-tools { display: flex; gap: 6px; }
+
+/* View tabs */
+.rb-view-switch {
+  display: flex;
+  gap: 4px;
+  flex-wrap: wrap;
+}
+.rb-view-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--text-muted);
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 500;
+}
+.rb-view-btn:hover { background: var(--background-modifier-hover); color: var(--text-normal); }
+.rb-view-btn.rb-active {
+  background: var(--background-modifier-hover);
+  color: var(--text-normal);
+  border-color: var(--background-modifier-border);
+}
+.rb-view-btn.rb-active .rb-view-btn-icon { color: var(--text-accent); }
+.rb-view-btn-icon { display: inline-flex; align-items: center; }
+.rb-view-btn-icon svg { width: 16px; height: 16px; }
+.rb-view-add { color: var(--text-muted); padding: 6px 9px; }
+
+/* Search */
+.rb-search {
+  flex: 0 1 280px;
+  min-width: 150px;
+  padding: 7px 12px;
+  border-radius: 8px;
+  border: 1px solid var(--background-modifier-border);
+  background: var(--background-primary);
+  color: var(--text-normal);
+  font-size: 13px;
+}
+
+/* Sort / filter chips (Notion-style, show active state with a label) */
+.rb-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 11px;
+  border: 1px solid var(--background-modifier-border);
+  border-radius: 8px;
+  background: var(--background-primary);
+  color: var(--text-muted);
+  cursor: pointer;
+  font-size: 13px;
+  white-space: nowrap;
+}
+.rb-chip:hover { background: var(--background-modifier-hover); color: var(--text-normal); }
+.rb-chip-icon { display: inline-flex; }
+.rb-chip-icon svg { width: 15px; height: 15px; }
+.rb-chip-active {
+  background: var(--background-modifier-active-hover, rgba(var(--color-accent-rgb), 0.15));
+  border-color: var(--interactive-accent);
+  color: var(--text-accent);
+}
+
+/* Square tool buttons (add view / settings gears) */
+.rb-tool-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 38px;
+  height: 38px;
+  border: 1px solid var(--background-modifier-border);
+  border-radius: 9px;
+  background: var(--background-primary);
+  color: var(--text-muted);
+  cursor: pointer;
+}
+.rb-tool-btn:hover { background: var(--background-modifier-hover); color: var(--text-normal); }
+.rb-tool-btn.rb-active {
+  border-color: var(--interactive-accent);
+  color: var(--text-accent);
+}
+.rb-tool-btn svg { width: 20px; height: 20px; }
+
+/* On narrow screens: hide text labels, keep icons only. */
+@media (max-width: 480px) {
+  .rb-chip > span:not(.rb-chip-icon) { display: none; }
+  .rb-chip { padding: 6px 8px; }
+  .rb-new-note > span:not(.rb-new-note-icon) { display: none; }
+  .rb-new-note { padding: 7px 9px; }
+  .rb-search { min-width: 80px; flex-basis: 120px; }
+}
+
+/* "New note" button */
+.rb-new-note {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 13px;
+  border: none;
+  border-radius: 8px;
+  background: var(--interactive-accent);
+  color: var(--text-on-accent);
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+.rb-new-note:hover { background: var(--interactive-accent-hover); }
+.rb-new-note-icon { display: inline-flex; }
+.rb-new-note-icon svg { width: 15px; height: 15px; }
+
+/* ===================== Cards (shared) ===================== */
+.rb-card {
+  background: var(--background-secondary);
+  border: 1px solid var(--background-modifier-border);
+  border-radius: 10px;
+  overflow: hidden;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+.rb-card:hover {
+  border-color: var(--background-modifier-border-hover);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.12);
+}
+.rb-gallery-card, .rb-kanban-card { cursor: pointer; }
+
+/* Note-content excerpt on a card. */
+.rb-card-content {
+  font-size: 12px;
+  color: var(--text-muted);
+  line-height: 1.45;
+  max-height: 7.5em;
+  overflow: hidden;
+  -webkit-mask-image: linear-gradient(180deg, #000 60%, transparent);
+  mask-image: linear-gradient(180deg, #000 60%, transparent);
+}
+.rb-card-content > :first-child { margin-top: 0; }
+.rb-card-content p { margin: 0 0 4px; }
+.rb-card-body {
+  padding: 10px 12px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.rb-title {
+  font-weight: 600;
+  font-size: 14px;
+  color: var(--text-normal);
+  text-decoration: none;
+  line-height: 1.3;
+}
+.rb-title:hover { color: var(--text-accent); text-decoration: underline; }
+.rb-field {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  align-items: center;
+}
+
+/* Card cover images */
+.rb-img { width: 100%; line-height: 0; background: var(--background-primary); }
+.rb-img img { width: 100%; display: block; cursor: zoom-in; }
+.rb-img-fill img { aspect-ratio: 3 / 4; object-fit: cover; }
+.rb-img-fit img { max-height: 320px; object-fit: contain; }
+
+/* ===================== Field renders ===================== */
+.rb-text { color: var(--text-muted); font-size: 13px; }
+.rb-number { font-variant-numeric: tabular-nums; }
+/* Prefix / suffix text around a value. */
+.rb-affix { color: var(--text-faint); font-size: 12px; }
+
+.rb-badge {
+  display: inline-block;
+  padding: 1px 8px;
+  border-radius: 4px;
+  background: var(--background-modifier-border);
+  color: var(--text-normal);
+  font-size: 12px;
+}
+.rb-pill {
+  display: inline-block;
+  padding: 2px 10px;
+  border-radius: 999px;
+  background: var(--background-modifier-hover);
+  color: var(--text-normal);
+  font-size: 12px;
+}
+.rb-tag {
+  display: inline-block;
+  padding: 1px 7px;
+  border-radius: 4px;
+  background: transparent;
+  border: 1px solid var(--background-modifier-border);
+  color: var(--text-accent);
+  font-size: 12px;
+}
+.rb-multi { display: flex; flex-wrap: wrap; gap: 5px; }
+/* Per-value colored pills/tags in multi fields (hue set inline via --pc). */
+.rb-multi .rb-pill {
+  background: hsla(var(--pc, 220), 55%, 50%, 0.28);
+  color: hsl(var(--pc, 220), 70%, 82%);
+}
+.rb-multi .rb-tag {
+  border-color: hsla(var(--pc, 220), 55%, 55%, 0.55);
+  color: hsl(var(--pc, 220), 70%, 80%);
+}
+
+/* Checkbox */
+.rb-check { font-size: 14px; line-height: 1; }
+.rb-check-on { color: var(--text-accent); }
+.rb-check-off { color: var(--text-faint); }
+
+/* Toggle (pill switch) */
+.rb-toggle {
+  display: inline-flex;
+  align-items: center;
+  width: 28px;
+  height: 16px;
+  padding: 2px;
+  border-radius: 999px;
+  background: var(--background-modifier-border);
+  transition: background 0.15s ease;
+}
+.rb-toggle-on { background: var(--text-accent); justify-content: flex-end; }
+.rb-toggle-off { justify-content: flex-start; }
+.rb-toggle-knob {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: var(--background-primary);
+}
+
+/* Links (list of links) */
+.rb-links { display: flex; flex-wrap: wrap; gap: 4px 10px; align-items: center; }
+.rb-link {
+  color: var(--text-accent);
+  font-size: 13px;
+  text-decoration: none;
+  cursor: pointer;
+}
+.rb-link:hover { text-decoration: underline; }
+.rb-link-pill {
+  padding: 2px 10px;
+  border-radius: 999px;
+  background: var(--background-modifier-hover);
+  font-size: 12px;
+}
+.rb-link-pill:hover { text-decoration: none; background: var(--background-modifier-border); }
+
+/* Stars */
+.rb-stars { display: inline-flex; gap: 1px; font-size: 14px; line-height: 1; }
+.rb-star { position: relative; color: var(--background-modifier-border); }
+/* Filled overlay clipped to a fractional width for half / decimal stars. */
+.rb-star-on {
+  position: absolute;
+  left: 0;
+  top: 0;
+  overflow: hidden;
+  color: var(--text-accent);
+}
+
+/* Bar */
+.rb-bar {
+  position: relative;
+  flex: 1 1 100%;
+  height: 14px;
+  border-radius: 7px;
+  background: var(--background-modifier-border);
+  overflow: hidden;
+  min-width: 80px;
+}
+.rb-bar-fill {
+  height: 100%;
+  background: var(--text-accent);
+  border-radius: 7px;
+}
+.rb-bar-label {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 10px;
+  color: var(--text-on-accent);
+  font-variant-numeric: tabular-nums;
+}
+
+/* Circle */
+.rb-circle { position: relative; display: inline-flex; }
+.rb-circle-track { stroke: var(--background-modifier-border); }
+.rb-circle-prog { stroke: var(--text-accent); stroke-linecap: round; transition: stroke-dashoffset 0.3s ease; }
+.rb-circle-label {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 11px;
+  font-variant-numeric: tabular-nums;
+  color: var(--text-normal);
+}
+
+/* ===================== Gallery ===================== */
+/* Card width per size (drives masonry column width and grid track size). */
+.rb-gallery.rb-size-small { --rb-card-w: 160px; }
+.rb-gallery.rb-size-medium { --rb-card-w: 220px; }
+.rb-gallery.rb-size-large { --rb-card-w: 300px; }
+
+/* Masonry: CSS multi-column, sized by card width. */
+.rb-gallery-masonry {
+  column-width: var(--rb-card-w, 220px);
+  column-gap: 14px;
+}
+.rb-gallery-masonry .rb-gallery-card {
+  display: inline-block;
+  width: 100%;
+  margin: 0 0 14px;
+  break-inside: avoid;
+}
+
+/* Grid: fixed-size tiles. */
+.rb-gallery-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(var(--rb-card-w, 220px), 1fr));
+  gap: 14px;
+  align-items: start;
+}
+
+/* ===================== Kanban ===================== */
+/* Wrapper stacks a top scrollbar above the board, both filling the body. */
+.rb-kanban-wrap {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+.rb-kanban-scrolltop {
+  flex: 0 0 auto;
+  overflow-x: auto;
+  overflow-y: hidden;
+  margin-bottom: 6px;
+}
+.rb-kanban-scrolltop.rb-hidden { display: none; }
+.rb-kanban-scrolltop-inner { height: 1px; }
+
+.rb-kanban {
+  flex: 1 1 auto;
+  min-height: 0;
+  display: flex;
+  gap: 14px;
+  align-items: flex-start;
+  overflow-x: auto;
+  overflow-y: hidden;
+}
+/* Hide the board's own bottom scrollbar — the synced top one is used instead. */
+.rb-kanban::-webkit-scrollbar { height: 0; }
+.rb-kanban { --rb-col-w: 280px; --rb-cover-h: 120px; }
+.rb-kanban.rb-size-small { --rb-col-w: 220px; --rb-cover-h: 90px; }
+.rb-kanban.rb-size-medium { --rb-col-w: 280px; --rb-cover-h: 120px; }
+.rb-kanban.rb-size-large { --rb-col-w: 340px; --rb-cover-h: 170px; }
+
+.rb-kanban-col {
+  flex: 0 0 var(--rb-col-w);
+  display: flex;
+  flex-direction: column;
+  max-height: 100%;
+  background: var(--background-secondary-alt);
+  border-radius: 10px;
+}
+.rb-kanban-col.rb-collapsed { flex-basis: 200px; }
+
+/* Fixed-size kanban cards: the cover crops to a consistent height. */
+.rb-kanban-card .rb-img img { height: var(--rb-cover-h); aspect-ratio: auto; object-fit: cover; }
+
+.rb-kanban-header {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 10px 12px;
+  cursor: pointer;
+  user-select: none;
+}
+.rb-kanban-header.rb-draggable { cursor: grab; }
+.rb-kanban-header.rb-draggable:active { cursor: grabbing; }
+
+/* Column being dragged / drop target while reordering columns. */
+.rb-col-dragging { opacity: 0.45; }
+.rb-col-drop {
+  outline: 2px solid var(--interactive-accent);
+  outline-offset: -2px;
+}
+
+/* "Add group" column. */
+.rb-kanban-add {
+  flex: 0 0 200px;
+  background: transparent;
+  border: 1px dashed var(--background-modifier-border);
+  align-items: stretch;
+  justify-content: flex-start;
+}
+.rb-kanban-add-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 12px;
+  margin: 8px;
+  border-radius: 8px;
+  color: var(--text-muted);
+  cursor: pointer;
+  font-size: 13px;
+}
+.rb-kanban-add-btn:hover { background: var(--background-modifier-hover); color: var(--text-normal); }
+.rb-kanban-add-icon { display: inline-flex; }
+.rb-kanban-add-icon svg { width: 15px; height: 15px; }
+.rb-kanban-add-input {
+  margin: 10px;
+  padding: 7px 10px;
+  border-radius: 8px;
+  border: 1px solid var(--background-modifier-border);
+  background: var(--background-primary);
+  color: var(--text-normal);
+  font-size: 13px;
+}
+.rb-kanban-caret { display: inline-flex; color: var(--text-muted); }
+.rb-kanban-caret svg { width: 16px; height: 16px; }
+.rb-kanban-title { font-weight: 600; font-size: 13px; }
+.rb-kanban-count {
+  margin-left: auto;
+  font-size: 11px;
+  color: var(--text-muted);
+  background: var(--background-modifier-border);
+  border-radius: 999px;
+  padding: 1px 8px;
+}
+.rb-kanban-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 0 10px 12px;
+  overflow-y: auto;
+  /* Let the list take the column's remaining height and scroll inside it. */
+  flex: 1 1 auto;
+  min-height: 60px;
+}
+/* Big, obvious drop target for an empty group. */
+.rb-kanban-empty-drop {
+  flex: 1 1 auto;
+  min-height: 90px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 4px 0 8px;
+  border: 1px dashed var(--background-modifier-border);
+  border-radius: 8px;
+  color: var(--text-faint);
+  font-size: 12px;
+}
+.rb-kanban-list.rb-drop-active .rb-kanban-empty-drop {
+  border-color: var(--interactive-accent);
+  color: var(--text-accent);
+}
+.rb-kanban-list.rb-drop-active {
+  outline: 2px dashed var(--text-accent);
+  outline-offset: -4px;
+  border-radius: 8px;
+}
+/* Cards keep their natural height — never shrink to thin strips. */
+.rb-kanban-card {
+  flex: 0 0 auto;
+  cursor: grab;
+  transition: transform 0.12s ease, box-shadow 0.12s ease, opacity 0.12s ease;
+}
+.rb-kanban-card:active { cursor: grabbing; }
+/* Floating "⋯" overlay button (top-right of the card). */
+.rb-kanban-card { position: relative; }
+.rb-card-menu {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  z-index: 2;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  border: none;
+  border-radius: 8px;
+  background: rgba(0, 0, 0, 0.55);
+  backdrop-filter: blur(4px);
+  color: #fff;
+  cursor: pointer;
+  opacity: 0;
+  transition: opacity 0.12s ease, background 0.12s ease;
+}
+.rb-kanban-card:hover .rb-card-menu { opacity: 1; }
+.rb-card-menu:hover { background: rgba(0, 0, 0, 0.75); }
+.rb-card-menu svg { width: 18px; height: 18px; }
+.rb-kanban-card.rb-dragging {
+  opacity: 0.4;
+  transform: scale(0.97) rotate(-1deg);
+}
+/* The "View More" button inside a column shouldn't shrink either. */
+.rb-kanban-list .rb-view-more { flex: 0 0 auto; }
+
+/* Floating clone used as the drag image (lives off-screen on <body>). */
+.rb-drag-ghost {
+  position: fixed;
+  top: -9999px;
+  left: -9999px;
+  pointer-events: none;
+  transform: rotate(2deg);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
+  opacity: 0.95;
+}
+
+/* ===================== Table ===================== */
+.rb-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+.rb-th {
+  text-align: left;
+  padding: 8px 10px;
+  border-bottom: 2px solid var(--background-modifier-border);
+  cursor: pointer;
+  user-select: none;
+  white-space: nowrap;
+  color: var(--text-normal);
+}
+.rb-th:hover { background: var(--background-modifier-hover); }
+.rb-sort-ind { color: var(--text-accent); }
+/* Draggable column headers (reorder by dragging). */
+.rb-th-draggable { cursor: grab; }
+.rb-th-draggable:active { cursor: grabbing; }
+.rb-th-dragging { opacity: 0.4; }
+/* Drop target: a colored line on the left edge where the column will land. */
+.rb-th-drop { box-shadow: inset 2px 0 0 0 var(--interactive-accent); }
+.rb-td {
+  padding: 8px 10px;
+  border-bottom: 1px solid var(--background-modifier-border);
+  vertical-align: middle;
+}
+.rb-tr:hover { background: var(--background-modifier-hover); }
+.rb-td .rb-img { width: 48px; }
+.rb-td .rb-img img { aspect-ratio: 3 / 4; object-fit: cover; border-radius: 4px; }
+
+/* ===================== Fullscreen image modal ===================== */
+.rb-image-modal {
+  width: auto;
+  max-width: 92vw;
+  max-height: 92vh;
+  background: transparent;
+  box-shadow: none;
+  border: none;
+  padding: 0;
+}
+.rb-image-modal .modal-close-button { z-index: 2; }
+.rb-image-modal .modal-content { margin: 0; padding: 0; }
+.rb-image-modal-img {
+  max-width: 92vw;
+  max-height: 92vh;
+  object-fit: contain;
+  cursor: zoom-out;
+  border-radius: 6px;
+}
+
+/* ===================== Grouped sections (gallery / table) ===================== */
+.rb-section { margin-bottom: 22px; }
+.rb-section-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 4px 0 10px;
+  padding-bottom: 6px;
+  border-bottom: 1px solid var(--background-modifier-border);
+  cursor: pointer;
+  user-select: none;
+}
+.rb-section-header:hover .rb-section-title { color: var(--text-normal); }
+.rb-section-caret {
+  display: inline-flex;
+  align-items: center;
+  color: var(--text-muted);
+}
+.rb-section-caret svg { width: 16px; height: 16px; }
+.rb-section-title {
+  font-weight: 600;
+  font-size: 13px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--text-muted);
+}
+.rb-section-count {
+  font-size: 11px;
+  color: var(--text-muted);
+  background: var(--background-modifier-border);
+  border-radius: 999px;
+  padding: 1px 8px;
+}
+
+/* Colored group-label pill (kanban columns + gallery/table sections). The
+   chosen color (--gc) tints the background and colors the text. */
+.rb-group-pill {
+  padding: 1px 10px;
+  border-radius: 999px;
+  background-color: color-mix(in srgb, var(--gc) 22%, transparent);
+  color: var(--gc);
+  border: 1px solid color-mix(in srgb, var(--gc) 40%, transparent);
+}
+
+/* ===================== Home (board hub) ===================== */
+.rb-home { padding: 20px; overflow-y: auto; }
+.rb-home-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 18px;
+}
+.rb-home-header h2 { margin: 0; }
+.rb-home-create {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 14px;
+  border-radius: 7px;
+  border: none;
+  background: var(--interactive-accent);
+  color: var(--text-on-accent);
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 600;
+}
+.rb-home-create:hover { background: var(--interactive-accent-hover); }
+.rb-home-create-icon { display: inline-flex; }
+.rb-home-create-icon svg { width: 15px; height: 15px; }
+
+.rb-home-empty { color: var(--text-muted); padding: 40px 0; text-align: center; }
+
+.rb-home-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 12px;
+}
+.rb-home-card {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px;
+  border-radius: 10px;
+  border: 1px solid var(--background-modifier-border);
+  background: var(--background-secondary);
+  cursor: pointer;
+}
+.rb-home-card:hover {
+  border-color: var(--background-modifier-border-hover);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.12);
+}
+.rb-home-card-icon { display: inline-flex; color: var(--text-accent); }
+.rb-home-card-icon svg { width: 24px; height: 24px; }
+.rb-home-card-title { font-weight: 600; font-size: 14px; }
+.rb-home-card-meta { font-size: 12px; color: var(--text-muted); margin-top: 2px; }
+.rb-home-card-error { color: var(--text-error); }
+
+/* ===================== Setup prompt + empty views ===================== */
+.rb-setup {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  height: 100%;
+  padding: 24px;
+  text-align: center;
+}
+.rb-setup-icon { color: var(--text-accent); }
+.rb-setup-icon svg { width: 44px; height: 44px; }
+.rb-setup h3 { margin: 0; font-size: 18px; }
+.rb-setup-error {
+  color: var(--text-error);
+  font-family: var(--font-monospace);
+  font-size: 12px;
+  max-width: 480px;
+}
+.rb-empty-views {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+}
+
+/* ===================== Wizard / settings forms ===================== */
+.modal:has(.rb-wizard) { width: min(620px, 90vw); }
+.rb-wizard .rb-wizard-hint { color: var(--text-muted); font-size: 12px; margin: -4px 0 10px; }
+.rb-wizard h4 {
+  margin: 20px 0 6px;
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--text-muted);
+}
+
+/* ----- Property card (custom component) ----- */
+.rb-prop-card {
+  border: 1px solid var(--background-modifier-border);
+  border-radius: 12px;
+  background: var(--background-secondary);
+  padding: 14px;
+  margin-bottom: 12px;
+}
+.rb-prop-head { display: flex; gap: 10px; align-items: flex-start; }
+.rb-prop-name {
+  flex: 1 1 auto;
+  min-width: 0;
+  padding: 9px 12px;
+  border-radius: 8px;
+  border: 1px solid var(--background-modifier-border);
+  background: var(--background-primary);
+  color: var(--text-normal);
+  font-size: 14px;
+  font-weight: 600;
+}
+.rb-prop-remove {
+  flex: 0 0 auto;
+  padding: 8px 12px;
+  border-radius: 8px;
+  border: 1px solid var(--background-modifier-border);
+  background: var(--background-primary);
+  color: var(--text-muted);
+  cursor: pointer;
+  font-size: 12px;
+  white-space: nowrap;
+}
+.rb-prop-remove:hover { color: var(--text-error); border-color: var(--text-error); }
+.rb-prop-config-label {
+  margin: 14px 0 8px;
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+.rb-prop-select,
+.rb-prop-input {
+  width: 100%;
+  max-width: none;
+  padding: 9px 12px;
+  border-radius: 8px;
+  border: 1px solid var(--background-modifier-border);
+  background-color: var(--background-primary);
+  background-image: none;
+  color: var(--text-normal);
+  font-size: 13px;
+  line-height: 1.5;
+  margin-bottom: 10px;
+}
+/* Custom-appearance select with a single caret — avoids native-control glyph
+   clipping (tall theme fonts) and the tiled-caret bug from .dropdown. */
+.rb-prop-select {
+  appearance: none;
+  -webkit-appearance: none;
+  height: auto;
+  padding-right: 34px;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23999' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 12px center;
+  background-size: 13px;
+}
+.rb-prop-select:last-of-type,
+.rb-prop-input:last-of-type { margin-bottom: 0; }
+/* Prefix + suffix inputs side by side, with a small section label. */
+.rb-prop-affix-label {
+  font-size: 11px;
+  color: var(--text-muted);
+  margin-top: 14px;
+  margin-bottom: 6px;
+  letter-spacing: 0.04em;
+}
+.rb-prop-affix { display: flex; gap: 8px; }
+.rb-prop-affix .rb-prop-input { flex: 1 1 0; min-width: 0; margin-bottom: 0; }
+.rb-prop-add {
+  width: 100%;
+  padding: 9px 14px;
+  border-radius: 8px;
+  border: 1px dashed var(--background-modifier-border);
+  background: transparent;
+  color: var(--text-muted);
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 500;
+}
+.rb-prop-add:hover { background: var(--background-modifier-hover); color: var(--text-normal); }
+
+/* Filter rows (FilterModal still uses Setting). */
+.rb-filter-row.setting-item { border: none; padding: 6px 0; }
+.rb-filter-row .setting-item-info { display: none; }
+.rb-filter-row .setting-item-control {
+  width: 100%;
+  justify-content: flex-start;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.rb-filter-row .setting-item-control select,
+.rb-filter-row .setting-item-control input { flex: 1 1 120px; }
+
+/* ===================== Settings sidebar (TOC-style overlay) ===================== */
+.rb-main { position: relative; }
+
+/* Floats over the board on the right; does not squeeze the content. */
+.rb-sidebar {
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 30;
+  display: flex;
+  flex-direction: column;
+  width: min(340px, 90%);
+  background: var(--background-primary);
+  border-left: 1px solid var(--background-modifier-border);
+  box-shadow: -8px 0 24px rgba(0, 0, 0, 0.28);
+  overflow: hidden;
+}
+@media (max-width: 480px) {
+  .rb-sidebar {
+    left: 0;
+    width: 100%;
+    border-left: none;
+  }
+}
+.rb-root:not(.rb-has-sidebar) .rb-sidebar { display: none; }
+
+.rb-sidebar-header {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 14px;
+  border-bottom: 1px solid var(--background-modifier-border);
+}
+.rb-sidebar-title { font-weight: 600; font-size: 16px; }
+.rb-sidebar-close {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  border: none;
+  border-radius: 8px;
+  background: var(--background-secondary);
+  color: var(--text-normal);
+  cursor: pointer;
+  transition: background 0.12s ease;
+}
+.rb-sidebar-close:hover { background: var(--background-modifier-hover); }
+.rb-sidebar-close svg { width: 17px; height: 17px; }
+
+.rb-sidebar-content {
+  flex: 1 1 auto;
+  overflow-y: auto;
+  padding: 10px 14px 28px;
+}
+/* Settings rows: label left, control right, light separators. */
+.rb-sidebar-content .setting-item {
+  border: none;
+  padding: 9px 9px;
+  align-items: center;
+}
+.rb-sidebar-content .setting-item:not(:last-child) {
+  border-bottom: 1px solid var(--background-modifier-border);
+}
+.rb-sidebar-content .setting-item-name { font-size: 13px; font-weight: 500; }
+.rb-sidebar-content .setting-item-description { font-size: 11px; }
+.rb-sidebar-content .setting-item-control select,
+.rb-sidebar-content .setting-item-control input[type='text'] { max-width: 160px; }
+/* Property cards inside Board settings span the full width. */
+.rb-sidebar-content .rb-prop-card .setting-item { border-bottom: none; }
+.rb-sidebar-content h4 {
+  margin: 18px 0 8px;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--text-muted);
+}
+
+/* ── Column config (kanban view settings) ── */
+.rb-col-config-list { display: flex; flex-direction: column; gap: 8px; margin-bottom: 10px; }
+.rb-col-config-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 10px;
+  border: 1px solid var(--background-modifier-border);
+  border-radius: 8px;
+  background: var(--background-secondary);
+}
+.rb-col-order-wrap { flex: 0 0 auto; }
+.rb-col-order-input {
+  width: 42px;
+  padding: 5px 6px;
+  border-radius: 6px;
+  border: 1px solid var(--background-modifier-border);
+  background: var(--background-primary);
+  color: var(--text-normal);
+  font-size: 13px;
+  text-align: center;
+}
+.rb-col-config-fields {
+  flex: 1 1 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+}
+.rb-col-key-label {
+  font-size: 11px;
+  color: var(--text-muted);
+  font-family: var(--font-monospace);
+}
+.rb-col-field-input {
+  width: 100%;
+  padding: 5px 9px;
+  border-radius: 6px;
+  border: 1px solid var(--background-modifier-border);
+  background: var(--background-primary);
+  color: var(--text-normal);
+  font-size: 13px;
+}
+.rb-col-color-wrap,
+.rb-col-hidden-wrap {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.rb-col-color-label,
+.rb-col-hidden-label { font-size: 12px; color: var(--text-muted); }
+.rb-col-color-input {
+  width: 32px;
+  height: 24px;
+  padding: 2px;
+  border-radius: 6px;
+  border: 1px solid var(--background-modifier-border);
+  background: transparent;
+  cursor: pointer;
+}
+.rb-col-clear-color {
+  padding: 2px 6px;
+  border-radius: 5px;
+  border: 1px solid var(--background-modifier-border);
+  background: transparent;
+  color: var(--text-muted);
+  cursor: pointer;
+  font-size: 11px;
+}
+.rb-col-clear-color:hover { color: var(--text-error); border-color: var(--text-error); }
+.rb-col-remove-btn {
+  flex: 0 0 auto;
+  padding: 4px 8px;
+  border-radius: 6px;
+  border: 1px solid var(--background-modifier-border);
+  background: transparent;
+  color: var(--text-muted);
+  cursor: pointer;
+  font-size: 14px;
+  line-height: 1;
+}
+.rb-col-remove-btn:hover { color: var(--text-error); border-color: var(--text-error); }
+
+.rb-col-add-row {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  margin-top: 4px;
+}
+.rb-col-add-input {
+  flex: 1 1 auto;
+  padding: 6px 10px;
+  border-radius: 7px;
+  border: 1px solid var(--background-modifier-border);
+  background: var(--background-primary);
+  color: var(--text-normal);
+  font-size: 13px;
+}
+.rb-col-add-btn {
+  flex: 0 0 auto;
+  padding: 6px 12px;
+  border-radius: 7px;
+  border: 1px solid var(--background-modifier-border);
+  background: var(--background-primary);
+  color: var(--text-normal);
+  cursor: pointer;
+  font-size: 13px;
+}
+.rb-col-add-btn:hover { background: var(--background-modifier-hover); }
+
+/* ===================== Custom buttons ===================== */
+/* Replaces Obsidian's default button chrome inside our forms (wizard, settings
+   modals, and the settings sidebar — all carry the .rb-wizard class). */
+.rb-wizard button {
+  padding: 7px 14px;
+  border-radius: 8px;
+  border: 1px solid var(--background-modifier-border);
+  background: var(--background-primary);
+  color: var(--text-normal);
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  box-shadow: none;
+  transition: background 0.12s ease, border-color 0.12s ease, transform 0.05s ease;
+}
+.rb-wizard button:hover {
+  background: var(--background-modifier-hover);
+  border-color: var(--background-modifier-border-hover);
+}
+.rb-wizard button:active { transform: translateY(1px); }
+
+.rb-wizard button.mod-cta {
+  background: var(--interactive-accent);
+  border-color: transparent;
+  color: var(--text-on-accent);
+}
+.rb-wizard button.mod-cta:hover { background: var(--interactive-accent-hover); }
+
+.rb-wizard button.mod-warning {
+  background: transparent;
+  border-color: var(--text-error);
+  color: var(--text-error);
+}
+.rb-wizard button.mod-warning:hover {
+  background: var(--text-error);
+  border-color: var(--text-error);
+  color: var(--text-on-accent);
+}
+
+/* Full-width primary buttons for "Add property" / "Add filter" / "Delete view". */
+.rb-wizard .setting-item:not(.rb-prop-row):not(.rb-filter-row) > .setting-item-control:only-child {
+  justify-content: stretch;
+}
+.rb-wizard .setting-item:not(.rb-prop-row):not(.rb-filter-row) > .setting-item-control:only-child button {
+  flex: 1 1 auto;
+}
+
+/* "View More" and home/empty primary buttons share the custom look. */
+.rb-view-more,
+.rb-home-create {
+  transition: background 0.12s ease, transform 0.05s ease;
+}
+.rb-view-more:active,
+.rb-home-create:active { transform: translateY(1px); }
+
+/* ===================== Filter builder ===================== */
+.modal:has(.rb-filter-builder) { width: min(720px, 92vw); }
+
+.rb-filter-empty { color: var(--text-muted); font-size: 13px; padding: 4px 0 12px; }
+
+.rb-filter-root { display: flex; flex-direction: column; gap: 8px; }
+
+.rb-filter-line {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+/* Aligns the property selects under each other (Where / And / Or column). */
+.rb-filter-prefix {
+  flex: 0 0 64px;
+  display: flex;
+  align-items: center;
+  font-size: 13px;
+  color: var(--text-muted);
+}
+.rb-filter-where { font-weight: 500; }
+.rb-filter-conj-static { font-weight: 500; }
+
+.rb-filter-rule {
+  flex: 1 1 auto;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+
+/* Inline selects (custom caret, no native glyph clipping). */
+.rb-filter-select,
+.rb-filter-value {
+  padding: 7px 10px;
+  border-radius: 7px;
+  border: 1px solid var(--background-modifier-border);
+  background-color: var(--background-primary);
+  color: var(--text-normal);
+  font-size: 13px;
+  line-height: 1.5;
+}
+.rb-filter-select {
+  appearance: none;
+  -webkit-appearance: none;
+  padding-right: 28px;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23999' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 9px center;
+  background-size: 12px;
+  cursor: pointer;
+}
+.rb-filter-conj { flex: 0 0 auto; }
+.rb-filter-value { flex: 1 1 120px; min-width: 80px; }
+
+/* Nested group box. */
+.rb-filter-group-box {
+  flex: 1 1 auto;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 10px;
+  border: 1px solid var(--background-modifier-border);
+  border-radius: 10px;
+  background: var(--background-secondary);
+}
+
+/* "⋯" row menu. */
+.rb-filter-row-menu {
+  flex: 0 0 auto;
+  margin-left: auto;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  border: none;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--text-muted);
+  cursor: pointer;
+}
+.rb-filter-row-menu:hover { background: var(--background-modifier-hover); color: var(--text-normal); }
+.rb-filter-row-menu svg { width: 17px; height: 17px; }
+
+/* "Add filter rule" button. */
+.rb-filter-add {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  align-self: flex-start;
+  margin-top: 2px;
+  padding: 6px 10px;
+  border: none;
+  border-radius: 7px;
+  background: transparent;
+  color: var(--text-muted);
+  cursor: pointer;
+  font-size: 13px;
+}
+.rb-filter-add:hover { background: var(--background-modifier-hover); color: var(--text-normal); }
+.rb-filter-add-icon, .rb-filter-add-caret { display: inline-flex; }
+.rb-filter-add-icon svg { width: 15px; height: 15px; }
+.rb-filter-add-caret svg { width: 13px; height: 13px; opacity: 0.7; }
+
+/* Footer "Delete filter". */
+.rb-filter-footer {
+  margin-top: 14px;
+  padding-top: 12px;
+  border-top: 1px solid var(--background-modifier-border);
+}
+.rb-filter-delete {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 7px 12px;
+  border: none;
+  border-radius: 7px;
+  background: transparent;
+  color: var(--text-muted);
+  cursor: pointer;
+  font-size: 13px;
+}
+.rb-filter-delete:hover { color: var(--text-error); }
+.rb-filter-delete-icon { display: inline-flex; }
+.rb-filter-delete-icon svg { width: 15px; height: 15px; }
+
+/* ===================== In-place note edit modal ===================== */
+/* Roomy, note-shaped modal that hosts a real embedded editor. */
+.rb-edit-modal {
+  width: 820px;
+  max-width: 92vw;
+}
+/* No outer padding — the embedded editor sits flush to the modal edges. */
+.rb-edit-modal .modal-content {
+  padding: 0;
+}
+/* Hide the default modal × — we use a red close button in the header instead. */
+.rb-edit-modal .modal-close-button {
+  display: none;
+}
+
+.rb-edit-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 16px 10px;
+  border-bottom: 1px solid var(--background-modifier-border);
+}
+.rb-edit-title {
+  flex: 1 1 auto;
+  margin: 0;
+  font-size: 18px;
+  line-height: 1.3;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.rb-edit-open {
+  flex: 0 0 auto;
+  cursor: pointer;
+}
+/* Red, square close button sitting next to "Open note". */
+.rb-edit-modal .rb-edit-close {
+  flex: 0 0 auto;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  border: none;
+  border-radius: 6px;
+  background-color: var(--color-red, #e5484d);
+  color: #fff;
+  font-size: 14px;
+  line-height: 1;
+  cursor: pointer;
+  box-shadow: none;
+}
+.rb-edit-modal .rb-edit-close:hover {
+  background-color: var(--color-red, #e5484d);
+  filter: brightness(1.1);
+}
+
+/* The embedded editor leaf fills a note-sized area, flush to the modal edges. */
+.rb-edit-embed {
+  height: 62vh;
+  overflow: hidden;
+  border-radius: 0 0 var(--modal-radius, 8px) var(--modal-radius, 8px);
+}
+.rb-edit-embed .workspace-leaf {
+  height: 100%;
+}
+.rb-edit-embed .workspace-leaf-content,
+.rb-edit-embed .view-content {
+  height: 100%;
+}
+/* The leaf header (tab title bar) is redundant inside the modal. */
+.rb-edit-embed .view-header {
+  display: none;
+}
+
+/* Read-only fallback if the editor can't be embedded. */
+.rb-edit-embed.rb-edit-preview {
+  height: auto;
+  max-height: 62vh;
+  overflow-y: auto;
+  padding: 4px 8px;
+}

@@ -674,9 +674,13 @@ function renderCheckbox(parent, item, field) {
 }
 function renderStars(parent, value, max) {
   const wrap = parent.createDiv({ cls: "rb-stars", attr: { "aria-label": `${value} / ${max}` } });
-  const full = Math.round(value);
   for (let i = 1; i <= max; i++) {
-    wrap.createSpan({ cls: i <= full ? "rb-star rb-star-on" : "rb-star", text: "\u2605" });
+    const fill = Math.max(0, Math.min(1, value - (i - 1)));
+    const star = wrap.createSpan({ cls: "rb-star", text: "\u2605" });
+    if (fill > 0) {
+      const on = star.createSpan({ cls: "rb-star-on", text: "\u2605" });
+      on.style.width = `${fill * 100}%`;
+    }
   }
 }
 function renderBar(parent, value, max) {

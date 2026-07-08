@@ -84,8 +84,15 @@
 
 /* Stars */
 .rb-stars { display: inline-flex; gap: 1px; font-size: 14px; line-height: 1; }
-.rb-star { color: var(--background-modifier-border); }
-.rb-star-on { color: var(--text-accent); }
+.rb-star { position: relative; color: var(--background-modifier-border); }
+/* Filled overlay clipped to a fractional width for half / decimal stars. */
+.rb-star-on {
+  position: absolute;
+  left: 0;
+  top: 0;
+  overflow: hidden;
+  color: var(--text-accent);
+}
 
 /* Bar */
 .rb-bar {
