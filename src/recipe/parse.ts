@@ -93,6 +93,16 @@ function parseStep(line: string): Step {
   return { parts };
 }
 
+/**
+ * Extract the inner source of the first ```recipe fenced block from a whole
+ * note body (fences stripped), or null if there is none. Used by the Recipe
+ * view, which reads notes directly rather than through a code-block processor.
+ */
+export function extractRecipeBlock(noteBody: string): string | null {
+  const m = /`{3,}[ \t]*recipe[^\n]*\n([\s\S]*?)\n[ \t]*`{3,}/.exec(noteBody);
+  return m ? m[1] : null;
+}
+
 export function parseRecipe(source: string): Recipe {
   const recipe: Recipe = { portions: 1, ingredients: [], steps: [] };
   let section: 'ingredients' | 'steps' | null = null;

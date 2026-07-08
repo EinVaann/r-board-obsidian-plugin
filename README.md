@@ -105,6 +105,7 @@ A database is a single `.board` file (JSON). Opening it shows the board pane wit
 - **Gallery** — masonry or fixed grid of cards; optional note-content excerpts. Not draggable.
 - **Kanban** — one column per value of the `group` property, plus an Uncategorized column. Cards can be dragged between columns, which **rewrites the group property** in the note's frontmatter (dropping into Uncategorized clears it). Fixed card size.
 - **Table** — one row per note, a column per visible property; click a header to sort.
+- **Recipe** — one card per note showing its title, properties, and full interactive [recipe block](#recipes). The card isn't click-to-open (so the portions stepper stays usable); the title link opens the note.
 
 Shared across views: a search bar, "View More" pagination, sort & filter, and grouping. **Clicking an item opens its note** in every view (Ctrl/Cmd-click opens in a new tab); clicking a cover image opens it fullscreen instead. The active view is remembered per database.
 

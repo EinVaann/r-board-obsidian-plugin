@@ -15,7 +15,7 @@ import type {
 } from './types';
 
 const PROPERTY_TYPES = new Set(['image', 'text', 'multi', 'number', 'checkbox', 'links']);
-const VIEW_TYPES = new Set(['gallery', 'kanban', 'table']);
+const VIEW_TYPES = new Set(['gallery', 'kanban', 'table', 'recipe']);
 const CARD_SIZES = new Set<CardSize>(['small', 'medium', 'large']);
 const LIMITS = new Set<LoadLimit>([10, 50, 100, 'none']);
 const FILTER_OPS = new Set<FilterOp>([
@@ -214,7 +214,8 @@ export function serializeDatabase(config: DatabaseConfig): string {
 
 /** A fresh view of the given type, with a name unique among `existing`. */
 export function makeDefaultView(type: ViewType, existing: ViewConfig[]): ViewConfig {
-  const baseName = type === 'gallery' ? 'Gallery' : type === 'kanban' ? 'Board' : 'Table';
+  const baseName =
+    type === 'gallery' ? 'Gallery' : type === 'kanban' ? 'Board' : type === 'recipe' ? 'Recipes' : 'Table';
   let name = baseName;
   let n = 2;
   while (existing.some((v) => v.name === name)) name = `${baseName} ${n++}`;

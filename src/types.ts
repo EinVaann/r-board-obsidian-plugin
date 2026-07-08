@@ -1,7 +1,7 @@
 import type { TFile } from 'obsidian';
 
-/** The three layouts a view can be displayed as. */
-export type ViewType = 'gallery' | 'kanban' | 'table';
+/** The layouts a view can be displayed as. */
+export type ViewType = 'gallery' | 'kanban' | 'table' | 'recipe';
 
 /** A property's data type. */
 export type PropertyType = 'image' | 'text' | 'multi' | 'number' | 'checkbox' | 'links';

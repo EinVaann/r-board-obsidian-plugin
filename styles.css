@@ -1397,14 +1397,12 @@
   color: var(--text-muted);
   margin: 10px 0 4px;
 }
-.rb-recipe-ing { width: 100%; border-collapse: collapse; }
-.rb-recipe-ing td { padding: 3px 0; vertical-align: baseline; }
+.rb-recipe-ing { margin: 0; padding-left: 1.3em; list-style: disc; }
+.rb-recipe-ing li { margin: 2px 0; }
 .rb-recipe-amt {
-  width: 34%;
   font-weight: 600;
   font-variant-numeric: tabular-nums;
   white-space: nowrap;
-  padding-right: 10px !important;
 }
 .rb-recipe-name { color: var(--text-muted); }
 .rb-recipe-steps { margin: 0; padding-left: 1.3em; }
@@ -1414,6 +1412,19 @@
   font-variant-numeric: tabular-nums;
   color: var(--text-accent);
 }
+
+/* Recipe view: a single column of recipe cards. */
+.rb-recipe-view {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  max-width: 680px;
+}
+.rb-recipe-card { cursor: default; }
+.rb-recipe-mount { margin-top: 8px; }
+/* The card already frames the block, so drop the inner block's own border. */
+.rb-recipe-card .rb-recipe { border: none; border-radius: 0; padding: 0; margin: 0; }
+.rb-recipe-none { color: var(--text-muted); font-size: 12px; font-style: italic; margin-top: 6px; }
 
 /* Error mark on a token, and the summary strip. */
 .rb-token-error { color: var(--text-error); cursor: help; }

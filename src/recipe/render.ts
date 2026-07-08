@@ -67,12 +67,15 @@ export function renderRecipe(el: HTMLElement, recipe: Recipe): void {
 
     if (recipe.ingredients.length > 0) {
       bodyEl.createDiv({ cls: 'rb-recipe-label', text: 'Ingredients' });
-      const table = bodyEl.createEl('table', { cls: 'rb-recipe-ing' });
+      const list = bodyEl.createEl('ul', { cls: 'rb-recipe-ing' });
       for (const ing of recipe.ingredients) {
-        const tr = table.createEl('tr');
-        const amt = tr.createEl('td', { cls: 'rb-recipe-amt' });
-        if (ing.cell) drawCell(amt, resolveCell(ing.cell, portions, recipe.portions), errors);
-        tr.createEl('td', { cls: 'rb-recipe-name', text: ing.name });
+        const li = list.createEl('li');
+        if (ing.cell) {
+          const amt = li.createSpan({ cls: 'rb-recipe-amt' });
+          drawCell(amt, resolveCell(ing.cell, portions, recipe.portions), errors);
+          li.appendText(' ');
+        }
+        li.createSpan({ cls: 'rb-recipe-name', text: ing.name });
       }
     }
 

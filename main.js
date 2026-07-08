@@ -90,7 +90,7 @@ var NoteEditModal = class extends import_obsidian.Modal {
 
 // src/config.ts
 var PROPERTY_TYPES = /* @__PURE__ */ new Set(["image", "text", "multi", "number", "checkbox", "links"]);
-var VIEW_TYPES = /* @__PURE__ */ new Set(["gallery", "kanban", "table"]);
+var VIEW_TYPES = /* @__PURE__ */ new Set(["gallery", "kanban", "table", "recipe"]);
 var CARD_SIZES = /* @__PURE__ */ new Set(["small", "medium", "large"]);
 var LIMITS = /* @__PURE__ */ new Set([10, 50, 100, "none"]);
 var FILTER_OPS = /* @__PURE__ */ new Set([
@@ -248,7 +248,7 @@ function serializeDatabase(config) {
   return JSON.stringify(out, null, 2);
 }
 function makeDefaultView(type, existing) {
-  const baseName = type === "gallery" ? "Gallery" : type === "kanban" ? "Board" : "Table";
+  const baseName = type === "gallery" ? "Gallery" : type === "kanban" ? "Board" : type === "recipe" ? "Recipes" : "Table";
   let name = baseName;
   let n = 2;
   while (existing.some((v) => v.name === name)) name = `${baseName} ${n++}`;
@@ -1301,6 +1301,472 @@ function renderTableEl(parent, items, props, ctx, pageKey) {
   }, { key: pageKey, store: ctx.ui.pages });
 }
 
+// src/recipe/token.ts
+var NAMED_MODES = {
+  const: { kind: "const" },
+  linear: { kind: "linear" },
+  sqrt: { kind: "pow", k: 0.5 },
+  step: { kind: "step" }
+};
+function parseToken(src, defaultMode) {
+  const trimmed = src.trim();
+  const hasOpen = trimmed.startsWith("{");
+  const hasClose = trimmed.endsWith("}");
+  if (hasOpen !== hasClose) return { error: "Unbalanced braces" };
+  const inner = hasOpen ? trimmed.slice(1, -1) : trimmed;
+  const lint = [];
+  const entries = [];
+  for (const raw of splitTop(inner)) {
+    const part = raw.trim();
+    if (part === "") return { error: "Empty entry" };
+    const entry = parseEntry(part, defaultMode, lint);
+    if ("error" in entry) return entry;
+    entries.push(entry);
+  }
+  if (entries.length === 0) return { error: "Empty token" };
+  return { entries, raw: trimmed, lint };
+}
+function splitTop(s) {
+  return s.split(",");
+}
+function parseEntry(src, defaultMode, lint) {
+  const [valuePart, ...tagParts] = src.split(":");
+  const value = parseValue(valuePart.trim());
+  if ("error" in value) return value;
+  let mode = null;
+  let point = null;
+  let round = { kind: "none" };
+  let min = null;
+  let max = null;
+  for (const rawTag of tagParts) {
+    const tag = rawTag.trim();
+    if (tag === "") continue;
+    const m = parseMode(tag);
+    if (m) {
+      if (mode) lint.push(`multiple modes in "${src.trim()}" \u2014 using last`);
+      mode = m;
+      continue;
+    }
+    const p = parsePoint(tag);
+    if (p) {
+      if (point) lint.push(`multiple conditions in "${src.trim()}" \u2014 using last`);
+      point = p;
+      continue;
+    }
+    const r = parseRound(tag);
+    if (r) {
+      if (round.kind !== "none") lint.push(`multiple rounding in "${src.trim()}" \u2014 using last`);
+      round = r;
+      continue;
+    }
+    const b = parseBound(tag);
+    if (b) {
+      if (b.which === "min") min = b.n;
+      else max = b.n;
+      continue;
+    }
+    lint.push(`unknown tag "${tag}" \u2014 ignored`);
+  }
+  if (min !== null && max !== null && min > max) {
+    lint.push(`min ${min} exceeds max ${max} \u2014 both ignored`);
+    min = null;
+    max = null;
+  }
+  return {
+    value: value.n,
+    unit: value.unit,
+    mode: mode ?? defaultMode,
+    point,
+    round,
+    min,
+    max
+  };
+}
+function parseValue(src) {
+  const m = /^(-?\d+(?:\.\d+)?)\s*(.*)$/.exec(src);
+  if (!m) return { error: `No numeric value in "${src}"` };
+  return { n: Number(m[1]), unit: m[2].trim() };
+}
+function parseMode(tag) {
+  if (tag in NAMED_MODES) return NAMED_MODES[tag];
+  const m = /^pow=(-?\d+(?:\.\d+)?)$/.exec(tag);
+  return m ? { kind: "pow", k: Number(m[1]) } : null;
+}
+function parsePoint(tag) {
+  const range = /^(\d+(?:\.\d+)?)-(\d+(?:\.\d+)?)p$/.exec(tag);
+  if (range) return { rel: "range", lo: Number(range[1]), hi: Number(range[2]) };
+  const rel = /^(>=|<=|>|<)?(\d+(?:\.\d+)?)p$/.exec(tag);
+  if (!rel) return null;
+  const n = Number(rel[2]);
+  switch (rel[1]) {
+    case ">":
+      return { rel: "gt", n };
+    case "<":
+      return { rel: "lt", n };
+    case ">=":
+      return { rel: "gte", n };
+    case "<=":
+      return { rel: "lte", n };
+    default:
+      return { rel: "eq", n };
+  }
+}
+function parseRound(tag) {
+  if (tag === "int") return { kind: "int" };
+  if (tag === "round") return { kind: "nearest", step: 1 };
+  if (tag === "ceil") return { kind: "ceil" };
+  if (tag === "floor") return { kind: "floor" };
+  const m = /^round=(\d+(?:\.\d+)?)$/.exec(tag);
+  return m ? { kind: "nearest", step: Number(m[1]) } : null;
+}
+function parseBound(tag) {
+  const m = /^(min|max)=\s*(-?\d+(?:\.\d+)?)/.exec(tag);
+  return m ? { which: m[1], n: Number(m[2]) } : null;
+}
+function resolve(token, portions, anchor) {
+  const base = token.entries[0];
+  const baseValue = base.value;
+  const fail = (msg, extra = []) => ({
+    value: baseValue,
+    unit: base.unit,
+    error: { message: [...token.lint, msg, ...extra].filter(Boolean).join("; "), base: baseValue }
+  });
+  const preLint = token.lint.length > 0;
+  const ok = (value, unit) => preLint ? fail("") : { value, unit };
+  if (token.entries.length === 1) {
+    if (base.point === null || base.point.rel === "eq") {
+      const a = base.point ? base.point.n : anchor;
+      return ok(applyPost(base, scaleByMode(base, portions, a)), base.unit);
+    }
+    if (pointMatches(base.point, portions)) return ok(applyPost(base, base.value), base.unit);
+    return fail(`no rule matches ${portions}p`);
+  }
+  const matches2 = token.entries.filter((e) => pointMatches(e.point, portions));
+  const conflicts = [];
+  if (matches2.length >= 1) {
+    const rank = (e) => specificity(e.point);
+    const best = Math.min(...matches2.map(rank));
+    const top = matches2.filter((e) => rank(e) === best);
+    if (top.length > 1) conflicts.push(`overlapping condition at ${portions}p`);
+    const chosen = top[top.length - 1];
+    if (preLint || conflicts.length > 0) return fail("", conflicts);
+    return { value: matchedValue(chosen, portions, anchor), unit: chosen.unit };
+  }
+  const gap = interpolate(token, portions, anchor);
+  if (!gap) return fail(`no rule matches ${portions}p`);
+  return ok(gap.value, gap.unit);
+}
+function matchedValue(entry, p, blockAnchor) {
+  const raw = entry.point === null ? scaleByMode(entry, p, blockAnchor) : entry.value;
+  return applyPost(entry, raw);
+}
+function pointMatches(point, p) {
+  if (!point) return true;
+  switch (point.rel) {
+    case "eq":
+      return p === point.n;
+    case "gt":
+      return p > point.n;
+    case "lt":
+      return p < point.n;
+    case "gte":
+      return p >= point.n;
+    case "lte":
+      return p <= point.n;
+    case "range":
+      return p >= point.lo && p <= point.hi;
+  }
+}
+function specificity(point) {
+  if (!point) return 4;
+  if (point.rel === "eq") return 1;
+  if (point.rel === "range") return 2;
+  return 3;
+}
+function scaleByMode(entry, p, a) {
+  const ratio = a === 0 ? 1 : p / a;
+  switch (entry.mode.kind) {
+    case "const":
+    case "step":
+      return entry.value;
+    case "linear":
+      return entry.value * ratio;
+    case "pow":
+      return entry.value * Math.pow(ratio, entry.mode.k);
+  }
+}
+function anchorOf(point) {
+  return point.rel === "range" ? point.lo : point.n;
+}
+function applyPost(entry, v) {
+  let out = v;
+  switch (entry.round.kind) {
+    case "int":
+      out = Math.round(out);
+      break;
+    case "nearest":
+      out = Math.round(out / entry.round.step) * entry.round.step;
+      break;
+    case "ceil":
+      out = Math.ceil(out);
+      break;
+    case "floor":
+      out = Math.floor(out);
+      break;
+    case "none":
+      break;
+  }
+  if (entry.min !== null) out = Math.max(out, entry.min);
+  if (entry.max !== null) out = Math.min(out, entry.max);
+  return out;
+}
+function reference(entry) {
+  if (!entry.point) return null;
+  const p = anchorOf(entry.point);
+  return { p, value: applyPost(entry, entry.value) };
+}
+function interpolate(token, p, _anchor) {
+  const isStep = token.entries.some((e) => e.mode.kind === "step");
+  const refs = token.entries.map((e) => ({ e, r: reference(e) })).filter((x) => x.r !== null);
+  let below = null;
+  let above = null;
+  for (const x of refs) {
+    if (x.r.p <= p && (!below || x.r.p > below.r.p)) below = x;
+    if (x.r.p >= p && (!above || x.r.p < above.r.p)) above = x;
+  }
+  if (below && above) {
+    if (isStep || below.r.p === above.r.p) return { value: below.r.value, unit: below.e.unit };
+    const t = (p - below.r.p) / (above.r.p - below.r.p);
+    return { value: below.r.value + t * (above.r.value - below.r.value), unit: below.e.unit };
+  }
+  if (below) return { value: below.r.value, unit: below.e.unit };
+  if (above) return { value: above.r.value, unit: above.e.unit };
+  return null;
+}
+
+// src/recipe/parse.ts
+var LINEAR = { kind: "linear" };
+var CONST = { kind: "const" };
+var TIME_UNITS = /* @__PURE__ */ new Set([
+  "sec",
+  "secs",
+  "second",
+  "seconds",
+  "s",
+  "min",
+  "mins",
+  "minute",
+  "minutes",
+  "m",
+  "hr",
+  "hrs",
+  "hour",
+  "hours",
+  "h"
+]);
+function makeCell(raw, defaultMode) {
+  const parsed = parseToken(raw, defaultMode);
+  return "error" in parsed ? { raw, token: null, parseError: parsed.error } : { raw, token: parsed, parseError: null };
+}
+function stepDefaultMode(tokenSrc) {
+  const m = /(\d+(?:\.\d+)?)\s*([a-zA-Z]+)/.exec(tokenSrc);
+  return m && TIME_UNITS.has(m[2].toLowerCase()) ? CONST : LINEAR;
+}
+function parseIngredient(line) {
+  const s = line.trim();
+  if (s.startsWith("{")) {
+    const close = s.indexOf("}");
+    if (close !== -1) {
+      const raw = s.slice(0, close + 1);
+      const name = s.slice(close + 1).trim();
+      return { cell: makeCell(raw, LINEAR), name };
+    }
+  }
+  const m = /^(-?\d+(?:\.\d+)?)(\s+.*)?$/.exec(s);
+  if (m) {
+    return { cell: makeCell(m[1], LINEAR), name: (m[2] ?? "").trim() };
+  }
+  return { cell: null, name: s };
+}
+function parseStep(line) {
+  const parts = [];
+  const re = /\{[^}]*\}/g;
+  let last = 0;
+  let m;
+  while ((m = re.exec(line)) !== null) {
+    if (m.index > last) parts.push({ kind: "text", text: line.slice(last, m.index) });
+    parts.push({ kind: "token", cell: makeCell(m[0], stepDefaultMode(m[0])) });
+    last = re.lastIndex;
+  }
+  if (last < line.length) parts.push({ kind: "text", text: line.slice(last) });
+  return { parts };
+}
+function extractRecipeBlock(noteBody) {
+  const m = /`{3,}[ \t]*recipe[^\n]*\n([\s\S]*?)\n[ \t]*`{3,}/.exec(noteBody);
+  return m ? m[1] : null;
+}
+function parseRecipe(source) {
+  const recipe = { portions: 1, ingredients: [], steps: [] };
+  let section = null;
+  for (const rawLine of source.split("\n")) {
+    const line = rawLine.replace(/\s+$/, "");
+    if (line.trim() === "") continue;
+    const portions = /^\s*portions:\s*(\d+(?:\.\d+)?)/i.exec(line);
+    if (portions) {
+      recipe.portions = Number(portions[1]);
+      section = null;
+      continue;
+    }
+    if (/^\s*ingredients:\s*$/i.test(line)) {
+      section = "ingredients";
+      continue;
+    }
+    if (/^\s*steps:\s*$/i.test(line)) {
+      section = "steps";
+      continue;
+    }
+    const item = /^\s*-\s+(.*)$/.exec(line);
+    if (item && section === "ingredients") recipe.ingredients.push(parseIngredient(item[1]));
+    else if (item && section === "steps") recipe.steps.push(parseStep(item[1]));
+  }
+  return recipe;
+}
+
+// src/recipe/render.ts
+var MIN_PORTIONS = 1;
+var MAX_PORTIONS = 99;
+function formatNum(n) {
+  if (Number.isInteger(n)) return String(n);
+  return String(Math.round(n * 100) / 100);
+}
+function resolveCell(cell, portions, anchor) {
+  if (cell.parseError) {
+    const bare = cell.raw.replace(/^\{|\}$/g, "");
+    return { text: bare, error: cell.parseError };
+  }
+  const r = resolve(cell.token, portions, anchor);
+  const text = r.unit ? `${formatNum(r.value)} ${r.unit}` : formatNum(r.value);
+  return { text, error: r.error ? r.error.message : null };
+}
+function drawCell(parent, res, errors) {
+  parent.appendText(res.text);
+  if (res.error) {
+    errors.push(res.error);
+    parent.createSpan({ cls: "rb-token-error", text: " \u26A0", attr: { "aria-label": res.error, title: res.error } });
+  }
+}
+function renderRecipe(el, recipe) {
+  const root = el.createDiv({ cls: "rb-recipe" });
+  let portions = recipe.portions;
+  const header = root.createDiv({ cls: "rb-recipe-header" });
+  header.createSpan({ cls: "rb-recipe-title", text: "Recipe" });
+  const stepper = header.createDiv({ cls: "rb-recipe-portions" });
+  const dec = stepper.createEl("button", { cls: "rb-recipe-step", text: "\u2212", attr: { "aria-label": "fewer portions" } });
+  const count = stepper.createSpan({ cls: "rb-recipe-count" });
+  const inc = stepper.createEl("button", { cls: "rb-recipe-step", text: "+", attr: { "aria-label": "more portions" } });
+  stepper.createSpan({ cls: "rb-recipe-portions-label", text: "portions" });
+  const bodyEl = root.createDiv({ cls: "rb-recipe-body" });
+  const repaint = () => {
+    count.setText(String(portions));
+    dec.toggleAttribute("disabled", portions <= MIN_PORTIONS);
+    inc.toggleAttribute("disabled", portions >= MAX_PORTIONS);
+    bodyEl.empty();
+    const errors = [];
+    if (recipe.ingredients.length > 0) {
+      bodyEl.createDiv({ cls: "rb-recipe-label", text: "Ingredients" });
+      const list = bodyEl.createEl("ul", { cls: "rb-recipe-ing" });
+      for (const ing of recipe.ingredients) {
+        const li = list.createEl("li");
+        if (ing.cell) {
+          const amt = li.createSpan({ cls: "rb-recipe-amt" });
+          drawCell(amt, resolveCell(ing.cell, portions, recipe.portions), errors);
+          li.appendText(" ");
+        }
+        li.createSpan({ cls: "rb-recipe-name", text: ing.name });
+      }
+    }
+    if (recipe.steps.length > 0) {
+      bodyEl.createDiv({ cls: "rb-recipe-label", text: "Method" });
+      const ol = bodyEl.createEl("ol", { cls: "rb-recipe-steps" });
+      for (const step of recipe.steps) drawStep(ol.createEl("li"), step, portions, recipe.portions, errors);
+    }
+    if (errors.length > 0) {
+      const strip = bodyEl.createDiv({ cls: "rb-recipe-errors" });
+      strip.createSpan({ text: "\u26A0 " });
+      strip.appendText(
+        errors.length === 1 ? errors[0] : `${errors.length} scaling issues \u2014 hover the \u26A0 marks to see each.`
+      );
+    }
+  };
+  const clamp = (n) => Math.max(MIN_PORTIONS, Math.min(MAX_PORTIONS, n));
+  dec.onclick = () => {
+    portions = clamp(portions - 1);
+    repaint();
+  };
+  inc.onclick = () => {
+    portions = clamp(portions + 1);
+    repaint();
+  };
+  repaint();
+}
+function drawStep(li, step, portions, anchor, errors) {
+  for (const part of step.parts) {
+    if (part.kind === "text") li.appendText(part.text);
+    else {
+      const span = li.createSpan({ cls: "rb-recipe-time" });
+      drawCell(span, resolveCell(part.cell, portions, anchor), errors);
+    }
+  }
+}
+
+// src/views/recipe.ts
+function renderRecipeView(host, items, ctx) {
+  host.empty();
+  if (items.length === 0) {
+    host.createDiv({ cls: "rb-empty", text: "No notes match this view." });
+    return;
+  }
+  const groupProp = ctx.view.group ? ctx.properties.find((p) => p.name === ctx.view.group) : void 0;
+  if (groupProp) {
+    for (const group of groupItems(items, groupProp, ctx.view.columns, ctx.view.groupConfig)) {
+      const section = host.createDiv({ cls: "rb-section" });
+      const color = group.key != null ? ctx.view.groupConfig?.[group.key]?.color : void 0;
+      const collapsed = renderSectionHeader(ctx, section, group.label, group.items.length, color);
+      if (!collapsed) renderList(section, group.items, ctx, `r:${group.label}`);
+    }
+    return;
+  }
+  renderList(host, items, ctx, "r");
+}
+function renderList(parent, items, ctx, pageKey) {
+  const cover = coverProperty(ctx.properties);
+  const fields = bodyProperties(ctx.properties);
+  const list = parent.createDiv({ cls: "rb-recipe-view" });
+  renderPaged(list, items, ctx.view.limit ?? 50, (item, host) => {
+    const card = host.createDiv({ cls: "rb-card rb-recipe-card" });
+    if (cover) renderField(ctx, card, item, cover);
+    const body = card.createDiv({ cls: "rb-card-body" });
+    createTitleLink(ctx, body, item);
+    for (const prop of fields) {
+      const row = body.createDiv({ cls: "rb-field" });
+      if (!renderField(ctx, row, item, prop)) row.remove();
+    }
+    void mountRecipe(ctx.app, body.createDiv({ cls: "rb-recipe-mount" }), item.file);
+  }, { key: pageKey, store: ctx.ui.pages });
+}
+async function mountRecipe(app, el, file) {
+  try {
+    const raw = await app.vault.cachedRead(file);
+    const src = extractRecipeBlock(raw);
+    if (!src) {
+      el.createDiv({ cls: "rb-recipe-none", text: "No recipe block in this note." });
+      return;
+    }
+    renderRecipe(el, parseRecipe(src));
+  } catch {
+  }
+}
+
 // src/ui/WizardModal.ts
 var import_obsidian8 = require("obsidian");
 
@@ -1633,7 +2099,7 @@ function renderViewSettings(app, container, config, view, hooks, onDelete) {
     })
   );
   new import_obsidian10.Setting(container).setName("Type").addDropdown((d) => {
-    d.addOptions({ gallery: "Gallery", kanban: "Kanban", table: "Table" });
+    d.addOptions({ gallery: "Gallery", kanban: "Kanban", table: "Table", recipe: "Recipe" });
     d.setValue(view.type);
     d.onChange((v) => {
       view.type = v;
@@ -1849,7 +2315,8 @@ var BOARD_EXTENSION = "board";
 var TYPE_ICON = {
   gallery: "layout-grid",
   kanban: "columns-3",
-  table: "table"
+  table: "table",
+  recipe: "utensils"
 };
 var BoardView = class extends import_obsidian11.TextFileView {
   constructor(leaf, plugin) {
@@ -2055,7 +2522,7 @@ var BoardView = class extends import_obsidian11.TextFileView {
   openCreateViewMenu(e) {
     if (!this.config) return;
     const menu = new import_obsidian11.Menu();
-    ["gallery", "kanban", "table"].forEach((type) => {
+    ["gallery", "kanban", "table", "recipe"].forEach((type) => {
       menu.addItem(
         (item) => item.setTitle(`New ${type} view`).setIcon(TYPE_ICON[type]).onClick(() => {
           const view = makeDefaultView(type, this.config.views);
@@ -2258,6 +2725,9 @@ tags:
       case "table":
         renderTable(body, items, ctx);
         break;
+      case "recipe":
+        renderRecipeView(body, items, ctx);
+        break;
       case "gallery":
       default:
         renderGallery(body, items, ctx);
@@ -2344,417 +2814,6 @@ var BoardHomeView = class extends import_obsidian12.ItemView {
     }).open();
   }
 };
-
-// src/recipe/token.ts
-var NAMED_MODES = {
-  const: { kind: "const" },
-  linear: { kind: "linear" },
-  sqrt: { kind: "pow", k: 0.5 },
-  step: { kind: "step" }
-};
-function parseToken(src, defaultMode) {
-  const trimmed = src.trim();
-  const hasOpen = trimmed.startsWith("{");
-  const hasClose = trimmed.endsWith("}");
-  if (hasOpen !== hasClose) return { error: "Unbalanced braces" };
-  const inner = hasOpen ? trimmed.slice(1, -1) : trimmed;
-  const lint = [];
-  const entries = [];
-  for (const raw of splitTop(inner)) {
-    const part = raw.trim();
-    if (part === "") return { error: "Empty entry" };
-    const entry = parseEntry(part, defaultMode, lint);
-    if ("error" in entry) return entry;
-    entries.push(entry);
-  }
-  if (entries.length === 0) return { error: "Empty token" };
-  return { entries, raw: trimmed, lint };
-}
-function splitTop(s) {
-  return s.split(",");
-}
-function parseEntry(src, defaultMode, lint) {
-  const [valuePart, ...tagParts] = src.split(":");
-  const value = parseValue(valuePart.trim());
-  if ("error" in value) return value;
-  let mode = null;
-  let point = null;
-  let round = { kind: "none" };
-  let min = null;
-  let max = null;
-  for (const rawTag of tagParts) {
-    const tag = rawTag.trim();
-    if (tag === "") continue;
-    const m = parseMode(tag);
-    if (m) {
-      if (mode) lint.push(`multiple modes in "${src.trim()}" \u2014 using last`);
-      mode = m;
-      continue;
-    }
-    const p = parsePoint(tag);
-    if (p) {
-      if (point) lint.push(`multiple conditions in "${src.trim()}" \u2014 using last`);
-      point = p;
-      continue;
-    }
-    const r = parseRound(tag);
-    if (r) {
-      if (round.kind !== "none") lint.push(`multiple rounding in "${src.trim()}" \u2014 using last`);
-      round = r;
-      continue;
-    }
-    const b = parseBound(tag);
-    if (b) {
-      if (b.which === "min") min = b.n;
-      else max = b.n;
-      continue;
-    }
-    lint.push(`unknown tag "${tag}" \u2014 ignored`);
-  }
-  if (min !== null && max !== null && min > max) {
-    lint.push(`min ${min} exceeds max ${max} \u2014 both ignored`);
-    min = null;
-    max = null;
-  }
-  return {
-    value: value.n,
-    unit: value.unit,
-    mode: mode ?? defaultMode,
-    point,
-    round,
-    min,
-    max
-  };
-}
-function parseValue(src) {
-  const m = /^(-?\d+(?:\.\d+)?)\s*(.*)$/.exec(src);
-  if (!m) return { error: `No numeric value in "${src}"` };
-  return { n: Number(m[1]), unit: m[2].trim() };
-}
-function parseMode(tag) {
-  if (tag in NAMED_MODES) return NAMED_MODES[tag];
-  const m = /^pow=(-?\d+(?:\.\d+)?)$/.exec(tag);
-  return m ? { kind: "pow", k: Number(m[1]) } : null;
-}
-function parsePoint(tag) {
-  const range = /^(\d+(?:\.\d+)?)-(\d+(?:\.\d+)?)p$/.exec(tag);
-  if (range) return { rel: "range", lo: Number(range[1]), hi: Number(range[2]) };
-  const rel = /^(>=|<=|>|<)?(\d+(?:\.\d+)?)p$/.exec(tag);
-  if (!rel) return null;
-  const n = Number(rel[2]);
-  switch (rel[1]) {
-    case ">":
-      return { rel: "gt", n };
-    case "<":
-      return { rel: "lt", n };
-    case ">=":
-      return { rel: "gte", n };
-    case "<=":
-      return { rel: "lte", n };
-    default:
-      return { rel: "eq", n };
-  }
-}
-function parseRound(tag) {
-  if (tag === "int") return { kind: "int" };
-  if (tag === "round") return { kind: "nearest", step: 1 };
-  if (tag === "ceil") return { kind: "ceil" };
-  if (tag === "floor") return { kind: "floor" };
-  const m = /^round=(\d+(?:\.\d+)?)$/.exec(tag);
-  return m ? { kind: "nearest", step: Number(m[1]) } : null;
-}
-function parseBound(tag) {
-  const m = /^(min|max)=\s*(-?\d+(?:\.\d+)?)/.exec(tag);
-  return m ? { which: m[1], n: Number(m[2]) } : null;
-}
-function resolve(token, portions, anchor) {
-  const base = token.entries[0];
-  const baseValue = base.value;
-  const fail = (msg, extra = []) => ({
-    value: baseValue,
-    unit: base.unit,
-    error: { message: [...token.lint, msg, ...extra].filter(Boolean).join("; "), base: baseValue }
-  });
-  const preLint = token.lint.length > 0;
-  const ok = (value, unit) => preLint ? fail("") : { value, unit };
-  if (token.entries.length === 1) {
-    if (base.point === null || base.point.rel === "eq") {
-      const a = base.point ? base.point.n : anchor;
-      return ok(applyPost(base, scaleByMode(base, portions, a)), base.unit);
-    }
-    if (pointMatches(base.point, portions)) return ok(applyPost(base, base.value), base.unit);
-    return fail(`no rule matches ${portions}p`);
-  }
-  const matches2 = token.entries.filter((e) => pointMatches(e.point, portions));
-  const conflicts = [];
-  if (matches2.length >= 1) {
-    const rank = (e) => specificity(e.point);
-    const best = Math.min(...matches2.map(rank));
-    const top = matches2.filter((e) => rank(e) === best);
-    if (top.length > 1) conflicts.push(`overlapping condition at ${portions}p`);
-    const chosen = top[top.length - 1];
-    if (preLint || conflicts.length > 0) return fail("", conflicts);
-    return { value: matchedValue(chosen, portions, anchor), unit: chosen.unit };
-  }
-  const gap = interpolate(token, portions, anchor);
-  if (!gap) return fail(`no rule matches ${portions}p`);
-  return ok(gap.value, gap.unit);
-}
-function matchedValue(entry, p, blockAnchor) {
-  const raw = entry.point === null ? scaleByMode(entry, p, blockAnchor) : entry.value;
-  return applyPost(entry, raw);
-}
-function pointMatches(point, p) {
-  if (!point) return true;
-  switch (point.rel) {
-    case "eq":
-      return p === point.n;
-    case "gt":
-      return p > point.n;
-    case "lt":
-      return p < point.n;
-    case "gte":
-      return p >= point.n;
-    case "lte":
-      return p <= point.n;
-    case "range":
-      return p >= point.lo && p <= point.hi;
-  }
-}
-function specificity(point) {
-  if (!point) return 4;
-  if (point.rel === "eq") return 1;
-  if (point.rel === "range") return 2;
-  return 3;
-}
-function scaleByMode(entry, p, a) {
-  const ratio = a === 0 ? 1 : p / a;
-  switch (entry.mode.kind) {
-    case "const":
-    case "step":
-      return entry.value;
-    case "linear":
-      return entry.value * ratio;
-    case "pow":
-      return entry.value * Math.pow(ratio, entry.mode.k);
-  }
-}
-function anchorOf(point) {
-  return point.rel === "range" ? point.lo : point.n;
-}
-function applyPost(entry, v) {
-  let out = v;
-  switch (entry.round.kind) {
-    case "int":
-      out = Math.round(out);
-      break;
-    case "nearest":
-      out = Math.round(out / entry.round.step) * entry.round.step;
-      break;
-    case "ceil":
-      out = Math.ceil(out);
-      break;
-    case "floor":
-      out = Math.floor(out);
-      break;
-    case "none":
-      break;
-  }
-  if (entry.min !== null) out = Math.max(out, entry.min);
-  if (entry.max !== null) out = Math.min(out, entry.max);
-  return out;
-}
-function reference(entry) {
-  if (!entry.point) return null;
-  const p = anchorOf(entry.point);
-  return { p, value: applyPost(entry, entry.value) };
-}
-function interpolate(token, p, _anchor) {
-  const isStep = token.entries.some((e) => e.mode.kind === "step");
-  const refs = token.entries.map((e) => ({ e, r: reference(e) })).filter((x) => x.r !== null);
-  let below = null;
-  let above = null;
-  for (const x of refs) {
-    if (x.r.p <= p && (!below || x.r.p > below.r.p)) below = x;
-    if (x.r.p >= p && (!above || x.r.p < above.r.p)) above = x;
-  }
-  if (below && above) {
-    if (isStep || below.r.p === above.r.p) return { value: below.r.value, unit: below.e.unit };
-    const t = (p - below.r.p) / (above.r.p - below.r.p);
-    return { value: below.r.value + t * (above.r.value - below.r.value), unit: below.e.unit };
-  }
-  if (below) return { value: below.r.value, unit: below.e.unit };
-  if (above) return { value: above.r.value, unit: above.e.unit };
-  return null;
-}
-
-// src/recipe/parse.ts
-var LINEAR = { kind: "linear" };
-var CONST = { kind: "const" };
-var TIME_UNITS = /* @__PURE__ */ new Set([
-  "sec",
-  "secs",
-  "second",
-  "seconds",
-  "s",
-  "min",
-  "mins",
-  "minute",
-  "minutes",
-  "m",
-  "hr",
-  "hrs",
-  "hour",
-  "hours",
-  "h"
-]);
-function makeCell(raw, defaultMode) {
-  const parsed = parseToken(raw, defaultMode);
-  return "error" in parsed ? { raw, token: null, parseError: parsed.error } : { raw, token: parsed, parseError: null };
-}
-function stepDefaultMode(tokenSrc) {
-  const m = /(\d+(?:\.\d+)?)\s*([a-zA-Z]+)/.exec(tokenSrc);
-  return m && TIME_UNITS.has(m[2].toLowerCase()) ? CONST : LINEAR;
-}
-function parseIngredient(line) {
-  const s = line.trim();
-  if (s.startsWith("{")) {
-    const close = s.indexOf("}");
-    if (close !== -1) {
-      const raw = s.slice(0, close + 1);
-      const name = s.slice(close + 1).trim();
-      return { cell: makeCell(raw, LINEAR), name };
-    }
-  }
-  const m = /^(-?\d+(?:\.\d+)?)(\s+.*)?$/.exec(s);
-  if (m) {
-    return { cell: makeCell(m[1], LINEAR), name: (m[2] ?? "").trim() };
-  }
-  return { cell: null, name: s };
-}
-function parseStep(line) {
-  const parts = [];
-  const re = /\{[^}]*\}/g;
-  let last = 0;
-  let m;
-  while ((m = re.exec(line)) !== null) {
-    if (m.index > last) parts.push({ kind: "text", text: line.slice(last, m.index) });
-    parts.push({ kind: "token", cell: makeCell(m[0], stepDefaultMode(m[0])) });
-    last = re.lastIndex;
-  }
-  if (last < line.length) parts.push({ kind: "text", text: line.slice(last) });
-  return { parts };
-}
-function parseRecipe(source) {
-  const recipe = { portions: 1, ingredients: [], steps: [] };
-  let section = null;
-  for (const rawLine of source.split("\n")) {
-    const line = rawLine.replace(/\s+$/, "");
-    if (line.trim() === "") continue;
-    const portions = /^\s*portions:\s*(\d+(?:\.\d+)?)/i.exec(line);
-    if (portions) {
-      recipe.portions = Number(portions[1]);
-      section = null;
-      continue;
-    }
-    if (/^\s*ingredients:\s*$/i.test(line)) {
-      section = "ingredients";
-      continue;
-    }
-    if (/^\s*steps:\s*$/i.test(line)) {
-      section = "steps";
-      continue;
-    }
-    const item = /^\s*-\s+(.*)$/.exec(line);
-    if (item && section === "ingredients") recipe.ingredients.push(parseIngredient(item[1]));
-    else if (item && section === "steps") recipe.steps.push(parseStep(item[1]));
-  }
-  return recipe;
-}
-
-// src/recipe/render.ts
-var MIN_PORTIONS = 1;
-var MAX_PORTIONS = 99;
-function formatNum(n) {
-  if (Number.isInteger(n)) return String(n);
-  return String(Math.round(n * 100) / 100);
-}
-function resolveCell(cell, portions, anchor) {
-  if (cell.parseError) {
-    const bare = cell.raw.replace(/^\{|\}$/g, "");
-    return { text: bare, error: cell.parseError };
-  }
-  const r = resolve(cell.token, portions, anchor);
-  const text = r.unit ? `${formatNum(r.value)} ${r.unit}` : formatNum(r.value);
-  return { text, error: r.error ? r.error.message : null };
-}
-function drawCell(parent, res, errors) {
-  parent.appendText(res.text);
-  if (res.error) {
-    errors.push(res.error);
-    parent.createSpan({ cls: "rb-token-error", text: " \u26A0", attr: { "aria-label": res.error, title: res.error } });
-  }
-}
-function renderRecipe(el, recipe) {
-  const root = el.createDiv({ cls: "rb-recipe" });
-  let portions = recipe.portions;
-  const header = root.createDiv({ cls: "rb-recipe-header" });
-  header.createSpan({ cls: "rb-recipe-title", text: "Recipe" });
-  const stepper = header.createDiv({ cls: "rb-recipe-portions" });
-  const dec = stepper.createEl("button", { cls: "rb-recipe-step", text: "\u2212", attr: { "aria-label": "fewer portions" } });
-  const count = stepper.createSpan({ cls: "rb-recipe-count" });
-  const inc = stepper.createEl("button", { cls: "rb-recipe-step", text: "+", attr: { "aria-label": "more portions" } });
-  stepper.createSpan({ cls: "rb-recipe-portions-label", text: "portions" });
-  const bodyEl = root.createDiv({ cls: "rb-recipe-body" });
-  const repaint = () => {
-    count.setText(String(portions));
-    dec.toggleAttribute("disabled", portions <= MIN_PORTIONS);
-    inc.toggleAttribute("disabled", portions >= MAX_PORTIONS);
-    bodyEl.empty();
-    const errors = [];
-    if (recipe.ingredients.length > 0) {
-      bodyEl.createDiv({ cls: "rb-recipe-label", text: "Ingredients" });
-      const table = bodyEl.createEl("table", { cls: "rb-recipe-ing" });
-      for (const ing of recipe.ingredients) {
-        const tr = table.createEl("tr");
-        const amt = tr.createEl("td", { cls: "rb-recipe-amt" });
-        if (ing.cell) drawCell(amt, resolveCell(ing.cell, portions, recipe.portions), errors);
-        tr.createEl("td", { cls: "rb-recipe-name", text: ing.name });
-      }
-    }
-    if (recipe.steps.length > 0) {
-      bodyEl.createDiv({ cls: "rb-recipe-label", text: "Method" });
-      const ol = bodyEl.createEl("ol", { cls: "rb-recipe-steps" });
-      for (const step of recipe.steps) drawStep(ol.createEl("li"), step, portions, recipe.portions, errors);
-    }
-    if (errors.length > 0) {
-      const strip = bodyEl.createDiv({ cls: "rb-recipe-errors" });
-      strip.createSpan({ text: "\u26A0 " });
-      strip.appendText(
-        errors.length === 1 ? errors[0] : `${errors.length} scaling issues \u2014 hover the \u26A0 marks to see each.`
-      );
-    }
-  };
-  const clamp = (n) => Math.max(MIN_PORTIONS, Math.min(MAX_PORTIONS, n));
-  dec.onclick = () => {
-    portions = clamp(portions - 1);
-    repaint();
-  };
-  inc.onclick = () => {
-    portions = clamp(portions + 1);
-    repaint();
-  };
-  repaint();
-}
-function drawStep(li, step, portions, anchor, errors) {
-  for (const part of step.parts) {
-    if (part.kind === "text") li.appendText(part.text);
-    else {
-      const span = li.createSpan({ cls: "rb-recipe-time" });
-      drawCell(span, resolveCell(part.cell, portions, anchor), errors);
-    }
-  }
-}
 
 // main.ts
 var RBoardPlugin = class extends import_obsidian13.Plugin {

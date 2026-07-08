@@ -37,7 +37,7 @@ export function renderViewSettings(
   );
 
   new Setting(container).setName('Type').addDropdown((d) => {
-    d.addOptions({ gallery: 'Gallery', kanban: 'Kanban', table: 'Table' });
+    d.addOptions({ gallery: 'Gallery', kanban: 'Kanban', table: 'Table', recipe: 'Recipe' });
     d.setValue(view.type);
     d.onChange((v) => {
       view.type = v as ViewType;

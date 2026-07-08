@@ -19,6 +19,7 @@ import { applySort } from './render/sort';
 import { renderGallery } from './views/gallery';
 import { renderKanban } from './views/kanban';
 import { renderTable } from './views/table';
+import { renderRecipeView } from './views/recipe';
 import { WizardModal } from './ui/WizardModal';
 import { FilterModal } from './ui/FilterModal';
 import { renderDatabaseSettings, renderViewSettings } from './ui/SettingsForms';
@@ -31,6 +32,7 @@ const TYPE_ICON: Record<ViewType, string> = {
   gallery: 'layout-grid',
   kanban: 'columns-3',
   table: 'table',
+  recipe: 'utensils',
 };
 
 type SidebarMode = 'view' | 'board' | null;
@@ -293,7 +295,7 @@ export class BoardView extends TextFileView {
   private openCreateViewMenu(e: MouseEvent): void {
     if (!this.config) return;
     const menu = new Menu();
-    (['gallery', 'kanban', 'table'] as ViewType[]).forEach((type) => {
+    (['gallery', 'kanban', 'table', 'recipe'] as ViewType[]).forEach((type) => {
       menu.addItem((item) =>
         item.setTitle(`New ${type} view`).setIcon(TYPE_ICON[type]).onClick(() => {
           const view = makeDefaultView(type, this.config!.views);
@@ -516,6 +518,9 @@ export class BoardView extends TextFileView {
         break;
       case 'table':
         renderTable(body, items, ctx);
+        break;
+      case 'recipe':
+        renderRecipeView(body, items, ctx);
         break;
       case 'gallery':
       default:

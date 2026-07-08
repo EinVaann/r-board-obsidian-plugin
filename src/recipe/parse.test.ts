@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { parseRecipe } from './parse';
+import { extractRecipeBlock, parseRecipe } from './parse';
 
 const SAMPLE = `
 portions: 2
@@ -56,5 +56,31 @@ describe('parseRecipe', () => {
 
   it('handles a step with no tokens', () => {
     expect(r.steps[1].parts).toEqual([{ kind: 'text', text: 'Toss and serve.' }]);
+  });
+});
+
+describe('extractRecipeBlock', () => {
+  it('pulls the inner source of the first recipe fence from a note body', () => {
+    const note = [
+      '# My pasta',
+      'Some intro prose.',
+      '',
+      '```recipe',
+      'portions: 2',
+      'ingredients:',
+      '  - 200 g spaghetti',
+      '```',
+      '',
+      'Outro.',
+    ].join('\n');
+    const inner = extractRecipeBlock(note);
+    expect(inner).toContain('portions: 2');
+    expect(inner).toContain('200 g spaghetti');
+    expect(inner).not.toContain('```');
+    expect(inner).not.toContain('Outro');
+  });
+
+  it('returns null when there is no recipe block', () => {
+    expect(extractRecipeBlock('# Just a note\nno recipe here')).toBeNull();
   });
 });
