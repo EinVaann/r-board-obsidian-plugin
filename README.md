@@ -2,6 +2,8 @@
 
 A native Obsidian plugin that turns your notes into **databases** with multiple configurable **views** (Gallery, Kanban, Table), driven by note frontmatter and tags. No Datacore, no dataview queries — a database is a plain `.board` config file read through Obsidian's own metadata cache.
 
+It also renders **interactive content blocks** inside notes — starting with [**Recipes**](#recipes), where ingredient amounts and cooking times scale with a portions stepper.
+
 ## Concepts
 
 - **Database** — pick a base tag (`sourceTag`) and define its **properties**. Every note carrying that tag is a row in the database.
@@ -78,7 +80,7 @@ A database is a single `.board` file (JSON). Opening it shows the board pane wit
 | `number` | Numeric value                   | `text`, `stars`, `bar`, `circle`|
 
 - Image `fill` crops to fill (`object-fit: cover`); `fit` shrinks without cropping (`object-fit: contain`).
-- `stars` / `bar` / `circle` use the property's `max`.
+- `stars` / `bar` / `circle` use the property's `max`. `stars` renders fractional values (e.g. `4.3` fills three and a bit stars).
 - Add `"searchable": true` to a property to include it in the search bar (by default the title plus all visible text/multi properties are searched).
 
 ### View config
@@ -90,7 +92,7 @@ A database is a single `.board` file (JSON). Opening it shows the board pane wit
 - **`columns`** — optional explicit order of group/column values; any others follow, sorted; Uncategorized is last.
 - **`sort`** — `{ "property", "dir" }` where `property` is a property name or `"$title"`, and `dir` is `"asc"` / `"desc"`. **Defaults to title ascending.** Applies to every view type (clicking a table header sets it too).
 - **`cardSize`** (gallery/kanban) — `"small"` | `"medium"` | `"large"`. Kanban cards are a fixed size per setting.
-- **`showContent`** (gallery/kanban) — `true` renders an excerpt of each note's body on the card.
+- **`showContent`** (gallery/kanban) — `true` renders an excerpt of each note's body on the card, and a **content-type badge** (e.g. `Recipe`) when the body matches a known type.
 - **`layout`** (gallery) — `"masonry"` (default) or `"grid"` (fixed tiles).
 
 ## Data source
@@ -106,16 +108,61 @@ A database is a single `.board` file (JSON). Opening it shows the board pane wit
 
 Shared across views: a search bar, "View More" pagination, sort & filter, and grouping. **Clicking an item opens its note** in every view (Ctrl/Cmd-click opens in a new tab); clicking a cover image opens it fullscreen instead. The active view is remembered per database.
 
+## Recipes
+
+A ` ```recipe ` code block anywhere in a note renders as an interactive card: ingredient amounts and cooking times that **scale with a portions stepper**.
+
+````markdown
+```recipe
+portions: 2
+ingredients:
+  - 200 g spaghetti
+  - 2 egg yolks
+  - {0.5 tsp:sqrt} black pepper
+  - salt to taste
+steps:
+  - Boil the pasta for {9 min:const} in salted water.
+  - Fry the guanciale for {6 min:sqrt} until crisp.
+```
+````
+
+- **`portions:`** — the recipe's base (anchor) portion count. The stepper scales everything relative to it; nothing is written back to the note.
+- **Ingredients** — one per line: a leading amount then the name. A bare number scales linearly by default (`200 g` → `400 g` at double portions); the unit stays in the name.
+- **Steps** — prose with inline `{…}` tokens; a token with a time unit (`min`, `hr`, `sec`…) stays fixed by default, because doubling portions rarely doubles cook time.
+
+### Scaling tokens
+
+Amounts and times are **scaling tokens** — a small expression for "a number that knows how to scale." Same syntax in both places:
+
+```
+{ VALUE (: TAG)* (, ENTRY)* }
+```
+
+| Tag                | Meaning                                        | Example                          |
+| ------------------ | ---------------------------------------------- | -------------------------------- |
+| `const`            | never changes                                  | `{9 min:const}`                  |
+| `linear`           | scales 1:1 (default for amounts)               | `{200 g:linear}`                 |
+| `sqrt`             | sub-linear (fry/boil time, salt)               | `{6 min:sqrt}`                   |
+| `pow=k`            | custom curve (`0`=const, `1`=linear, `0.5`=sqrt)| `{6 min:pow=0.7}`               |
+| `Np`, `>Np`, `2-4p`| a portion condition (piecewise / anchor)       | `{9:1p, 18:2p, 27:>=3p}`         |
+| `int`, `round=0.25`| round the result                               | `{2:linear:int}`                 |
+| `min=`, `max=`     | clamp the result                               | `{1 clove:linear:min=1}`         |
+
+Overlapping conditions resolve by specificity (exact beats range beats bound beats formula); a genuine conflict or an unresolvable/parse error shows the **base value with a ⚠ mark** rather than a silently-wrong number.
+
+**Full grammar, resolution rules, and error handling:** [`docs/recipe-tokens.md`](docs/recipe-tokens.md).
+
 ## Development
 
 ```bash
 npm install      # restore dependencies
 npm run dev      # watch build (main.js + styles.css)
 npm run build    # production build
+npm test         # run the unit tests (vitest)
 ```
 
-CSS lives as numbered partials under `styles/` and is concatenated into `styles.css` by `build-css.mjs`.
+CSS lives as numbered partials under `styles/` and is concatenated into `styles.css` by `build-css.mjs`. The recipe token parser/resolver (`src/recipe/token.ts`) is pure and covered by tests.
 
-## Out of scope (v0.1)
+## Out of scope (for now)
 
-Chart view, single-note ingestion, formulas, cross-database references, mobile layout tuning.
+Chart view, cross-database references, writing scaled recipe amounts back to the note, cross-recipe shopping lists, mobile layout tuning.
