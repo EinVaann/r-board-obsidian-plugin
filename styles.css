@@ -1399,16 +1399,32 @@
 }
 .rb-recipe-body > .rb-recipe-label:first-child { margin-top: 0; }
 
-/* Ingredients and method share one indent so bullets and numbers align.
-   Scoped + element-qualified to out-specify Obsidian's list resets. */
+/* Ingredients and method use custom markers in a fixed-width box so the
+   bullets and the numbers hang at the exact same left edge (native • and 1.
+   have different widths). Scoped + element-qualified to out-specify Obsidian's
+   list resets. */
 .rb-recipe ul.rb-recipe-ing,
 .rb-recipe ol.rb-recipe-steps {
   margin: 0;
-  padding-inline-start: 1.5em;
+  padding: 0;
+  list-style: none;
 }
-.rb-recipe ul.rb-recipe-ing { list-style: disc; }
+.rb-recipe ol.rb-recipe-steps { counter-reset: rb-step; }
 .rb-recipe ul.rb-recipe-ing li,
-.rb-recipe ol.rb-recipe-steps li { margin: 3px 0; padding-left: 2px; }
+.rb-recipe ol.rb-recipe-steps li {
+  margin: 3px 0;
+  padding-left: 1.6em;
+}
+.rb-recipe ul.rb-recipe-ing li::before,
+.rb-recipe ol.rb-recipe-steps li::before {
+  display: inline-block;
+  width: 1.6em;
+  margin-left: -1.6em;
+  color: var(--text-muted);
+}
+.rb-recipe ul.rb-recipe-ing li::before { content: '•'; }
+.rb-recipe ol.rb-recipe-steps li { counter-increment: rb-step; }
+.rb-recipe ol.rb-recipe-steps li::before { content: counter(rb-step) '.'; }
 
 .rb-recipe-amt {
   font-weight: 600;
