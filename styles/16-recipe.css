@@ -1,0 +1,77 @@
+/* ===================== Recipe block ===================== */
+.rb-recipe {
+  border: 1px solid var(--background-modifier-border);
+  border-radius: 10px;
+  padding: 12px 14px;
+  margin: 8px 0;
+}
+.rb-recipe-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+.rb-recipe-title {
+  font-weight: 600;
+  font-size: 13px;
+  color: var(--text-accent);
+}
+.rb-recipe-portions {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-left: auto;
+}
+.rb-recipe-portions-label { color: var(--text-muted); font-size: 12px; }
+.rb-recipe-step {
+  width: 26px;
+  height: 26px;
+  padding: 0;
+  line-height: 1;
+  font-size: 15px;
+  cursor: pointer;
+}
+.rb-recipe-step:disabled { opacity: 0.4; cursor: default; }
+.rb-recipe-count {
+  min-width: 22px;
+  text-align: center;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+.rb-recipe-label {
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-muted);
+  margin: 10px 0 4px;
+}
+.rb-recipe-ing { width: 100%; border-collapse: collapse; }
+.rb-recipe-ing td { padding: 3px 0; vertical-align: baseline; }
+.rb-recipe-amt {
+  width: 34%;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+  padding-right: 10px !important;
+}
+.rb-recipe-name { color: var(--text-muted); }
+.rb-recipe-steps { margin: 0; padding-left: 1.3em; }
+.rb-recipe-steps li { margin: 2px 0; }
+.rb-recipe-time {
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  color: var(--text-accent);
+}
+
+/* Error mark on a token, and the summary strip. */
+.rb-token-error { color: var(--text-error); cursor: help; }
+.rb-recipe-errors {
+  margin-top: 10px;
+  padding: 6px 8px;
+  border-radius: 6px;
+  font-size: 12px;
+  color: var(--text-error);
+  background: var(--background-modifier-error);
+}

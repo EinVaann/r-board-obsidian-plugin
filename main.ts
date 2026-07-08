@@ -4,6 +4,8 @@ import { BoardHomeView, HOME_VIEW_TYPE } from './src/home/HomeView';
 import { serializeDatabase } from './src/config';
 import type { DatabaseConfig } from './src/types';
 import { WizardModal } from './src/ui/WizardModal';
+import { parseRecipe } from './src/recipe/parse';
+import { renderRecipe } from './src/recipe/render';
 
 interface RBoardData {
   /** Active view name chosen per database, keyed by the `.board` file path. */
@@ -19,6 +21,11 @@ export default class RBoardPlugin extends Plugin {
     this.registerView(BOARD_VIEW_TYPE, (leaf) => new BoardView(leaf, this));
     this.registerView(HOME_VIEW_TYPE, (leaf) => new BoardHomeView(leaf, this));
     this.registerExtensions([BOARD_EXTENSION], BOARD_VIEW_TYPE);
+
+    // Interactive recipe blocks: ```recipe → portions-scaled ingredients/times.
+    this.registerMarkdownCodeBlockProcessor('recipe', (source, el) => {
+      renderRecipe(el, parseRecipe(source));
+    });
 
     this.addRibbonIcon('circuit-board', 'R Board', () => void this.openHome());
 
