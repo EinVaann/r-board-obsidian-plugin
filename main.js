@@ -754,6 +754,21 @@ function renderPaged(host, items, limit, drawItem, page) {
 
 // src/render/content.ts
 var import_obsidian5 = require("obsidian");
+
+// src/render/contentType.ts
+var RECIPE = {
+  id: "recipe",
+  label: "Recipe",
+  // A fenced ```recipe block anywhere in the body (any fence length, optional
+  // leading whitespace).
+  matches: (body) => /^\s*`{3,}\s*recipe\b/m.test(body)
+};
+var CONTENT_TYPES = [RECIPE];
+function detectContentType(body) {
+  return CONTENT_TYPES.find((t) => t.matches(body)) ?? null;
+}
+
+// src/render/content.ts
 function stripFrontmatter(raw) {
   if (raw.startsWith("---")) {
     const end = raw.indexOf("\n---", 3);
@@ -769,6 +784,13 @@ async function renderNoteExcerpt(app, el, file, component, maxChars = 320) {
     const raw = await app.vault.cachedRead(file);
     const body = stripFrontmatter(raw).trim();
     if (!body) return;
+    const type = detectContentType(body);
+    if (type) {
+      el.createSpan({
+        cls: `rb-content-type rb-content-type-${type.id}`,
+        text: type.label
+      });
+    }
     const excerpt = body.length > maxChars ? `${body.slice(0, maxChars).trimEnd()}\u2026` : body;
     await import_obsidian5.MarkdownRenderer.render(app, excerpt, el, file.path, component);
   } catch {

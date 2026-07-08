@@ -1,4 +1,5 @@
 import { type App, type Component, MarkdownRenderer, type TFile } from 'obsidian';
+import { detectContentType } from './contentType';
 
 /** Remove a leading YAML frontmatter block from raw note text. */
 function stripFrontmatter(raw: string): string {
@@ -27,6 +28,16 @@ export async function renderNoteExcerpt(
     const raw = await app.vault.cachedRead(file);
     const body = stripFrontmatter(raw).trim();
     if (!body) return;
+
+    // A type badge (Recipe, …) when the body matches a known content type.
+    const type = detectContentType(body);
+    if (type) {
+      el.createSpan({
+        cls: `rb-content-type rb-content-type-${type.id}`,
+        text: type.label,
+      });
+    }
+
     const excerpt = body.length > maxChars ? `${body.slice(0, maxChars).trimEnd()}…` : body;
     await MarkdownRenderer.render(app, excerpt, el, file.path, component);
   } catch {
