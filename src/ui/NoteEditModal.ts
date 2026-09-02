@@ -45,27 +45,20 @@ export class NoteEditModal extends Modal {
   /** Mount a real editor leaf for the file; fall back to a rendered preview. */
   private async embedEditor(parent: HTMLElement): Promise<void> {
     try {
-      // WorkspaceLeaf's constructor isn't in the public typings. A detached leaf
-      // is the way to host an editor outside the layout, but current Obsidian
-      // walks `leaf.parentSplit` during view setup and resize, so the leaf needs
-      // a real parent container. `parentSplit` is a getter-only accessor derived
-      // from the parent, so it must be passed to the constructor, not assigned.
-      //
-      // The parent must be the container for the *window the modal lives in*:
-      // when the board is in a pop-out window, parenting to the main root split
-      // makes the editor measure against the wrong document and it renders blank.
-      const ws = this.app.workspace as unknown as {
-        rootSplit: unknown;
-        floatingSplit?: { children?: Array<{ doc?: Document }> };
-      };
-      const doc = this.modalEl.ownerDocument;
-      const container =
-        (ws.floatingSplit?.children ?? []).find((c) => c.doc === doc) ?? ws.rootSplit;
-      const LeafCtor = WorkspaceLeaf as unknown as new (app: App, parent?: unknown) => WorkspaceLeaf;
-      const leaf = new LeafCtor(this.app, container);
+      // Create a real, fully-parented leaf through the public API, then relocate
+      // its DOM into the modal. A bare `new WorkspaceLeaf(app)` has no parent or
+      // container, and the editor's internals dereference `leaf.parentSplit`
+      // during setup/resize — on some platforms (Windows) that throws
+      // "reading 'parentSplit'" and the body renders blank; `parentSplit` is
+      // getter-only in current builds so it also can't be patched in after the
+      // fact. `createLeafInParent` gives us a leaf Obsidian fully recognises;
+      // `onClose` calls `leaf.detach()` to remove it from the layout again.
+      const ws = this.app.workspace;
+      const leaf = ws.createLeafInParent(ws.rootSplit, 0);
       this.leaf = leaf;
       // Source mode = the same editing view you get when opening the note.
       await leaf.openFile(this.file, { active: false, state: { mode: 'source', source: false } });
+      parent.empty();
       parent.appendChild(leaf.containerEl);
       // Let the embedded editor lay out to its new container size.
       window.setTimeout(() => leaf.view?.onResize?.(), 0);
