@@ -56,12 +56,11 @@ var NoteEditModal = class extends import_obsidian.Modal {
   /** Mount a real editor leaf for the file; fall back to a rendered preview. */
   async embedEditor(parent) {
     try {
-      const root = this.app.workspace.rootSplit;
+      const ws = this.app.workspace;
+      const doc = this.modalEl.ownerDocument;
+      const container = (ws.floatingSplit?.children ?? []).find((c) => c.doc === doc) ?? ws.rootSplit;
       const LeafCtor = import_obsidian.WorkspaceLeaf;
-      const leaf = new LeafCtor(this.app, root);
-      const anyLeaf = leaf;
-      anyLeaf.parentSplit ??= root;
-      anyLeaf.parent ??= root;
+      const leaf = new LeafCtor(this.app, container);
       this.leaf = leaf;
       await leaf.openFile(this.file, { active: false, state: { mode: "source", source: false } });
       parent.appendChild(leaf.containerEl);

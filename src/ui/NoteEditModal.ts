@@ -47,15 +47,22 @@ export class NoteEditModal extends Modal {
     try {
       // WorkspaceLeaf's constructor isn't in the public typings. A detached leaf
       // is the way to host an editor outside the layout, but current Obsidian
-      // walks `leaf.parentSplit` during view setup and resize, so an unparented
-      // leaf throws "Cannot read properties of undefined (reading 'parentSplit')".
-      // Point it at the real root split; its DOM still lives inside the modal.
-      const root = this.app.workspace.rootSplit;
+      // walks `leaf.parentSplit` during view setup and resize, so the leaf needs
+      // a real parent container. `parentSplit` is a getter-only accessor derived
+      // from the parent, so it must be passed to the constructor, not assigned.
+      //
+      // The parent must be the container for the *window the modal lives in*:
+      // when the board is in a pop-out window, parenting to the main root split
+      // makes the editor measure against the wrong document and it renders blank.
+      const ws = this.app.workspace as unknown as {
+        rootSplit: unknown;
+        floatingSplit?: { children?: Array<{ doc?: Document }> };
+      };
+      const doc = this.modalEl.ownerDocument;
+      const container =
+        (ws.floatingSplit?.children ?? []).find((c) => c.doc === doc) ?? ws.rootSplit;
       const LeafCtor = WorkspaceLeaf as unknown as new (app: App, parent?: unknown) => WorkspaceLeaf;
-      const leaf = new LeafCtor(this.app, root);
-      const anyLeaf = leaf as unknown as { parentSplit?: unknown; parent?: unknown };
-      anyLeaf.parentSplit ??= root;
-      anyLeaf.parent ??= root;
+      const leaf = new LeafCtor(this.app, container);
       this.leaf = leaf;
       // Source mode = the same editing view you get when opening the note.
       await leaf.openFile(this.file, { active: false, state: { mode: 'source', source: false } });
