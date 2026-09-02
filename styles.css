@@ -1328,6 +1328,10 @@
   overflow: hidden;
   border-radius: 0 0 var(--modal-radius, 8px) var(--modal-radius, 8px);
 }
+/* The private split standing in for the leaf's usual workspace parent. */
+.rb-edit-embed > .workspace-split {
+  height: 100%;
+}
 .rb-edit-embed .workspace-leaf {
   height: 100%;
 }

@@ -22,20 +22,77 @@ __export(main_exports, {
   default: () => RBoardPlugin
 });
 module.exports = __toCommonJS(main_exports);
-var import_obsidian13 = require("obsidian");
+var import_obsidian14 = require("obsidian");
 
 // src/BoardView.ts
-var import_obsidian11 = require("obsidian");
+var import_obsidian12 = require("obsidian");
 
 // src/ui/NoteEditModal.ts
+var import_obsidian2 = require("obsidian");
+
+// src/ui/DetachedEditorHost.ts
 var import_obsidian = require("obsidian");
-var NoteEditModal = class extends import_obsidian.Modal {
+var DetachedEditorHost = class {
+  constructor(app, doc) {
+    const container = containerForDocument(app, doc);
+    const SplitCtor = import_obsidian.WorkspaceSplit;
+    const split = new SplitCtor(app.workspace, "vertical");
+    split.parent = container;
+    split.getRoot = () => split;
+    split.getContainer = () => container;
+    this.split = split;
+    const LeafCtor = import_obsidian.WorkspaceLeaf;
+    const leaf = new LeafCtor(app, split);
+    adoptLeaf(leaf, split, doc);
+    split.children = [leaf];
+    this.leaf = leaf;
+    this.containerEl = split.containerEl ?? doc.createElement("div");
+    this.containerEl.addClass("workspace-split");
+    if (!split.containerEl) split.containerEl = this.containerEl;
+    this.containerEl.appendChild(leaf.containerEl);
+  }
+  /** Unload the editor and drop the private split. */
+  destroy() {
+    this.split.children = [];
+    try {
+      this.leaf.detach();
+    } catch (e) {
+      console.error("[r-board] detaching the embedded editor failed", e);
+    }
+    this.containerEl.remove();
+  }
+};
+function containerForDocument(app, doc) {
+  const ws = app.workspace;
+  const containers = [ws.rootSplit, ...ws.floatingSplit?.children ?? []];
+  return containers.find((c) => c.doc === doc) ?? ws.rootSplit;
+}
+function adoptLeaf(leaf, split, doc) {
+  const internals = leaf;
+  internals.parent = split;
+  if (internals.parentSplit !== split) {
+    Object.defineProperty(leaf, "parentSplit", {
+      value: split,
+      writable: true,
+      configurable: true
+    });
+  }
+  try {
+    internals.tabHeaderEl ??= doc.createElement("div");
+    internals.tabHeaderInnerTitleEl ??= doc.createElement("div");
+    internals.tabHeaderInnerIconEl ??= doc.createElement("div");
+  } catch {
+  }
+}
+
+// src/ui/NoteEditModal.ts
+var NoteEditModal = class extends import_obsidian2.Modal {
   constructor(app, file, noteTitle, onDone) {
     super(app);
     this.file = file;
     this.noteTitle = noteTitle;
     this.onDone = onDone;
-    this.leaf = null;
+    this.host = null;
     this.fallback = null;
     this.fmAtOpen = "";
   }
@@ -55,35 +112,39 @@ var NoteEditModal = class extends import_obsidian.Modal {
     const embed = contentEl.createDiv({ cls: "rb-edit-embed" });
     await this.embedEditor(embed);
   }
-  /** Mount a real editor leaf for the file; fall back to a rendered preview. */
+  /** Mount a real editor for the file; fall back to a rendered preview. */
   async embedEditor(parent) {
     try {
-      const ws = this.app.workspace;
-      const doc = this.modalEl.ownerDocument;
-      const container = [ws.rootSplit, ...ws.floatingSplit?.children ?? []].find((c) => c.doc === doc) ?? ws.rootSplit;
-      const LeafCtor = import_obsidian.WorkspaceLeaf;
-      const leaf = new LeafCtor(this.app, container);
-      this.leaf = leaf;
-      await leaf.openFile(this.file, { active: false, state: { mode: "source", source: false } });
+      const host = new DetachedEditorHost(this.app, this.modalEl.ownerDocument);
+      this.host = host;
+      const previous = this.app.workspace.activeLeaf;
+      await host.leaf.openFile(this.file, { active: false, state: { mode: "source", source: false } });
+      this.restoreActiveLeaf(previous);
       parent.empty();
-      parent.appendChild(leaf.containerEl);
-      window.setTimeout(() => leaf.view?.onResize?.(), 0);
+      parent.appendChild(host.containerEl);
+      window.setTimeout(() => host.leaf.view?.onResize?.(), 0);
     } catch (e) {
       console.error("[r-board] could not embed editor, falling back to preview", e);
-      this.leaf?.detach();
-      this.leaf = null;
+      this.host?.destroy();
+      this.host = null;
       parent.empty();
       await this.renderPreview(parent);
     }
   }
-  /** Read-only fallback if the editor leaf can't be embedded. */
+  /** Put the workspace's active leaf back if opening the file moved it. */
+  restoreActiveLeaf(previous) {
+    const workspace = this.app.workspace;
+    if (!previous || workspace.activeLeaf === previous) return;
+    workspace.setActiveLeaf(previous, { focus: false });
+  }
+  /** Read-only fallback if the editor can't be embedded. */
   async renderPreview(parent) {
     parent.addClass("rb-edit-preview");
-    const comp = new import_obsidian.Component();
+    const comp = new import_obsidian2.Component();
     comp.load();
     this.fallback = comp;
     const content = await this.app.vault.cachedRead(this.file);
-    await import_obsidian.MarkdownRenderer.render(this.app, content, parent, this.file.path, comp);
+    await import_obsidian2.MarkdownRenderer.render(this.app, content, parent, this.file.path, comp);
   }
   /** Stable string of the note's frontmatter, for change detection on close. */
   frontmatterSnapshot() {
@@ -91,8 +152,8 @@ var NoteEditModal = class extends import_obsidian.Modal {
     return JSON.stringify(fm);
   }
   onClose() {
-    this.leaf?.detach();
-    this.leaf = null;
+    this.host?.destroy();
+    this.host = null;
     this.fallback?.unload();
     this.fallback = null;
     this.contentEl.empty();
@@ -280,12 +341,12 @@ function visibleProperties(config, view) {
 }
 
 // src/data/query.ts
-var import_obsidian2 = require("obsidian");
+var import_obsidian3 = require("obsidian");
 var TEMPLATE_BASENAME = "_template";
 function tagsForFile(app, file) {
   const cache = app.metadataCache.getFileCache(file);
   if (!cache) return [];
-  const all = (0, import_obsidian2.getAllTags)(cache) ?? [];
+  const all = (0, import_obsidian3.getAllTags)(cache) ?? [];
   return all.map(normalizeTag);
 }
 function titleForFile(file, frontmatter) {
@@ -432,7 +493,7 @@ function countFilterRules(group) {
 }
 
 // src/render/common.ts
-var import_obsidian3 = require("obsidian");
+var import_obsidian4 = require("obsidian");
 function openNote(app, item, newLeaf) {
   void app.workspace.openLinkText(item.file.path, item.file.path, newLeaf);
 }
@@ -455,7 +516,7 @@ function renderSectionHeader(ctx, section, label, count, color) {
   const collapsed = ctx.ui.collapsed.has(label);
   const header = section.createDiv({ cls: "rb-section-header" });
   const caret = header.createSpan({ cls: "rb-section-caret" });
-  (0, import_obsidian3.setIcon)(caret, collapsed ? "chevron-right" : "chevron-down");
+  (0, import_obsidian4.setIcon)(caret, collapsed ? "chevron-right" : "chevron-down");
   const title = header.createSpan({ cls: "rb-section-title", text: label });
   applyGroupColor(title, color);
   header.createSpan({ cls: "rb-section-count", text: String(count) });
@@ -515,8 +576,8 @@ function applySort(items, sort, properties) {
 }
 
 // src/ui/ImageModal.ts
-var import_obsidian4 = require("obsidian");
-var ImageModal = class extends import_obsidian4.Modal {
+var import_obsidian5 = require("obsidian");
+var ImageModal = class extends import_obsidian5.Modal {
   constructor(app, src) {
     super(app);
     this.src = src;
@@ -765,7 +826,7 @@ function renderPaged(host, items, limit, drawItem, page) {
 }
 
 // src/render/content.ts
-var import_obsidian5 = require("obsidian");
+var import_obsidian6 = require("obsidian");
 
 // src/render/contentType.ts
 var RECIPE = {
@@ -804,7 +865,7 @@ async function renderNoteExcerpt(app, el, file, component, maxChars = 320) {
       });
     }
     const excerpt = body.length > maxChars ? `${body.slice(0, maxChars).trimEnd()}\u2026` : body;
-    await import_obsidian5.MarkdownRenderer.render(app, excerpt, el, file.path, component);
+    await import_obsidian6.MarkdownRenderer.render(app, excerpt, el, file.path, component);
   } catch {
   }
 }
@@ -898,7 +959,7 @@ function renderGrid(parent, items, ctx, pageKey) {
 }
 
 // src/views/kanban.ts
-var import_obsidian6 = require("obsidian");
+var import_obsidian7 = require("obsidian");
 
 // src/data/properties.ts
 async function setProperty(app, file, prop, value) {
@@ -984,7 +1045,7 @@ function renderColumn(board, column, groupProp, ctx, reorder, targets) {
   const collapsed = ctx.ui.collapsed.has(column.label);
   const colEl = board.createDiv({ cls: "rb-kanban-col" });
   if (collapsed) colEl.addClass("rb-collapsed");
-  if (!import_obsidian6.Platform.isMobile) {
+  if (!import_obsidian7.Platform.isMobile) {
     colEl.addEventListener("dragover", (e) => {
       if (!hasType(e, COLUMN_MIME)) return;
       e.preventDefault();
@@ -1001,7 +1062,7 @@ function renderColumn(board, column, groupProp, ctx, reorder, targets) {
   }
   const header = colEl.createDiv({ cls: "rb-kanban-header" });
   const caret = header.createSpan({ cls: "rb-kanban-caret" });
-  (0, import_obsidian6.setIcon)(caret, collapsed ? "chevron-right" : "chevron-down");
+  (0, import_obsidian7.setIcon)(caret, collapsed ? "chevron-right" : "chevron-down");
   const titleSpan = header.createSpan({ cls: "rb-kanban-title", text: column.label });
   const colCfg = column.key !== null ? ctx.view.groupConfig?.[column.key] : void 0;
   applyGroupColor(titleSpan, colCfg?.color);
@@ -1011,7 +1072,7 @@ function renderColumn(board, column, groupProp, ctx, reorder, targets) {
     else ctx.ui.collapsed.add(column.label);
     ctx.refresh();
   };
-  if (!import_obsidian6.Platform.isMobile && column.key !== null) {
+  if (!import_obsidian7.Platform.isMobile && column.key !== null) {
     header.addClass("rb-draggable");
     header.setAttr("draggable", "true");
     header.addEventListener("dragstart", (e) => {
@@ -1042,7 +1103,7 @@ function renderColumn(board, column, groupProp, ctx, reorder, targets) {
   if (savedTop) window.requestAnimationFrame(() => {
     list.scrollTop = savedTop;
   });
-  if (!import_obsidian6.Platform.isMobile) {
+  if (!import_obsidian7.Platform.isMobile) {
     list.addEventListener("dragover", (e) => {
       if (hasType(e, COLUMN_MIME)) return;
       e.preventDefault();
@@ -1061,7 +1122,7 @@ function renderColumn(board, column, groupProp, ctx, reorder, targets) {
 function renderAddGroup(board, realKeys, ctx) {
   const col = board.createDiv({ cls: "rb-kanban-col rb-kanban-add" });
   const btn = col.createDiv({ cls: "rb-kanban-add-btn" });
-  (0, import_obsidian6.setIcon)(btn.createSpan({ cls: "rb-kanban-add-icon" }), "plus");
+  (0, import_obsidian7.setIcon)(btn.createSpan({ cls: "rb-kanban-add-icon" }), "plus");
   btn.createSpan({ text: "Add group" });
   btn.onclick = () => {
     col.empty();
@@ -1095,19 +1156,19 @@ function renderCard(list, item, ctx, groupProp, targets) {
   const cover = coverProperty(ctx.properties);
   const fields = bodyProperties(ctx.properties);
   const card = list.createDiv({ cls: "rb-card rb-kanban-card" });
-  if (!import_obsidian6.Platform.isMobile) card.setAttr("draggable", "true");
+  if (!import_obsidian7.Platform.isMobile) card.setAttr("draggable", "true");
   card.dataset.path = item.file.path;
   card.oncontextmenu = (e) => {
     e.preventDefault();
     openCardMenu(e, item, groupProp, targets, ctx);
   };
   const menuBtn = card.createEl("button", { cls: "rb-card-menu", attr: { "aria-label": "Card actions" } });
-  (0, import_obsidian6.setIcon)(menuBtn, "more-horizontal");
+  (0, import_obsidian7.setIcon)(menuBtn, "more-horizontal");
   menuBtn.onclick = (e) => {
     e.stopPropagation();
     openCardMenu(e, item, groupProp, targets, ctx);
   };
-  if (!import_obsidian6.Platform.isMobile) {
+  if (!import_obsidian7.Platform.isMobile) {
     card.addEventListener("dragstart", (e) => {
       e.dataTransfer?.setData("text/plain", item.file.path);
       e.dataTransfer.effectAllowed = "move";
@@ -1135,7 +1196,7 @@ function renderCard(list, item, ctx, groupProp, targets) {
 }
 function openCardMenu(e, item, groupProp, targets, ctx) {
   const current = groupValueOf(item, groupProp);
-  const menu = new import_obsidian6.Menu();
+  const menu = new import_obsidian7.Menu();
   menu.addItem((it) => {
     it.setTitle("Move to group").setIcon("arrow-right-circle");
     const sub = it.setSubmenu();
@@ -1169,7 +1230,7 @@ async function moveItemToGroup(file, targetKey, groupProp, ctx) {
     await waitForFrontmatter(ctx, file, key, targetKey);
   } catch (e) {
     console.error(`${MLOG} FAILED for "${file.path}":`, e);
-    new import_obsidian6.Notice(`R Board: could not move note \u2014 ${e.message}`);
+    new import_obsidian7.Notice(`R Board: could not move note \u2014 ${e.message}`);
     return;
   }
   const after = ctx.app.metadataCache.getFileCache(file)?.frontmatter?.[key];
@@ -1228,12 +1289,12 @@ function hasType(e, type) {
 }
 async function handleDrop(path, column, groupProp, ctx) {
   const file = ctx.app.vault.getAbstractFileByPath(path);
-  if (!(file instanceof import_obsidian6.TFile)) return;
+  if (!(file instanceof import_obsidian7.TFile)) return;
   await moveItemToGroup(file, column.key, groupProp, ctx);
 }
 
 // src/views/table.ts
-var import_obsidian7 = require("obsidian");
+var import_obsidian8 = require("obsidian");
 var COLUMN_MIME2 = "application/x-rb-table-column";
 function renderTable(host, items, ctx) {
   host.empty();
@@ -1277,7 +1338,7 @@ function renderTableEl(parent, items, props, ctx, pageKey) {
       const dir = ctx.sort.property === key && ctx.sort.dir === "asc" ? "desc" : "asc";
       ctx.setSort({ property: key, dir });
     };
-    if (draggable && !import_obsidian7.Platform.isMobile) {
+    if (draggable && !import_obsidian8.Platform.isMobile) {
       th.addClass("rb-th-draggable");
       th.setAttr("draggable", "true");
       th.addEventListener("dragstart", (e) => {
@@ -1780,7 +1841,7 @@ async function mountRecipe(app, el, file) {
 }
 
 // src/ui/WizardModal.ts
-var import_obsidian8 = require("obsidian");
+var import_obsidian9 = require("obsidian");
 
 // src/ui/PropertyEditor.ts
 var RENDER_OPTIONS = {
@@ -1881,7 +1942,7 @@ function renderPropertyEditor(container, properties, onChange) {
 }
 
 // src/ui/WizardModal.ts
-var WizardModal = class extends import_obsidian8.Modal {
+var WizardModal = class extends import_obsidian9.Modal {
   constructor(app, seed, heading, onComplete) {
     super(app);
     this.name = seed.name ?? "";
@@ -1894,8 +1955,8 @@ var WizardModal = class extends import_obsidian8.Modal {
     this.titleEl.setText(this.heading);
     const { contentEl } = this;
     contentEl.addClass("rb-wizard");
-    new import_obsidian8.Setting(contentEl).setName("Name").setDesc("Shown in the board title.").addText((t) => t.setValue(this.name).onChange((v) => this.name = v));
-    new import_obsidian8.Setting(contentEl).setName("Base tag").setDesc("Notes carrying this tag become rows (without the leading #).").addText(
+    new import_obsidian9.Setting(contentEl).setName("Name").setDesc("Shown in the board title.").addText((t) => t.setValue(this.name).onChange((v) => this.name = v));
+    new import_obsidian9.Setting(contentEl).setName("Base tag").setDesc("Notes carrying this tag become rows (without the leading #).").addText(
       (t) => t.setPlaceholder("backlog").setValue(this.sourceTag).onChange((v) => this.sourceTag = v)
     );
     contentEl.createEl("h4", { text: "Properties" });
@@ -1906,14 +1967,14 @@ var WizardModal = class extends import_obsidian8.Modal {
     const propsEl = contentEl.createDiv();
     renderPropertyEditor(propsEl, this.properties, () => {
     });
-    new import_obsidian8.Setting(contentEl).addButton(
+    new import_obsidian9.Setting(contentEl).addButton(
       (b) => b.setButtonText("Create").setCta().onClick(() => this.submit())
     ).addButton((b) => b.setButtonText("Cancel").onClick(() => this.close()));
   }
   submit() {
     const tag = normalizeTag(this.sourceTag);
     if (!tag) {
-      new import_obsidian8.Notice("R Board: a base tag is required.");
+      new import_obsidian9.Notice("R Board: a base tag is required.");
       return;
     }
     this.onComplete({
@@ -1930,7 +1991,7 @@ var WizardModal = class extends import_obsidian8.Modal {
 };
 
 // src/ui/FilterModal.ts
-var import_obsidian9 = require("obsidian");
+var import_obsidian10 = require("obsidian");
 var OP_LABELS = {
   eq: "Is",
   ne: "Is not",
@@ -1946,7 +2007,7 @@ var VALUELESS = ["empty", "notempty"];
 function clone(v) {
   return JSON.parse(JSON.stringify(v));
 }
-var FilterModal = class extends import_obsidian9.Modal {
+var FilterModal = class extends import_obsidian10.Modal {
   constructor(app, group, properties, onSave) {
     super(app);
     this.root = group ? clone(group) : { conjunction: "and", conditions: [] };
@@ -1977,7 +2038,7 @@ var FilterModal = class extends import_obsidian9.Modal {
     this.renderGroup(contentEl.createDiv({ cls: "rb-filter-root" }), this.root);
     const footer = contentEl.createDiv({ cls: "rb-filter-footer" });
     const del = footer.createEl("button", { cls: "rb-filter-delete" });
-    (0, import_obsidian9.setIcon)(del.createSpan({ cls: "rb-filter-delete-icon" }), "trash");
+    (0, import_obsidian10.setIcon)(del.createSpan({ cls: "rb-filter-delete-icon" }), "trash");
     del.createSpan({ text: "Delete filter" });
     del.onclick = () => {
       this.root = { conjunction: "and", conditions: [] };
@@ -2025,11 +2086,11 @@ var FilterModal = class extends import_obsidian9.Modal {
       }
     });
     const add = container.createEl("button", { cls: "rb-filter-add" });
-    (0, import_obsidian9.setIcon)(add.createSpan({ cls: "rb-filter-add-icon" }), "plus");
+    (0, import_obsidian10.setIcon)(add.createSpan({ cls: "rb-filter-add-icon" }), "plus");
     add.createSpan({ text: "Add filter rule" });
-    (0, import_obsidian9.setIcon)(add.createSpan({ cls: "rb-filter-add-caret" }), "chevron-down");
+    (0, import_obsidian10.setIcon)(add.createSpan({ cls: "rb-filter-add-caret" }), "chevron-down");
     add.onclick = (e) => {
-      const menu = new import_obsidian9.Menu();
+      const menu = new import_obsidian10.Menu();
       menu.addItem(
         (it) => it.setTitle("Add rule").setIcon("plus").onClick(() => {
           group.conditions.push(this.newRule());
@@ -2091,9 +2152,9 @@ var FilterModal = class extends import_obsidian9.Modal {
   /** The "⋯" row menu (delete). */
   rowMenu(line, onDelete) {
     const btn = line.createEl("button", { cls: "rb-filter-row-menu", attr: { "aria-label": "More" } });
-    (0, import_obsidian9.setIcon)(btn, "more-horizontal");
+    (0, import_obsidian10.setIcon)(btn, "more-horizontal");
     btn.onclick = (e) => {
-      const menu = new import_obsidian9.Menu();
+      const menu = new import_obsidian10.Menu();
       menu.addItem((it) => it.setTitle("Delete").setIcon("trash").onClick(onDelete));
       menu.showAtMouseEvent(e);
     };
@@ -2101,16 +2162,16 @@ var FilterModal = class extends import_obsidian9.Modal {
 };
 
 // src/ui/SettingsForms.ts
-var import_obsidian10 = require("obsidian");
+var import_obsidian11 = require("obsidian");
 function renderViewSettings(app, container, config, view, hooks, onDelete) {
   container.empty();
-  new import_obsidian10.Setting(container).setName("Name").addText(
+  new import_obsidian11.Setting(container).setName("Name").addText(
     (t) => t.setValue(view.name).onChange((v) => {
       view.name = v;
       hooks.onChange();
     })
   );
-  new import_obsidian10.Setting(container).setName("Type").addDropdown((d) => {
+  new import_obsidian11.Setting(container).setName("Type").addDropdown((d) => {
     d.addOptions({ gallery: "Gallery", kanban: "Kanban", table: "Table", recipe: "Recipe" });
     d.setValue(view.type);
     d.onChange((v) => {
@@ -2118,7 +2179,7 @@ function renderViewSettings(app, container, config, view, hooks, onDelete) {
       hooks.onStructureChange();
     });
   });
-  new import_obsidian10.Setting(container).setName("Load limit").addDropdown((d) => {
+  new import_obsidian11.Setting(container).setName("Load limit").addDropdown((d) => {
     d.addOptions({ "10": "10", "50": "50", "100": "100", none: "No limit" });
     d.setValue(String(view.limit ?? 50));
     d.onChange((v) => {
@@ -2127,7 +2188,7 @@ function renderViewSettings(app, container, config, view, hooks, onDelete) {
     });
   });
   const sort = view.sort ?? { property: TITLE_SORT_KEY, dir: "asc" };
-  new import_obsidian10.Setting(container).setName("Sort by").addDropdown((d) => {
+  new import_obsidian11.Setting(container).setName("Sort by").addDropdown((d) => {
     d.addOption(TITLE_SORT_KEY, "Title");
     for (const p of config.properties) d.addOption(p.name, propertyLabel(p));
     d.setValue(sort.property);
@@ -2144,7 +2205,7 @@ function renderViewSettings(app, container, config, view, hooks, onDelete) {
     });
   });
   const groupProps = view.type === "kanban" ? config.properties.filter((p) => p.type === "text") : config.properties;
-  new import_obsidian10.Setting(container).setName("Group by").setDesc(view.type === "kanban" ? "Required: a text property defines the columns." : "Optional: section headers.").addDropdown((d) => {
+  new import_obsidian11.Setting(container).setName("Group by").setDesc(view.type === "kanban" ? "Required: a text property defines the columns." : "Optional: section headers.").addDropdown((d) => {
     d.addOption("", view.type === "kanban" ? "(choose a text property)" : "None");
     for (const p of groupProps) d.addOption(p.name, propertyLabel(p));
     d.setValue(view.group ?? "");
@@ -2157,7 +2218,7 @@ function renderViewSettings(app, container, config, view, hooks, onDelete) {
     renderColumnConfig(container, view, hooks);
   }
   if (view.type === "gallery" || view.type === "kanban") {
-    new import_obsidian10.Setting(container).setName("Card size").addDropdown((d) => {
+    new import_obsidian11.Setting(container).setName("Card size").addDropdown((d) => {
       d.addOptions({ small: "Small", medium: "Medium", large: "Large" });
       d.setValue(view.cardSize ?? "medium");
       d.onChange((v) => {
@@ -2165,7 +2226,7 @@ function renderViewSettings(app, container, config, view, hooks, onDelete) {
         hooks.onChange();
       });
     });
-    new import_obsidian10.Setting(container).setName("Show note content").setDesc("Render an excerpt of each note on the card.").addToggle(
+    new import_obsidian11.Setting(container).setName("Show note content").setDesc("Render an excerpt of each note on the card.").addToggle(
       (t) => t.setValue(!!view.showContent).onChange((on) => {
         view.showContent = on;
         hooks.onChange();
@@ -2173,7 +2234,7 @@ function renderViewSettings(app, container, config, view, hooks, onDelete) {
     );
   }
   if (view.type === "gallery") {
-    new import_obsidian10.Setting(container).setName("Gallery layout").addDropdown((d) => {
+    new import_obsidian11.Setting(container).setName("Gallery layout").addDropdown((d) => {
       d.addOptions({ masonry: "Masonry", grid: "Grid" });
       d.setValue(view.layout ?? "masonry");
       d.onChange((v) => {
@@ -2182,7 +2243,7 @@ function renderViewSettings(app, container, config, view, hooks, onDelete) {
       });
     });
   }
-  new import_obsidian10.Setting(container).setName("Filters").setDesc(`${countFilterRules(view.filter)} active`).addButton(
+  new import_obsidian11.Setting(container).setName("Filters").setDesc(`${countFilterRules(view.filter)} active`).addButton(
     (b) => b.setButtonText("Edit filters\u2026").onClick(() => {
       new FilterModal(app, view.filter, config.properties, (group) => {
         view.filter = group;
@@ -2193,7 +2254,7 @@ function renderViewSettings(app, container, config, view, hooks, onDelete) {
   container.createEl("h4", { text: "Visible properties" });
   const visible = new Set(view.properties ?? config.properties.map((p) => p.name));
   for (const p of config.properties) {
-    new import_obsidian10.Setting(container).setName(propertyLabel(p)).setDesc(p.type).addToggle(
+    new import_obsidian11.Setting(container).setName(propertyLabel(p)).setDesc(p.type).addToggle(
       (t) => t.setValue(visible.has(p.name)).onChange((on) => {
         if (on) visible.add(p.name);
         else visible.delete(p.name);
@@ -2202,7 +2263,7 @@ function renderViewSettings(app, container, config, view, hooks, onDelete) {
       })
     );
   }
-  new import_obsidian10.Setting(container).addButton(
+  new import_obsidian11.Setting(container).addButton(
     (b) => b.setButtonText("Delete view").setWarning().onClick(onDelete)
   );
 }
@@ -2210,7 +2271,7 @@ function renderColumnConfig(container, view, hooks) {
   container.createEl("h4", { text: "Column settings" });
   const cols = view.columns ?? [];
   const cfg = () => view.groupConfig ??= {};
-  const debouncedChange = (0, import_obsidian10.debounce)(() => hooks.onChange(), 250, true);
+  const debouncedChange = (0, import_obsidian11.debounce)(() => hooks.onChange(), 250, true);
   const rerender = () => renderColumnConfig(container.parentElement.createDiv(), view, hooks);
   const list = container.createDiv({ cls: "rb-col-config-list" });
   cols.forEach((key, idx) => {
@@ -2293,19 +2354,19 @@ function renderColumnConfig(container, view, hooks) {
 }
 function renderDatabaseSettings(container, config, hooks) {
   container.empty();
-  new import_obsidian10.Setting(container).setName("Name").addText(
+  new import_obsidian11.Setting(container).setName("Name").addText(
     (t) => t.setValue(config.name ?? "").onChange((v) => {
       config.name = v.trim() || void 0;
       hooks.onChange();
     })
   );
-  new import_obsidian10.Setting(container).setName("Base tag").setDesc("Without the leading #.").addText(
+  new import_obsidian11.Setting(container).setName("Base tag").setDesc("Without the leading #.").addText(
     (t) => t.setValue(config.sourceTag).onChange((v) => {
       config.sourceTag = v.replace(/^#/, "").trim().toLowerCase();
       hooks.onChange();
     })
   );
-  new import_obsidian10.Setting(container).setName("New note location").setDesc('Folder where the "New note" button creates notes. Required for that button.').addText(
+  new import_obsidian11.Setting(container).setName("New note location").setDesc('Folder where the "New note" button creates notes. Required for that button.').addText(
     (t) => t.setPlaceholder("e.g. Games/Backlog").setValue(config.newNoteFolder ?? "").onChange((v) => {
       config.newNoteFolder = v.trim() || void 0;
       hooks.onChange();
@@ -2315,7 +2376,7 @@ function renderDatabaseSettings(container, config, hooks) {
   renderPropertyEditor(container.createDiv(), config.properties, hooks.onChange);
   if (hooks.onRefresh) {
     const refresh = hooks.onRefresh;
-    new import_obsidian10.Setting(container).setName("Refresh index").setDesc("Re-query notes from the vault.").addButton(
+    new import_obsidian11.Setting(container).setName("Refresh index").setDesc("Re-query notes from the vault.").addButton(
       (b) => b.setButtonText("Refresh").onClick(() => refresh())
     );
   }
@@ -2330,7 +2391,7 @@ var TYPE_ICON = {
   table: "table",
   recipe: "utensils"
 };
-var BoardView = class extends import_obsidian11.TextFileView {
+var BoardView = class extends import_obsidian12.TextFileView {
   constructor(leaf, plugin) {
     super(leaf);
     /** While an edit modal is open, suppress re-renders until it closes. */
@@ -2382,7 +2443,7 @@ var BoardView = class extends import_obsidian11.TextFileView {
   // --- Lifecycle -------------------------------------------------------------
   async onOpen() {
     this.contentEl.addClass("rb-root");
-    const refresh = (0, import_obsidian11.debounce)(() => this.renderBody(), 250, true);
+    const refresh = (0, import_obsidian12.debounce)(() => this.renderBody(), 250, true);
     this.registerEvent(this.app.metadataCache.on("resolved", refresh));
     this.registerEvent(this.app.metadataCache.on("changed", refresh));
   }
@@ -2439,7 +2500,7 @@ var BoardView = class extends import_obsidian11.TextFileView {
   /** Setup prompt shown when the `.board` file is empty or unparseable. */
   renderSetup(root) {
     const box = root.createDiv({ cls: "rb-setup" });
-    (0, import_obsidian11.setIcon)(box.createDiv({ cls: "rb-setup-icon" }), "layout-dashboard");
+    (0, import_obsidian12.setIcon)(box.createDiv({ cls: "rb-setup-icon" }), "layout-dashboard");
     box.createEl("h3", { text: "Set up this board" });
     if (this.parseError && this.data.trim() !== "" && this.data.trim() !== "{}") {
       box.createEl("p", { cls: "rb-setup-error", text: this.parseError });
@@ -2466,7 +2527,7 @@ var BoardView = class extends import_obsidian11.TextFileView {
         cls: view2.name === this.activeView ? "rb-view-btn rb-active" : "rb-view-btn",
         attr: { title: `${view2.name} (${view2.type})` }
       });
-      (0, import_obsidian11.setIcon)(btn.createSpan({ cls: "rb-view-btn-icon" }), TYPE_ICON[view2.type]);
+      (0, import_obsidian12.setIcon)(btn.createSpan({ cls: "rb-view-btn-icon" }), TYPE_ICON[view2.type]);
       btn.createSpan({ text: view2.name });
       btn.onclick = () => this.setActiveView(view2.name);
       btn.oncontextmenu = (e) => this.openTabMenu(e, view2);
@@ -2495,7 +2556,7 @@ var BoardView = class extends import_obsidian11.TextFileView {
     }
     ctrlRow.createDiv({ cls: "rb-spacer" });
     const newNote = ctrlRow.createEl("button", { cls: "rb-new-note", attr: { title: "Create a new note in this database" } });
-    (0, import_obsidian11.setIcon)(newNote.createSpan({ cls: "rb-new-note-icon" }), "file-plus");
+    (0, import_obsidian12.setIcon)(newNote.createSpan({ cls: "rb-new-note-icon" }), "file-plus");
     newNote.createSpan({ text: "New note" });
     newNote.onclick = () => void this.createNewNote();
   }
@@ -2513,7 +2574,7 @@ var BoardView = class extends import_obsidian11.TextFileView {
   }
   chip(parent, icon, label, active) {
     const chip = parent.createEl("button", { cls: active ? "rb-chip rb-chip-active" : "rb-chip" });
-    (0, import_obsidian11.setIcon)(chip.createSpan({ cls: "rb-chip-icon" }), icon);
+    (0, import_obsidian12.setIcon)(chip.createSpan({ cls: "rb-chip-icon" }), icon);
     chip.createSpan({ text: label });
     return chip;
   }
@@ -2522,7 +2583,7 @@ var BoardView = class extends import_obsidian11.TextFileView {
       cls: active ? "rb-tool-btn rb-active" : "rb-tool-btn",
       attr: { "aria-label": label, title: label }
     });
-    (0, import_obsidian11.setIcon)(btn, icon);
+    (0, import_obsidian12.setIcon)(btn, icon);
     btn.onclick = onClick;
   }
   propLabel(key) {
@@ -2533,7 +2594,7 @@ var BoardView = class extends import_obsidian11.TextFileView {
   // --- Toolbar actions -------------------------------------------------------
   openCreateViewMenu(e) {
     if (!this.config) return;
-    const menu = new import_obsidian11.Menu();
+    const menu = new import_obsidian12.Menu();
     ["gallery", "kanban", "table", "recipe"].forEach((type) => {
       menu.addItem(
         (item) => item.setTitle(`New ${type} view`).setIcon(TYPE_ICON[type]).onClick(() => {
@@ -2558,19 +2619,19 @@ var BoardView = class extends import_obsidian11.TextFileView {
     if (!this.config) return;
     const folder = this.config.newNoteFolder?.trim();
     if (!folder) {
-      new import_obsidian11.Notice('R Board: set a "New note location" in board settings to use this.');
+      new import_obsidian12.Notice('R Board: set a "New note location" in board settings to use this.');
       this.toggleSidebar("board", true);
       return;
     }
     try {
-      const dir = (0, import_obsidian11.normalizePath)(folder);
-      if (!(this.app.vault.getAbstractFileByPath(dir) instanceof import_obsidian11.TFolder)) {
+      const dir = (0, import_obsidian12.normalizePath)(folder);
+      if (!(this.app.vault.getAbstractFileByPath(dir) instanceof import_obsidian12.TFolder)) {
         await this.app.vault.createFolder(dir).catch(() => void 0);
       }
-      let path = (0, import_obsidian11.normalizePath)(`${dir}/Untitled.md`);
+      let path = (0, import_obsidian12.normalizePath)(`${dir}/Untitled.md`);
       let i = 1;
       while (this.app.vault.getAbstractFileByPath(path)) {
-        path = (0, import_obsidian11.normalizePath)(`${dir}/Untitled ${i++}.md`);
+        path = (0, import_obsidian12.normalizePath)(`${dir}/Untitled ${i++}.md`);
       }
       const content = `---
 tags:
@@ -2580,12 +2641,12 @@ tags:
       const file = await this.app.vault.create(path, content);
       await this.app.workspace.getLeaf("tab").openFile(file);
     } catch (e) {
-      new import_obsidian11.Notice(`R Board: could not create note \u2014 ${e.message}`);
+      new import_obsidian12.Notice(`R Board: could not create note \u2014 ${e.message}`);
     }
   }
   openTabMenu(e, view) {
     e.preventDefault();
-    const menu = new import_obsidian11.Menu();
+    const menu = new import_obsidian12.Menu();
     menu.addItem((i) => i.setTitle("View settings").setIcon("sliders-horizontal").onClick(() => {
       this.setActiveView(view.name);
       this.toggleSidebar("view", true);
@@ -2596,7 +2657,7 @@ tags:
   openSortMenu(e, view) {
     if (!this.config) return;
     const current = effectiveSort(view);
-    const menu = new import_obsidian11.Menu();
+    const menu = new import_obsidian12.Menu();
     const addItem = (key, label) => {
       menu.addItem((item) => {
         item.setTitle(label);
@@ -2644,7 +2705,7 @@ tags:
     const header = el.createDiv({ cls: "rb-sidebar-header" });
     header.createSpan({ cls: "rb-sidebar-title", text: this.sidebar === "board" ? "Board settings" : "View settings" });
     const close = header.createEl("button", { cls: "rb-sidebar-close", attr: { "aria-label": "Close" } });
-    (0, import_obsidian11.setIcon)(close, "x");
+    (0, import_obsidian12.setIcon)(close, "x");
     close.onclick = () => this.toggleSidebar(this.sidebar);
     const content = el.createDiv({ cls: "rb-sidebar-content rb-wizard" });
     if (this.sidebar === "board") {
@@ -2749,9 +2810,9 @@ tags:
 };
 
 // src/home/HomeView.ts
-var import_obsidian12 = require("obsidian");
+var import_obsidian13 = require("obsidian");
 var HOME_VIEW_TYPE = "r-board-home";
-var BoardHomeView = class extends import_obsidian12.ItemView {
+var BoardHomeView = class extends import_obsidian13.ItemView {
   constructor(leaf, plugin) {
     super(leaf);
     this.plugin = plugin;
@@ -2779,7 +2840,7 @@ var BoardHomeView = class extends import_obsidian12.ItemView {
     const header = root.createDiv({ cls: "rb-home-header" });
     header.createEl("h2", { text: "Boards" });
     const create = header.createEl("button", { cls: "rb-home-create" });
-    (0, import_obsidian12.setIcon)(create.createSpan({ cls: "rb-home-create-icon" }), "plus");
+    (0, import_obsidian13.setIcon)(create.createSpan({ cls: "rb-home-create-icon" }), "plus");
     create.createSpan({ text: "Create board" });
     create.onclick = () => this.openCreateWizard();
     const files = this.plugin.listBoardFiles();
@@ -2803,7 +2864,7 @@ var BoardHomeView = class extends import_obsidian12.ItemView {
   renderCard(grid, file, raw) {
     const card = grid.createDiv({ cls: "rb-home-card" });
     const result = parseDatabaseConfig(raw);
-    (0, import_obsidian12.setIcon)(card.createDiv({ cls: "rb-home-card-icon" }), "layout-dashboard");
+    (0, import_obsidian13.setIcon)(card.createDiv({ cls: "rb-home-card-icon" }), "layout-dashboard");
     const body = card.createDiv({ cls: "rb-home-card-body" });
     body.createDiv({
       cls: "rb-home-card-title",
@@ -2828,7 +2889,7 @@ var BoardHomeView = class extends import_obsidian12.ItemView {
 };
 
 // main.ts
-var RBoardPlugin = class extends import_obsidian13.Plugin {
+var RBoardPlugin = class extends import_obsidian14.Plugin {
   constructor() {
     super(...arguments);
     this.data = {};
@@ -2854,7 +2915,7 @@ var RBoardPlugin = class extends import_obsidian13.Plugin {
     });
     this.registerEvent(
       this.app.workspace.on("file-menu", (menu, file) => {
-        const folder = file instanceof import_obsidian13.TFolder ? file : file instanceof import_obsidian13.TFile ? file.parent : null;
+        const folder = file instanceof import_obsidian14.TFolder ? file : file instanceof import_obsidian14.TFile ? file.parent : null;
         if (!folder) return;
         menu.addItem(
           (item) => item.setTitle("New board").setIcon("circuit-board").setSection("action").onClick(() => this.openCreateWizard(folder.path))
@@ -2901,18 +2962,18 @@ var RBoardPlugin = class extends import_obsidian13.Plugin {
   /** Write a new `.board` file from a config and open it. */
   async createDatabaseFromConfig(config, folderPath) {
     const folder = folderPath !== void 0 ? this.app.vault.getAbstractFileByPath(folderPath) : this.app.fileManager.getNewFileParent("");
-    const dir = folder instanceof import_obsidian13.TFolder && folder.path ? `${folder.path}/` : "";
+    const dir = folder instanceof import_obsidian14.TFolder && folder.path ? `${folder.path}/` : "";
     const base = (config.name?.trim() || "New Database").replace(/[\\/:*?"<>|]/g, "-");
-    let path = (0, import_obsidian13.normalizePath)(`${dir}${base}.${BOARD_EXTENSION}`);
+    let path = (0, import_obsidian14.normalizePath)(`${dir}${base}.${BOARD_EXTENSION}`);
     let i = 2;
     while (this.app.vault.getAbstractFileByPath(path)) {
-      path = (0, import_obsidian13.normalizePath)(`${dir}${base} ${i++}.${BOARD_EXTENSION}`);
+      path = (0, import_obsidian14.normalizePath)(`${dir}${base} ${i++}.${BOARD_EXTENSION}`);
     }
     try {
       const file = await this.app.vault.create(path, serializeDatabase(config));
       await this.openBoard(file);
     } catch (e) {
-      new import_obsidian13.Notice(`R Board: could not create database \u2014 ${e.message}`);
+      new import_obsidian14.Notice(`R Board: could not create database \u2014 ${e.message}`);
     }
   }
 };

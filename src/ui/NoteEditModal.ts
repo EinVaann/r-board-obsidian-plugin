@@ -1,18 +1,20 @@
-import { Component, MarkdownRenderer, Modal, TFile, WorkspaceLeaf, type App } from 'obsidian';
+import { Component, MarkdownRenderer, Modal, TFile, type App, type WorkspaceLeaf } from 'obsidian';
+import { DetachedEditorHost } from './DetachedEditorHost';
 
 /**
  * In-place note editor. Opens when a card/row is clicked instead of opening the
- * note. Embeds a real Obsidian editor leaf so the note looks and edits exactly
- * like the native editor (Properties widget + live-preview body). A header
- * button opens the note in the main workspace.
+ * note. Embeds a real Obsidian editor so the note looks and edits exactly like
+ * the native editor (Properties widget + live-preview body). A header button
+ * opens the note in the main workspace.
  *
- * The leaf is detached — it never joins the visible workspace layout, so opening
- * and closing the modal doesn't reshuffle the user's panes. `onDone` reports
- * whether the note's frontmatter actually changed, so the board only repaints
- * when it needs to.
+ * The editor lives on a private split (see {@link DetachedEditorHost}) that no
+ * layout walker can reach, so opening the modal neither reshuffles the user's
+ * panes nor exposes a half-real leaf to other plugins. `onDone` reports whether
+ * the note's frontmatter actually changed, so the board only repaints when it
+ * needs to.
  */
 export class NoteEditModal extends Modal {
-  private leaf: WorkspaceLeaf | null = null;
+  private host: DetachedEditorHost | null = null;
   private fallback: Component | null = null;
   private fmAtOpen = '';
 
@@ -47,45 +49,40 @@ export class NoteEditModal extends Modal {
     await this.embedEditor(embed);
   }
 
-  /** Mount a real editor leaf for the file; fall back to a rendered preview. */
+  /** Mount a real editor for the file; fall back to a rendered preview. */
   private async embedEditor(parent: HTMLElement): Promise<void> {
     try {
-      // WorkspaceLeaf's constructor isn't in the public typings, but a detached
-      // leaf is the way to host an editor outside the layout. It must not enter
-      // the visible workspace (createLeafInParent would add a real pane and make
-      // every open/close reshuffle — and slowly re-render — the board), yet the
-      // editor internals dereference `leaf.parentSplit` during setup and resize.
-      // `parentSplit` is a getter-only accessor derived from the parent, so the
-      // parent has to be supplied to the constructor. Use the container for the
-      // window the modal lives in, or the editor measures the wrong document and
-      // renders blank (notably in pop-out windows and on Windows).
-      const ws = this.app.workspace as unknown as {
-        rootSplit: { doc?: Document };
-        floatingSplit?: { children?: Array<{ doc?: Document }> };
-      };
-      const doc = this.modalEl.ownerDocument;
-      const container =
-        [ws.rootSplit, ...(ws.floatingSplit?.children ?? [])].find((c) => c.doc === doc) ??
-        ws.rootSplit;
-      const LeafCtor = WorkspaceLeaf as unknown as new (app: App, parent?: unknown) => WorkspaceLeaf;
-      const leaf = new LeafCtor(this.app, container);
-      this.leaf = leaf;
+      const host = new DetachedEditorHost(this.app, this.modalEl.ownerDocument);
+      this.host = host;
+
+      // Opening must not steal the workspace's active leaf: that is what makes
+      // other plugins treat the modal's editor as the user's current tab.
+      const previous = this.app.workspace.activeLeaf;
       // Source mode = the same editing view you get when opening the note.
-      await leaf.openFile(this.file, { active: false, state: { mode: 'source', source: false } });
+      await host.leaf.openFile(this.file, { active: false, state: { mode: 'source', source: false } });
+      this.restoreActiveLeaf(previous);
+
       parent.empty();
-      parent.appendChild((leaf as unknown as { containerEl: HTMLElement }).containerEl);
+      parent.appendChild(host.containerEl);
       // Let the embedded editor lay out to its new container size.
-      window.setTimeout(() => leaf.view?.onResize?.(), 0);
+      window.setTimeout(() => host.leaf.view?.onResize?.(), 0);
     } catch (e) {
       console.error('[r-board] could not embed editor, falling back to preview', e);
-      this.leaf?.detach();
-      this.leaf = null;
+      this.host?.destroy();
+      this.host = null;
       parent.empty();
       await this.renderPreview(parent);
     }
   }
 
-  /** Read-only fallback if the editor leaf can't be embedded. */
+  /** Put the workspace's active leaf back if opening the file moved it. */
+  private restoreActiveLeaf(previous: WorkspaceLeaf | null): void {
+    const workspace = this.app.workspace;
+    if (!previous || workspace.activeLeaf === previous) return;
+    workspace.setActiveLeaf(previous, { focus: false });
+  }
+
+  /** Read-only fallback if the editor can't be embedded. */
   private async renderPreview(parent: HTMLElement): Promise<void> {
     parent.addClass('rb-edit-preview');
     const comp = new Component();
@@ -102,8 +99,8 @@ export class NoteEditModal extends Modal {
   }
 
   onClose(): void {
-    this.leaf?.detach();
-    this.leaf = null;
+    this.host?.destroy();
+    this.host = null;
     this.fallback?.unload();
     this.fallback = null;
     this.contentEl.empty();
