@@ -37,10 +37,12 @@ var NoteEditModal = class extends import_obsidian.Modal {
     this.onDone = onDone;
     this.leaf = null;
     this.fallback = null;
+    this.fmAtOpen = "";
   }
   async onOpen() {
     const { contentEl, modalEl } = this;
     modalEl.addClass("rb-edit-modal");
+    this.fmAtOpen = this.frontmatterSnapshot();
     const header = contentEl.createDiv({ cls: "rb-edit-header" });
     header.createEl("h2", { cls: "rb-edit-title", text: this.noteTitle });
     const open = header.createEl("button", { cls: "mod-cta rb-edit-open", text: "Open note" });
@@ -57,7 +59,10 @@ var NoteEditModal = class extends import_obsidian.Modal {
   async embedEditor(parent) {
     try {
       const ws = this.app.workspace;
-      const leaf = ws.createLeafInParent(ws.rootSplit, 0);
+      const doc = this.modalEl.ownerDocument;
+      const container = [ws.rootSplit, ...ws.floatingSplit?.children ?? []].find((c) => c.doc === doc) ?? ws.rootSplit;
+      const LeafCtor = import_obsidian.WorkspaceLeaf;
+      const leaf = new LeafCtor(this.app, container);
       this.leaf = leaf;
       await leaf.openFile(this.file, { active: false, state: { mode: "source", source: false } });
       parent.empty();
@@ -80,13 +85,18 @@ var NoteEditModal = class extends import_obsidian.Modal {
     const content = await this.app.vault.cachedRead(this.file);
     await import_obsidian.MarkdownRenderer.render(this.app, content, parent, this.file.path, comp);
   }
+  /** Stable string of the note's frontmatter, for change detection on close. */
+  frontmatterSnapshot() {
+    const fm = this.app.metadataCache.getFileCache(this.file)?.frontmatter ?? null;
+    return JSON.stringify(fm);
+  }
   onClose() {
     this.leaf?.detach();
     this.leaf = null;
     this.fallback?.unload();
     this.fallback = null;
     this.contentEl.empty();
-    this.onDone();
+    this.onDone(this.frontmatterSnapshot() !== this.fmAtOpen);
   }
 };
 
@@ -2686,9 +2696,9 @@ tags:
   openEditModal(file, title) {
     if (!this.config) return;
     this.renderSuspended = true;
-    new NoteEditModal(this.app, file, title ?? file.basename, () => {
+    new NoteEditModal(this.app, file, title ?? file.basename, (changed) => {
       this.renderSuspended = false;
-      this.renderBody();
+      if (changed) this.renderBody();
     }).open();
   }
   renderBody() {

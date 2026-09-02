@@ -6,17 +6,21 @@ import { Component, MarkdownRenderer, Modal, TFile, WorkspaceLeaf, type App } fr
  * like the native editor (Properties widget + live-preview body). A header
  * button opens the note in the main workspace.
  *
- * The board (whose re-render is suspended by the caller) repaints once on close.
+ * The leaf is detached — it never joins the visible workspace layout, so opening
+ * and closing the modal doesn't reshuffle the user's panes. `onDone` reports
+ * whether the note's frontmatter actually changed, so the board only repaints
+ * when it needs to.
  */
 export class NoteEditModal extends Modal {
   private leaf: WorkspaceLeaf | null = null;
   private fallback: Component | null = null;
+  private fmAtOpen = '';
 
   constructor(
     app: App,
     private file: TFile,
     private noteTitle: string,
-    private onDone: () => void,
+    private onDone: (changed: boolean) => void,
   ) {
     super(app);
   }
@@ -24,6 +28,7 @@ export class NoteEditModal extends Modal {
   async onOpen(): Promise<void> {
     const { contentEl, modalEl } = this;
     modalEl.addClass('rb-edit-modal');
+    this.fmAtOpen = this.frontmatterSnapshot();
 
     // Header: note title + a button to open the note in the workspace.
     const header = contentEl.createDiv({ cls: 'rb-edit-header' });
@@ -45,21 +50,30 @@ export class NoteEditModal extends Modal {
   /** Mount a real editor leaf for the file; fall back to a rendered preview. */
   private async embedEditor(parent: HTMLElement): Promise<void> {
     try {
-      // Create a real, fully-parented leaf through the public API, then relocate
-      // its DOM into the modal. A bare `new WorkspaceLeaf(app)` has no parent or
-      // container, and the editor's internals dereference `leaf.parentSplit`
-      // during setup/resize — on some platforms (Windows) that throws
-      // "reading 'parentSplit'" and the body renders blank; `parentSplit` is
-      // getter-only in current builds so it also can't be patched in after the
-      // fact. `createLeafInParent` gives us a leaf Obsidian fully recognises;
-      // `onClose` calls `leaf.detach()` to remove it from the layout again.
-      const ws = this.app.workspace;
-      const leaf = ws.createLeafInParent(ws.rootSplit, 0);
+      // WorkspaceLeaf's constructor isn't in the public typings, but a detached
+      // leaf is the way to host an editor outside the layout. It must not enter
+      // the visible workspace (createLeafInParent would add a real pane and make
+      // every open/close reshuffle — and slowly re-render — the board), yet the
+      // editor internals dereference `leaf.parentSplit` during setup and resize.
+      // `parentSplit` is a getter-only accessor derived from the parent, so the
+      // parent has to be supplied to the constructor. Use the container for the
+      // window the modal lives in, or the editor measures the wrong document and
+      // renders blank (notably in pop-out windows and on Windows).
+      const ws = this.app.workspace as unknown as {
+        rootSplit: { doc?: Document };
+        floatingSplit?: { children?: Array<{ doc?: Document }> };
+      };
+      const doc = this.modalEl.ownerDocument;
+      const container =
+        [ws.rootSplit, ...(ws.floatingSplit?.children ?? [])].find((c) => c.doc === doc) ??
+        ws.rootSplit;
+      const LeafCtor = WorkspaceLeaf as unknown as new (app: App, parent?: unknown) => WorkspaceLeaf;
+      const leaf = new LeafCtor(this.app, container);
       this.leaf = leaf;
       // Source mode = the same editing view you get when opening the note.
       await leaf.openFile(this.file, { active: false, state: { mode: 'source', source: false } });
       parent.empty();
-      parent.appendChild(leaf.containerEl);
+      parent.appendChild((leaf as unknown as { containerEl: HTMLElement }).containerEl);
       // Let the embedded editor lay out to its new container size.
       window.setTimeout(() => leaf.view?.onResize?.(), 0);
     } catch (e) {
@@ -81,13 +95,23 @@ export class NoteEditModal extends Modal {
     await MarkdownRenderer.render(this.app, content, parent, this.file.path, comp);
   }
 
+  /** Stable string of the note's frontmatter, for change detection on close. */
+  private frontmatterSnapshot(): string {
+    const fm = this.app.metadataCache.getFileCache(this.file)?.frontmatter ?? null;
+    return JSON.stringify(fm);
+  }
+
   onClose(): void {
     this.leaf?.detach();
     this.leaf = null;
     this.fallback?.unload();
     this.fallback = null;
     this.contentEl.empty();
-    // The embedded editor autosaves; let the board repaint once now.
-    this.onDone();
+    // The embedded editor autosaves. Only ask the board to repaint if the
+    // frontmatter the board reads from has actually changed; otherwise a stray
+    // full rebuild of every card is a visible hitch on slower machines. Real
+    // edits whose cache update lands later are still caught by BoardView's
+    // metadata-change listener.
+    this.onDone(this.frontmatterSnapshot() !== this.fmAtOpen);
   }
 }

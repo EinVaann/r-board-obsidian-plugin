@@ -473,9 +473,11 @@ export class BoardView extends TextFileView {
   private openEditModal(file: TFile, title?: string): void {
     if (!this.config) return;
     this.renderSuspended = true;
-    new NoteEditModal(this.app, file, title ?? file.basename, () => {
+    new NoteEditModal(this.app, file, title ?? file.basename, (changed) => {
       this.renderSuspended = false;
-      this.renderBody();
+      // Only rebuild the board if the edit touched frontmatter the board reads.
+      // Unchanged closes (the common case) skip a full card re-render.
+      if (changed) this.renderBody();
     }).open();
   }
 
