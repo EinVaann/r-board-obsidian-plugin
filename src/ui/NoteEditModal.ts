@@ -45,12 +45,19 @@ export class NoteEditModal extends Modal {
   /** Mount a real editor leaf for the file; fall back to a rendered preview. */
   private async embedEditor(parent: HTMLElement): Promise<void> {
     try {
-      // WorkspaceLeaf's constructor isn't in the public typings, but a detached
-      // leaf is the supported way to host an editor outside the layout.
-      const LeafCtor = WorkspaceLeaf as unknown as new (app: App) => WorkspaceLeaf;
-      const leaf = new LeafCtor(this.app);
+      // WorkspaceLeaf's constructor isn't in the public typings. A detached leaf
+      // is the way to host an editor outside the layout, but current Obsidian
+      // walks `leaf.parentSplit` during view setup and resize, so an unparented
+      // leaf throws "Cannot read properties of undefined (reading 'parentSplit')".
+      // Point it at the real root split; its DOM still lives inside the modal.
+      const root = this.app.workspace.rootSplit;
+      const LeafCtor = WorkspaceLeaf as unknown as new (app: App, parent?: unknown) => WorkspaceLeaf;
+      const leaf = new LeafCtor(this.app, root);
+      const anyLeaf = leaf as unknown as { parentSplit?: unknown; parent?: unknown };
+      anyLeaf.parentSplit ??= root;
+      anyLeaf.parent ??= root;
       this.leaf = leaf;
-      // Live-preview mode = the same view you get when opening the note.
+      // Source mode = the same editing view you get when opening the note.
       await leaf.openFile(this.file, { active: false, state: { mode: 'source', source: false } });
       parent.appendChild(leaf.containerEl);
       // Let the embedded editor lay out to its new container size.
@@ -59,6 +66,7 @@ export class NoteEditModal extends Modal {
       console.error('[r-board] could not embed editor, falling back to preview', e);
       this.leaf?.detach();
       this.leaf = null;
+      parent.empty();
       await this.renderPreview(parent);
     }
   }

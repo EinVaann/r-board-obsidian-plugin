@@ -56,8 +56,12 @@ var NoteEditModal = class extends import_obsidian.Modal {
   /** Mount a real editor leaf for the file; fall back to a rendered preview. */
   async embedEditor(parent) {
     try {
+      const root = this.app.workspace.rootSplit;
       const LeafCtor = import_obsidian.WorkspaceLeaf;
-      const leaf = new LeafCtor(this.app);
+      const leaf = new LeafCtor(this.app, root);
+      const anyLeaf = leaf;
+      anyLeaf.parentSplit ??= root;
+      anyLeaf.parent ??= root;
       this.leaf = leaf;
       await leaf.openFile(this.file, { active: false, state: { mode: "source", source: false } });
       parent.appendChild(leaf.containerEl);
@@ -66,6 +70,7 @@ var NoteEditModal = class extends import_obsidian.Modal {
       console.error("[r-board] could not embed editor, falling back to preview", e);
       this.leaf?.detach();
       this.leaf = null;
+      parent.empty();
       await this.renderPreview(parent);
     }
   }
