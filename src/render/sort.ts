@@ -1,5 +1,5 @@
 import type { BoardItem, PropertyConfig, SortSpec } from '../types';
-import { TITLE_SORT_KEY } from '../config';
+import { NO_SORT_KEY, TITLE_SORT_KEY } from '../config';
 import { asBoolean, asNumber, fieldValue } from './values';
 
 /** Return a new array of items sorted by `sort`. */
@@ -8,6 +8,7 @@ export function applySort(
   sort: SortSpec,
   properties: PropertyConfig[],
 ): BoardItem[] {
+  if (sort.property === NO_SORT_KEY) return items;
   const prop = sort.property === TITLE_SORT_KEY
     ? undefined
     : properties.find((p) => p.name === sort.property);

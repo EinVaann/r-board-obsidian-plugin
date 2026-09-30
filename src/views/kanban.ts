@@ -332,7 +332,7 @@ function openCardMenu(
 
   menu.addSeparator();
   menu.addItem((it) =>
-    it.setTitle('Open note').setIcon('file-text').onClick(() => openNote(ctx.app, item, false)),
+    it.setTitle('Open note').setIcon('file-text').onClick(() => openNote(ctx.app, item, true)),
   );
 
   menu.showAtMouseEvent(e);

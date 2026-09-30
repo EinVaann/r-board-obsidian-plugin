@@ -105,7 +105,7 @@ var NoteEditModal = class extends import_obsidian2.Modal {
     const open = header.createEl("button", { cls: "mod-cta rb-edit-open", text: "Open note" });
     open.onclick = () => {
       this.close();
-      void this.app.workspace.getLeaf(false).openFile(this.file);
+      void this.app.workspace.getLeaf("tab").openFile(this.file);
     };
     const close = header.createEl("button", { cls: "rb-edit-close", text: "\u2715", attr: { "aria-label": "Close" } });
     close.onclick = () => this.close();
@@ -294,6 +294,7 @@ function propertyLabel(prop) {
   return prop.label ?? prop.name;
 }
 var TITLE_SORT_KEY = "$title";
+var NO_SORT_KEY = "$none";
 function effectiveSort(view) {
   return view.sort ?? { property: TITLE_SORT_KEY, dir: "asc" };
 }
@@ -549,6 +550,7 @@ function filterBySearch(items, properties, query) {
 
 // src/render/sort.ts
 function applySort(items, sort, properties) {
+  if (sort.property === NO_SORT_KEY) return items;
   const prop = sort.property === TITLE_SORT_KEY ? void 0 : properties.find((p) => p.name === sort.property);
   const factor = sort.dir === "desc" ? -1 : 1;
   const out = [...items];
@@ -968,7 +970,9 @@ async function setProperty(app, file, prop, value) {
       delete fm[prop.name];
       return;
     }
-    if (prop.type === "number") {
+    if (Array.isArray(value)) {
+      fm[prop.name] = value;
+    } else if (prop.type === "number") {
       const n = Number(value);
       fm[prop.name] = Number.isNaN(n) ? value : n;
     } else if (prop.type === "checkbox") {
@@ -1210,7 +1214,7 @@ function openCardMenu(e, item, groupProp, targets, ctx) {
   });
   menu.addSeparator();
   menu.addItem(
-    (it) => it.setTitle("Open note").setIcon("file-text").onClick(() => openNote(ctx.app, item, false))
+    (it) => it.setTitle("Open note").setIcon("file-text").onClick(() => openNote(ctx.app, item, true))
   );
   menu.showAtMouseEvent(e);
 }
@@ -1316,7 +1320,7 @@ function renderTable(host, items, ctx) {
   renderTableEl(host, items, props, ctx, "t");
 }
 function renderTableEl(parent, items, props, ctx, pageKey) {
-  const table = parent.createEl("table", { cls: "rb-table" });
+  const table = parent.createDiv({ cls: "rb-table-wrap" }).createEl("table", { cls: "rb-table" });
   const headRow = table.createEl("thead").createEl("tr");
   const reorderColumns = (dragged, before) => {
     const order = props.map((p) => p.name);
@@ -1369,9 +1373,62 @@ function renderTableEl(parent, items, props, ctx, pageKey) {
     const tr = tbody.createEl("tr", { cls: "rb-tr" });
     createTitleLink(ctx, tr.createEl("td", { cls: "rb-td" }), item);
     for (const prop of props) {
-      renderField(ctx, tr.createEl("td", { cls: "rb-td" }), item, prop);
+      const td = tr.createEl("td", { cls: "rb-td" });
+      renderField(ctx, td, item, prop);
+      makeEditable(ctx, td, item, prop);
     }
   }, { key: pageKey, store: ctx.ui.pages });
+}
+var EDITABLE = /* @__PURE__ */ new Set(["text", "number", "multi", "checkbox"]);
+function makeEditable(ctx, td, item, prop) {
+  if (!EDITABLE.has(prop.type)) return;
+  td.addClass("rb-td-editable");
+  const write = (value) => {
+    setProperty(ctx.app, item.file, prop, value).catch(
+      (e) => new import_obsidian8.Notice(`R Board: could not update ${prop.name} \u2014 ${e.message}`)
+    );
+  };
+  if (prop.type === "checkbox") {
+    td.addClass("rb-td-toggle");
+    td.onclick = () => write(String(!(asBoolean(fieldValue(item, prop)) ?? false)));
+    return;
+  }
+  td.setAttr("title", "Double-click to edit");
+  td.ondblclick = () => {
+    const raw = fieldValue(item, prop);
+    const initial = prop.type === "multi" ? asArray(raw).join(", ") : raw == null ? "" : String(raw);
+    td.empty();
+    const input = td.createEl("input", {
+      cls: "rb-cell-input",
+      attr: { type: prop.type === "number" ? "number" : "text" }
+    });
+    input.value = initial;
+    input.focus();
+    input.select();
+    let done = false;
+    const finish = (save) => {
+      if (done) return;
+      done = true;
+      const next = input.value.trim();
+      if (!save || next === initial.trim()) {
+        td.empty();
+        renderField(ctx, td, item, prop);
+        return;
+      }
+      input.disabled = true;
+      if (next === "") write(null);
+      else if (prop.type === "multi") write(next.split(",").map((s) => s.trim()).filter((s) => s !== ""));
+      else write(next);
+    };
+    input.onkeydown = (e) => {
+      if (e.key === "Enter") finish(true);
+      else if (e.key === "Escape") {
+        e.stopPropagation();
+        finish(false);
+      }
+    };
+    input.onblur = () => finish(true);
+  };
 }
 
 // src/recipe/token.ts
@@ -2188,17 +2245,22 @@ function renderViewSettings(app, container, config, view, hooks, onDelete) {
     });
   });
   const sort = view.sort ?? { property: TITLE_SORT_KEY, dir: "asc" };
+  let dirDropdown;
   new import_obsidian11.Setting(container).setName("Sort by").addDropdown((d) => {
+    d.addOption(NO_SORT_KEY, "None");
     d.addOption(TITLE_SORT_KEY, "Title");
     for (const p of config.properties) d.addOption(p.name, propertyLabel(p));
     d.setValue(sort.property);
     d.onChange((v) => {
       view.sort = { property: v, dir: (view.sort ?? sort).dir };
+      dirDropdown?.setDisabled(v === NO_SORT_KEY);
       hooks.onChange();
     });
   }).addDropdown((d) => {
+    dirDropdown = d;
     d.addOptions({ asc: "Ascending", desc: "Descending" });
     d.setValue(sort.dir);
+    d.setDisabled(sort.property === NO_SORT_KEY);
     d.onChange((v) => {
       view.sort = { property: (view.sort ?? sort).property, dir: v };
       hooks.onChange();
@@ -2402,6 +2464,8 @@ var BoardView = class extends import_obsidian12.TextFileView {
     this.searchQuery = "";
     this.sidebar = null;
     this.ui = { collapsed: /* @__PURE__ */ new Set(), pages: {}, listScroll: {} };
+    /** Paths of every note in the database at the last render (pre-filter). */
+    this.itemPaths = /* @__PURE__ */ new Set();
     this.bodyEl = null;
     this.toolbarEl = null;
     this.sidebarEl = null;
@@ -2444,8 +2508,27 @@ var BoardView = class extends import_obsidian12.TextFileView {
   async onOpen() {
     this.contentEl.addClass("rb-root");
     const refresh = (0, import_obsidian12.debounce)(() => this.renderBody(), 250, true);
-    this.registerEvent(this.app.metadataCache.on("resolved", refresh));
-    this.registerEvent(this.app.metadataCache.on("changed", refresh));
+    let initialResolve = true;
+    this.registerEvent(this.app.metadataCache.on("resolved", () => {
+      if (!initialResolve) return;
+      initialResolve = false;
+      refresh();
+    }));
+    this.registerEvent(this.app.metadataCache.on("changed", (file) => {
+      if (this.affectsBoard(file)) refresh();
+    }));
+    this.registerEvent(this.app.metadataCache.on("deleted", (file) => {
+      if (this.itemPaths.has(file.path)) refresh();
+    }));
+    this.registerEvent(this.app.vault.on("rename", (file, oldPath) => {
+      if (this.itemPaths.has(oldPath) || file instanceof import_obsidian12.TFile && this.affectsBoard(file)) refresh();
+    }));
+  }
+  /** Whether a changed note is, or was at the last render, one of this board's items. */
+  affectsBoard(file) {
+    if (!this.config || file.extension !== "md") return false;
+    if (this.itemPaths.has(file.path)) return true;
+    return tagsForFile(this.app, file).includes(normalizeTag(this.config.sourceTag));
   }
   // --- Config persistence ----------------------------------------------------
   /**
@@ -2562,8 +2645,9 @@ var BoardView = class extends import_obsidian12.TextFileView {
   }
   renderSortChip(parent, view) {
     const sort = effectiveSort(view);
-    const active = !!view.sort;
-    const label = active ? `${this.propLabel(sort.property)} ${sort.dir === "asc" ? "\u2191" : "\u2193"}` : "Sort";
+    const unsorted = sort.property === NO_SORT_KEY;
+    const active = !!view.sort && !unsorted;
+    const label = unsorted ? "No sort" : active ? `${this.propLabel(sort.property)} ${sort.dir === "asc" ? "\u2191" : "\u2193"}` : "Sort";
     const chip = this.chip(parent, "arrow-up-down", label, active);
     chip.onclick = (e) => this.openSortMenu(e, view);
   }
@@ -2669,6 +2753,15 @@ tags:
         });
       });
     };
+    menu.addItem((item) => {
+      item.setTitle("No sort");
+      if (current.property === NO_SORT_KEY) item.setIcon("check");
+      item.onClick(() => {
+        view.sort = { property: NO_SORT_KEY, dir: "asc" };
+        this.saveConfig();
+      });
+    });
+    menu.addSeparator();
     addItem(TITLE_SORT_KEY, "Title");
     for (const p of this.config.properties) addItem(p.name, propertyLabel(p));
     menu.showAtMouseEvent(e);
@@ -2767,13 +2860,19 @@ tags:
     const body = this.bodyEl;
     const view = this.currentView();
     if (!body || !this.config || !view) return;
+    const { scrollTop, scrollLeft } = body;
     body.empty();
     const properties = visibleProperties(this.config, view);
     const sort = effectiveSort(view);
-    let items = queryItems(this.app, this.config);
-    items = applyFilter(items, view.filter, this.config.properties);
+    const all = queryItems(this.app, this.config);
+    this.itemPaths = new Set(all.map((i) => i.file.path));
+    let items = applyFilter(all, view.filter, this.config.properties);
     items = filterBySearch(items, properties, this.searchQuery);
     items = applySort(items, sort, this.config.properties);
+    if (items.length === 0 && !(all.length === 0 && view.type === "kanban")) {
+      this.renderEmptyState(body, view, all.length);
+      return;
+    }
     const ctx = {
       app: this.app,
       config: this.config,
@@ -2805,6 +2904,37 @@ tags:
       default:
         renderGallery(body, items, ctx);
         break;
+    }
+    body.scrollTop = scrollTop;
+    body.scrollLeft = scrollLeft;
+  }
+  /** Explain why the view is empty and offer the matching way out. */
+  renderEmptyState(body, view, total) {
+    const box = body.createDiv({ cls: "rb-empty rb-empty-state" });
+    const actions = () => box.createDiv({ cls: "rb-empty-actions" });
+    if (total === 0) {
+      box.createDiv({ text: `No notes tagged #${this.config.sourceTag} yet.` });
+      const btn = actions().createEl("button", { cls: "rb-home-create", text: "New note" });
+      btn.onclick = () => void this.createNewNote();
+      return;
+    }
+    const hasSearch = this.searchQuery.trim() !== "";
+    const hasFilter = countFilterRules(view.filter) > 0;
+    const reason = hasSearch && hasFilter ? "search and filter" : hasSearch ? "search" : "filter";
+    box.createDiv({ text: `All ${total} notes are hidden by the current ${reason}.` });
+    const row = actions();
+    if (hasSearch) {
+      row.createEl("button", { text: "Clear search" }).onclick = () => {
+        this.searchQuery = "";
+        this.renderToolbar();
+        this.renderBody();
+      };
+    }
+    if (hasFilter) {
+      row.createEl("button", { text: "Clear filter" }).onclick = () => {
+        view.filter = void 0;
+        this.saveConfig();
+      };
     }
   }
 };

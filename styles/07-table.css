@@ -1,4 +1,6 @@
 /* ===================== Table ===================== */
+/* The board body hides horizontal overflow, so wide tables scroll here. */
+.rb-table-wrap { overflow-x: auto; }
 .rb-table {
   width: 100%;
   border-collapse: collapse;
@@ -27,5 +29,13 @@
   vertical-align: middle;
 }
 .rb-tr:hover { background: var(--background-modifier-hover); }
+.rb-td-editable { cursor: text; }
+.rb-td-editable.rb-td-toggle { cursor: pointer; }
+.rb-td-editable:hover { box-shadow: inset 0 0 0 1px var(--background-modifier-border-hover); }
+.rb-cell-input {
+  width: 100%;
+  min-width: 80px;
+  font-size: inherit;
+}
 .rb-td .rb-img { width: 48px; }
 .rb-td .rb-img img { aspect-ratio: 3 / 4; object-fit: cover; border-radius: 4px; }

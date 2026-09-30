@@ -39,6 +39,12 @@
   border-color: hsla(var(--pc, 220), 55%, 55%, 0.55);
   color: hsl(var(--pc, 220), 70%, 80%);
 }
+/* Light theme: the pale text above is unreadable on a light tint. */
+.theme-light .rb-multi .rb-pill {
+  background: hsla(var(--pc, 220), 60%, 50%, 0.16);
+  color: hsl(var(--pc, 220), 60%, 30%);
+}
+.theme-light .rb-multi .rb-tag { color: hsl(var(--pc, 220), 60%, 32%); }
 
 /* Checkbox */
 .rb-check { font-size: 14px; line-height: 1; }

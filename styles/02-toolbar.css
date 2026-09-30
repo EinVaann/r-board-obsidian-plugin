@@ -14,6 +14,17 @@
   align-items: center;
   gap: 8px;
 }
+.rb-controls-row { flex-wrap: wrap; }
+/* One shared control height so tabs, chips, search and buttons line up. */
+.rb-view-btn,
+.rb-chip,
+.rb-search,
+.rb-new-note {
+  box-sizing: border-box;
+  height: 32px;
+  padding-top: 0;
+  padding-bottom: 0;
+}
 /* Divider between the tabs row and the controls (search/sort/filter) row. */
 .rb-tabs-row {
   padding-bottom: 8px;
@@ -92,10 +103,12 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 38px;
-  height: 38px;
+  box-sizing: border-box;
+  width: 32px;
+  height: 32px;
+  padding: 0;
   border: 1px solid var(--background-modifier-border);
-  border-radius: 9px;
+  border-radius: 8px;
   background: var(--background-primary);
   color: var(--text-muted);
   cursor: pointer;
@@ -105,7 +118,7 @@
   border-color: var(--interactive-accent);
   color: var(--text-accent);
 }
-.rb-tool-btn svg { width: 20px; height: 20px; }
+.rb-tool-btn svg { width: 17px; height: 17px; }
 
 /* On narrow screens: hide text labels, keep icons only. */
 @media (max-width: 480px) {

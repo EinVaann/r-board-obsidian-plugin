@@ -181,6 +181,8 @@ export function propertyLabel(prop: PropertyConfig): string {
 
 /** Sort key meaning "the note title". */
 export const TITLE_SORT_KEY = '$title';
+/** Sort key meaning "don't sort": notes keep the vault's own order. */
+export const NO_SORT_KEY = '$none';
 
 /** A view's effective sort (its own, else title ascending). */
 export function effectiveSort(view: ViewConfig): SortSpec {

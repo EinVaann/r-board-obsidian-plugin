@@ -1,18 +1,19 @@
-import { Menu, Notice, TFolder, TextFileView, WorkspaceLeaf, debounce, normalizePath, setIcon } from 'obsidian';
-import type { TFile } from 'obsidian';
+import { Menu, Notice, TFile, TFolder, TextFileView, WorkspaceLeaf, debounce, normalizePath, setIcon } from 'obsidian';
 import { NoteEditModal } from './ui/NoteEditModal';
 import type RBoardPlugin from '../main';
 import type { BoardItem, DatabaseConfig, SortSpec, ViewConfig, ViewType } from './types';
 import {
   effectiveSort,
   makeDefaultView,
+  NO_SORT_KEY,
+  normalizeTag,
   parseDatabaseConfig,
   propertyLabel,
   serializeDatabase,
   TITLE_SORT_KEY,
   visibleProperties,
 } from './config';
-import { queryItems } from './data/query';
+import { queryItems, tagsForFile } from './data/query';
 import { applyFilter, countFilterRules } from './data/filter';
 import { filterBySearch, openNote, type BoardUiState, type RenderContext } from './render/common';
 import { applySort } from './render/sort';
@@ -50,6 +51,8 @@ export class BoardView extends TextFileView {
   private searchQuery = '';
   private sidebar: SidebarMode = null;
   private ui: BoardUiState = { collapsed: new Set(), pages: {}, listScroll: {} };
+  /** Paths of every note in the database at the last render (pre-filter). */
+  private itemPaths = new Set<string>();
 
   private bodyEl: HTMLElement | null = null;
   private toolbarEl: HTMLElement | null = null;
@@ -107,8 +110,29 @@ export class BoardView extends TextFileView {
   async onOpen(): Promise<void> {
     this.contentEl.addClass('rb-root');
     const refresh = debounce(() => this.renderBody(), 250, true);
-    this.registerEvent(this.app.metadataCache.on('resolved', refresh));
-    this.registerEvent(this.app.metadataCache.on('changed', refresh));
+    // Only the first `resolved` matters (initial index); later ones follow every edit.
+    let initialResolve = true;
+    this.registerEvent(this.app.metadataCache.on('resolved', () => {
+      if (!initialResolve) return;
+      initialResolve = false;
+      refresh();
+    }));
+    this.registerEvent(this.app.metadataCache.on('changed', (file) => {
+      if (this.affectsBoard(file)) refresh();
+    }));
+    this.registerEvent(this.app.metadataCache.on('deleted', (file) => {
+      if (this.itemPaths.has(file.path)) refresh();
+    }));
+    this.registerEvent(this.app.vault.on('rename', (file, oldPath) => {
+      if (this.itemPaths.has(oldPath) || (file instanceof TFile && this.affectsBoard(file))) refresh();
+    }));
+  }
+
+  /** Whether a changed note is, or was at the last render, one of this board's items. */
+  private affectsBoard(file: TFile): boolean {
+    if (!this.config || file.extension !== 'md') return false;
+    if (this.itemPaths.has(file.path)) return true;
+    return tagsForFile(this.app, file).includes(normalizeTag(this.config.sourceTag));
   }
 
   // --- Config persistence ----------------------------------------------------
@@ -248,10 +272,13 @@ export class BoardView extends TextFileView {
 
   private renderSortChip(parent: HTMLElement, view: ViewConfig): void {
     const sort = effectiveSort(view);
-    const active = !!view.sort;
-    const label = active
-      ? `${this.propLabel(sort.property)} ${sort.dir === 'asc' ? '↑' : '↓'}`
-      : 'Sort';
+    const unsorted = sort.property === NO_SORT_KEY;
+    const active = !!view.sort && !unsorted;
+    const label = unsorted
+      ? 'No sort'
+      : active
+        ? `${this.propLabel(sort.property)} ${sort.dir === 'asc' ? '↑' : '↓'}`
+        : 'Sort';
     const chip = this.chip(parent, 'arrow-up-down', label, active);
     chip.onclick = (e) => this.openSortMenu(e, view);
   }
@@ -374,6 +401,15 @@ export class BoardView extends TextFileView {
         });
       });
     };
+    menu.addItem((item) => {
+      item.setTitle('No sort');
+      if (current.property === NO_SORT_KEY) item.setIcon('check');
+      item.onClick(() => {
+        view.sort = { property: NO_SORT_KEY, dir: 'asc' };
+        this.saveConfig();
+      });
+    });
+    menu.addSeparator();
     addItem(TITLE_SORT_KEY, 'Title');
     for (const p of this.config.properties) addItem(p.name, propertyLabel(p));
     menu.showAtMouseEvent(e);
@@ -486,15 +522,23 @@ export class BoardView extends TextFileView {
     const body = this.bodyEl;
     const view = this.currentView();
     if (!body || !this.config || !view) return;
+    const { scrollTop, scrollLeft } = body;
     body.empty();
 
     const properties = visibleProperties(this.config, view);
     const sort = effectiveSort(view);
 
-    let items: BoardItem[] = queryItems(this.app, this.config);
-    items = applyFilter(items, view.filter, this.config.properties);
+    const all: BoardItem[] = queryItems(this.app, this.config);
+    this.itemPaths = new Set(all.map((i) => i.file.path));
+    let items = applyFilter(all, view.filter, this.config.properties);
     items = filterBySearch(items, properties, this.searchQuery);
     items = applySort(items, sort, this.config.properties);
+
+    // An empty kanban still shows its columns so cards can be added to them.
+    if (items.length === 0 && !(all.length === 0 && view.type === 'kanban')) {
+      this.renderEmptyState(body, view, all.length);
+      return;
+    }
 
     const ctx: RenderContext = {
       app: this.app,
@@ -528,6 +572,40 @@ export class BoardView extends TextFileView {
       default:
         renderGallery(body, items, ctx);
         break;
+    }
+    body.scrollTop = scrollTop;
+    body.scrollLeft = scrollLeft;
+  }
+
+  /** Explain why the view is empty and offer the matching way out. */
+  private renderEmptyState(body: HTMLElement, view: ViewConfig, total: number): void {
+    const box = body.createDiv({ cls: 'rb-empty rb-empty-state' });
+    const actions = (): HTMLElement => box.createDiv({ cls: 'rb-empty-actions' });
+
+    if (total === 0) {
+      box.createDiv({ text: `No notes tagged #${this.config!.sourceTag} yet.` });
+      const btn = actions().createEl('button', { cls: 'rb-home-create', text: 'New note' });
+      btn.onclick = () => void this.createNewNote();
+      return;
+    }
+
+    const hasSearch = this.searchQuery.trim() !== '';
+    const hasFilter = countFilterRules(view.filter) > 0;
+    const reason = hasSearch && hasFilter ? 'search and filter' : hasSearch ? 'search' : 'filter';
+    box.createDiv({ text: `All ${total} notes are hidden by the current ${reason}.` });
+    const row = actions();
+    if (hasSearch) {
+      row.createEl('button', { text: 'Clear search' }).onclick = () => {
+        this.searchQuery = '';
+        this.renderToolbar();
+        this.renderBody();
+      };
+    }
+    if (hasFilter) {
+      row.createEl('button', { text: 'Clear filter' }).onclick = () => {
+        view.filter = undefined;
+        this.saveConfig();
+      };
     }
   }
 }

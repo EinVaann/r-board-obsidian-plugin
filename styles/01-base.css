@@ -24,6 +24,12 @@
   padding: 32px 0;
   text-align: center;
 }
+.rb-empty-actions {
+  display: flex;
+  justify-content: center;
+  gap: 8px;
+  margin-top: 12px;
+}
 .rb-error {
   padding: 24px;
   color: var(--text-error);

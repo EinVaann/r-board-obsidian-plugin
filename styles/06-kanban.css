@@ -166,6 +166,8 @@
   transition: opacity 0.12s ease, background 0.12s ease;
 }
 .rb-kanban-card:hover .rb-card-menu { opacity: 1; }
+/* Touch screens have no hover, so keep the menu button visible. */
+@media (hover: none) { .rb-card-menu { opacity: 1; } }
 .rb-card-menu:hover { background: rgba(0, 0, 0, 0.75); }
 .rb-card-menu svg { width: 18px; height: 18px; }
 .rb-kanban-card.rb-dragging {

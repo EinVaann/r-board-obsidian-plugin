@@ -38,7 +38,7 @@ export class NoteEditModal extends Modal {
     const open = header.createEl('button', { cls: 'mod-cta rb-edit-open', text: 'Open note' });
     open.onclick = () => {
       this.close();
-      void this.app.workspace.getLeaf(false).openFile(this.file);
+      void this.app.workspace.getLeaf('tab').openFile(this.file);
     };
 
     // Custom red close button in the header (the default modal × is hidden).

@@ -1,6 +1,6 @@
-import { App, Setting, debounce } from 'obsidian';
+import { App, DropdownComponent, Setting, debounce } from 'obsidian';
 import type { CardSize, DatabaseConfig, GalleryLayout, GroupColumnConfig, SortDir, ViewConfig, ViewType } from '../types';
-import { propertyLabel, TITLE_SORT_KEY } from '../config';
+import { NO_SORT_KEY, propertyLabel, TITLE_SORT_KEY } from '../config';
 import { countFilterRules } from '../data/filter';
 import { renderPropertyEditor } from './PropertyEditor';
 import { FilterModal } from './FilterModal';
@@ -56,20 +56,25 @@ export function renderViewSettings(
 
   // Sort
   const sort = view.sort ?? { property: TITLE_SORT_KEY, dir: 'asc' as const };
+  let dirDropdown: DropdownComponent | undefined;
   new Setting(container)
     .setName('Sort by')
     .addDropdown((d) => {
+      d.addOption(NO_SORT_KEY, 'None');
       d.addOption(TITLE_SORT_KEY, 'Title');
       for (const p of config.properties) d.addOption(p.name, propertyLabel(p));
       d.setValue(sort.property);
       d.onChange((v) => {
         view.sort = { property: v, dir: (view.sort ?? sort).dir };
+        dirDropdown?.setDisabled(v === NO_SORT_KEY);
         hooks.onChange();
       });
     })
     .addDropdown((d) => {
+      dirDropdown = d;
       d.addOptions({ asc: 'Ascending', desc: 'Descending' });
       d.setValue(sort.dir);
+      d.setDisabled(sort.property === NO_SORT_KEY);
       d.onChange((v) => {
         view.sort = { property: (view.sort ?? sort).property, dir: v as SortDir };
         hooks.onChange();

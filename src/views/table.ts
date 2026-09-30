@@ -1,6 +1,8 @@
-import { Platform } from 'obsidian';
-import type { BoardItem, PropertyConfig, SortDir } from '../types';
+import { Notice, Platform } from 'obsidian';
+import type { BoardItem, PropertyConfig, PropertyType, SortDir } from '../types';
 import { renderField } from '../render/fields';
+import { asArray, asBoolean, fieldValue } from '../render/values';
+import { setProperty } from '../data/properties';
 import { createTitleLink, renderSectionHeader, type RenderContext } from '../render/common';
 import { propertyLabel, TITLE_SORT_KEY } from '../config';
 import { renderPaged } from '../render/paginate';
@@ -44,7 +46,7 @@ function renderTableEl(
   ctx: RenderContext,
   pageKey: string,
 ): void {
-  const table = parent.createEl('table', { cls: 'rb-table' });
+  const table = parent.createDiv({ cls: 'rb-table-wrap' }).createEl('table', { cls: 'rb-table' });
   const headRow = table.createEl('thead').createEl('tr');
 
   // Move column `dragged` to just before column `before`, then persist the new
@@ -106,7 +108,70 @@ function renderTableEl(
     const tr = tbody.createEl('tr', { cls: 'rb-tr' });
     createTitleLink(ctx, tr.createEl('td', { cls: 'rb-td' }), item);
     for (const prop of props) {
-      renderField(ctx, tr.createEl('td', { cls: 'rb-td' }), item, prop);
+      const td = tr.createEl('td', { cls: 'rb-td' });
+      renderField(ctx, td, item, prop);
+      makeEditable(ctx, td, item, prop);
     }
   }, { key: pageKey, store: ctx.ui.pages });
+}
+
+/** Property types whose table cells can be edited in place. */
+const EDITABLE: ReadonlySet<PropertyType> = new Set(['text', 'number', 'multi', 'checkbox']);
+
+/**
+ * Inline editing: a click toggles a checkbox; a double-click opens an input for
+ * text / number / multi (comma-separated). The metadata-change refresh repaints.
+ */
+function makeEditable(ctx: RenderContext, td: HTMLElement, item: BoardItem, prop: PropertyConfig): void {
+  if (!EDITABLE.has(prop.type)) return;
+  td.addClass('rb-td-editable');
+  const write = (value: string | string[] | null): void => {
+    setProperty(ctx.app, item.file, prop, value).catch((e) =>
+      new Notice(`R Board: could not update ${prop.name} — ${(e as Error).message}`),
+    );
+  };
+
+  if (prop.type === 'checkbox') {
+    td.addClass('rb-td-toggle');
+    td.onclick = () => write(String(!(asBoolean(fieldValue(item, prop)) ?? false)));
+    return;
+  }
+
+  td.setAttr('title', 'Double-click to edit');
+  td.ondblclick = () => {
+    const raw = fieldValue(item, prop);
+    const initial = prop.type === 'multi' ? asArray(raw).join(', ') : raw == null ? '' : String(raw);
+    td.empty();
+    const input = td.createEl('input', {
+      cls: 'rb-cell-input',
+      attr: { type: prop.type === 'number' ? 'number' : 'text' },
+    });
+    input.value = initial;
+    input.focus();
+    input.select();
+
+    let done = false;
+    const finish = (save: boolean): void => {
+      if (done) return;
+      done = true;
+      const next = input.value.trim();
+      if (!save || next === initial.trim()) {
+        td.empty();
+        renderField(ctx, td, item, prop);
+        return;
+      }
+      input.disabled = true;
+      if (next === '') write(null);
+      else if (prop.type === 'multi') write(next.split(',').map((s) => s.trim()).filter((s) => s !== ''));
+      else write(next);
+    };
+    input.onkeydown = (e) => {
+      if (e.key === 'Enter') finish(true);
+      else if (e.key === 'Escape') {
+        e.stopPropagation();
+        finish(false);
+      }
+    };
+    input.onblur = () => finish(true);
+  };
 }
