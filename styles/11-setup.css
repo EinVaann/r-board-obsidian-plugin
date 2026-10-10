@@ -26,7 +26,8 @@
 }
 
 /* ===================== Wizard / settings forms ===================== */
-.modal:has(.rb-wizard) { width: min(620px, 90vw); }
+body:not(.is-phone) .modal:has(.rb-wizard) { width: min(620px, 90vw); }
+.rb-wizard-actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 16px; }
 .rb-wizard .rb-wizard-hint { color: var(--text-muted); font-size: 12px; margin: -4px 0 10px; }
 .rb-wizard h4 {
   margin: 20px 0 6px;
@@ -44,6 +45,8 @@
   background: var(--background-secondary);
 }
 .rb-prop-card.rb-open { border-color: var(--background-modifier-border-hover); }
+/* The sortable wrapper around each property card. */
+.rb-prop-row { border-radius: 10px; }
 
 .rb-prop-head {
   display: flex;
@@ -93,6 +96,8 @@
   padding: 12px 14px 14px 38px;
   border-top: 1px solid var(--background-modifier-border);
 }
+/* Radix keeps a collapsed body mounted with [hidden]; don't let display: grid show it. */
+.rb-prop-body[hidden] { display: none; }
 .rb-prop-field { display: flex; flex-direction: column; gap: 5px; min-width: 0; }
 .rb-prop-field-wide { grid-column: 1 / -1; }
 .rb-prop-field-label {
@@ -125,15 +130,3 @@
   .rb-prop-type-icon { display: none; }
   .rb-prop-body { padding-left: 14px; }
 }
-
-/* Filter rows (FilterModal still uses Setting). */
-.rb-filter-row.setting-item { border: none; padding: 6px 0; }
-.rb-filter-row .setting-item-info { display: none; }
-.rb-filter-row .setting-item-control {
-  width: 100%;
-  justify-content: flex-start;
-  gap: 8px;
-  flex-wrap: wrap;
-}
-.rb-filter-row .setting-item-control select,
-.rb-filter-row .setting-item-control input { flex: 1 1 120px; }

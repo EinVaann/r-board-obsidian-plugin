@@ -1,0 +1,73 @@
+/* ===================== Phones: bottom sheets + layout ===================== */
+/* Modals open as bottom sheets on phones (see src/ui/sheet.ts). */
+.modal-container.rb-sheet-container { align-items: flex-end; }
+.modal.rb-sheet {
+  width: 100vw;
+  max-width: 100vw;
+  max-height: calc(100% - var(--safe-area-inset-top, 0px) - 24px);
+  margin: 0;
+  padding-bottom: var(--safe-area-inset-bottom, 0px);
+  border-radius: 16px 16px 0 0;
+  border-bottom: none;
+  animation: rb-sheet-up 0.22s cubic-bezier(0.2, 0.9, 0.3, 1);
+  transition: transform 0.2s ease;
+}
+.modal.rb-sheet.rb-sheet-dragging { transition: none; }
+.modal.rb-sheet.rb-sheet-leaving { transition: transform 0.18s ease-in; }
+@keyframes rb-sheet-up {
+  from { transform: translateY(100%); }
+}
+/* Grab handle at the top of the sheet. */
+.rb-sheet-handle {
+  flex: 0 0 auto;
+  align-self: center;
+  width: 40px;
+  height: 5px;
+  margin: 8px auto 2px;
+  border-radius: 999px;
+  background: var(--background-modifier-border-hover);
+}
+/* Swiping starts on the handle / header, so the browser mustn't scroll there. */
+.rb-sheet-grip { touch-action: none; }
+/* Settings sheets keep one height while switching tabs. */
+.modal.rb-sheet.rb-settings-modal { height: calc(100% - var(--safe-area-inset-top, 0px) - 24px); }
+/* The note editor fills the sheet. */
+.modal.rb-sheet.rb-edit-modal { height: calc(100% - var(--safe-area-inset-top, 0px) - 24px); }
+.rb-sheet.rb-edit-modal .modal-content { flex: 1 1 auto; min-height: 0; display: flex; flex-direction: column; }
+.rb-sheet .rb-edit-embed { flex: 1 1 auto; height: auto; }
+
+/* --- Settings content on phones --- */
+/* Tabs share the width evenly. */
+.is-phone .rb-settings-tabs { overflow-x: visible; }
+.is-phone .rb-wizard .rb-settings-tab { flex: 1 1 0; justify-content: center; padding: 10px 6px; }
+/* Stacked rows (label above, control below): controls take the full width. */
+.is-phone .rb-settings-body .setting-item-control select,
+.is-phone .rb-settings-body .setting-item-control input[type='text'] { flex: 1 1 0; min-width: 0; }
+.is-phone .rb-segmented { display: flex; width: 100%; }
+.is-phone .rb-wizard .rb-segment { flex: 1 1 0; padding: 8px 6px; }
+/* Bigger touch targets for drag handles and icon buttons. */
+.is-phone .rb-drag-handle { padding: 8px 4px; }
+.is-phone .rb-drag-handle svg { width: 18px; height: 18px; }
+.is-phone .rb-wizard .rb-icon-btn { width: 38px; height: 38px; }
+.is-phone .rb-prop-body { padding-left: 14px; }
+.is-phone .rb-wizard .rb-prop-remove-wide { display: flex; align-items: center; justify-content: center; gap: 8px; width: 100%; }
+
+/* Wizard: actions pinned at the bottom as full-width buttons. */
+.is-phone .rb-wizard-actions {
+  position: sticky;
+  bottom: 0;
+  padding: 12px 0 4px;
+  background: var(--modal-background, var(--background-primary));
+}
+.is-phone .rb-wizard-actions > button { flex: 1 1 0; height: 44px; }
+
+/* Filter builder: each rule wraps — conjunction + menu on top, then the
+   property / operator pair, then the value at full width. */
+.is-phone .rb-filter-line { flex-wrap: wrap; align-items: center; row-gap: 6px; }
+.is-phone .rb-filter-prefix { flex: 1 1 auto; }
+.is-phone .rb-filter-line > .rb-filter-row-menu { order: 2; margin-left: auto; }
+.is-phone .rb-filter-line > .rb-filter-rule,
+.is-phone .rb-filter-line > .rb-filter-group-box { order: 3; flex: 1 1 100%; }
+.is-phone .rb-filter-rule { flex-wrap: wrap; }
+.is-phone .rb-filter-rule > .rb-filter-select { flex: 1 1 40%; min-width: 0; }
+.is-phone .rb-filter-rule > .rb-filter-value { flex: 1 1 100%; }

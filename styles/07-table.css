@@ -22,7 +22,9 @@
 .rb-th-draggable:active { cursor: grabbing; }
 .rb-th-dragging { opacity: 0.4; }
 /* Drop target: a colored line on the left edge where the column will land. */
-.rb-th-drop { box-shadow: inset 2px 0 0 0 var(--interactive-accent); }
+.rb-th-dragging { position: relative; z-index: 1; }
+/* Stand-ins for rows scrolled out of view (virtualized table body). */
+.rb-spacer-row, .rb-spacer-row:hover { background: none; }
 .rb-td {
   padding: 8px 10px;
   border-bottom: 1px solid var(--background-modifier-border);
@@ -39,3 +41,40 @@
 }
 .rb-td .rb-img { width: 48px; }
 .rb-td .rb-img img { aspect-ratio: 3 / 4; object-fit: cover; border-radius: 4px; }
+
+/* Numbered pages under a table (view.paging = "pages"). */
+.rb-pager {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 8px 16px;
+  padding: 12px 2px 4px;
+}
+.rb-pager-range { font-size: 12px; color: var(--text-muted); }
+.rb-pager-pages { display: flex; align-items: center; gap: 4px; }
+.rb-pager-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 30px;
+  height: 30px;
+  padding: 0 8px;
+  border: 1px solid transparent;
+  border-radius: 7px;
+  background: transparent;
+  box-shadow: none;
+  color: var(--text-muted);
+  font-size: 13px;
+  cursor: pointer;
+}
+.rb-pager-btn:hover:not(:disabled) { background: var(--background-modifier-hover); color: var(--text-normal); }
+.rb-pager-btn.rb-active {
+  border-color: var(--background-modifier-border);
+  background: var(--background-modifier-hover);
+  color: var(--text-normal);
+  font-weight: 600;
+}
+.rb-pager-btn:disabled { opacity: 0.35; cursor: default; }
+.rb-pager-btn svg { width: 16px; height: 16px; }
+.rb-pager-gap { padding: 0 4px; color: var(--text-faint); }

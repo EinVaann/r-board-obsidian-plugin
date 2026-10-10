@@ -19,6 +19,9 @@
   overflow-x: hidden;
   padding: 16px;
 }
+/* <Icon> wrapper span (svg drawn by setIcon). */
+.rb-icon { display: inline-flex; align-items: center; justify-content: center; }
+.rb-body-inner { min-height: 100%; }
 .rb-empty {
   color: var(--text-muted);
   padding: 32px 0;

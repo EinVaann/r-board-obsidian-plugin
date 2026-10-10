@@ -95,6 +95,9 @@ export type CardSize = 'small' | 'medium' | 'large';
 /** Gallery tiling layout. */
 export type GalleryLayout = 'masonry' | 'grid';
 
+/** How a long list is split: a growing "View more" list, or numbered pages. */
+export type PagingMode = 'more' | 'pages';
+
 /**
  * A saved view over the database: a layout plus its own visibility, limit,
  * filter, and grouping.
@@ -125,6 +128,8 @@ export interface ViewConfig {
   showContent?: boolean;
   /** Gallery tiling (defaults to `masonry`). */
   layout?: GalleryLayout;
+  /** Table paging (defaults to `more`). `limit` is the page size. */
+  paging?: PagingMode;
 }
 
 /** Per-column display overrides for a kanban view. */

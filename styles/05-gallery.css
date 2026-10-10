@@ -1,25 +1,18 @@
 /* ===================== Gallery ===================== */
-/* Card width per size (drives masonry column width and grid track size). */
+/* Lanes and positions are computed in GalleryView (virtualized); card widths
+   there must match these sizes. */
 .rb-gallery.rb-size-small { --rb-card-w: 160px; }
 .rb-gallery.rb-size-medium { --rb-card-w: 220px; }
 .rb-gallery.rb-size-large { --rb-card-w: 300px; }
 
-/* Masonry: CSS multi-column, sized by card width. */
-.rb-gallery-masonry {
-  column-width: var(--rb-card-w, 220px);
-  column-gap: 14px;
-}
-.rb-gallery-masonry .rb-gallery-card {
-  display: inline-block;
-  width: 100%;
-  margin: 0 0 14px;
-  break-inside: avoid;
-}
-
-/* Grid: fixed-size tiles. */
-.rb-gallery-grid {
+/* A virtualized list: absolutely positioned items inside a sized box. */
+.rb-vlist { position: relative; width: 100%; }
+.rb-vitem { position: absolute; top: 0; left: 0; }
+/* Grid layout: one virtual item per row of fixed tiles. */
+.rb-vgrid-row {
+  right: 0;
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(var(--rb-card-w, 220px), 1fr));
   gap: 14px;
   align-items: start;
 }
+.rb-gallery-virtual .rb-view-more { margin-top: 14px; }

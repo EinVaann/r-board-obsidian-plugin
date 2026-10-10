@@ -26,9 +26,9 @@
 /* Hide the board's own bottom scrollbar — the synced top one is used instead. */
 .rb-kanban::-webkit-scrollbar { height: 0; }
 .rb-kanban { --rb-col-w: 280px; --rb-cover-h: 120px; }
-.rb-kanban.rb-size-small { --rb-col-w: 220px; --rb-cover-h: 90px; }
-.rb-kanban.rb-size-medium { --rb-col-w: 280px; --rb-cover-h: 120px; }
-.rb-kanban.rb-size-large { --rb-col-w: 340px; --rb-cover-h: 170px; }
+.rb-kanban.rb-size-small, .rb-drag-ghost.rb-size-small { --rb-col-w: 220px; --rb-cover-h: 90px; }
+.rb-kanban.rb-size-medium, .rb-drag-ghost.rb-size-medium { --rb-col-w: 280px; --rb-cover-h: 120px; }
+.rb-kanban.rb-size-large, .rb-drag-ghost.rb-size-large { --rb-col-w: 340px; --rb-cover-h: 170px; }
 
 .rb-kanban-col {
   flex: 0 0 var(--rb-col-w);
@@ -54,12 +54,8 @@
 .rb-kanban-header.rb-draggable { cursor: grab; }
 .rb-kanban-header.rb-draggable:active { cursor: grabbing; }
 
-/* Column being dragged / drop target while reordering columns. */
+/* Column being dragged while reordering columns. */
 .rb-col-dragging { opacity: 0.45; }
-.rb-col-drop {
-  outline: 2px solid var(--interactive-accent);
-  outline-offset: -2px;
-}
 
 /* "Add group" column. */
 .rb-kanban-add {
@@ -136,9 +132,10 @@
   outline-offset: -4px;
   border-radius: 8px;
 }
-/* Cards keep their natural height — never shrink to thin strips. */
+/* Cards keep their natural height — never shrink to thin strips. The slot is
+   the draggable; `manipulation` lets a long-press start a drag on touch. */
+.rb-kanban-card-slot { flex: 0 0 auto; touch-action: manipulation; }
 .rb-kanban-card {
-  flex: 0 0 auto;
   cursor: grab;
   transition: transform 0.12s ease, box-shadow 0.12s ease, opacity 0.12s ease;
 }
@@ -170,20 +167,19 @@
 @media (hover: none) { .rb-card-menu { opacity: 1; } }
 .rb-card-menu:hover { background: rgba(0, 0, 0, 0.75); }
 .rb-card-menu svg { width: 18px; height: 18px; }
-.rb-kanban-card.rb-dragging {
+/* The card left behind while its overlay copy follows the pointer. */
+.rb-kanban-card-slot.rb-dragging .rb-kanban-card {
   opacity: 0.4;
   transform: scale(0.97) rotate(-1deg);
 }
 /* The "View More" button inside a column shouldn't shrink either. */
 .rb-kanban-list .rb-view-more { flex: 0 0 auto; }
 
-/* Floating clone used as the drag image (lives off-screen on <body>). */
+/* The card following the pointer while dragging (dnd-kit DragOverlay). */
 .rb-drag-ghost {
-  position: fixed;
-  top: -9999px;
-  left: -9999px;
   pointer-events: none;
+  cursor: grabbing;
   transform: rotate(2deg);
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
   opacity: 0.95;
 }
+.rb-drag-ghost .rb-kanban-card { box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35); }

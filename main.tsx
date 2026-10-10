@@ -3,9 +3,10 @@ import { BOARD_EXTENSION, BOARD_VIEW_TYPE, BoardView } from './src/BoardView';
 import { BoardHomeView, HOME_VIEW_TYPE } from './src/home/HomeView';
 import { serializeDatabase } from './src/config';
 import type { DatabaseConfig } from './src/types';
-import { WizardModal } from './src/ui/WizardModal';
+import { openWizard } from './src/settings/Wizard';
 import { parseRecipe } from './src/recipe/parse';
-import { renderRecipe } from './src/recipe/render';
+import { Recipe } from './src/recipe/Recipe';
+import { ReactRenderChild } from './src/react/mount';
 
 interface RBoardData {
   /** Active view name chosen per database, keyed by the `.board` file path. */
@@ -23,8 +24,8 @@ export default class RBoardPlugin extends Plugin {
     this.registerExtensions([BOARD_EXTENSION], BOARD_VIEW_TYPE);
 
     // Interactive recipe blocks: ```recipe → portions-scaled ingredients/times.
-    this.registerMarkdownCodeBlockProcessor('recipe', (source, el) => {
-      renderRecipe(el, parseRecipe(source));
+    this.registerMarkdownCodeBlockProcessor('recipe', (source, el, ctx) => {
+      ctx.addChild(new ReactRenderChild(this.app, el, <Recipe recipe={parseRecipe(source)} />));
     });
 
     this.addRibbonIcon('circuit-board', 'R Board', () => void this.openHome());
@@ -77,7 +78,7 @@ export default class RBoardPlugin extends Plugin {
     const existing = this.app.workspace.getLeavesOfType(HOME_VIEW_TYPE);
     if (existing.length > 0) {
       this.app.workspace.revealLeaf(existing[0]);
-      void (existing[0].view as BoardHomeView).render();
+      (existing[0].view as BoardHomeView).render();
       return;
     }
     const leaf: WorkspaceLeaf = this.app.workspace.getLeaf(true);
@@ -99,9 +100,9 @@ export default class RBoardPlugin extends Plugin {
   }
 
   private openCreateWizard(folderPath?: string): void {
-    new WizardModal(this.app, {}, 'Create database', (config) => {
+    openWizard(this.app, {}, 'Create database', (config) => {
       void this.createDatabaseFromConfig(config, folderPath);
-    }).open();
+    });
   }
 
   /** Write a new `.board` file from a config and open it. */

@@ -1,12 +1,15 @@
 /* ===================== Settings modal (board / view settings) ===================== */
 /* Fixed size so switching tabs doesn't make the modal jump around. */
 .modal.rb-settings-modal {
-  width: min(760px, 94vw);
-  height: min(680px, 88vh);
   display: flex;
   flex-direction: column;
 }
-.rb-settings-modal .modal-content.rb-settings {
+body:not(.is-phone) .modal.rb-settings-modal {
+  width: min(760px, 94vw);
+  height: min(680px, 88vh);
+}
+.rb-settings-modal .modal-content,
+.rb-settings-modal .rb-settings {
   flex: 1 1 auto;
   min-height: 0;
   display: flex;
@@ -35,7 +38,7 @@
   white-space: nowrap;
 }
 .rb-wizard .rb-settings-tab:hover { background: var(--background-modifier-hover); color: var(--text-normal); }
-.rb-wizard .rb-settings-tab.rb-active {
+.rb-wizard .rb-settings-tab[data-state='active'] {
   border-bottom-color: var(--interactive-accent);
   color: var(--text-normal);
 }
@@ -49,6 +52,7 @@
   overflow-y: auto;
   padding: 8px 2px 16px;
 }
+.rb-settings-body[hidden] { display: none; }
 /* Settings rows: label left, control right, light separators. */
 .rb-settings-body .setting-item {
   border: none;
@@ -100,13 +104,13 @@
 }
 .rb-drag-handle:hover { color: var(--text-muted); }
 .rb-drag-handle svg { width: 16px; height: 16px; }
-.rb-dragging {
+.rb-wizard .rb-dragging {
   position: relative;
   z-index: 1;
   box-shadow: 0 6px 18px rgba(0, 0, 0, 0.3);
   cursor: grabbing;
 }
-.rb-dragging .rb-drag-handle { cursor: grabbing; }
+.rb-wizard .rb-dragging .rb-drag-handle { cursor: grabbing; }
 
 /* Segmented control. */
 .rb-segmented {
@@ -128,7 +132,7 @@
   font-size: 12px;
 }
 .rb-wizard .rb-segment:hover { background: var(--background-modifier-hover); color: var(--text-normal); }
-.rb-wizard .rb-segment.rb-active {
+.rb-wizard .rb-segment[data-state='on'] {
   background: var(--interactive-accent);
   color: var(--text-on-accent);
 }
@@ -162,7 +166,7 @@
   padding: 6px 8px 6px 6px;
   background: var(--background-primary);
 }
-.rb-vis-row:not(:last-child) { border-bottom: 1px solid var(--background-modifier-border); }
+.rb-vis-row-wrap:not(:last-child) { border-bottom: 1px solid var(--background-modifier-border); }
 .rb-vis-type { display: inline-flex; color: var(--text-muted); }
 .rb-vis-type svg { width: 16px; height: 16px; }
 .rb-vis-text { flex: 1 1 auto; min-width: 0; display: flex; align-items: baseline; gap: 8px; }
@@ -172,27 +176,42 @@
 .rb-vis-row.rb-hidden .rb-vis-text { opacity: 0.45; }
 .rb-vis-row.rb-hidden .rb-vis-name { text-decoration: line-through; }
 
+/* ── Switch (Radix), styled like Obsidian's toggle ── */
+.rb-wizard .rb-switch {
+  all: unset;
+  position: relative;
+  flex: 0 0 auto;
+  width: 40px;
+  height: 22px;
+  border-radius: 999px;
+  background: var(--background-modifier-border-hover);
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+.rb-wizard .rb-switch[data-state='checked'] { background: var(--interactive-accent); }
+.rb-wizard .rb-switch:focus-visible { box-shadow: 0 0 0 2px var(--background-modifier-border-focus); }
+.rb-switch-thumb {
+  display: block;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: white;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+  transform: translateX(2px);
+  transition: transform 0.15s ease;
+}
+.rb-switch-thumb[data-state='checked'] { transform: translateX(20px); }
+
 /* ── Column config (kanban view settings) ── */
 .rb-col-config-list { display: flex; flex-direction: column; gap: 8px; margin-bottom: 10px; }
 .rb-col-config-row {
   display: flex;
   align-items: center;
   gap: 8px;
-  padding: 8px 10px;
+  padding: 8px 10px 8px 4px;
   border: 1px solid var(--background-modifier-border);
   border-radius: 8px;
   background: var(--background-secondary);
-}
-.rb-col-order-wrap { flex: 0 0 auto; }
-.rb-col-order-input {
-  width: 42px;
-  padding: 5px 6px;
-  border-radius: 6px;
-  border: 1px solid var(--background-modifier-border);
-  background: var(--background-primary);
-  color: var(--text-normal);
-  font-size: 13px;
-  text-align: center;
 }
 .rb-col-config-fields {
   flex: 1 1 auto;
@@ -208,18 +227,20 @@
 }
 .rb-col-field-input {
   width: 100%;
-  padding: 5px 9px;
+  height: 32px;
+  padding: 0 9px;
   border-radius: 6px;
   border: 1px solid var(--background-modifier-border);
   background: var(--background-primary);
   color: var(--text-normal);
   font-size: 13px;
 }
+.rb-col-options { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 18px; }
 .rb-col-color-wrap,
 .rb-col-hidden-wrap {
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: 8px;
 }
 .rb-col-color-label,
 .rb-col-hidden-label { font-size: 12px; color: var(--text-muted); }
@@ -232,28 +253,9 @@
   background: transparent;
   cursor: pointer;
 }
-.rb-col-clear-color {
-  padding: 2px 6px;
-  border-radius: 5px;
-  border: 1px solid var(--background-modifier-border);
-  background: transparent;
-  color: var(--text-muted);
-  cursor: pointer;
-  font-size: 11px;
-}
-.rb-col-clear-color:hover { color: var(--text-error); border-color: var(--text-error); }
-.rb-col-remove-btn {
-  flex: 0 0 auto;
-  padding: 4px 8px;
-  border-radius: 6px;
-  border: 1px solid var(--background-modifier-border);
-  background: transparent;
-  color: var(--text-muted);
-  cursor: pointer;
-  font-size: 14px;
-  line-height: 1;
-}
-.rb-col-remove-btn:hover { color: var(--text-error); border-color: var(--text-error); }
+.rb-wizard .rb-col-clear-color { width: 24px; height: 24px; }
+.rb-wizard .rb-col-remove-btn:hover,
+.rb-wizard .rb-col-clear-color:hover { color: var(--text-error); }
 
 .rb-col-add-row {
   display: flex;
@@ -263,21 +265,13 @@
 }
 .rb-col-add-input {
   flex: 1 1 auto;
-  padding: 6px 10px;
+  height: 34px;
+  padding: 0 10px;
   border-radius: 7px;
   border: 1px solid var(--background-modifier-border);
   background: var(--background-primary);
   color: var(--text-normal);
   font-size: 13px;
 }
-.rb-col-add-btn {
-  flex: 0 0 auto;
-  padding: 6px 12px;
-  border-radius: 7px;
-  border: 1px solid var(--background-modifier-border);
-  background: var(--background-primary);
-  color: var(--text-normal);
-  cursor: pointer;
-  font-size: 13px;
-}
-.rb-col-add-btn:hover { background: var(--background-modifier-hover); }
+.rb-wizard .rb-col-add-btn { display: inline-flex; align-items: center; gap: 6px; }
+.rb-col-add-btn svg { width: 14px; height: 14px; }

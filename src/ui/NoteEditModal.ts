@@ -1,5 +1,6 @@
 import { Component, MarkdownRenderer, Modal, TFile, type App, type WorkspaceLeaf } from 'obsidian';
 import { DetachedEditorHost } from './DetachedEditorHost';
+import { applySheet } from './sheet';
 
 /**
  * In-place note editor. Opens when a card/row is clicked instead of opening the
@@ -44,6 +45,7 @@ export class NoteEditModal extends Modal {
     // Custom red close button in the header (the default modal × is hidden).
     const close = header.createEl('button', { cls: 'rb-edit-close', text: '✕', attr: { 'aria-label': 'Close' } });
     close.onclick = () => this.close();
+    applySheet(this, [header]);
 
     const embed = contentEl.createDiv({ cls: 'rb-edit-embed' });
     await this.embedEditor(embed);

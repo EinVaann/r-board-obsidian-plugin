@@ -1,6 +1,6 @@
 /* ===================== In-place note edit modal ===================== */
 /* Roomy, note-shaped modal that hosts a real embedded editor. */
-.rb-edit-modal {
+body:not(.is-phone) .rb-edit-modal {
   width: 820px;
   max-width: 92vw;
 }

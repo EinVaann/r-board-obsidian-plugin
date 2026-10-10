@@ -124,6 +124,7 @@ function parseView(raw: unknown, index: number): ViewConfig | null {
     cardSize: CARD_SIZES.has(v.cardSize as CardSize) ? (v.cardSize as CardSize) : undefined,
     showContent: typeof v.showContent === 'boolean' ? v.showContent : undefined,
     layout: v.layout === 'grid' ? 'grid' : v.layout === 'masonry' ? 'masonry' : undefined,
+    paging: v.paging === 'pages' ? 'pages' : undefined,
   };
 }
 
@@ -207,6 +208,7 @@ export function serializeDatabase(config: DatabaseConfig): string {
     if (v.cardSize) view.cardSize = v.cardSize;
     if (v.showContent) view.showContent = v.showContent;
     if (v.layout) view.layout = v.layout;
+    if (v.paging === 'pages') view.paging = v.paging;
     return view;
   });
   if (config.defaultView) out.defaultView = config.defaultView;

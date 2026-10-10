@@ -94,6 +94,7 @@ A database is a single `.board` file (JSON). Opening it shows the board pane wit
 - **`cardSize`** (gallery/kanban) — `"small"` | `"medium"` | `"large"`. Kanban cards are a fixed size per setting.
 - **`showContent`** (gallery/kanban) — `true` renders an excerpt of each note's body on the card, and a **content-type badge** (e.g. `Recipe`) when the body matches a known type.
 - **`layout`** (gallery) — `"masonry"` (default) or `"grid"` (fixed tiles).
+- **`paging`** (table) — `"more"` (default: a "View More" button grows the list) or `"pages"` (numbered pages; `limit` is the page size).
 
 ## Data source
 
@@ -103,7 +104,7 @@ A database is a single `.board` file (JSON). Opening it shows the board pane wit
 ## Views
 
 - **Gallery** — masonry or fixed grid of cards; optional note-content excerpts. Not draggable.
-- **Kanban** — one column per value of the `group` property, plus an Uncategorized column. Cards can be dragged between columns, which **rewrites the group property** in the note's frontmatter (dropping into Uncategorized clears it). Fixed card size.
+- **Kanban** — one column per value of the `group` property, plus an Uncategorized column. Cards can be dragged between columns, which **rewrites the group property** in the note's frontmatter (dropping into Uncategorized clears it); columns reorder by dragging their header. On touch screens, long-press a card or header to start dragging. Fixed card size.
 - **Table** — one row per note, a column per visible property; click a header to sort.
 - **Recipe** — one card per note showing its title, properties, and full interactive [recipe block](#recipes). The card isn't click-to-open (so the portions stepper stays usable); the title link opens the note.
 
@@ -159,10 +160,14 @@ Overlapping conditions resolve by specificity (exact beats range beats bound bea
 npm install      # restore dependencies
 npm run dev      # watch build (main.js + styles.css)
 npm run build    # production build
-npm test         # run the unit tests (vitest)
+npm test         # unit tests + UI smoke tests (vitest)
 ```
 
-CSS lives as numbered partials under `styles/` and is concatenated into `styles.css` by `build-css.mjs`. The recipe token parser/resolver (`src/recipe/token.ts`) is pure and covered by tests.
+The UI is React 19. `src/BoardView.tsx` is the Obsidian side (file, vault events) and mounts `src/board/BoardApp.tsx`; each open board has its own Zustand store (`src/board/store.ts`), and config edits are Immer recipes so unchanged views and cards keep their identity and skip re-rendering. Libraries: dnd-kit (all drag and drop, touch included), TanStack Virtual (gallery and table only render what's on screen), Radix UI primitives (settings tabs, switches, segmented controls, collapsibles), styled with Obsidian's CSS variables.
+
+`npm run dev` bundles React's development build (slower, with extra checks); judge performance with `npm run build`.
+
+CSS lives as numbered partials under `styles/` and is concatenated into `styles.css` by `build-css.mjs`. The recipe token parser/resolver (`src/recipe/token.ts`) is pure and covered by tests; `src/test/board.smoke.test.tsx` renders every view and settings tab against a mock vault (`src/test/obsidian-mock.ts`) under happy-dom.
 
 ## Out of scope (for now)
 

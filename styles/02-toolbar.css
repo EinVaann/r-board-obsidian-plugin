@@ -27,15 +27,36 @@
 }
 /* Divider between the tabs row and the controls (search/sort/filter) row. */
 .rb-tabs-row {
+  position: relative;
   padding-bottom: 8px;
   border-bottom: 1px solid var(--background-modifier-border);
 }
+/* As many tabs as fit stay in the row (counted in JS); never wrap. */
+.rb-tabs-row .rb-view-switch { flex: 0 1 auto; min-width: 0; flex-wrap: nowrap; }
+.rb-view-switch > .rb-view-btn,
+.rb-view-add-wrap { flex: 0 0 auto; white-space: nowrap; }
+.rb-view-add-wrap { display: flex; }
+.rb-tabs-row .rb-tools { flex: 0 0 auto; }
+/* Off-screen copies of the tabs, only measured. */
+.rb-tab-measure {
+  position: absolute;
+  top: 0;
+  left: 0;
+  display: flex;
+  width: max-content;
+  height: 0;
+  overflow: hidden;
+  visibility: hidden;
+  pointer-events: none;
+}
+.rb-tab-measure > * { flex: 0 0 auto; white-space: nowrap; }
 .rb-spacer { flex: 1 1 auto; }
-.rb-tools { display: flex; gap: 6px; }
+.rb-tools { display: flex; align-items: center; gap: 6px; }
 
 /* View tabs */
 .rb-view-switch {
   display: flex;
+  align-items: center;
   gap: 4px;
   flex-wrap: wrap;
 }
@@ -114,20 +135,34 @@
   cursor: pointer;
 }
 .rb-tool-btn:hover { background: var(--background-modifier-hover); color: var(--text-normal); }
-.rb-tool-btn.rb-active {
-  border-color: var(--interactive-accent);
-  color: var(--text-accent);
-}
 .rb-tool-btn svg { width: 17px; height: 17px; }
 
-/* On narrow screens: hide text labels, keep icons only. */
-@media (max-width: 480px) {
-  .rb-chip > span:not(.rb-chip-icon) { display: none; }
-  .rb-chip { padding: 6px 8px; }
-  .rb-new-note > span:not(.rb-new-note-icon) { display: none; }
-  .rb-new-note { padding: 7px 9px; }
-  .rb-search { min-width: 80px; flex-basis: 120px; }
+/* Count badge on a chip (e.g. number of filter rules). */
+.rb-chip-badge {
+  min-width: 18px;
+  padding: 0 5px;
+  border-radius: 999px;
+  background: var(--interactive-accent);
+  color: var(--text-on-accent);
+  font-size: 11px;
+  font-weight: 600;
+  line-height: 18px;
+  text-align: center;
 }
+
+/* Compact toolbar (narrow pane or phone; set from the measured width): one
+   view dropdown, icon-only buttons and chips, search takes the free space. */
+.rb-compact .rb-tabs-row { gap: 6px; }
+.rb-compact .rb-view-switch { flex-wrap: nowrap; min-width: 0; }
+.rb-compact .rb-view-more-btn { min-width: 0; max-width: 100%; }
+.rb-compact .rb-view-more-btn > span:not(.rb-icon) { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.rb-compact .rb-tools { flex: 0 0 auto; }
+.rb-compact .rb-chip-label,
+.rb-compact .rb-new-note-label { display: none; }
+.rb-compact .rb-chip { padding: 6px 8px; }
+.rb-compact .rb-new-note { padding: 7px 9px; }
+.rb-compact .rb-controls-row { flex-wrap: nowrap; }
+.rb-compact .rb-search { flex: 1 1 auto; min-width: 0; }
 
 /* "New note" button */
 .rb-new-note {
@@ -147,3 +182,7 @@
 .rb-new-note:hover { background: var(--interactive-accent-hover); }
 .rb-new-note-icon { display: inline-flex; }
 .rb-new-note-icon svg { width: 15px; height: 15px; }
+
+/* "N more" view dropdown (views past the first three). */
+.rb-view-more-caret { opacity: 0.7; }
+.rb-view-more-caret svg { width: 14px; height: 14px; }
