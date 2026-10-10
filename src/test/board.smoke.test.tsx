@@ -270,6 +270,22 @@ describe('board views', () => {
     expect(count(el, '.rb-kanban-add')).toBe(1);
   });
 
+  it('kanban on mobile: no drag handles, no top scrollbar, menu button stays', async () => {
+    const platform = (await import('obsidian')).Platform as unknown as { isMobile: boolean };
+    platform.isMobile = true;
+    try {
+      const { el, show } = await renderBoard(GAMES);
+      await show('Board');
+      expect(count(el, '.rb-kanban-card')).toBe(40);
+      expect(el.querySelector('.rb-kanban-scrolltop')).toBeNull();
+      expect(count(el, '.rb-kanban-header.rb-draggable')).toBe(0);
+      expect(el.querySelector('.rb-kanban-card-slot')?.getAttribute('role')).toBeNull();
+      expect(count(el, '.rb-card-menu')).toBe(40);
+    } finally {
+      platform.isMobile = false;
+    }
+  });
+
   it('table: header per property, sorted rows, sort toggles', async () => {
     const { el, show, store } = await renderBoard(GAMES);
     await show('Table');

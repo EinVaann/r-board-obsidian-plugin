@@ -1,6 +1,6 @@
 import { memo, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type MouseEvent as ReactMouseEvent, type ReactNode } from 'react';
 import { createPortal } from 'react-dom';
-import { Menu, Notice } from 'obsidian';
+import { Menu, Notice, Platform } from 'obsidian';
 import {
   DndContext,
   DragOverlay,
@@ -26,6 +26,13 @@ import { Icon } from '../react/Icon';
 /** Column id for the Uncategorized bucket (its group key is null). */
 const NONE = '\u0000uncategorized';
 const colId = (key: string | null): string => `col:${key ?? NONE}`;
+
+/**
+ * Drag and drop is desktop-only. On touch it competes with scrolling the board
+ * sideways; phones and tablets move cards with the card menu instead.
+ */
+const canDrag = (): boolean => !Platform.isMobile;
+const NO_SENSORS: never[] = [];
 
 /** Drag payloads, read back in the drop handler. */
 type DragData = { type: 'card'; item: BoardItem } | { type: 'column'; key: string | null };
@@ -140,7 +147,7 @@ export function KanbanView({ config, view, viewIndex, items, properties }: Kanba
   };
 
   return (
-    <DndContext sensors={sensors} collisionDetection={collision} onDragStart={onDragStart} onDragEnd={onDragEnd} onDragCancel={() => setActive(null)}>
+    <DndContext sensors={canDrag() ? sensors : NO_SENSORS} collisionDetection={collision} onDragStart={onDragStart} onDragEnd={onDragEnd} onDragCancel={() => setActive(null)}>
       <TopScrollbar size={view.cardSize ?? 'medium'}>
         <SortableContext items={columns.map((c) => colId(c.key))} strategy={horizontalListSortingStrategy}>
           {columns.map((column) => (
@@ -164,18 +171,20 @@ export function KanbanView({ config, view, viewIndex, items, properties }: Kanba
 
 /**
  * The scrolling board with a thin horizontal scrollbar pinned above it, kept
- * in sync with the board's own (hidden) scrollbar.
+ * in sync with the board's own (hidden) scrollbar. On mobile there's no top
+ * bar: the board just scrolls under the finger.
  */
 function TopScrollbar({ size, children }: { size: string; children: ReactNode }) {
   const topRef = useRef<HTMLDivElement>(null);
   const innerRef = useRef<HTMLDivElement>(null);
   const boardRef = useRef<HTMLDivElement>(null);
+  const mirrored = !Platform.isMobile;
 
   useLayoutEffect(() => {
     const top = topRef.current;
     const inner = innerRef.current;
     const board = boardRef.current;
-    if (!top || !inner || !board) return;
+    if (!mirrored || !top || !inner || !board) return;
     const sync = (): void => {
       inner.style.width = `${board.scrollWidth}px`;
       top.toggleClass('rb-hidden', board.scrollWidth <= board.clientWidth + 1);
@@ -184,12 +193,19 @@ function TopScrollbar({ size, children }: { size: string; children: ReactNode })
     const ro = new ResizeObserver(sync);
     ro.observe(board);
     for (const child of Array.from(board.children)) ro.observe(child);
-    let lock = false;
+    // Setting one side's scrollLeft fires a scroll event on it a moment later.
+    // Remember the value we set and ignore that echo; acting on it would pull
+    // the other side back to a stale position mid-scroll (visible as jitter).
+    const echo = new Map<HTMLElement, number>();
     const mirror = (from: HTMLElement, to: HTMLElement) => () => {
-      if (lock) return;
-      lock = true;
+      const expected = echo.get(from);
+      if (expected !== undefined) {
+        echo.delete(from);
+        if (Math.abs(from.scrollLeft - expected) < 1) return;
+      }
+      if (Math.abs(to.scrollLeft - from.scrollLeft) < 1) return;
+      echo.set(to, from.scrollLeft);
       to.scrollLeft = from.scrollLeft;
-      lock = false;
     };
     const onTop = mirror(top, board);
     const onBoard = mirror(board, top);
@@ -204,9 +220,11 @@ function TopScrollbar({ size, children }: { size: string; children: ReactNode })
 
   return (
     <div className="rb-kanban-wrap">
-      <div ref={topRef} className="rb-kanban-scrolltop">
-        <div ref={innerRef} className="rb-kanban-scrolltop-inner" />
-      </div>
+      {mirrored && (
+        <div ref={topRef} className="rb-kanban-scrolltop">
+          <div ref={innerRef} className="rb-kanban-scrolltop-inner" />
+        </div>
+      )}
       <div ref={boardRef} className={`rb-kanban rb-size-${size}`}>
         {children}
       </div>
@@ -229,10 +247,11 @@ function Column({ column, view, properties, getTargets, groupProp, onMove }: Col
   const { visible, more, remaining } = usePaged(`k:${column.label}`, column.items, view.limit ?? 50);
 
   // The column itself is sortable (by its header); Uncategorized stays put.
+  const draggable = canDrag() && column.key !== null;
   const sortable = useSortable({
     id: colId(column.key),
     data: { type: 'column', key: column.key },
-    disabled: column.key === null,
+    disabled: !draggable,
   });
   // Its card list is the drop target for cards.
   const drop = useDroppable({ id: `drop:${column.key ?? NONE}`, data: { key: column.key } });
@@ -250,10 +269,10 @@ function Column({ column, view, properties, getTargets, groupProp, onMove }: Col
       style={{ transform: CSS.Translate.toString(sortable.transform), transition: sortable.transition }}
     >
       <div
-        className={column.key !== null ? 'rb-kanban-header rb-draggable' : 'rb-kanban-header'}
+        className={draggable ? 'rb-kanban-header rb-draggable' : 'rb-kanban-header'}
         onClick={() => toggle(column.label)}
-        {...sortable.attributes}
-        {...sortable.listeners}
+        {...(draggable ? sortable.attributes : {})}
+        {...(draggable ? sortable.listeners : {})}
       >
         <Icon name={collapsed ? 'chevron-right' : 'chevron-down'} className="rb-kanban-caret" />
         <GroupLabel label={column.label} color={color} className="rb-kanban-title" />
@@ -262,7 +281,7 @@ function Column({ column, view, properties, getTargets, groupProp, onMove }: Col
       <div ref={drop.setNodeRef} className={`rb-kanban-list${draggingCard && drop.isOver ? ' rb-drop-active' : ''}`}>
         {!collapsed && (
           <>
-            {column.items.length === 0 && <div className="rb-kanban-empty-drop">Drop cards here</div>}
+            {column.items.length === 0 && <div className="rb-kanban-empty-drop">{canDrag() ? 'Drop cards here' : 'No cards'}</div>}
             {visible.map((item) => (
               <KanbanCard key={item.file.path} item={item} view={view} properties={properties} getTargets={getTargets} groupProp={groupProp} onMove={onMove} />
             ))}
@@ -285,9 +304,11 @@ interface KanbanCardProps {
 
 const KanbanCard = memo(function KanbanCard({ item, view, properties, getTargets, groupProp, onMove }: KanbanCardProps) {
   const { actions } = useBoardContext();
+  const drag = canDrag();
   const { attributes, listeners, setNodeRef, isDragging } = useDraggable({
     id: item.file.path,
     data: { type: 'card', item },
+    disabled: !drag,
   });
 
   const openMenu = (e: ReactMouseEvent): void => {
@@ -317,8 +338,8 @@ const KanbanCard = memo(function KanbanCard({ item, view, properties, getTargets
       ref={setNodeRef}
       className={isDragging ? 'rb-kanban-card-slot rb-dragging' : 'rb-kanban-card-slot'}
       onContextMenu={openMenu}
-      {...attributes}
-      {...listeners}
+      {...(drag ? attributes : {})}
+      {...(drag ? listeners : {})}
     >
       <Card
         item={item}

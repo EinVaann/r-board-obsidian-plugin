@@ -104,7 +104,7 @@ A database is a single `.board` file (JSON). Opening it shows the board pane wit
 ## Views
 
 - **Gallery** — masonry or fixed grid of cards; optional note-content excerpts. Not draggable.
-- **Kanban** — one column per value of the `group` property, plus an Uncategorized column. Cards can be dragged between columns, which **rewrites the group property** in the note's frontmatter (dropping into Uncategorized clears it); columns reorder by dragging their header. On touch screens, long-press a card or header to start dragging. Fixed card size.
+- **Kanban** — one column per value of the `group` property, plus an Uncategorized column. Cards can be dragged between columns, which **rewrites the group property** in the note's frontmatter (dropping into Uncategorized clears it); columns reorder by dragging their header. On phones and tablets, drag is off so the board scrolls cleanly; move cards with the card's ⋯ → Move to group menu. Fixed card size.
 - **Table** — one row per note, a column per visible property; click a header to sort.
 - **Recipe** — one card per note showing its title, properties, and full interactive [recipe block](#recipes). The card isn't click-to-open (so the portions stepper stays usable); the title link opens the note.
 

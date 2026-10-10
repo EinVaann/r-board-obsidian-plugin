@@ -612,10 +612,12 @@
    the draggable; `manipulation` lets a long-press start a drag on touch. */
 .rb-kanban-card-slot { flex: 0 0 auto; touch-action: manipulation; }
 .rb-kanban-card {
-  cursor: grab;
+  cursor: pointer;
   transition: transform 0.12s ease, box-shadow 0.12s ease, opacity 0.12s ease;
 }
-.rb-kanban-card:active { cursor: grabbing; }
+/* Grab cursors only where cards can be dragged (desktop). */
+body:not(.is-mobile) .rb-kanban-card { cursor: grab; }
+body:not(.is-mobile) .rb-kanban-card:active { cursor: grabbing; }
 /* Floating "⋯" overlay button (top-right of the card). */
 .rb-kanban-card { position: relative; }
 .rb-card-menu {
