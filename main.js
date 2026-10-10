@@ -22,10 +22,10 @@ __export(main_exports, {
   default: () => RBoardPlugin
 });
 module.exports = __toCommonJS(main_exports);
-var import_obsidian14 = require("obsidian");
+var import_obsidian16 = require("obsidian");
 
 // src/BoardView.ts
-var import_obsidian12 = require("obsidian");
+var import_obsidian14 = require("obsidian");
 
 // src/ui/NoteEditModal.ts
 var import_obsidian2 = require("obsidian");
@@ -603,27 +603,27 @@ function openImageModal(app, src) {
 }
 
 // src/render/fields.ts
-function renderField(ctx, parent, item, field) {
-  switch (field.type) {
+function renderField(ctx, parent, item, field2) {
+  switch (field2.type) {
     case "image":
-      return renderImage(ctx.app, parent, item, field);
+      return renderImage(ctx.app, parent, item, field2);
     case "multi":
-      return renderMulti(parent, item, field);
+      return renderMulti(parent, item, field2);
     case "number":
-      return renderNumber(parent, item, field);
+      return renderNumber(parent, item, field2);
     case "checkbox":
-      return renderCheckbox(parent, item, field);
+      return renderCheckbox(parent, item, field2);
     case "links":
-      return renderLinks(ctx, parent, item, field);
+      return renderLinks(ctx, parent, item, field2);
     case "text":
     default:
-      return renderText(parent, item, field);
+      return renderText(parent, item, field2);
   }
 }
-function renderImage(app, parent, item, field) {
-  const url = resolveImageSrc(app, item.file, fieldValue(item, field));
+function renderImage(app, parent, item, field2) {
+  const url = resolveImageSrc(app, item.file, fieldValue(item, field2));
   if (!url) return false;
-  const mode = field.render === "fit" ? "fit" : "fill";
+  const mode = field2.render === "fit" ? "fit" : "fill";
   const wrap = parent.createDiv({ cls: `rb-img rb-img-${mode}` });
   const img = wrap.createEl("img", { attr: { src: url, loading: "lazy" } });
   img.onclick = (e) => {
@@ -632,19 +632,19 @@ function renderImage(app, parent, item, field) {
   };
   return true;
 }
-function affix(field, value) {
-  return `${field.prefix ?? ""}${value}${field.suffix ?? ""}`;
+function affix(field2, value) {
+  return `${field2.prefix ?? ""}${value}${field2.suffix ?? ""}`;
 }
-function addAffixSpans(parent, field, draw) {
-  if (field.prefix) parent.createSpan({ cls: "rb-affix", text: field.prefix });
+function addAffixSpans(parent, field2, draw) {
+  if (field2.prefix) parent.createSpan({ cls: "rb-affix", text: field2.prefix });
   draw();
-  if (field.suffix) parent.createSpan({ cls: "rb-affix", text: field.suffix });
+  if (field2.suffix) parent.createSpan({ cls: "rb-affix", text: field2.suffix });
 }
-function renderText(parent, item, field) {
-  const v = fieldValue(item, field);
+function renderText(parent, item, field2) {
+  const v = fieldValue(item, field2);
   if (v === void 0 || v === null || v === "") return false;
-  const text = affix(field, String(v));
-  const render = field.render ?? "plain";
+  const text = affix(field2, String(v));
+  const render = field2.render ?? "plain";
   if (render === "badge") {
     parent.createSpan({ cls: "rb-badge", text });
   } else if (render === "pill") {
@@ -660,12 +660,12 @@ function pillHue(s) {
   for (let i = 0; i < s.length; i++) h = Math.imul(h, 31) + s.charCodeAt(i) >>> 0;
   return PILL_HUES[h % PILL_HUES.length];
 }
-function renderMulti(parent, item, field) {
-  const arr = asArray(fieldValue(item, field));
+function renderMulti(parent, item, field2) {
+  const arr = asArray(fieldValue(item, field2));
   if (arr.length === 0) return false;
-  const asTags = field.render === "tags";
+  const asTags = field2.render === "tags";
   const wrap = parent.createDiv({ cls: "rb-multi" });
-  addAffixSpans(wrap, field, () => {
+  addAffixSpans(wrap, field2, () => {
     for (const entry of arr) {
       const el = wrap.createSpan({
         cls: asTags ? "rb-tag" : "rb-pill",
@@ -676,33 +676,33 @@ function renderMulti(parent, item, field) {
   });
   return true;
 }
-function renderNumber(parent, item, field) {
-  const n = asNumber(fieldValue(item, field));
+function renderNumber(parent, item, field2) {
+  const n = asNumber(fieldValue(item, field2));
   if (n === null) return false;
-  const render = field.render ?? "text";
-  const max = field.max ?? 100;
+  const render = field2.render ?? "text";
+  const max = field2.max ?? 100;
   switch (render) {
     case "stars":
-      addAffixSpans(parent, field, () => renderStars(parent, n, field.max ?? 5));
+      addAffixSpans(parent, field2, () => renderStars(parent, n, field2.max ?? 5));
       return true;
     case "bar":
-      addAffixSpans(parent, field, () => renderBar(parent, n, max));
+      addAffixSpans(parent, field2, () => renderBar(parent, n, max));
       return true;
     case "circle":
-      addAffixSpans(parent, field, () => renderCircle(parent, n, max));
+      addAffixSpans(parent, field2, () => renderCircle(parent, n, max));
       return true;
     case "text":
     default:
-      parent.createSpan({ cls: "rb-text rb-number", text: affix(field, String(n)) });
+      parent.createSpan({ cls: "rb-text rb-number", text: affix(field2, String(n)) });
       return true;
   }
 }
-function renderLinks(ctx, parent, item, field) {
-  const links = asArray(fieldValue(item, field)).map(parseLink).filter((l) => l !== null);
+function renderLinks(ctx, parent, item, field2) {
+  const links = asArray(fieldValue(item, field2)).map(parseLink).filter((l) => l !== null);
   if (links.length === 0) return false;
-  const asPills = field.render === "pills";
+  const asPills = field2.render === "pills";
   const wrap = parent.createDiv({ cls: "rb-links" });
-  addAffixSpans(wrap, field, () => {
+  addAffixSpans(wrap, field2, () => {
     for (const link of links) {
       const a = wrap.createEl("a", {
         cls: asPills ? "rb-link rb-link-pill" : "rb-link",
@@ -726,10 +726,10 @@ function renderLinks(ctx, parent, item, field) {
   });
   return true;
 }
-function renderCheckbox(parent, item, field) {
-  const b = asBoolean(fieldValue(item, field)) ?? false;
-  const render = field.render ?? "check";
-  addAffixSpans(parent, field, () => {
+function renderCheckbox(parent, item, field2) {
+  const b = asBoolean(fieldValue(item, field2)) ?? false;
+  const render = field2.render ?? "check";
+  addAffixSpans(parent, field2, () => {
     if (render === "toggle") {
       const wrap = parent.createDiv({
         cls: `rb-toggle ${b ? "rb-toggle-on" : "rb-toggle-off"}`,
@@ -1898,7 +1898,68 @@ async function mountRecipe(app, el, file) {
 }
 
 // src/ui/WizardModal.ts
+var import_obsidian10 = require("obsidian");
+
+// src/ui/PropertyEditor.ts
 var import_obsidian9 = require("obsidian");
+
+// src/ui/reorder.ts
+function makeReorderable(list, rowSelector, handleSelector, onReorder) {
+  const rows = () => Array.from(list.children).filter((el) => el.matches(rowSelector));
+  list.addEventListener("pointerdown", (e) => {
+    const handle = e.target.closest(handleSelector);
+    const row = handle?.closest(rowSelector);
+    if (!handle || !row || row.parentElement !== list || e.button !== 0) return;
+    e.preventDefault();
+    const from = rows().indexOf(row);
+    row.addClass("rb-dragging");
+    handle.setPointerCapture(e.pointerId);
+    const move = (ev) => {
+      const others = rows().filter((r) => r !== row);
+      const before = others.find((r) => {
+        const box = r.getBoundingClientRect();
+        return ev.clientY < box.top + box.height / 2;
+      });
+      if (before) {
+        if (row.nextElementSibling !== before) list.insertBefore(row, before);
+      } else {
+        const last = others[others.length - 1];
+        if (last && last.nextElementSibling !== row) last.after(row);
+      }
+    };
+    const end = () => {
+      handle.removeEventListener("pointermove", move);
+      handle.removeEventListener("pointerup", end);
+      handle.removeEventListener("pointercancel", end);
+      row.removeClass("rb-dragging");
+      const to = rows().indexOf(row);
+      if (to !== from) onReorder(from, to);
+    };
+    handle.addEventListener("pointermove", move);
+    handle.addEventListener("pointerup", end);
+    handle.addEventListener("pointercancel", end);
+  });
+}
+function moveItem(arr, from, to) {
+  const [item] = arr.splice(from, 1);
+  arr.splice(to, 0, item);
+}
+function segmented(parent, options, value, onPick) {
+  const group = parent.createDiv({ cls: "rb-segmented" });
+  for (const opt of options) {
+    const btn = group.createEl("button", {
+      cls: opt.value === value ? "rb-segment rb-active" : "rb-segment",
+      text: opt.label
+    });
+    btn.onclick = () => {
+      if (btn.hasClass("rb-active")) return;
+      group.querySelectorAll(".rb-segment").forEach((b) => b.removeClass("rb-active"));
+      btn.addClass("rb-active");
+      onPick(opt.value);
+    };
+  }
+  return group;
+}
 
 // src/ui/PropertyEditor.ts
 var RENDER_OPTIONS = {
@@ -1909,17 +1970,37 @@ var RENDER_OPTIONS = {
   checkbox: ["check", "box", "toggle"],
   links: ["list", "pills"]
 };
+var TYPE_LABELS = {
+  image: "Image",
+  text: "Text",
+  multi: "List",
+  number: "Number",
+  checkbox: "Checkbox",
+  links: "Links"
+};
+var PROPERTY_TYPE_ICON = {
+  image: "image",
+  text: "type",
+  multi: "tags",
+  number: "hash",
+  checkbox: "check-square",
+  links: "link"
+};
 function needsMax(prop) {
   return prop.type === "number" && ["stars", "bar", "circle"].includes(prop.render ?? "");
 }
-function makeSelect(parent, options, value) {
-  const sel = parent.createEl("select", { cls: "rb-prop-select" });
-  for (const opt of options) {
-    const o = sel.createEl("option", { text: opt });
-    o.value = opt;
-  }
-  sel.value = value;
-  return sel;
+var capitalize = (s) => s.charAt(0).toUpperCase() + s.slice(1);
+var expanded = /* @__PURE__ */ new WeakSet();
+function field(parent, label, wide = false) {
+  const cell = parent.createDiv({ cls: wide ? "rb-prop-field rb-prop-field-wide" : "rb-prop-field" });
+  cell.createDiv({ cls: "rb-prop-field-label", text: label });
+  return cell;
+}
+function textInput(parent, value, placeholder, onInput) {
+  const input = parent.createEl("input", { cls: "rb-prop-input", attr: { type: "text", placeholder } });
+  input.value = value;
+  input.oninput = () => onInput(input.value);
+  return input;
 }
 function renderPropertyEditor(container, properties, onChange) {
   const rerender = () => {
@@ -1927,79 +2008,115 @@ function renderPropertyEditor(container, properties, onChange) {
     onChange();
   };
   container.empty();
+  const list = container.createDiv({ cls: "rb-prop-list" });
   properties.forEach((prop, i) => {
-    const card = container.createDiv({ cls: "rb-prop-card" });
+    const isOpen = expanded.has(prop);
+    const card = list.createDiv({ cls: isOpen ? "rb-prop-card rb-open" : "rb-prop-card" });
     const head = card.createDiv({ cls: "rb-prop-head" });
+    (0, import_obsidian9.setIcon)(head.createSpan({ cls: "rb-drag-handle", attr: { "aria-label": "Drag to reorder" } }), "grip-vertical");
+    (0, import_obsidian9.setIcon)(head.createSpan({ cls: "rb-prop-type-icon" }), PROPERTY_TYPE_ICON[prop.type]);
     const name = head.createEl("input", {
       cls: "rb-prop-name",
-      attr: { type: "text", placeholder: "field name" }
+      attr: { type: "text", placeholder: "frontmatter key", "aria-label": "Frontmatter key" }
     });
     name.value = prop.name;
+    name.toggleClass("rb-invalid", !prop.name.trim());
     name.oninput = () => {
       prop.name = name.value;
+      name.toggleClass("rb-invalid", !prop.name.trim());
       onChange();
     };
-    const remove = head.createEl("button", { cls: "rb-prop-remove", text: "Remove" });
-    remove.onclick = () => {
-      properties.splice(i, 1);
-      rerender();
-    };
-    card.createDiv({ cls: "rb-prop-config-label", text: "CONFIG" });
-    const typeSel = makeSelect(card, ["image", "text", "multi", "number", "checkbox", "links"], prop.type);
+    const typeSel = head.createEl("select", { cls: "rb-prop-select rb-prop-type" });
+    for (const t of Object.keys(RENDER_OPTIONS)) {
+      typeSel.createEl("option", { text: TYPE_LABELS[t], value: t });
+    }
+    typeSel.value = prop.type;
     typeSel.onchange = () => {
       prop.type = typeSel.value;
       prop.render = RENDER_OPTIONS[prop.type][0];
       rerender();
     };
-    const renderSel = makeSelect(card, RENDER_OPTIONS[prop.type], prop.render ?? RENDER_OPTIONS[prop.type][0]);
-    renderSel.onchange = () => {
-      prop.render = renderSel.value;
+    const toggle = head.createEl("button", {
+      cls: "rb-icon-btn rb-prop-expand",
+      attr: { "aria-label": isOpen ? "Hide options" : "Show options" }
+    });
+    (0, import_obsidian9.setIcon)(toggle, "chevron-down");
+    toggle.onclick = () => {
+      if (expanded.has(prop)) expanded.delete(prop);
+      else expanded.add(prop);
+      renderPropertyEditor(container, properties, onChange);
+    };
+    const remove = head.createEl("button", { cls: "rb-icon-btn rb-prop-remove", attr: { "aria-label": "Remove property" } });
+    (0, import_obsidian9.setIcon)(remove, "trash-2");
+    remove.onclick = () => {
+      properties.splice(i, 1);
       rerender();
     };
+    if (!isOpen) return;
+    const body = card.createDiv({ cls: "rb-prop-body" });
+    segmented(
+      field(body, "Style", true),
+      RENDER_OPTIONS[prop.type].map((r) => ({ value: r, label: capitalize(r) })),
+      prop.render ?? RENDER_OPTIONS[prop.type][0],
+      (v) => {
+        prop.render = v;
+        rerender();
+      }
+    );
+    textInput(field(body, "Label"), prop.label ?? "", prop.name || "Same as key", (v) => {
+      prop.label = v.trim() || void 0;
+      onChange();
+    });
     if (needsMax(prop)) {
-      const max = card.createEl("input", {
+      const max = field(body, "Max").createEl("input", {
         cls: "rb-prop-input",
-        attr: { type: "number", placeholder: "max" }
+        attr: { type: "number", placeholder: "e.g. 5 or 100" }
       });
       max.value = prop.max != null ? String(prop.max) : "";
       max.oninput = () => {
         const n = Number(max.value);
-        prop.max = Number.isNaN(n) ? void 0 : n;
+        prop.max = max.value === "" || Number.isNaN(n) ? void 0 : n;
         onChange();
       };
     }
     if (prop.type !== "image") {
-      card.createDiv({ cls: "rb-prop-affix-label", text: "Prefix / Suffix" });
-      const affixRow = card.createDiv({ cls: "rb-prop-affix" });
-      const prefix = affixRow.createEl("input", {
-        cls: "rb-prop-input",
-        attr: { type: "text", placeholder: 'prefix (e.g. "Score: ")' }
-      });
-      prefix.value = prop.prefix ?? "";
-      prefix.oninput = () => {
-        prop.prefix = prefix.value || void 0;
+      textInput(field(body, "Prefix"), prop.prefix ?? "", 'e.g. "Score: "', (v) => {
+        prop.prefix = v || void 0;
         onChange();
-      };
-      const suffix = affixRow.createEl("input", {
-        cls: "rb-prop-input",
-        attr: { type: "text", placeholder: 'suffix (e.g. "%")' }
       });
-      suffix.value = prop.suffix ?? "";
-      suffix.oninput = () => {
-        prop.suffix = suffix.value || void 0;
+      textInput(field(body, "Suffix"), prop.suffix ?? "", 'e.g. "%"', (v) => {
+        prop.suffix = v || void 0;
         onChange();
-      };
+      });
     }
+    const search = field(body, "Searchable", true).createDiv({ cls: "rb-prop-toggle-row" });
+    search.createSpan({
+      cls: "rb-prop-toggle-desc",
+      text: "Match this property in the search bar, even when it isn\u2019t shown."
+    });
+    new import_obsidian9.ToggleComponent(search).setValue(!!prop.searchable).onChange((on) => {
+      prop.searchable = on || void 0;
+      onChange();
+    });
   });
-  const add = container.createEl("button", { cls: "rb-prop-add", text: "+ Add property" });
-  add.onclick = () => {
-    properties.push({ name: "", type: "text", render: "plain" });
+  makeReorderable(list, ".rb-prop-card", ".rb-drag-handle", (from, to) => {
+    moveItem(properties, from, to);
     rerender();
+  });
+  const add = container.createEl("button", { cls: "rb-prop-add" });
+  (0, import_obsidian9.setIcon)(add.createSpan({ cls: "rb-prop-add-icon" }), "plus");
+  add.createSpan({ text: "Add property" });
+  add.onclick = () => {
+    const prop = { name: "", type: "text", render: "plain" };
+    properties.push(prop);
+    expanded.add(prop);
+    rerender();
+    container.querySelector(".rb-prop-card:last-child .rb-prop-name")?.focus();
   };
 }
 
 // src/ui/WizardModal.ts
-var WizardModal = class extends import_obsidian9.Modal {
+var WizardModal = class extends import_obsidian10.Modal {
   constructor(app, seed, heading, onComplete) {
     super(app);
     this.name = seed.name ?? "";
@@ -2012,8 +2129,8 @@ var WizardModal = class extends import_obsidian9.Modal {
     this.titleEl.setText(this.heading);
     const { contentEl } = this;
     contentEl.addClass("rb-wizard");
-    new import_obsidian9.Setting(contentEl).setName("Name").setDesc("Shown in the board title.").addText((t) => t.setValue(this.name).onChange((v) => this.name = v));
-    new import_obsidian9.Setting(contentEl).setName("Base tag").setDesc("Notes carrying this tag become rows (without the leading #).").addText(
+    new import_obsidian10.Setting(contentEl).setName("Name").setDesc("Shown in the board title.").addText((t) => t.setValue(this.name).onChange((v) => this.name = v));
+    new import_obsidian10.Setting(contentEl).setName("Base tag").setDesc("Notes carrying this tag become rows (without the leading #).").addText(
       (t) => t.setPlaceholder("backlog").setValue(this.sourceTag).onChange((v) => this.sourceTag = v)
     );
     contentEl.createEl("h4", { text: "Properties" });
@@ -2024,14 +2141,14 @@ var WizardModal = class extends import_obsidian9.Modal {
     const propsEl = contentEl.createDiv();
     renderPropertyEditor(propsEl, this.properties, () => {
     });
-    new import_obsidian9.Setting(contentEl).addButton(
+    new import_obsidian10.Setting(contentEl).addButton(
       (b) => b.setButtonText("Create").setCta().onClick(() => this.submit())
     ).addButton((b) => b.setButtonText("Cancel").onClick(() => this.close()));
   }
   submit() {
     const tag = normalizeTag(this.sourceTag);
     if (!tag) {
-      new import_obsidian9.Notice("R Board: a base tag is required.");
+      new import_obsidian10.Notice("R Board: a base tag is required.");
       return;
     }
     this.onComplete({
@@ -2048,7 +2165,7 @@ var WizardModal = class extends import_obsidian9.Modal {
 };
 
 // src/ui/FilterModal.ts
-var import_obsidian10 = require("obsidian");
+var import_obsidian11 = require("obsidian");
 var OP_LABELS = {
   eq: "Is",
   ne: "Is not",
@@ -2064,7 +2181,7 @@ var VALUELESS = ["empty", "notempty"];
 function clone(v) {
   return JSON.parse(JSON.stringify(v));
 }
-var FilterModal = class extends import_obsidian10.Modal {
+var FilterModal = class extends import_obsidian11.Modal {
   constructor(app, group, properties, onSave) {
     super(app);
     this.root = group ? clone(group) : { conjunction: "and", conditions: [] };
@@ -2095,7 +2212,7 @@ var FilterModal = class extends import_obsidian10.Modal {
     this.renderGroup(contentEl.createDiv({ cls: "rb-filter-root" }), this.root);
     const footer = contentEl.createDiv({ cls: "rb-filter-footer" });
     const del = footer.createEl("button", { cls: "rb-filter-delete" });
-    (0, import_obsidian10.setIcon)(del.createSpan({ cls: "rb-filter-delete-icon" }), "trash");
+    (0, import_obsidian11.setIcon)(del.createSpan({ cls: "rb-filter-delete-icon" }), "trash");
     del.createSpan({ text: "Delete filter" });
     del.onclick = () => {
       this.root = { conjunction: "and", conditions: [] };
@@ -2143,11 +2260,11 @@ var FilterModal = class extends import_obsidian10.Modal {
       }
     });
     const add = container.createEl("button", { cls: "rb-filter-add" });
-    (0, import_obsidian10.setIcon)(add.createSpan({ cls: "rb-filter-add-icon" }), "plus");
+    (0, import_obsidian11.setIcon)(add.createSpan({ cls: "rb-filter-add-icon" }), "plus");
     add.createSpan({ text: "Add filter rule" });
-    (0, import_obsidian10.setIcon)(add.createSpan({ cls: "rb-filter-add-caret" }), "chevron-down");
+    (0, import_obsidian11.setIcon)(add.createSpan({ cls: "rb-filter-add-caret" }), "chevron-down");
     add.onclick = (e) => {
-      const menu = new import_obsidian10.Menu();
+      const menu = new import_obsidian11.Menu();
       menu.addItem(
         (it) => it.setTitle("Add rule").setIcon("plus").onClick(() => {
           group.conditions.push(this.newRule());
@@ -2209,9 +2326,9 @@ var FilterModal = class extends import_obsidian10.Modal {
   /** The "⋯" row menu (delete). */
   rowMenu(line, onDelete) {
     const btn = line.createEl("button", { cls: "rb-filter-row-menu", attr: { "aria-label": "More" } });
-    (0, import_obsidian10.setIcon)(btn, "more-horizontal");
+    (0, import_obsidian11.setIcon)(btn, "more-horizontal");
     btn.onclick = (e) => {
-      const menu = new import_obsidian10.Menu();
+      const menu = new import_obsidian11.Menu();
       menu.addItem((it) => it.setTitle("Delete").setIcon("trash").onClick(onDelete));
       menu.showAtMouseEvent(e);
     };
@@ -2219,16 +2336,15 @@ var FilterModal = class extends import_obsidian10.Modal {
 };
 
 // src/ui/SettingsForms.ts
-var import_obsidian11 = require("obsidian");
-function renderViewSettings(app, container, config, view, hooks, onDelete) {
-  container.empty();
-  new import_obsidian11.Setting(container).setName("Name").addText(
+var import_obsidian12 = require("obsidian");
+function renderViewGeneral(app, container, config, view, hooks, onDelete) {
+  new import_obsidian12.Setting(container).setName("Name").addText(
     (t) => t.setValue(view.name).onChange((v) => {
       view.name = v;
       hooks.onChange();
     })
   );
-  new import_obsidian11.Setting(container).setName("Type").addDropdown((d) => {
+  new import_obsidian12.Setting(container).setName("Type").addDropdown((d) => {
     d.addOptions({ gallery: "Gallery", kanban: "Kanban", table: "Table", recipe: "Recipe" });
     d.setValue(view.type);
     d.onChange((v) => {
@@ -2236,7 +2352,7 @@ function renderViewSettings(app, container, config, view, hooks, onDelete) {
       hooks.onStructureChange();
     });
   });
-  new import_obsidian11.Setting(container).setName("Load limit").addDropdown((d) => {
+  new import_obsidian12.Setting(container).setName("Load limit").addDropdown((d) => {
     d.addOptions({ "10": "10", "50": "50", "100": "100", none: "No limit" });
     d.setValue(String(view.limit ?? 50));
     d.onChange((v) => {
@@ -2246,7 +2362,7 @@ function renderViewSettings(app, container, config, view, hooks, onDelete) {
   });
   const sort = view.sort ?? { property: TITLE_SORT_KEY, dir: "asc" };
   let dirDropdown;
-  new import_obsidian11.Setting(container).setName("Sort by").addDropdown((d) => {
+  new import_obsidian12.Setting(container).setName("Sort by").addDropdown((d) => {
     d.addOption(NO_SORT_KEY, "None");
     d.addOption(TITLE_SORT_KEY, "Title");
     for (const p of config.properties) d.addOption(p.name, propertyLabel(p));
@@ -2267,7 +2383,7 @@ function renderViewSettings(app, container, config, view, hooks, onDelete) {
     });
   });
   const groupProps = view.type === "kanban" ? config.properties.filter((p) => p.type === "text") : config.properties;
-  new import_obsidian11.Setting(container).setName("Group by").setDesc(view.type === "kanban" ? "Required: a text property defines the columns." : "Optional: section headers.").addDropdown((d) => {
+  new import_obsidian12.Setting(container).setName("Group by").setDesc(view.type === "kanban" ? "Required: a text property defines the columns." : "Optional: section headers.").addDropdown((d) => {
     d.addOption("", view.type === "kanban" ? "(choose a text property)" : "None");
     for (const p of groupProps) d.addOption(p.name, propertyLabel(p));
     d.setValue(view.group ?? "");
@@ -2276,36 +2392,7 @@ function renderViewSettings(app, container, config, view, hooks, onDelete) {
       hooks.onChange();
     });
   });
-  if (view.type === "kanban") {
-    renderColumnConfig(container, view, hooks);
-  }
-  if (view.type === "gallery" || view.type === "kanban") {
-    new import_obsidian11.Setting(container).setName("Card size").addDropdown((d) => {
-      d.addOptions({ small: "Small", medium: "Medium", large: "Large" });
-      d.setValue(view.cardSize ?? "medium");
-      d.onChange((v) => {
-        view.cardSize = v;
-        hooks.onChange();
-      });
-    });
-    new import_obsidian11.Setting(container).setName("Show note content").setDesc("Render an excerpt of each note on the card.").addToggle(
-      (t) => t.setValue(!!view.showContent).onChange((on) => {
-        view.showContent = on;
-        hooks.onChange();
-      })
-    );
-  }
-  if (view.type === "gallery") {
-    new import_obsidian11.Setting(container).setName("Gallery layout").addDropdown((d) => {
-      d.addOptions({ masonry: "Masonry", grid: "Grid" });
-      d.setValue(view.layout ?? "masonry");
-      d.onChange((v) => {
-        view.layout = v;
-        hooks.onChange();
-      });
-    });
-  }
-  new import_obsidian11.Setting(container).setName("Filters").setDesc(`${countFilterRules(view.filter)} active`).addButton(
+  new import_obsidian12.Setting(container).setName("Filters").setDesc(`${countFilterRules(view.filter)} active`).addButton(
     (b) => b.setButtonText("Edit filters\u2026").onClick(() => {
       new FilterModal(app, view.filter, config.properties, (group) => {
         view.filter = group;
@@ -2313,28 +2400,108 @@ function renderViewSettings(app, container, config, view, hooks, onDelete) {
       }).open();
     })
   );
-  container.createEl("h4", { text: "Visible properties" });
-  const visible = new Set(view.properties ?? config.properties.map((p) => p.name));
-  for (const p of config.properties) {
-    new import_obsidian11.Setting(container).setName(propertyLabel(p)).setDesc(p.type).addToggle(
-      (t) => t.setValue(visible.has(p.name)).onChange((on) => {
-        if (on) visible.add(p.name);
-        else visible.delete(p.name);
-        view.properties = config.properties.map((q) => q.name).filter((n) => visible.has(n));
+  new import_obsidian12.Setting(container).addButton(
+    (b) => b.setButtonText("Delete view").setWarning().onClick(onDelete)
+  );
+}
+function renderViewDisplay(container, config, view, hooks) {
+  if (view.type === "gallery" || view.type === "kanban") {
+    container.createEl("h4", { text: "Cards" });
+    if (view.type === "gallery") {
+      segmented(
+        new import_obsidian12.Setting(container).setName("Layout").setDesc("Masonry flows cards of any height; grid uses fixed tiles.").controlEl,
+        [{ value: "masonry", label: "Masonry" }, { value: "grid", label: "Grid" }],
+        view.layout ?? "masonry",
+        (v) => {
+          view.layout = v;
+          hooks.onChange();
+        }
+      );
+    }
+    segmented(
+      new import_obsidian12.Setting(container).setName("Card size").controlEl,
+      [{ value: "small", label: "Small" }, { value: "medium", label: "Medium" }, { value: "large", label: "Large" }],
+      view.cardSize ?? "medium",
+      (v) => {
+        view.cardSize = v;
+        hooks.onChange();
+      }
+    );
+    new import_obsidian12.Setting(container).setName("Show note content").setDesc("Render an excerpt of each note on the card.").addToggle(
+      (t) => t.setValue(!!view.showContent).onChange((on) => {
+        view.showContent = on;
         hooks.onChange();
       })
     );
   }
-  new import_obsidian11.Setting(container).addButton(
-    (b) => b.setButtonText("Delete view").setWarning().onClick(onDelete)
-  );
+  const shown = (view.properties ?? config.properties.map((p) => p.name)).filter((n) => config.properties.some((p) => p.name === n));
+  const visible = new Set(shown);
+  const order = [...shown, ...config.properties.map((p) => p.name).filter((n) => !visible.has(n))];
+  const commit = () => {
+    view.properties = order.filter((n) => visible.has(n));
+    hooks.onChange();
+  };
+  const head = container.createDiv({ cls: "rb-section-head" });
+  head.createEl("h4", { text: view.type === "table" ? "Columns" : "Properties" });
+  const count = head.createSpan({ cls: "rb-section-count" });
+  const updateCount = () => count.setText(`${visible.size} of ${order.length} shown`);
+  updateCount();
+  head.createDiv({ cls: "rb-spacer" });
+  const bulk = (label, show) => {
+    head.createEl("button", { cls: "rb-link-btn", text: label }).onclick = () => {
+      order.forEach((n) => show ? visible.add(n) : visible.delete(n));
+      commit();
+      hooks.onStructureChange();
+    };
+  };
+  bulk("Show all", true);
+  bulk("Hide all", false);
+  if (order.length === 0) {
+    container.createDiv({ cls: "rb-wizard-hint", text: "This board has no properties yet \u2014 add some in Board settings." });
+    return;
+  }
+  container.createDiv({ cls: "rb-wizard-hint", text: "Drag to reorder. The title is always shown." });
+  const list = container.createDiv({ cls: "rb-vis-list" });
+  for (const name of order) {
+    const prop = config.properties.find((p) => p.name === name);
+    const row = list.createDiv({ cls: visible.has(name) ? "rb-vis-row" : "rb-vis-row rb-hidden" });
+    (0, import_obsidian12.setIcon)(row.createSpan({ cls: "rb-drag-handle", attr: { "aria-label": "Drag to reorder" } }), "grip-vertical");
+    (0, import_obsidian12.setIcon)(row.createSpan({ cls: "rb-vis-type" }), PROPERTY_TYPE_ICON[prop.type]);
+    const text = row.createDiv({ cls: "rb-vis-text" });
+    text.createSpan({ cls: "rb-vis-name", text: propertyLabel(prop) });
+    text.createSpan({ cls: "rb-vis-meta", text: [prop.type, prop.render].filter(Boolean).join(" \xB7 ") });
+    const eye = row.createEl("button", { cls: "rb-icon-btn rb-vis-toggle" });
+    const paint = () => {
+      const on = visible.has(name);
+      row.toggleClass("rb-hidden", !on);
+      (0, import_obsidian12.setIcon)(eye, on ? "eye" : "eye-off");
+      eye.setAttr("aria-label", on ? "Hide" : "Show");
+    };
+    paint();
+    eye.onclick = () => {
+      if (visible.has(name)) visible.delete(name);
+      else visible.add(name);
+      paint();
+      updateCount();
+      commit();
+    };
+  }
+  makeReorderable(list, ".rb-vis-row", ".rb-drag-handle", (from, to) => {
+    moveItem(order, from, to);
+    commit();
+  });
 }
 function renderColumnConfig(container, view, hooks) {
-  container.createEl("h4", { text: "Column settings" });
+  container.createDiv({
+    cls: "rb-wizard-hint",
+    text: "Pin the order of columns and give them a label, color, or hide them. Values not listed here follow, sorted; Uncategorized is always last."
+  });
+  if (!view.group) {
+    container.createDiv({ cls: "rb-wizard-hint", text: 'Choose a "Group by" property in General first.' });
+  }
   const cols = view.columns ?? [];
   const cfg = () => view.groupConfig ??= {};
-  const debouncedChange = (0, import_obsidian11.debounce)(() => hooks.onChange(), 250, true);
-  const rerender = () => renderColumnConfig(container.parentElement.createDiv(), view, hooks);
+  const debouncedChange = (0, import_obsidian12.debounce)(() => hooks.onChange(), 250, true);
   const list = container.createDiv({ cls: "rb-col-config-list" });
   cols.forEach((key, idx) => {
     const row = list.createDiv({ cls: "rb-col-config-row" });
@@ -2414,35 +2581,81 @@ function renderColumnConfig(container, view, hooks) {
     if (e.key === "Enter") doAdd();
   });
 }
-function renderDatabaseSettings(container, config, hooks) {
-  container.empty();
-  new import_obsidian11.Setting(container).setName("Name").addText(
+function renderBoardGeneral(container, config, hooks) {
+  new import_obsidian12.Setting(container).setName("Name").addText(
     (t) => t.setValue(config.name ?? "").onChange((v) => {
       config.name = v.trim() || void 0;
       hooks.onChange();
     })
   );
-  new import_obsidian11.Setting(container).setName("Base tag").setDesc("Without the leading #.").addText(
+  new import_obsidian12.Setting(container).setName("Base tag").setDesc("Without the leading #.").addText(
     (t) => t.setValue(config.sourceTag).onChange((v) => {
       config.sourceTag = v.replace(/^#/, "").trim().toLowerCase();
       hooks.onChange();
     })
   );
-  new import_obsidian11.Setting(container).setName("New note location").setDesc('Folder where the "New note" button creates notes. Required for that button.').addText(
+  new import_obsidian12.Setting(container).setName("New note location").setDesc('Folder where the "New note" button creates notes. Required for that button.').addText(
     (t) => t.setPlaceholder("e.g. Games/Backlog").setValue(config.newNoteFolder ?? "").onChange((v) => {
       config.newNoteFolder = v.trim() || void 0;
       hooks.onChange();
     })
   );
-  container.createEl("h4", { text: "Properties" });
-  renderPropertyEditor(container.createDiv(), config.properties, hooks.onChange);
   if (hooks.onRefresh) {
     const refresh = hooks.onRefresh;
-    new import_obsidian11.Setting(container).setName("Refresh index").setDesc("Re-query notes from the vault.").addButton(
+    new import_obsidian12.Setting(container).setName("Refresh index").setDesc("Re-query notes from the vault.").addButton(
       (b) => b.setButtonText("Refresh").onClick(() => refresh())
     );
   }
 }
+function renderBoardProperties(container, config, hooks) {
+  renderPropertyEditor(container.createDiv(), config.properties, hooks.onChange);
+}
+
+// src/ui/SettingsModal.ts
+var import_obsidian13 = require("obsidian");
+var SettingsModal = class extends import_obsidian13.Modal {
+  constructor(app, heading, getTabs, initialTab) {
+    super(app);
+    this.heading = heading;
+    this.getTabs = getTabs;
+    this.active = initialTab ?? "";
+  }
+  onOpen() {
+    this.modalEl.addClass("rb-settings-modal");
+    this.titleEl.setText(this.heading);
+    this.refresh();
+  }
+  onClose() {
+    this.contentEl.empty();
+  }
+  /** Re-render the tab strip and the active tab, keeping its scroll position. */
+  refresh() {
+    const { contentEl } = this;
+    const tabs = this.getTabs();
+    const switched = !tabs.some((t) => t.id === this.active);
+    if (switched) this.active = tabs[0]?.id ?? "";
+    const scrollTop = switched ? 0 : contentEl.querySelector(".rb-settings-body")?.scrollTop ?? 0;
+    contentEl.empty();
+    contentEl.addClass("rb-wizard", "rb-settings");
+    const strip = contentEl.createDiv({ cls: "rb-settings-tabs" });
+    for (const tab of tabs) {
+      const btn = strip.createEl("button", {
+        cls: tab.id === this.active ? "rb-settings-tab rb-active" : "rb-settings-tab"
+      });
+      (0, import_obsidian13.setIcon)(btn.createSpan({ cls: "rb-settings-tab-icon" }), tab.icon);
+      btn.createSpan({ text: tab.label });
+      btn.onclick = () => {
+        if (this.active === tab.id) return;
+        this.active = tab.id;
+        this.refresh();
+        this.contentEl.querySelector(".rb-settings-body")?.scrollTo(0, 0);
+      };
+    }
+    const body = contentEl.createDiv({ cls: "rb-settings-body" });
+    tabs.find((t) => t.id === this.active)?.render(body);
+    body.scrollTop = scrollTop;
+  }
+};
 
 // src/BoardView.ts
 var BOARD_VIEW_TYPE = "r-board-view";
@@ -2453,7 +2666,7 @@ var TYPE_ICON = {
   table: "table",
   recipe: "utensils"
 };
-var BoardView = class extends import_obsidian12.TextFileView {
+var BoardView = class extends import_obsidian14.TextFileView {
   constructor(leaf, plugin) {
     super(leaf);
     /** While an edit modal is open, suppress re-renders until it closes. */
@@ -2462,13 +2675,11 @@ var BoardView = class extends import_obsidian12.TextFileView {
     this.parseError = null;
     this.activeView = "";
     this.searchQuery = "";
-    this.sidebar = null;
     this.ui = { collapsed: /* @__PURE__ */ new Set(), pages: {}, listScroll: {} };
     /** Paths of every note in the database at the last render (pre-filter). */
     this.itemPaths = /* @__PURE__ */ new Set();
     this.bodyEl = null;
     this.toolbarEl = null;
-    this.sidebarEl = null;
     this.plugin = plugin;
   }
   getViewType() {
@@ -2507,7 +2718,7 @@ var BoardView = class extends import_obsidian12.TextFileView {
   // --- Lifecycle -------------------------------------------------------------
   async onOpen() {
     this.contentEl.addClass("rb-root");
-    const refresh = (0, import_obsidian12.debounce)(() => this.renderBody(), 250, true);
+    const refresh = (0, import_obsidian14.debounce)(() => this.renderBody(), 250, true);
     let initialResolve = true;
     this.registerEvent(this.app.metadataCache.on("resolved", () => {
       if (!initialResolve) return;
@@ -2521,7 +2732,7 @@ var BoardView = class extends import_obsidian12.TextFileView {
       if (this.itemPaths.has(file.path)) refresh();
     }));
     this.registerEvent(this.app.vault.on("rename", (file, oldPath) => {
-      if (this.itemPaths.has(oldPath) || file instanceof import_obsidian12.TFile && this.affectsBoard(file)) refresh();
+      if (this.itemPaths.has(oldPath) || file instanceof import_obsidian14.TFile && this.affectsBoard(file)) refresh();
     }));
   }
   /** Whether a changed note is, or was at the last render, one of this board's items. */
@@ -2533,7 +2744,7 @@ var BoardView = class extends import_obsidian12.TextFileView {
   // --- Config persistence ----------------------------------------------------
   /**
    * Persist the current in-memory config to the `.board` file without forcing a
-   * full reload (so the sidebar keeps focus). Refreshes body + toolbar.
+   * full reload (so an open settings modal keeps focus). Refreshes body + toolbar.
    */
   saveConfig() {
     if (!this.config) return;
@@ -2569,7 +2780,6 @@ var BoardView = class extends import_obsidian12.TextFileView {
     this.renderToolbar();
     const main = root.createDiv({ cls: "rb-main" });
     this.bodyEl = main.createDiv({ cls: "rb-body" });
-    this.sidebarEl = main.createDiv({ cls: "rb-sidebar" });
     if (this.config.views.length === 0) {
       const empty = this.bodyEl.createDiv({ cls: "rb-empty rb-empty-views" });
       empty.createDiv({ text: "This board has no views yet." });
@@ -2578,12 +2788,11 @@ var BoardView = class extends import_obsidian12.TextFileView {
     } else {
       this.renderBody();
     }
-    this.renderSidebar();
   }
   /** Setup prompt shown when the `.board` file is empty or unparseable. */
   renderSetup(root) {
     const box = root.createDiv({ cls: "rb-setup" });
-    (0, import_obsidian12.setIcon)(box.createDiv({ cls: "rb-setup-icon" }), "layout-dashboard");
+    (0, import_obsidian14.setIcon)(box.createDiv({ cls: "rb-setup-icon" }), "layout-dashboard");
     box.createEl("h3", { text: "Set up this board" });
     if (this.parseError && this.data.trim() !== "" && this.data.trim() !== "{}") {
       box.createEl("p", { cls: "rb-setup-error", text: this.parseError });
@@ -2610,7 +2819,7 @@ var BoardView = class extends import_obsidian12.TextFileView {
         cls: view2.name === this.activeView ? "rb-view-btn rb-active" : "rb-view-btn",
         attr: { title: `${view2.name} (${view2.type})` }
       });
-      (0, import_obsidian12.setIcon)(btn.createSpan({ cls: "rb-view-btn-icon" }), TYPE_ICON[view2.type]);
+      (0, import_obsidian14.setIcon)(btn.createSpan({ cls: "rb-view-btn-icon" }), TYPE_ICON[view2.type]);
       btn.createSpan({ text: view2.name });
       btn.onclick = () => this.setActiveView(view2.name);
       btn.oncontextmenu = (e) => this.openTabMenu(e, view2);
@@ -2620,9 +2829,9 @@ var BoardView = class extends import_obsidian12.TextFileView {
     const view = this.currentView();
     this.toolButton(tools, "plus", "Create view", (e) => this.openCreateViewMenu(e));
     if (view) {
-      this.toolButton(tools, "sliders-horizontal", "View settings", () => this.toggleSidebar("view"), this.sidebar === "view");
+      this.toolButton(tools, "sliders-horizontal", "View settings", () => this.openViewSettings(view));
     }
-    this.toolButton(tools, "settings", "Board settings", () => this.toggleSidebar("board"), this.sidebar === "board");
+    this.toolButton(tools, "settings", "Board settings", () => this.openBoardSettings());
     const ctrlRow = bar.createDiv({ cls: "rb-controls-row" });
     const search = ctrlRow.createEl("input", {
       cls: "rb-search",
@@ -2639,7 +2848,7 @@ var BoardView = class extends import_obsidian12.TextFileView {
     }
     ctrlRow.createDiv({ cls: "rb-spacer" });
     const newNote = ctrlRow.createEl("button", { cls: "rb-new-note", attr: { title: "Create a new note in this database" } });
-    (0, import_obsidian12.setIcon)(newNote.createSpan({ cls: "rb-new-note-icon" }), "file-plus");
+    (0, import_obsidian14.setIcon)(newNote.createSpan({ cls: "rb-new-note-icon" }), "file-plus");
     newNote.createSpan({ text: "New note" });
     newNote.onclick = () => void this.createNewNote();
   }
@@ -2658,16 +2867,16 @@ var BoardView = class extends import_obsidian12.TextFileView {
   }
   chip(parent, icon, label, active) {
     const chip = parent.createEl("button", { cls: active ? "rb-chip rb-chip-active" : "rb-chip" });
-    (0, import_obsidian12.setIcon)(chip.createSpan({ cls: "rb-chip-icon" }), icon);
+    (0, import_obsidian14.setIcon)(chip.createSpan({ cls: "rb-chip-icon" }), icon);
     chip.createSpan({ text: label });
     return chip;
   }
-  toolButton(parent, icon, label, onClick, active = false) {
+  toolButton(parent, icon, label, onClick) {
     const btn = parent.createEl("button", {
-      cls: active ? "rb-tool-btn rb-active" : "rb-tool-btn",
+      cls: "rb-tool-btn",
       attr: { "aria-label": label, title: label }
     });
-    (0, import_obsidian12.setIcon)(btn, icon);
+    (0, import_obsidian14.setIcon)(btn, icon);
     btn.onclick = onClick;
   }
   propLabel(key) {
@@ -2678,7 +2887,7 @@ var BoardView = class extends import_obsidian12.TextFileView {
   // --- Toolbar actions -------------------------------------------------------
   openCreateViewMenu(e) {
     if (!this.config) return;
-    const menu = new import_obsidian12.Menu();
+    const menu = new import_obsidian14.Menu();
     ["gallery", "kanban", "table", "recipe"].forEach((type) => {
       menu.addItem(
         (item) => item.setTitle(`New ${type} view`).setIcon(TYPE_ICON[type]).onClick(() => {
@@ -2686,9 +2895,9 @@ var BoardView = class extends import_obsidian12.TextFileView {
           this.config.views.push(view);
           this.activeView = view.name;
           if (this.file) void this.plugin.setActiveView(this.file.path, view.name);
-          this.sidebar = "view";
           this.saveConfig();
           this.render();
+          this.openViewSettings(view);
         })
       );
     });
@@ -2703,19 +2912,19 @@ var BoardView = class extends import_obsidian12.TextFileView {
     if (!this.config) return;
     const folder = this.config.newNoteFolder?.trim();
     if (!folder) {
-      new import_obsidian12.Notice('R Board: set a "New note location" in board settings to use this.');
-      this.toggleSidebar("board", true);
+      new import_obsidian14.Notice('R Board: set a "New note location" in board settings to use this.');
+      this.openBoardSettings();
       return;
     }
     try {
-      const dir = (0, import_obsidian12.normalizePath)(folder);
-      if (!(this.app.vault.getAbstractFileByPath(dir) instanceof import_obsidian12.TFolder)) {
+      const dir = (0, import_obsidian14.normalizePath)(folder);
+      if (!(this.app.vault.getAbstractFileByPath(dir) instanceof import_obsidian14.TFolder)) {
         await this.app.vault.createFolder(dir).catch(() => void 0);
       }
-      let path = (0, import_obsidian12.normalizePath)(`${dir}/Untitled.md`);
+      let path = (0, import_obsidian14.normalizePath)(`${dir}/Untitled.md`);
       let i = 1;
       while (this.app.vault.getAbstractFileByPath(path)) {
-        path = (0, import_obsidian12.normalizePath)(`${dir}/Untitled ${i++}.md`);
+        path = (0, import_obsidian14.normalizePath)(`${dir}/Untitled ${i++}.md`);
       }
       const content = `---
 tags:
@@ -2725,15 +2934,15 @@ tags:
       const file = await this.app.vault.create(path, content);
       await this.app.workspace.getLeaf("tab").openFile(file);
     } catch (e) {
-      new import_obsidian12.Notice(`R Board: could not create note \u2014 ${e.message}`);
+      new import_obsidian14.Notice(`R Board: could not create note \u2014 ${e.message}`);
     }
   }
   openTabMenu(e, view) {
     e.preventDefault();
-    const menu = new import_obsidian12.Menu();
+    const menu = new import_obsidian14.Menu();
     menu.addItem((i) => i.setTitle("View settings").setIcon("sliders-horizontal").onClick(() => {
       this.setActiveView(view.name);
-      this.toggleSidebar("view", true);
+      this.openViewSettings(view);
     }));
     menu.addItem((i) => i.setTitle("Delete view").setIcon("trash").onClick(() => this.deleteView(view.name)));
     menu.showAtMouseEvent(e);
@@ -2741,7 +2950,7 @@ tags:
   openSortMenu(e, view) {
     if (!this.config) return;
     const current = effectiveSort(view);
-    const menu = new import_obsidian12.Menu();
+    const menu = new import_obsidian14.Menu();
     const addItem = (key, label) => {
       menu.addItem((item) => {
         item.setTitle(label);
@@ -2778,69 +2987,61 @@ tags:
     this.config.views = this.config.views.filter((v) => v.name !== name);
     if (this.activeView === name) this.activeView = this.config.views[0]?.name ?? "";
     this.config.defaultView = this.config.views[0]?.name;
-    if (this.sidebar === "view" && this.config.views.length === 0) this.sidebar = null;
     this.saveConfig();
     this.render();
   }
-  // --- Sidebar ---------------------------------------------------------------
-  toggleSidebar(mode, force = false) {
-    this.sidebar = !force && this.sidebar === mode ? null : mode;
-    this.contentEl.toggleClass("rb-has-sidebar", this.sidebar !== null);
-    this.renderToolbar();
-    this.renderSidebar();
+  // --- Settings modals -------------------------------------------------------
+  /** Hooks for settings forms: persist on change, re-render the modal on structural change. */
+  settingsHooks(modal) {
+    return {
+      onChange: () => this.saveConfig(),
+      onStructureChange: () => {
+        this.saveConfig();
+        modal().refresh();
+      },
+      onRefresh: () => this.renderBody()
+    };
   }
-  renderSidebar() {
-    const el = this.sidebarEl;
-    if (!el || !this.config) return;
-    el.empty();
-    this.contentEl.toggleClass("rb-has-sidebar", this.sidebar !== null);
-    if (!this.sidebar) return;
-    const header = el.createDiv({ cls: "rb-sidebar-header" });
-    header.createSpan({ cls: "rb-sidebar-title", text: this.sidebar === "board" ? "Board settings" : "View settings" });
-    const close = header.createEl("button", { cls: "rb-sidebar-close", attr: { "aria-label": "Close" } });
-    (0, import_obsidian12.setIcon)(close, "x");
-    close.onclick = () => this.toggleSidebar(this.sidebar);
-    const content = el.createDiv({ cls: "rb-sidebar-content rb-wizard" });
-    if (this.sidebar === "board") {
-      renderDatabaseSettings(content, this.config, {
-        onChange: () => this.saveConfig(),
-        onStructureChange: () => {
-          this.saveConfig();
-          this.renderSidebar();
-        },
-        onRefresh: () => this.renderBody()
-      });
-    } else {
-      const view = this.currentView();
-      if (!view) {
-        content.createDiv({ cls: "rb-empty", text: "No view selected." });
-        return;
+  openBoardSettings() {
+    const config = this.config;
+    if (!config) return;
+    const hooks = this.settingsHooks(() => modal);
+    const modal = new SettingsModal(this.app, "Board settings", () => [
+      { id: "general", label: "General", icon: "settings", render: (el) => renderBoardGeneral(el, config, hooks) },
+      { id: "properties", label: "Properties", icon: "list", render: (el) => renderBoardProperties(el, config, hooks) }
+    ]);
+    modal.open();
+  }
+  openViewSettings(view) {
+    const config = this.config;
+    if (!config) return;
+    const base = this.settingsHooks(() => modal);
+    const syncName = () => {
+      if (this.activeView !== view.name) {
+        this.activeView = view.name;
+        if (this.file) void this.plugin.setActiveView(this.file.path, view.name);
       }
-      const syncName = () => {
-        if (this.activeView !== view.name) {
-          this.activeView = view.name;
-          if (this.file) void this.plugin.setActiveView(this.file.path, view.name);
-        }
-      };
-      renderViewSettings(
-        this.app,
-        content,
-        this.config,
-        view,
-        {
-          onChange: () => {
-            syncName();
-            this.saveConfig();
-          },
-          onStructureChange: () => {
-            syncName();
-            this.saveConfig();
-            this.renderSidebar();
-          }
-        },
-        () => this.deleteView(view.name)
-      );
-    }
+    };
+    const hooks = {
+      onChange: () => {
+        syncName();
+        base.onChange();
+      },
+      onStructureChange: () => {
+        syncName();
+        base.onStructureChange();
+      }
+    };
+    const onDelete = () => {
+      modal.close();
+      this.deleteView(view.name);
+    };
+    const modal = new SettingsModal(this.app, "View settings", () => [
+      { id: "general", label: "General", icon: "sliders-horizontal", render: (el) => renderViewGeneral(this.app, el, config, view, hooks, onDelete) },
+      { id: "display", label: "Display", icon: "eye", render: (el) => renderViewDisplay(el, config, view, hooks) },
+      ...view.type === "kanban" ? [{ id: "columns", label: "Columns", icon: "columns-3", render: (el) => renderColumnConfig(el, view, hooks) }] : []
+    ]);
+    modal.open();
   }
   // --- Body ------------------------------------------------------------------
   /**
@@ -2940,9 +3141,9 @@ tags:
 };
 
 // src/home/HomeView.ts
-var import_obsidian13 = require("obsidian");
+var import_obsidian15 = require("obsidian");
 var HOME_VIEW_TYPE = "r-board-home";
-var BoardHomeView = class extends import_obsidian13.ItemView {
+var BoardHomeView = class extends import_obsidian15.ItemView {
   constructor(leaf, plugin) {
     super(leaf);
     this.plugin = plugin;
@@ -2970,7 +3171,7 @@ var BoardHomeView = class extends import_obsidian13.ItemView {
     const header = root.createDiv({ cls: "rb-home-header" });
     header.createEl("h2", { text: "Boards" });
     const create = header.createEl("button", { cls: "rb-home-create" });
-    (0, import_obsidian13.setIcon)(create.createSpan({ cls: "rb-home-create-icon" }), "plus");
+    (0, import_obsidian15.setIcon)(create.createSpan({ cls: "rb-home-create-icon" }), "plus");
     create.createSpan({ text: "Create board" });
     create.onclick = () => this.openCreateWizard();
     const files = this.plugin.listBoardFiles();
@@ -2994,7 +3195,7 @@ var BoardHomeView = class extends import_obsidian13.ItemView {
   renderCard(grid, file, raw) {
     const card = grid.createDiv({ cls: "rb-home-card" });
     const result = parseDatabaseConfig(raw);
-    (0, import_obsidian13.setIcon)(card.createDiv({ cls: "rb-home-card-icon" }), "layout-dashboard");
+    (0, import_obsidian15.setIcon)(card.createDiv({ cls: "rb-home-card-icon" }), "layout-dashboard");
     const body = card.createDiv({ cls: "rb-home-card-body" });
     body.createDiv({
       cls: "rb-home-card-title",
@@ -3019,7 +3220,7 @@ var BoardHomeView = class extends import_obsidian13.ItemView {
 };
 
 // main.ts
-var RBoardPlugin = class extends import_obsidian14.Plugin {
+var RBoardPlugin = class extends import_obsidian16.Plugin {
   constructor() {
     super(...arguments);
     this.data = {};
@@ -3045,7 +3246,7 @@ var RBoardPlugin = class extends import_obsidian14.Plugin {
     });
     this.registerEvent(
       this.app.workspace.on("file-menu", (menu, file) => {
-        const folder = file instanceof import_obsidian14.TFolder ? file : file instanceof import_obsidian14.TFile ? file.parent : null;
+        const folder = file instanceof import_obsidian16.TFolder ? file : file instanceof import_obsidian16.TFile ? file.parent : null;
         if (!folder) return;
         menu.addItem(
           (item) => item.setTitle("New board").setIcon("circuit-board").setSection("action").onClick(() => this.openCreateWizard(folder.path))
@@ -3092,18 +3293,18 @@ var RBoardPlugin = class extends import_obsidian14.Plugin {
   /** Write a new `.board` file from a config and open it. */
   async createDatabaseFromConfig(config, folderPath) {
     const folder = folderPath !== void 0 ? this.app.vault.getAbstractFileByPath(folderPath) : this.app.fileManager.getNewFileParent("");
-    const dir = folder instanceof import_obsidian14.TFolder && folder.path ? `${folder.path}/` : "";
+    const dir = folder instanceof import_obsidian16.TFolder && folder.path ? `${folder.path}/` : "";
     const base = (config.name?.trim() || "New Database").replace(/[\\/:*?"<>|]/g, "-");
-    let path = (0, import_obsidian14.normalizePath)(`${dir}${base}.${BOARD_EXTENSION}`);
+    let path = (0, import_obsidian16.normalizePath)(`${dir}${base}.${BOARD_EXTENSION}`);
     let i = 2;
     while (this.app.vault.getAbstractFileByPath(path)) {
-      path = (0, import_obsidian14.normalizePath)(`${dir}${base} ${i++}.${BOARD_EXTENSION}`);
+      path = (0, import_obsidian16.normalizePath)(`${dir}${base} ${i++}.${BOARD_EXTENSION}`);
     }
     try {
       const file = await this.app.vault.create(path, serializeDatabase(config));
       await this.openBoard(file);
     } catch (e) {
-      new import_obsidian14.Notice(`R Board: could not create database \u2014 ${e.message}`);
+      new import_obsidian16.Notice(`R Board: could not create database \u2014 ${e.message}`);
     }
   }
 };

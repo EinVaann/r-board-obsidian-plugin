@@ -1,9 +1,18 @@
-import { App, DropdownComponent, Setting, debounce } from 'obsidian';
-import type { CardSize, DatabaseConfig, GalleryLayout, GroupColumnConfig, SortDir, ViewConfig, ViewType } from '../types';
+import { App, DropdownComponent, Setting, debounce, setIcon } from 'obsidian';
+import type {
+  CardSize,
+  DatabaseConfig,
+  GalleryLayout,
+  GroupColumnConfig,
+  SortDir,
+  ViewConfig,
+  ViewType,
+} from '../types';
 import { NO_SORT_KEY, propertyLabel, TITLE_SORT_KEY } from '../config';
 import { countFilterRules } from '../data/filter';
-import { renderPropertyEditor } from './PropertyEditor';
+import { PROPERTY_TYPE_ICON, renderPropertyEditor } from './PropertyEditor';
 import { FilterModal } from './FilterModal';
+import { makeReorderable, moveItem, segmented } from './reorder';
 
 /** Callbacks the settings forms use to persist and refresh. */
 export interface FormHooks {
@@ -16,10 +25,10 @@ export interface FormHooks {
 }
 
 /**
- * Render the editable settings for one view into `container`. Mutates `view`
- * (a live reference into the config) in place.
+ * View settings "General" tab: name, type, paging, sort, grouping, filters.
+ * Mutates `view` (a live reference into the config) in place.
  */
-export function renderViewSettings(
+export function renderViewGeneral(
   app: App,
   container: HTMLElement,
   config: DatabaseConfig,
@@ -27,8 +36,6 @@ export function renderViewSettings(
   hooks: FormHooks,
   onDelete: () => void,
 ): void {
-  container.empty();
-
   new Setting(container).setName('Name').addText((t) =>
     t.setValue(view.name).onChange((v) => {
       view.name = v;
@@ -98,42 +105,6 @@ export function renderViewSettings(
       });
     });
 
-  // Kanban column config (order, label, color, visibility).
-  if (view.type === 'kanban') {
-    renderColumnConfig(container, view, hooks);
-  }
-
-  // Per-type options
-  if (view.type === 'gallery' || view.type === 'kanban') {
-    new Setting(container).setName('Card size').addDropdown((d) => {
-      d.addOptions({ small: 'Small', medium: 'Medium', large: 'Large' });
-      d.setValue(view.cardSize ?? 'medium');
-      d.onChange((v) => {
-        view.cardSize = v as CardSize;
-        hooks.onChange();
-      });
-    });
-    new Setting(container)
-      .setName('Show note content')
-      .setDesc('Render an excerpt of each note on the card.')
-      .addToggle((t) =>
-        t.setValue(!!view.showContent).onChange((on) => {
-          view.showContent = on;
-          hooks.onChange();
-        }),
-      );
-  }
-  if (view.type === 'gallery') {
-    new Setting(container).setName('Gallery layout').addDropdown((d) => {
-      d.addOptions({ masonry: 'Masonry', grid: 'Grid' });
-      d.setValue(view.layout ?? 'masonry');
-      d.onChange((v) => {
-        view.layout = v as GalleryLayout;
-        hooks.onChange();
-      });
-    });
-  }
-
   // Filters
   new Setting(container)
     .setName('Filters')
@@ -147,28 +118,126 @@ export function renderViewSettings(
       }),
     );
 
-  // Visible properties
-  container.createEl('h4', { text: 'Visible properties' });
-  const visible = new Set(view.properties ?? config.properties.map((p) => p.name));
-  for (const p of config.properties) {
-    new Setting(container).setName(propertyLabel(p)).setDesc(p.type).addToggle((t) =>
-      t.setValue(visible.has(p.name)).onChange((on) => {
-        if (on) visible.add(p.name);
-        else visible.delete(p.name);
-        view.properties = config.properties.map((q) => q.name).filter((n) => visible.has(n));
-        hooks.onChange();
-      }),
-    );
-  }
-
   new Setting(container).addButton((b) =>
     b.setButtonText('Delete view').setWarning().onClick(onDelete),
   );
 }
 
-/** Editable list of kanban column overrides: order, label, color, visibility. */
-function renderColumnConfig(container: HTMLElement, view: ViewConfig, hooks: FormHooks): void {
-  container.createEl('h4', { text: 'Column settings' });
+/** View settings "Display" tab: card layout and which properties show, in what order. */
+export function renderViewDisplay(
+  container: HTMLElement,
+  config: DatabaseConfig,
+  view: ViewConfig,
+  hooks: FormHooks,
+): void {
+  // --- Layout (gallery / kanban only) ---
+  if (view.type === 'gallery' || view.type === 'kanban') {
+    container.createEl('h4', { text: 'Cards' });
+    if (view.type === 'gallery') {
+      segmented(
+        new Setting(container).setName('Layout').setDesc('Masonry flows cards of any height; grid uses fixed tiles.').controlEl,
+        [{ value: 'masonry', label: 'Masonry' }, { value: 'grid', label: 'Grid' }],
+        view.layout ?? 'masonry',
+        (v: GalleryLayout) => {
+          view.layout = v;
+          hooks.onChange();
+        },
+      );
+    }
+    segmented(
+      new Setting(container).setName('Card size').controlEl,
+      [{ value: 'small', label: 'Small' }, { value: 'medium', label: 'Medium' }, { value: 'large', label: 'Large' }],
+      view.cardSize ?? 'medium',
+      (v: CardSize) => {
+        view.cardSize = v;
+        hooks.onChange();
+      },
+    );
+    new Setting(container)
+      .setName('Show note content')
+      .setDesc('Render an excerpt of each note on the card.')
+      .addToggle((t) =>
+        t.setValue(!!view.showContent).onChange((on) => {
+          view.showContent = on;
+          hooks.onChange();
+        }),
+      );
+  }
+
+  // --- Properties: visibility + order ---
+  // Shown properties first (in the view's order), then hidden ones (in database order).
+  const shown = (view.properties ?? config.properties.map((p) => p.name))
+    .filter((n) => config.properties.some((p) => p.name === n));
+  const visible = new Set(shown);
+  const order = [...shown, ...config.properties.map((p) => p.name).filter((n) => !visible.has(n))];
+  const commit = (): void => {
+    view.properties = order.filter((n) => visible.has(n));
+    hooks.onChange();
+  };
+
+  const head = container.createDiv({ cls: 'rb-section-head' });
+  head.createEl('h4', { text: view.type === 'table' ? 'Columns' : 'Properties' });
+  const count = head.createSpan({ cls: 'rb-section-count' });
+  const updateCount = (): void => count.setText(`${visible.size} of ${order.length} shown`);
+  updateCount();
+  head.createDiv({ cls: 'rb-spacer' });
+  const bulk = (label: string, show: boolean): void => {
+    head.createEl('button', { cls: 'rb-link-btn', text: label }).onclick = () => {
+      order.forEach((n) => (show ? visible.add(n) : visible.delete(n)));
+      commit();
+      hooks.onStructureChange();
+    };
+  };
+  bulk('Show all', true);
+  bulk('Hide all', false);
+
+  if (order.length === 0) {
+    container.createDiv({ cls: 'rb-wizard-hint', text: 'This board has no properties yet — add some in Board settings.' });
+    return;
+  }
+  container.createDiv({ cls: 'rb-wizard-hint', text: 'Drag to reorder. The title is always shown.' });
+
+  const list = container.createDiv({ cls: 'rb-vis-list' });
+  for (const name of order) {
+    const prop = config.properties.find((p) => p.name === name)!;
+    const row = list.createDiv({ cls: visible.has(name) ? 'rb-vis-row' : 'rb-vis-row rb-hidden' });
+    setIcon(row.createSpan({ cls: 'rb-drag-handle', attr: { 'aria-label': 'Drag to reorder' } }), 'grip-vertical');
+    setIcon(row.createSpan({ cls: 'rb-vis-type' }), PROPERTY_TYPE_ICON[prop.type]);
+    const text = row.createDiv({ cls: 'rb-vis-text' });
+    text.createSpan({ cls: 'rb-vis-name', text: propertyLabel(prop) });
+    text.createSpan({ cls: 'rb-vis-meta', text: [prop.type, prop.render].filter(Boolean).join(' · ') });
+    const eye = row.createEl('button', { cls: 'rb-icon-btn rb-vis-toggle' });
+    const paint = (): void => {
+      const on = visible.has(name);
+      row.toggleClass('rb-hidden', !on);
+      setIcon(eye, on ? 'eye' : 'eye-off');
+      eye.setAttr('aria-label', on ? 'Hide' : 'Show');
+    };
+    paint();
+    eye.onclick = () => {
+      if (visible.has(name)) visible.delete(name);
+      else visible.add(name);
+      paint();
+      updateCount();
+      commit();
+    };
+  }
+  makeReorderable(list, '.rb-vis-row', '.rb-drag-handle', (from, to) => {
+    moveItem(order, from, to);
+    commit();
+  });
+}
+
+/** View settings "Columns" tab (kanban): order, label, color, visibility. */
+export function renderColumnConfig(container: HTMLElement, view: ViewConfig, hooks: FormHooks): void {
+  container.createDiv({
+    cls: 'rb-wizard-hint',
+    text: 'Pin the order of columns and give them a label, color, or hide them. '
+      + 'Values not listed here follow, sorted; Uncategorized is always last.',
+  });
+  if (!view.group) {
+    container.createDiv({ cls: 'rb-wizard-hint', text: 'Choose a "Group by" property in General first.' });
+  }
 
   const cols = view.columns ?? [];
   const cfg = (): Record<string, GroupColumnConfig> => (view.groupConfig ??= {});
@@ -176,8 +245,6 @@ function renderColumnConfig(container: HTMLElement, view: ViewConfig, hooks: For
   // Color inputs fire continuously while dragging the picker; debounce the
   // persist/re-render so the board only repaints once the user settles.
   const debouncedChange = debounce(() => hooks.onChange(), 250, true);
-
-  const rerender = (): void => renderColumnConfig(container.parentElement!.createDiv(), view, hooks);
 
   const list = container.createDiv({ cls: 'rb-col-config-list' });
 
@@ -271,17 +338,14 @@ function renderColumnConfig(container: HTMLElement, view: ViewConfig, hooks: For
   };
   addBtn.onclick = doAdd;
   addInput.addEventListener('keydown', (e) => { if (e.key === 'Enter') doAdd(); });
-  void rerender; // referenced to keep TS happy; re-render happens via onStructureChange
 }
 
-/** Render database-level settings (name, base tag, properties) into `container`. */
-export function renderDatabaseSettings(
+/** Board settings "General" tab: name, base tag, new-note folder, refresh. */
+export function renderBoardGeneral(
   container: HTMLElement,
   config: DatabaseConfig,
   hooks: FormHooks,
 ): void {
-  container.empty();
-
   new Setting(container).setName('Name').addText((t) =>
     t.setValue(config.name ?? '').onChange((v) => {
       config.name = v.trim() || undefined;
@@ -309,9 +373,6 @@ export function renderDatabaseSettings(
       }),
     );
 
-  container.createEl('h4', { text: 'Properties' });
-  renderPropertyEditor(container.createDiv(), config.properties, hooks.onChange);
-
   if (hooks.onRefresh) {
     const refresh = hooks.onRefresh;
     new Setting(container)
@@ -321,4 +382,9 @@ export function renderDatabaseSettings(
         b.setButtonText('Refresh').onClick(() => refresh()),
       );
   }
+}
+
+/** Board settings "Properties" tab: the database's property definitions. */
+export function renderBoardProperties(container: HTMLElement, config: DatabaseConfig, hooks: FormHooks): void {
+  renderPropertyEditor(container.createDiv(), config.properties, hooks.onChange);
 }

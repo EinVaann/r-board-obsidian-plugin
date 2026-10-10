@@ -23,7 +23,15 @@ import { renderTable } from './views/table';
 import { renderRecipeView } from './views/recipe';
 import { WizardModal } from './ui/WizardModal';
 import { FilterModal } from './ui/FilterModal';
-import { renderDatabaseSettings, renderViewSettings } from './ui/SettingsForms';
+import {
+  type FormHooks,
+  renderBoardGeneral,
+  renderBoardProperties,
+  renderColumnConfig,
+  renderViewDisplay,
+  renderViewGeneral,
+} from './ui/SettingsForms';
+import { SettingsModal } from './ui/SettingsModal';
 
 export const BOARD_VIEW_TYPE = 'r-board-view';
 /** File extension that opens as a database board (JSON content, like `.canvas`). */
@@ -36,8 +44,6 @@ const TYPE_ICON: Record<ViewType, string> = {
   recipe: 'utensils',
 };
 
-type SidebarMode = 'view' | 'board' | null;
-
 /** A board pane: parses a `.board` database config and renders the active view. */
 export class BoardView extends TextFileView {
   plugin: RBoardPlugin;
@@ -49,14 +55,12 @@ export class BoardView extends TextFileView {
   private parseError: string | null = null;
   private activeView = '';
   private searchQuery = '';
-  private sidebar: SidebarMode = null;
   private ui: BoardUiState = { collapsed: new Set(), pages: {}, listScroll: {} };
   /** Paths of every note in the database at the last render (pre-filter). */
   private itemPaths = new Set<string>();
 
   private bodyEl: HTMLElement | null = null;
   private toolbarEl: HTMLElement | null = null;
-  private sidebarEl: HTMLElement | null = null;
 
   constructor(leaf: WorkspaceLeaf, plugin: RBoardPlugin) {
     super(leaf);
@@ -139,7 +143,7 @@ export class BoardView extends TextFileView {
 
   /**
    * Persist the current in-memory config to the `.board` file without forcing a
-   * full reload (so the sidebar keeps focus). Refreshes body + toolbar.
+   * full reload (so an open settings modal keeps focus). Refreshes body + toolbar.
    */
   private saveConfig(): void {
     if (!this.config) return;
@@ -182,7 +186,6 @@ export class BoardView extends TextFileView {
 
     const main = root.createDiv({ cls: 'rb-main' });
     this.bodyEl = main.createDiv({ cls: 'rb-body' });
-    this.sidebarEl = main.createDiv({ cls: 'rb-sidebar' });
 
     if (this.config.views.length === 0) {
       const empty = this.bodyEl.createDiv({ cls: 'rb-empty rb-empty-views' });
@@ -192,8 +195,6 @@ export class BoardView extends TextFileView {
     } else {
       this.renderBody();
     }
-
-    this.renderSidebar();
   }
 
   /** Setup prompt shown when the `.board` file is empty or unparseable. */
@@ -242,9 +243,9 @@ export class BoardView extends TextFileView {
     const view = this.currentView();
     this.toolButton(tools, 'plus', 'Create view', (e) => this.openCreateViewMenu(e));
     if (view) {
-      this.toolButton(tools, 'sliders-horizontal', 'View settings', () => this.toggleSidebar('view'), this.sidebar === 'view');
+      this.toolButton(tools, 'sliders-horizontal', 'View settings', () => this.openViewSettings(view));
     }
-    this.toolButton(tools, 'settings', 'Board settings', () => this.toggleSidebar('board'), this.sidebar === 'board');
+    this.toolButton(tools, 'settings', 'Board settings', () => this.openBoardSettings());
 
     // Row 2: search + sort/filter chips.
     const ctrlRow = bar.createDiv({ cls: 'rb-controls-row' });
@@ -301,10 +302,9 @@ export class BoardView extends TextFileView {
     icon: string,
     label: string,
     onClick: (e: MouseEvent) => void,
-    active = false,
   ): void {
     const btn = parent.createEl('button', {
-      cls: active ? 'rb-tool-btn rb-active' : 'rb-tool-btn',
+      cls: 'rb-tool-btn',
       attr: { 'aria-label': label, title: label },
     });
     setIcon(btn, icon);
@@ -329,9 +329,9 @@ export class BoardView extends TextFileView {
           this.config!.views.push(view);
           this.activeView = view.name;
           if (this.file) void this.plugin.setActiveView(this.file.path, view.name);
-          this.sidebar = 'view';
           this.saveConfig();
           this.render();
+          this.openViewSettings(view);
         }),
       );
     });
@@ -348,7 +348,7 @@ export class BoardView extends TextFileView {
     const folder = this.config.newNoteFolder?.trim();
     if (!folder) {
       new Notice('R Board: set a "New note location" in board settings to use this.');
-      this.toggleSidebar('board', true);
+      this.openBoardSettings();
       return;
     }
 
@@ -380,7 +380,7 @@ export class BoardView extends TextFileView {
     const menu = new Menu();
     menu.addItem((i) => i.setTitle('View settings').setIcon('sliders-horizontal').onClick(() => {
       this.setActiveView(view.name);
-      this.toggleSidebar('view', true);
+      this.openViewSettings(view);
     }));
     menu.addItem((i) => i.setTitle('Delete view').setIcon('trash').onClick(() => this.deleteView(view.name)));
     menu.showAtMouseEvent(e);
@@ -428,76 +428,68 @@ export class BoardView extends TextFileView {
     this.config.views = this.config.views.filter((v) => v.name !== name);
     if (this.activeView === name) this.activeView = this.config.views[0]?.name ?? '';
     this.config.defaultView = this.config.views[0]?.name;
-    if (this.sidebar === 'view' && this.config.views.length === 0) this.sidebar = null;
     this.saveConfig();
     this.render();
   }
 
-  // --- Sidebar ---------------------------------------------------------------
+  // --- Settings modals -------------------------------------------------------
 
-  private toggleSidebar(mode: Exclude<SidebarMode, null>, force = false): void {
-    this.sidebar = !force && this.sidebar === mode ? null : mode;
-    this.contentEl.toggleClass('rb-has-sidebar', this.sidebar !== null);
-    this.renderToolbar();
-    this.renderSidebar();
+  /** Hooks for settings forms: persist on change, re-render the modal on structural change. */
+  private settingsHooks(modal: () => SettingsModal): FormHooks {
+    return {
+      onChange: () => this.saveConfig(),
+      onStructureChange: () => {
+        this.saveConfig();
+        modal().refresh();
+      },
+      onRefresh: () => this.renderBody(),
+    };
   }
 
-  private renderSidebar(): void {
-    const el = this.sidebarEl;
-    if (!el || !this.config) return;
-    el.empty();
-    this.contentEl.toggleClass('rb-has-sidebar', this.sidebar !== null);
-    if (!this.sidebar) return;
+  private openBoardSettings(): void {
+    const config = this.config;
+    if (!config) return;
+    const hooks = this.settingsHooks(() => modal);
+    const modal = new SettingsModal(this.app, 'Board settings', () => [
+      { id: 'general', label: 'General', icon: 'settings', render: (el) => renderBoardGeneral(el, config, hooks) },
+      { id: 'properties', label: 'Properties', icon: 'list', render: (el) => renderBoardProperties(el, config, hooks) },
+    ]);
+    modal.open();
+  }
 
-    const header = el.createDiv({ cls: 'rb-sidebar-header' });
-    header.createSpan({ cls: 'rb-sidebar-title', text: this.sidebar === 'board' ? 'Board settings' : 'View settings' });
-    const close = header.createEl('button', { cls: 'rb-sidebar-close', attr: { 'aria-label': 'Close' } });
-    setIcon(close, 'x');
-    close.onclick = () => this.toggleSidebar(this.sidebar as Exclude<SidebarMode, null>);
-
-    const content = el.createDiv({ cls: 'rb-sidebar-content rb-wizard' });
-
-    if (this.sidebar === 'board') {
-      renderDatabaseSettings(content, this.config, {
-        onChange: () => this.saveConfig(),
-        onStructureChange: () => {
-          this.saveConfig();
-          this.renderSidebar();
-        },
-        onRefresh: () => this.renderBody(),
-      });
-    } else {
-      const view = this.currentView();
-      if (!view) {
-        content.createDiv({ cls: 'rb-empty', text: 'No view selected.' });
-        return;
+  private openViewSettings(view: ViewConfig): void {
+    const config = this.config;
+    if (!config) return;
+    const base = this.settingsHooks(() => modal);
+    // The view's name may be edited here; keep the active-view pointer in sync.
+    const syncName = (): void => {
+      if (this.activeView !== view.name) {
+        this.activeView = view.name;
+        if (this.file) void this.plugin.setActiveView(this.file.path, view.name);
       }
-      // The view's name may be edited here; keep the active-view pointer in sync.
-      const syncName = (): void => {
-        if (this.activeView !== view.name) {
-          this.activeView = view.name;
-          if (this.file) void this.plugin.setActiveView(this.file.path, view.name);
-        }
-      };
-      renderViewSettings(
-        this.app,
-        content,
-        this.config,
-        view,
-        {
-          onChange: () => {
-            syncName();
-            this.saveConfig();
-          },
-          onStructureChange: () => {
-            syncName();
-            this.saveConfig();
-            this.renderSidebar();
-          },
-        },
-        () => this.deleteView(view.name),
-      );
-    }
+    };
+    const hooks: FormHooks = {
+      onChange: () => {
+        syncName();
+        base.onChange();
+      },
+      onStructureChange: () => {
+        syncName();
+        base.onStructureChange();
+      },
+    };
+    const onDelete = (): void => {
+      modal.close();
+      this.deleteView(view.name);
+    };
+    const modal = new SettingsModal(this.app, 'View settings', () => [
+      { id: 'general', label: 'General', icon: 'sliders-horizontal', render: (el) => renderViewGeneral(this.app, el, config, view, hooks, onDelete) },
+      { id: 'display', label: 'Display', icon: 'eye', render: (el) => renderViewDisplay(el, config, view, hooks) },
+      ...(view.type === 'kanban'
+        ? [{ id: 'columns', label: 'Columns', icon: 'columns-3', render: (el: HTMLElement) => renderColumnConfig(el, view, hooks) }]
+        : []),
+    ]);
+    modal.open();
   }
 
   // --- Body ------------------------------------------------------------------

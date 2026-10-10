@@ -826,95 +826,95 @@
   color: var(--text-muted);
 }
 
-/* ----- Property card (custom component) ----- */
+/* ----- Property editor (board settings + setup wizard) ----- */
+.rb-prop-list { display: flex; flex-direction: column; gap: 8px; margin-bottom: 10px; }
 .rb-prop-card {
   border: 1px solid var(--background-modifier-border);
-  border-radius: 12px;
+  border-radius: 10px;
   background: var(--background-secondary);
-  padding: 14px;
-  margin-bottom: 12px;
 }
-.rb-prop-head { display: flex; gap: 10px; align-items: flex-start; }
-.rb-prop-name {
-  flex: 1 1 auto;
-  min-width: 0;
-  padding: 9px 12px;
-  border-radius: 8px;
-  border: 1px solid var(--background-modifier-border);
-  background: var(--background-primary);
-  color: var(--text-normal);
-  font-size: 14px;
-  font-weight: 600;
+.rb-prop-card.rb-open { border-color: var(--background-modifier-border-hover); }
+
+.rb-prop-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 8px 8px 4px;
 }
-.rb-prop-remove {
-  flex: 0 0 auto;
-  padding: 8px 12px;
-  border-radius: 8px;
-  border: 1px solid var(--background-modifier-border);
-  background: var(--background-primary);
-  color: var(--text-muted);
-  cursor: pointer;
-  font-size: 12px;
-  white-space: nowrap;
-}
-.rb-prop-remove:hover { color: var(--text-error); border-color: var(--text-error); }
-.rb-prop-config-label {
-  margin: 14px 0 8px;
-  font-size: 11px;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  color: var(--text-muted);
-}
-.rb-prop-select,
-.rb-prop-input {
-  width: 100%;
-  max-width: none;
-  padding: 9px 12px;
-  border-radius: 8px;
+.rb-prop-type-icon { display: inline-flex; color: var(--text-muted); }
+.rb-prop-type-icon svg { width: 16px; height: 16px; }
+.rb-prop-name,
+.rb-prop-input,
+.rb-prop-select {
+  height: 34px;
+  padding: 0 10px;
+  border-radius: 7px;
   border: 1px solid var(--background-modifier-border);
   background-color: var(--background-primary);
-  background-image: none;
   color: var(--text-normal);
   font-size: 13px;
-  line-height: 1.5;
-  margin-bottom: 10px;
+  line-height: normal;
 }
+.rb-prop-name { flex: 1 1 auto; min-width: 0; font-weight: 600; font-family: var(--font-monospace); }
+.rb-prop-name.rb-invalid { border-color: var(--text-error); }
+.rb-prop-input { width: 100%; }
 /* Custom-appearance select with a single caret — avoids native-control glyph
    clipping (tall theme fonts) and the tiled-caret bug from .dropdown. */
 .rb-prop-select {
   appearance: none;
   -webkit-appearance: none;
-  height: auto;
-  padding-right: 34px;
+  padding-right: 30px;
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23999' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
   background-repeat: no-repeat;
-  background-position: right 12px center;
-  background-size: 13px;
+  background-position: right 10px center;
+  background-size: 12px;
+  cursor: pointer;
 }
-.rb-prop-select:last-of-type,
-.rb-prop-input:last-of-type { margin-bottom: 0; }
-/* Prefix + suffix inputs side by side, with a small section label. */
-.rb-prop-affix-label {
+.rb-prop-type { flex: 0 0 120px; }
+.rb-prop-expand svg { transition: transform 0.15s ease; }
+.rb-prop-card.rb-open .rb-prop-expand svg { transform: rotate(180deg); }
+.rb-wizard .rb-prop-remove:hover { color: var(--text-error); }
+
+/* Expanded options: a responsive grid of labelled fields. */
+.rb-prop-body {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(170px, 1fr));
+  gap: 12px 14px;
+  padding: 12px 14px 14px 38px;
+  border-top: 1px solid var(--background-modifier-border);
+}
+.rb-prop-field { display: flex; flex-direction: column; gap: 5px; min-width: 0; }
+.rb-prop-field-wide { grid-column: 1 / -1; }
+.rb-prop-field-label {
   font-size: 11px;
-  color: var(--text-muted);
-  margin-top: 14px;
-  margin-bottom: 6px;
+  font-weight: 600;
   letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--text-muted);
 }
-.rb-prop-affix { display: flex; gap: 8px; }
-.rb-prop-affix .rb-prop-input { flex: 1 1 0; min-width: 0; margin-bottom: 0; }
-.rb-prop-add {
+.rb-prop-toggle-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.rb-prop-toggle-desc { font-size: 12px; color: var(--text-muted); }
+
+.rb-wizard .rb-prop-add {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
   width: 100%;
   padding: 9px 14px;
-  border-radius: 8px;
   border: 1px dashed var(--background-modifier-border);
   background: transparent;
   color: var(--text-muted);
-  cursor: pointer;
-  font-size: 13px;
-  font-weight: 500;
 }
-.rb-prop-add:hover { background: var(--background-modifier-hover); color: var(--text-normal); }
+.rb-wizard .rb-prop-add:hover { background: var(--background-modifier-hover); color: var(--text-normal); }
+.rb-prop-add-icon { display: inline-flex; }
+.rb-prop-add-icon svg { width: 15px; height: 15px; }
+
+@media (max-width: 480px) {
+  .rb-prop-type { flex-basis: 96px; }
+  .rb-prop-type-icon { display: none; }
+  .rb-prop-body { padding-left: 14px; }
+}
 
 /* Filter rows (FilterModal still uses Setting). */
 .rb-filter-row.setting-item { border: none; padding: 6px 0; }
@@ -928,85 +928,179 @@
 .rb-filter-row .setting-item-control select,
 .rb-filter-row .setting-item-control input { flex: 1 1 120px; }
 
-/* ===================== Settings sidebar (TOC-style overlay) ===================== */
-.rb-main { position: relative; }
-
-/* Floats over the board on the right; does not squeeze the content. */
-.rb-sidebar {
-  position: absolute;
-  top: 0;
-  right: 0;
-  bottom: 0;
-  z-index: 30;
+/* ===================== Settings modal (board / view settings) ===================== */
+/* Fixed size so switching tabs doesn't make the modal jump around. */
+.modal.rb-settings-modal {
+  width: min(760px, 94vw);
+  height: min(680px, 88vh);
   display: flex;
   flex-direction: column;
-  width: min(340px, 90%);
-  background: var(--background-primary);
-  border-left: 1px solid var(--background-modifier-border);
-  box-shadow: -8px 0 24px rgba(0, 0, 0, 0.28);
-  overflow: hidden;
 }
-@media (max-width: 480px) {
-  .rb-sidebar {
-    left: 0;
-    width: 100%;
-    border-left: none;
-  }
+.rb-settings-modal .modal-content.rb-settings {
+  flex: 1 1 auto;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
 }
-.rb-root:not(.rb-has-sidebar) .rb-sidebar { display: none; }
 
-.rb-sidebar-header {
+.rb-settings-tabs {
   flex: 0 0 auto;
   display: flex;
+  gap: 4px;
+  margin-bottom: 4px;
+  border-bottom: 1px solid var(--background-modifier-border);
+  overflow-x: auto;
+}
+.rb-wizard .rb-settings-tab {
+  display: inline-flex;
   align-items: center;
-  justify-content: space-between;
-  padding: 12px 14px;
+  gap: 7px;
+  margin-bottom: -1px;
+  padding: 8px 12px;
+  border: none;
+  border-bottom: 2px solid transparent;
+  border-radius: 6px 6px 0 0;
+  background: transparent;
+  color: var(--text-muted);
+  white-space: nowrap;
+}
+.rb-wizard .rb-settings-tab:hover { background: var(--background-modifier-hover); color: var(--text-normal); }
+.rb-wizard .rb-settings-tab.rb-active {
+  border-bottom-color: var(--interactive-accent);
+  color: var(--text-normal);
+}
+.rb-wizard .rb-settings-tab:active { transform: none; }
+.rb-settings-tab-icon { display: inline-flex; }
+.rb-settings-tab-icon svg { width: 15px; height: 15px; }
+
+.rb-settings-body {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  padding: 8px 2px 16px;
+}
+/* Settings rows: label left, control right, light separators. */
+.rb-settings-body .setting-item {
+  border: none;
+  padding: 10px 4px;
+  align-items: center;
+}
+.rb-settings-body .setting-item:not(:last-child) {
   border-bottom: 1px solid var(--background-modifier-border);
 }
-.rb-sidebar-title { font-weight: 600; font-size: 16px; }
-.rb-sidebar-close {
+.rb-settings-body .setting-item-control select,
+.rb-settings-body .setting-item-control input[type='text'] { min-width: 200px; }
+/* Property cards inside Board settings span the full width. */
+.rb-settings-body .rb-prop-card .setting-item { border-bottom: none; }
+.rb-settings-body > .rb-wizard-hint { margin: 4px 0 12px; }
+.rb-settings-body > h4:first-child,
+.rb-settings-body > .rb-section-head:first-child { margin-top: 6px; }
+
+@media (max-width: 480px) {
+  .rb-settings-body .setting-item-control select,
+  .rb-settings-body .setting-item-control input[type='text'] { min-width: 0; }
+}
+
+/* ── Shared settings controls ── */
+/* Small square icon button (expand, delete, visibility). */
+.rb-wizard .rb-icon-btn {
+  flex: 0 0 auto;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 34px;
-  height: 34px;
+  width: 30px;
+  height: 30px;
+  padding: 0;
   border: none;
-  border-radius: 8px;
-  background: var(--background-secondary);
-  color: var(--text-normal);
-  cursor: pointer;
-  transition: background 0.12s ease;
-}
-.rb-sidebar-close:hover { background: var(--background-modifier-hover); }
-.rb-sidebar-close svg { width: 17px; height: 17px; }
-
-.rb-sidebar-content {
-  flex: 1 1 auto;
-  overflow-y: auto;
-  padding: 10px 14px 28px;
-}
-/* Settings rows: label left, control right, light separators. */
-.rb-sidebar-content .setting-item {
-  border: none;
-  padding: 9px 9px;
-  align-items: center;
-}
-.rb-sidebar-content .setting-item:not(:last-child) {
-  border-bottom: 1px solid var(--background-modifier-border);
-}
-.rb-sidebar-content .setting-item-name { font-size: 13px; font-weight: 500; }
-.rb-sidebar-content .setting-item-description { font-size: 11px; }
-.rb-sidebar-content .setting-item-control select,
-.rb-sidebar-content .setting-item-control input[type='text'] { max-width: 160px; }
-/* Property cards inside Board settings span the full width. */
-.rb-sidebar-content .rb-prop-card .setting-item { border-bottom: none; }
-.rb-sidebar-content h4 {
-  margin: 18px 0 8px;
-  font-size: 11px;
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
+  border-radius: 6px;
+  background: transparent;
   color: var(--text-muted);
 }
+.rb-wizard .rb-icon-btn:hover { background: var(--background-modifier-hover); color: var(--text-normal); }
+.rb-icon-btn svg { width: 16px; height: 16px; }
+
+/* Drag grip for reorderable lists (pointer-based, so touch works too). */
+.rb-drag-handle {
+  flex: 0 0 auto;
+  display: inline-flex;
+  padding: 4px 2px;
+  color: var(--text-faint);
+  cursor: grab;
+  touch-action: none;
+}
+.rb-drag-handle:hover { color: var(--text-muted); }
+.rb-drag-handle svg { width: 16px; height: 16px; }
+.rb-dragging {
+  position: relative;
+  z-index: 1;
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.3);
+  cursor: grabbing;
+}
+.rb-dragging .rb-drag-handle { cursor: grabbing; }
+
+/* Segmented control. */
+.rb-segmented {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 2px;
+  padding: 3px;
+  border-radius: 8px;
+  background: var(--background-modifier-form-field, var(--background-secondary));
+  border: 1px solid var(--background-modifier-border);
+  align-self: flex-start;
+}
+.rb-wizard .rb-segment {
+  padding: 5px 12px;
+  border: none;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--text-muted);
+  font-size: 12px;
+}
+.rb-wizard .rb-segment:hover { background: var(--background-modifier-hover); color: var(--text-normal); }
+.rb-wizard .rb-segment.rb-active {
+  background: var(--interactive-accent);
+  color: var(--text-on-accent);
+}
+.rb-wizard .rb-segment:active { transform: none; }
+
+/* Section heading with a count and inline actions. */
+.rb-section-head { display: flex; align-items: center; gap: 10px; margin: 20px 0 6px; }
+.rb-section-head h4 { margin: 0; }
+.rb-section-count { font-size: 12px; color: var(--text-faint); }
+.rb-wizard .rb-link-btn {
+  padding: 3px 8px;
+  border: none;
+  background: transparent;
+  color: var(--text-accent);
+  font-size: 12px;
+}
+.rb-wizard .rb-link-btn:hover { background: var(--background-modifier-hover); }
+
+/* ── Display tab: property visibility + order ── */
+.rb-vis-list {
+  display: flex;
+  flex-direction: column;
+  border: 1px solid var(--background-modifier-border);
+  border-radius: 10px;
+  overflow: hidden;
+}
+.rb-vis-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 6px 8px 6px 6px;
+  background: var(--background-primary);
+}
+.rb-vis-row:not(:last-child) { border-bottom: 1px solid var(--background-modifier-border); }
+.rb-vis-type { display: inline-flex; color: var(--text-muted); }
+.rb-vis-type svg { width: 16px; height: 16px; }
+.rb-vis-text { flex: 1 1 auto; min-width: 0; display: flex; align-items: baseline; gap: 8px; }
+.rb-vis-name { font-size: 13px; font-weight: 500; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.rb-vis-meta { font-size: 11px; color: var(--text-faint); white-space: nowrap; }
+.rb-vis-row.rb-hidden .rb-vis-type,
+.rb-vis-row.rb-hidden .rb-vis-text { opacity: 0.45; }
+.rb-vis-row.rb-hidden .rb-vis-name { text-decoration: line-through; }
 
 /* ── Column config (kanban view settings) ── */
 .rb-col-config-list { display: flex; flex-direction: column; gap: 8px; margin-bottom: 10px; }
@@ -1204,16 +1298,19 @@
   min-width: 0;
 }
 
-/* Inline selects (custom caret, no native glyph clipping). */
+/* Inline selects (custom caret, no native glyph clipping). Obsidian gives
+   selects/inputs a fixed height, so set our own and pad only horizontally —
+   vertical padding on top of that height pushes the text down and clips it. */
 .rb-filter-select,
 .rb-filter-value {
-  padding: 7px 10px;
+  height: 34px;
+  padding: 0 10px;
   border-radius: 7px;
   border: 1px solid var(--background-modifier-border);
   background-color: var(--background-primary);
   color: var(--text-normal);
   font-size: 13px;
-  line-height: 1.5;
+  line-height: normal;
 }
 .rb-filter-select {
   appearance: none;
@@ -1241,8 +1338,12 @@
   background: var(--background-secondary);
 }
 
+/* The buttons below are scoped under .rb-wizard so they out-rank the generic
+   `.rb-wizard button` chrome in 13-buttons.css (its padding squashed the
+   30px "⋯" button's icon down to a dot). */
+
 /* "⋯" row menu. */
-.rb-filter-row-menu {
+.rb-wizard .rb-filter-row-menu {
   flex: 0 0 auto;
   margin-left: auto;
   display: inline-flex;
@@ -1250,17 +1351,18 @@
   justify-content: center;
   width: 30px;
   height: 30px;
+  padding: 0;
   border: none;
   border-radius: 6px;
   background: transparent;
   color: var(--text-muted);
   cursor: pointer;
 }
-.rb-filter-row-menu:hover { background: var(--background-modifier-hover); color: var(--text-normal); }
+.rb-wizard .rb-filter-row-menu:hover { background: var(--background-modifier-hover); color: var(--text-normal); }
 .rb-filter-row-menu svg { width: 17px; height: 17px; }
 
 /* "Add filter rule" button. */
-.rb-filter-add {
+.rb-wizard .rb-filter-add {
   display: inline-flex;
   align-items: center;
   gap: 6px;
@@ -1274,7 +1376,7 @@
   cursor: pointer;
   font-size: 13px;
 }
-.rb-filter-add:hover { background: var(--background-modifier-hover); color: var(--text-normal); }
+.rb-wizard .rb-filter-add:hover { background: var(--background-modifier-hover); color: var(--text-normal); }
 .rb-filter-add-icon, .rb-filter-add-caret { display: inline-flex; }
 .rb-filter-add-icon svg { width: 15px; height: 15px; }
 .rb-filter-add-caret svg { width: 13px; height: 13px; opacity: 0.7; }
@@ -1285,7 +1387,7 @@
   padding-top: 12px;
   border-top: 1px solid var(--background-modifier-border);
 }
-.rb-filter-delete {
+.rb-wizard .rb-filter-delete {
   display: inline-flex;
   align-items: center;
   gap: 8px;
@@ -1297,7 +1399,7 @@
   cursor: pointer;
   font-size: 13px;
 }
-.rb-filter-delete:hover { color: var(--text-error); }
+.rb-wizard .rb-filter-delete:hover { background: transparent; color: var(--text-error); }
 .rb-filter-delete-icon { display: inline-flex; }
 .rb-filter-delete-icon svg { width: 15px; height: 15px; }
 
