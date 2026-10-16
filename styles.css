@@ -807,11 +807,10 @@ body:not(.is-mobile) .rb-kanban-card:active { cursor: grabbing; }
 }
 .rb-grand-total .rb-summary-value { font-size: 15px; }
 
-/* Grouped tables scroll sideways as one block, so every group and the total stay aligned. */
-.rb-grid-groups { overflow-x: auto; }
-.rb-grid-groups .rb-table-wrap { overflow-x: visible; }
-.rb-grid-groups > .rb-section,
-.rb-grid-groups > .rb-grand-total { min-width: max-content; }
+/* Grouped tables: each group scrolls sideways, kept in sync (see TableView). Totals
+   shown on their own follow along without a scrollbar of their own. */
+.rb-summary-only { scrollbar-width: none; }
+.rb-summary-only::-webkit-scrollbar { display: none; }
 
 .rb-grid-add {
   display: flex;

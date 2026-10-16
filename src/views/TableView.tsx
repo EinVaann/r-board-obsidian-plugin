@@ -1,4 +1,15 @@
-import { memo, useEffect, useMemo, useRef, useState, type KeyboardEvent as ReactKeyboardEvent, type MouseEvent as ReactMouseEvent, type PointerEvent as ReactPointerEvent } from 'react';
+import {
+  memo,
+  useEffect,
+  useLayoutEffect,
+  useMemo,
+  useRef,
+  useState,
+  type KeyboardEvent as ReactKeyboardEvent,
+  type MouseEvent as ReactMouseEvent,
+  type PointerEvent as ReactPointerEvent,
+  type ReactNode,
+} from 'react';
 import { Menu, Notice } from 'obsidian';
 import { DndContext, closestCenter, type DragEndEvent } from '@dnd-kit/core';
 import { SortableContext, arrayMove, horizontalListSortingStrategy, useSortable } from '@dnd-kit/sortable';
@@ -49,9 +60,8 @@ export function TableView(props: TableProps) {
   );
   if (items.length === 0) return table([], 't');
   if (!groupProp) return table(items, 't');
-  // One horizontal scroll for every group (and the total), so their columns stay lined up.
   return (
-    <div className="rb-grid-groups">
+    <SyncedScroll>
       <Sections
         items={items}
         groupProp={groupProp}
@@ -62,6 +72,43 @@ export function TableView(props: TableProps) {
         {table}
       </Sections>
       {view.summary && <SummaryTable {...props} label="Total" grand />}
+    </SyncedScroll>
+  );
+}
+
+/**
+ * Groups of a table, each with its own sideways scroll, kept in step: scrolling
+ * one group scrolls every group and the totals, so their columns stay lined up.
+ */
+function SyncedScroll({ children }: { children: ReactNode }) {
+  const ref = useRef<HTMLDivElement>(null);
+  useLayoutEffect(() => {
+    const box = ref.current;
+    if (!box) return;
+    let left = 0;
+    // Scroll events don't bubble: listen in the capture phase.
+    const onScroll = (e: Event): void => {
+      const from = e.target as HTMLElement;
+      if (!from.classList?.contains('rb-table-wrap') || from.scrollLeft === left) return;
+      left = from.scrollLeft;
+      for (const wrap of box.querySelectorAll<HTMLElement>('.rb-table-wrap')) {
+        if (wrap !== from && wrap.scrollLeft !== left) wrap.scrollLeft = left;
+      }
+    };
+    box.addEventListener('scroll', onScroll, true);
+    // Groups opened later start at the shared position.
+    const mo = new MutationObserver(() => {
+      for (const wrap of box.querySelectorAll<HTMLElement>('.rb-table-wrap')) if (wrap.scrollLeft !== left) wrap.scrollLeft = left;
+    });
+    mo.observe(box, { childList: true, subtree: true });
+    return () => {
+      box.removeEventListener('scroll', onScroll, true);
+      mo.disconnect();
+    };
+  }, []);
+  return (
+    <div className="rb-grid-groups" ref={ref}>
+      {children}
     </div>
   );
 }
