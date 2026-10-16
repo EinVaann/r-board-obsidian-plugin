@@ -46,8 +46,12 @@ export function toText(v: FValue): string {
   return v.map(toText).join(', ');
 }
 
+/** A formula read a blank input where it needed a date: the result is blank, not an error. */
+export class BlankInput extends FormulaError {}
+
 export function toDate(v: FValue): Date {
   if (v instanceof Date) return v;
+  if (isEmpty(v)) throw new BlankInput('Blank date');
   if (typeof v === 'number') return new Date(v);
   if (typeof v === 'string') {
     const d = parseDateString(v);

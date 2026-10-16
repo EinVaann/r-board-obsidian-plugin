@@ -1,4 +1,4 @@
-import { memo, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type MouseEvent as ReactMouseEvent, type ReactNode } from 'react';
+import { memo, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type CSSProperties, type MouseEvent as ReactMouseEvent, type ReactNode } from 'react';
 import { createPortal } from 'react-dom';
 import { Menu, Platform } from 'obsidian';
 import {
@@ -332,6 +332,12 @@ function TopScrollbar({ size, lanes, children }: { size: string; lanes: boolean;
 }
 
 
+/** Columns without a color are shaded in this neutral tone. */
+const NEUTRAL = 'var(--text-faint)';
+
+/** A column's color, read by the kanban CSS (blended into the theme there). */
+const columnColor = (color: string | undefined): CSSProperties => ({ '--gc': color ?? NEUTRAL }) as CSSProperties;
+
 /**
  * A sortable column shell. Without swimlanes (`whole`) it is the whole column
  * (header + cards); with them, just the header in the top row.
@@ -359,7 +365,7 @@ function SortableHeader({
     <div
       ref={sortable.setNodeRef}
       className={cls.join(' ')}
-      style={{ transform: CSS.Translate.toString(sortable.transform), transition: sortable.transition }}
+      style={{ ...columnColor(column.color), transform: CSS.Translate.toString(sortable.transform), transition: sortable.transition }}
     >
       {children(handle)}
     </div>
@@ -370,7 +376,7 @@ function ColumnHeader({ column, collapsed, onToggle, handle }: { column: ItemGro
   return (
     <div className={canDrag() && column.key !== null ? 'rb-kanban-header rb-draggable' : 'rb-kanban-header'} onClick={onToggle} {...handle}>
       <Icon name={collapsed ? 'chevron-right' : 'chevron-down'} className="rb-kanban-caret" />
-      <GroupLabel label={column.label} color={column.color} className="rb-kanban-title" />
+      <GroupLabel label={column.label} color={column.color ?? NEUTRAL} className="rb-kanban-title" />
       <span className="rb-kanban-count">{column.items.length}</span>
     </div>
   );
@@ -405,6 +411,7 @@ function Cell({ column, lane, items, collapsed, view, properties, getTargets, gr
     <div
       ref={drop.setNodeRef}
       className={`${inLane ? 'rb-kanban-cell ' : ''}rb-kanban-list${draggingCard && drop.isOver ? ' rb-drop-active' : ''}`}
+      style={inLane ? columnColor(column.color) : undefined}
     >
       {items.length === 0 && !inLane && <div className="rb-kanban-empty-drop">{canDrag() && movable ? 'Drop cards here' : 'No cards'}</div>}
       {visible.map((item) => (

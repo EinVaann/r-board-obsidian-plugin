@@ -66,6 +66,16 @@ describe('formula properties', () => {
     expect(empty.values.double).toBe(0);
   });
 
+  it('leaves a formula blank (not an error) when a date it needs is blank', () => {
+    const p: PropertyConfig[] = [
+      { name: 'd', label: 'D', type: 'date' },
+      { name: 'm', type: 'formula', formula: 'formatDate({D}, "YYYY-MM")' },
+    ];
+    const [blank] = computeItems([item('x', {})], p);
+    expect(blank.values.m).toBeNull();
+    expect(blank.errors).toBeUndefined();
+  });
+
   it('leaves items untouched when there are no formulas', () => {
     const plain = [item('A', { score: 1 })];
     expect(computeItems(plain, props.slice(0, 3))).toBe(plain);

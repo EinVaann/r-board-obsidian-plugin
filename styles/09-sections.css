@@ -40,18 +40,25 @@
 .rb-section-header:hover .rb-section-add, .rb-section-add:focus-visible, .is-mobile .rb-section-add { opacity: 1; }
 .rb-section-add svg { width: 15px; height: 15px; }
 
-/* Group label with a color (kanban columns + gallery/table sections): flat
-   text with a small dot in the chosen color (--gc). */
+/* Group label with a color (kanban columns + gallery/table sections): a soft
+   pill with a dot. The color (--gc) is blended into the theme so bright
+   colors come out muted. */
 .rb-group-pill {
   display: inline-flex;
   align-items: center;
-  gap: 7px;
+  gap: 6px;
+  padding: 1px 9px 1px 7px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--gc) 22%, var(--background-primary));
+  color: color-mix(in srgb, var(--gc) 35%, var(--text-normal));
+  text-transform: none;
+  letter-spacing: normal;
 }
 .rb-group-pill::before {
   content: '';
   flex: none;
-  width: 8px;
-  height: 8px;
+  width: 7px;
+  height: 7px;
   border-radius: 50%;
-  background: var(--gc);
+  background: color-mix(in srgb, var(--gc) 75%, var(--text-muted));
 }

@@ -884,20 +884,27 @@ body:not(.is-mobile) .rb-kanban-card:active { cursor: grabbing; }
 .rb-section-header:hover .rb-section-add, .rb-section-add:focus-visible, .is-mobile .rb-section-add { opacity: 1; }
 .rb-section-add svg { width: 15px; height: 15px; }
 
-/* Group label with a color (kanban columns + gallery/table sections): flat
-   text with a small dot in the chosen color (--gc). */
+/* Group label with a color (kanban columns + gallery/table sections): a soft
+   pill with a dot. The color (--gc) is blended into the theme so bright
+   colors come out muted. */
 .rb-group-pill {
   display: inline-flex;
   align-items: center;
-  gap: 7px;
+  gap: 6px;
+  padding: 1px 9px 1px 7px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--gc) 22%, var(--background-primary));
+  color: color-mix(in srgb, var(--gc) 35%, var(--text-normal));
+  text-transform: none;
+  letter-spacing: normal;
 }
 .rb-group-pill::before {
   content: '';
   flex: none;
-  width: 8px;
-  height: 8px;
+  width: 7px;
+  height: 7px;
   border-radius: 50%;
-  background: var(--gc);
+  background: color-mix(in srgb, var(--gc) 75%, var(--text-muted));
 }
 
 /* ===================== Home (board hub) ===================== */
@@ -1919,8 +1926,26 @@ body:not(.is-phone) .rb-edit-modal {
 .rb-formula-help ul { margin: 6px 0 0; padding-left: 18px; max-height: 180px; overflow: auto; }
 .rb-formula-help code { font-size: 12px; }
 
-/* ===================== Kanban: "New" buttons, swimlanes ===================== */
-/* Columns stay flat: the option color shows only on the header label. */
+/* ===================== Kanban: column colors, "New" buttons, swimlanes ===================== */
+/* Every column carries a color (--kc): its option color, else a neutral gray.
+   It is blended into the theme so the column, its cards, count and "New"
+   button only take a faint shade of it. */
+.rb-kanban-col,
+.rb-kanban-cell { --kc: var(--gc, var(--text-faint)); }
+.rb-kanban-col:not(.rb-kanban-add),
+.rb-kanban-cell { background: color-mix(in srgb, var(--kc) 6%, var(--background-secondary)); }
+.rb-kanban-col .rb-kanban-card,
+.rb-kanban-cell .rb-kanban-card {
+  background: color-mix(in srgb, var(--kc) 9%, var(--background-primary));
+  border-color: color-mix(in srgb, var(--kc) 18%, var(--background-modifier-border));
+}
+.rb-kanban-col .rb-kanban-count {
+  background: none;
+  padding: 0;
+  margin-left: 4px;
+  font-size: 13px;
+  color: color-mix(in srgb, var(--kc) 55%, var(--text-muted));
+}
 
 /* "New" at the bottom of each column / cell (pre-fills the column and row values). */
 .rb-kanban-new {
@@ -1929,16 +1954,17 @@ body:not(.is-phone) .rb-edit-modal {
   gap: 6px;
   width: 100%;
   height: auto;
-  padding: 6px 8px;
+  padding: 8px 10px;
   background: transparent;
   box-shadow: none;
-  border-radius: 6px;
-  color: var(--text-faint);
-  font-size: 12px;
+  border: 1px solid color-mix(in srgb, var(--kc, var(--text-faint)) 22%, var(--background-modifier-border));
+  border-radius: 8px;
+  color: color-mix(in srgb, var(--kc, var(--text-faint)) 55%, var(--text-muted));
+  font-size: 13px;
   cursor: pointer;
   justify-content: flex-start;
 }
-.rb-kanban-new:hover { background: var(--background-modifier-hover); color: var(--text-normal); }
+.rb-kanban-new:hover { background: color-mix(in srgb, var(--kc, var(--text-faint)) 10%, transparent); }
 .rb-kanban-new svg { width: 13px; height: 13px; }
 
 /* Swimlanes: the board scrolls both ways; a header row of columns, then one row per lane. */

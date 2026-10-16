@@ -1,5 +1,5 @@
 import type { BoardItem, PropertyConfig } from '../types';
-import { evaluateFormula, type FValue } from '../formula/evaluate';
+import { BlankInput, evaluateFormula, type FValue } from '../formula/evaluate';
 import { FormulaError } from '../formula/tokenize';
 import { asArray, asBoolean, asDate, asNumber, optionFor } from '../render/values';
 
@@ -79,6 +79,11 @@ export class FormulaEvaluator {
         results.set(prop.name, value);
         return value;
       } catch (e) {
+        // A blank input (e.g. no date yet) leaves the result blank instead of #ERROR.
+        if (e instanceof BlankInput) {
+          results.set(prop.name, null);
+          return null;
+        }
         errors[prop.name] = e instanceof Error ? e.message : String(e);
         throw new FormulaError(`{${prop.label ?? prop.name}} has an error`);
       } finally {
