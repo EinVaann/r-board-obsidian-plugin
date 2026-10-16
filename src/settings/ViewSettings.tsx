@@ -1,13 +1,28 @@
 import { useCallback, useMemo, useState } from 'react';
 import { debounce } from 'obsidian';
 import { arrayMove } from '@dnd-kit/sortable';
-import type { CardSize, DatabaseConfig, DateBucket, GalleryLayout, GroupColumnConfig, LoadLimit, PagingMode, PropertyConfig, SortDir, ViewConfig, ViewType } from '../types';
-import { NO_SORT_KEY, propertyLabel, TITLE_SORT_KEY } from '../config';
+import type {
+  Aggregate,
+  CardSize,
+  ChartConfig,
+  ChartType,
+  DatabaseConfig,
+  DateBucket,
+  GalleryLayout,
+  GroupColumnConfig,
+  LoadLimit,
+  PagingMode,
+  PropertyConfig,
+  SortDir,
+  ViewConfig,
+  ViewType,
+} from '../types';
+import { defaultChartConfig, NO_SORT_KEY, propertyLabel, TITLE_SORT_KEY } from '../config';
 import { countFilterRules } from '../data/filter';
 import { useBoard, useBoardContext } from '../board/context';
 import { Icon } from '../react/Icon';
 import { PROPERTY_TYPE_ICON } from './PropertyEditor';
-import { DragHandle, Segmented, Select, SettingRow, SettingsTabs, SortableList, TextInput, Toggle } from './controls';
+import { DragHandle, Segmented, Select, SettingRow, SettingsTabs, SortableList, TextInput, Toggle, type Option } from './controls';
 
 type ViewRecipe = (draft: ViewConfig) => void;
 
@@ -28,7 +43,8 @@ export function ViewSettings({ viewIndex, onDelete }: { viewIndex: number; onDel
     { id: 'display', label: 'Display', icon: 'eye', content: <Display config={config} view={view} edit={edit} /> },
   ];
   if (view.type === 'kanban') tabs.push({ id: 'columns', label: 'Columns', icon: 'columns-3', content: <Columns view={view} edit={edit} /> });
-  return <SettingsTabs tabs={tabs} />;
+  if (view.type === 'chart') tabs.splice(1, 0, { id: 'chart', label: 'Chart', icon: 'bar-chart-3', content: <ChartSettings config={config} view={view} edit={edit} /> });
+  return <SettingsTabs tabs={tabs} initial={view.type === 'chart' ? 'chart' : undefined} />;
 }
 
 interface TabProps {
@@ -62,10 +78,19 @@ function General({ config, view, viewIndex, edit, onDelete }: TabProps & { viewI
             { value: 'kanban', label: 'Kanban' },
             { value: 'table', label: 'Table' },
             { value: 'recipe', label: 'Recipe' },
+            { value: 'chart', label: 'Chart' },
           ]}
-          onChange={(v) => edit((d) => void (d.type = v))}
+          onChange={(v) =>
+            edit((d) => {
+              d.type = v;
+              if (v === 'chart' && !d.chart) d.chart = defaultChartConfig();
+            })
+          }
         />
       </SettingRow>
+      {/* Charts aggregate everything that passes the filter: no paging, sort or sections. */}
+      {view.type !== 'chart' && (
+      <>
       <SettingRow
         name={view.type === 'table' && view.paging === 'pages' ? 'Page size' : 'Load limit'}
         desc={view.type === 'table' && view.paging === 'pages' ? 'Rows per page.' : 'How many items show before a "View More" button.'}
@@ -132,6 +157,8 @@ function General({ config, view, viewIndex, edit, onDelete }: TabProps & { viewI
         />
       </SettingRow>
       {groupProp && <BucketRow prop={groupProp} value={view.groupBucket} onChange={(b) => edit((d) => void ((d.groupBucket = b), (d.collapsed = undefined)))} />}
+      </>
+      )}
       {view.type === 'kanban' && (
         <SettingRow name="Rows" desc="Optional: split the board into swimlanes by another property. Every row has every column.">
           <Select
@@ -156,6 +183,127 @@ function General({ config, view, viewIndex, edit, onDelete }: TabProps & { viewI
         <button className="mod-warning" onClick={onDelete}>
           Delete view
         </button>
+      </SettingRow>
+    </>
+  );
+}
+
+/** Chart tab: chart type, axes, series split, values and look. */
+function ChartSettings({ config, view, edit }: TabProps) {
+  const chart = view.chart ?? defaultChartConfig();
+  const set = (patch: Partial<ChartConfig>): void => edit((d) => void (d.chart = { ...(d.chart ?? defaultChartConfig()), ...patch }));
+  const props = config.properties;
+  const xProp = props.find((p) => p.name === chart.x);
+  const numeric = props.filter((p) => p.type === 'number' || p.type === 'formula' || p.type === 'checkbox');
+  const pie = chart.type === 'pie' || chart.type === 'donut';
+  const bars = chart.type === 'bar';
+  const label = (p: PropertyConfig): Option<string> => ({ value: p.name, label: propertyLabel(p) });
+
+  return (
+    <>
+      <SettingRow name="Chart type">
+        <Select<ChartType>
+          value={chart.type}
+          options={[
+            { value: 'bar', label: 'Bar' },
+            { value: 'line', label: 'Line' },
+            { value: 'area', label: 'Area' },
+            { value: 'pie', label: 'Pie' },
+            { value: 'donut', label: 'Donut' },
+            { value: 'scatter', label: 'Scatter' },
+          ]}
+          onChange={(type) => set({ type })}
+        />
+      </SettingRow>
+      <SettingRow name={chart.type === 'scatter' ? 'X axis' : pie ? 'Slices' : 'Categories (X axis)'} desc={chart.type === 'scatter' ? 'A number or date property.' : 'One bar / point / slice per value. None: one per item.'}>
+        <Select
+          value={chart.x ?? ''}
+          options={[{ value: '', label: 'None (each item)' }, ...props.map(label)]}
+          onChange={(v) => set({ x: v || null })}
+        />
+      </SettingRow>
+      {xProp && (xProp.type === 'date' || xProp.type === 'formula') && chart.type !== 'scatter' && (
+        <SettingRow name="Group dates by">
+          <Select<DateBucket>
+            value={chart.dateBucket}
+            options={[
+              { value: 'none', label: 'Day' },
+              { value: 'week', label: 'Week' },
+              { value: 'month', label: 'Month' },
+              { value: 'quarter', label: 'Quarter' },
+              { value: 'year', label: 'Year' },
+              { value: 'relative', label: 'Relative to today' },
+            ]}
+            onChange={(dateBucket) => set({ dateBucket })}
+          />
+        </SettingRow>
+      )}
+      {!pie && (
+        <SettingRow name="Split into series by" desc="One colored series per value (option colors are used).">
+          <Select value={chart.splitBy ?? ''} options={[{ value: '', label: 'None' }, ...props.filter((p) => p.name !== chart.x).map(label)]} onChange={(v) => set({ splitBy: v || null })} />
+        </SettingRow>
+      )}
+      <SettingRow name={chart.type === 'scatter' ? 'Y axis' : 'Values'} desc={chart.type === 'scatter' ? 'A number property.' : 'Numbers to add up. None: count items.'}>
+        <div className="rb-chart-values">
+          {numeric.length === 0 && <span className="rb-wizard-hint">No number properties.</span>}
+          {numeric.map((p) => {
+            const on = chart.values.includes(p.name);
+            return (
+              <label key={p.name} className="rb-chart-value">
+                <input
+                  type="checkbox"
+                  checked={on}
+                  onChange={() => set({ values: on ? chart.values.filter((v) => v !== p.name) : chart.type === 'scatter' ? [p.name] : [...chart.values, p.name] })}
+                />
+                {propertyLabel(p)}
+              </label>
+            );
+          })}
+        </div>
+      </SettingRow>
+      {chart.values.length > 0 && chart.type !== 'scatter' && (
+        <SettingRow name="Combine values with">
+          <Select<Aggregate>
+            value={chart.aggregate}
+            options={[
+              { value: 'sum', label: 'Sum' },
+              { value: 'avg', label: 'Average' },
+              { value: 'min', label: 'Minimum' },
+              { value: 'max', label: 'Maximum' },
+              { value: 'count', label: 'Count items' },
+            ]}
+            onChange={(aggregate) => set({ aggregate })}
+          />
+        </SettingRow>
+      )}
+      {chart.type !== 'scatter' && (
+        <SettingRow name="Order">
+          <Select<ChartConfig['sort']>
+            value={chart.sort}
+            options={[
+              { value: 'x', label: 'By category' },
+              { value: 'value-desc', label: 'Largest first' },
+              { value: 'value-asc', label: 'Smallest first' },
+            ]}
+            onChange={(sort) => set({ sort })}
+          />
+        </SettingRow>
+      )}
+      {!pie && chart.type !== 'scatter' && (
+        <SettingRow name="Stacked" desc="Stack series on top of each other." toggle>
+          <Toggle checked={chart.stacked} onChange={(stacked) => set({ stacked })} label="Stacked" />
+        </SettingRow>
+      )}
+      {bars && (
+        <SettingRow name="Horizontal bars" toggle>
+          <Toggle checked={chart.horizontal} onChange={(horizontal) => set({ horizontal })} label="Horizontal bars" />
+        </SettingRow>
+      )}
+      <SettingRow name="Legend" toggle>
+        <Toggle checked={chart.showLegend} onChange={(showLegend) => set({ showLegend })} label="Legend" />
+      </SettingRow>
+      <SettingRow name="Value labels" toggle>
+        <Toggle checked={chart.showLabels} onChange={(showLabels) => set({ showLabels })} label="Value labels" />
       </SettingRow>
     </>
   );

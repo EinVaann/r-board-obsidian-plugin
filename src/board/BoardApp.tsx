@@ -12,6 +12,7 @@ import { GalleryView } from '../views/GalleryView';
 import { KanbanView } from '../views/KanbanView';
 import { TableView } from '../views/TableView';
 import { RecipeView } from '../views/RecipeView';
+import { ChartView } from '../chart/ChartView';
 
 /** At most this many view tabs; the rest go in the "more" dropdown. */
 const MAX_VIEW_TABS = 3;
@@ -98,7 +99,7 @@ function useViewMenus() {
   const createView = (e: ReactMouseEvent): void => {
     const menu = new Menu();
     // Recipe views read note bodies, so tables don't offer them.
-    const types: ViewType[] = store.getState().config?.kind === 'table' ? ['table', 'gallery', 'kanban'] : ['gallery', 'kanban', 'table', 'recipe'];
+    const types: ViewType[] = store.getState().config?.kind === 'table' ? ['table', 'gallery', 'kanban', 'chart'] : ['gallery', 'kanban', 'table', 'recipe', 'chart'];
     types.forEach((type) => {
       menu.addItem((item) =>
         item
@@ -267,7 +268,7 @@ function Toolbar({ config, view }: { config: DatabaseConfig; view: ViewConfig | 
       {/* Row 2: search, sort / filter chips. */}
       <div className="rb-controls-row">
         <input className="rb-search" type="search" placeholder="Search…" value={search} onChange={(e) => setSearch(e.target.value)} />
-        {view && <SortChip config={config} view={view} viewIndex={viewIndex} />}
+        {view && view.type !== 'chart' && <SortChip config={config} view={view} viewIndex={viewIndex} />}
         {view && (
           <Chip icon="filter" label="Filter" badge={filters || undefined} active={filters > 0} onClick={() => actions.openFilter(viewIndex)} />
         )}
@@ -411,7 +412,7 @@ function Body({ config, view }: { config: DatabaseConfig; view: ViewConfig }) {
     case 'kanban':
       return <KanbanView config={config} view={view} viewIndex={viewIndex} items={items} properties={properties} />;
     case 'chart':
-      return <div className="rb-empty">Chart views are not available yet.</div>;
+      return <ChartView chart={view.chart} properties={config.properties} items={items} detailProperties={properties} />;
     case 'table':
       return <TableView view={view} viewIndex={viewIndex} items={items} properties={properties} sort={sort} titleLabel={titleLabel(config)} titleProp={titlePropertyOf(config)} />;
     case 'recipe':

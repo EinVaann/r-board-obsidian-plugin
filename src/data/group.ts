@@ -99,6 +99,26 @@ function categoryOf(item: BoardItem, prop: PropertyConfig, bucket: DateBucket, t
   return first === undefined ? null : { key: first, label: first };
 }
 
+/** Every group an item falls in (a multi-select: one per value). Empty → []. */
+export function categoriesOf(item: BoardItem, prop: PropertyConfig, bucket: DateBucket, today = new Date()): { key: string; label: string }[] {
+  if (prop.type === 'multi') return asArray(item.values[prop.name]).map((v) => ({ key: v, label: optionFor(prop, v).label }));
+  const c = categoryOf(item, prop, bucket, today);
+  return c ? [c] : [];
+}
+
+/** Group keys in natural order: listed options first, then numbers / dates / text ascending. */
+export function orderKeys(prop: PropertyConfig, keys: string[]): string[] {
+  const rank = new Map((prop.options ?? []).map((o, i) => [o.value, i]));
+  const numeric = prop.type === 'number' || keys.every((k) => k !== '' && !Number.isNaN(Number(k)));
+  return [...keys].sort((a, b) => {
+    const ra = rank.get(a);
+    const rb = rank.get(b);
+    if (ra !== undefined || rb !== undefined) return (ra ?? 1e9) - (rb ?? 1e9);
+    if (prop.type === 'checkbox') return b.localeCompare(a);
+    return numeric ? Number(a) - Number(b) : a.localeCompare(b, undefined, { numeric: true });
+  });
+}
+
 /** The group value of an item for a property: a single key, or null. */
 export function groupValueOf(item: BoardItem, prop: PropertyConfig, bucket: DateBucket = 'none'): string | null {
   return categoryOf(item, prop, bucket, new Date())?.key ?? null;
