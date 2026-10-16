@@ -665,6 +665,23 @@ body:not(.is-mobile) .rb-kanban-card:active { cursor: grabbing; }
 /* ===================== Table ===================== */
 /* The board body hides horizontal overflow, so wide tables scroll here. */
 .rb-table-wrap { overflow-x: auto; }
+/* Always-visible horizontal scrollbar (macOS overlay bars hide without a trackpad).
+   A theme's scrollbar-color/width would switch the custom bar off: reset them. */
+body .rb-table-wrap.rb-grid { scrollbar-width: auto; scrollbar-color: auto; }
+body .rb-table-wrap.rb-grid::-webkit-scrollbar { display: block; height: 12px; background: transparent; }
+body .rb-table-wrap.rb-grid::-webkit-scrollbar-track { background: var(--background-secondary); border-radius: 6px; }
+body .rb-table-wrap.rb-grid::-webkit-scrollbar-thumb {
+  background-color: var(--background-modifier-border-hover);
+  background-clip: padding-box;
+  border: 3px solid transparent;
+  border-radius: 6px;
+  min-width: 40px;
+}
+body .rb-table-wrap.rb-grid::-webkit-scrollbar-thumb:hover,
+body .rb-table-wrap.rb-grid::-webkit-scrollbar-thumb:active { background-color: var(--text-faint); }
+/* Things under the grid stay in view while it scrolls sideways. */
+.rb-grid > .rb-grid-add, .rb-grid > .rb-pager, .rb-grid > .rb-empty { position: sticky; left: 0; }
+.rb-grid > .rb-pager, .rb-grid > .rb-empty { width: 100%; box-sizing: border-box; }
 .rb-table {
   width: 100%;
   border-collapse: collapse;
@@ -775,7 +792,7 @@ body:not(.is-mobile) .rb-kanban-card:active { cursor: grabbing; }
   vertical-align: bottom;
   cursor: pointer;
 }
-.rb-summary-row .rb-summary-title { text-align: left; cursor: default; vertical-align: middle; }
+.rb-summary-row .rb-summary-title { text-align: left; cursor: default; vertical-align: middle; position: sticky; left: 0; z-index: 1; }
 .rb-summary-caption {
   display: block;
   font-size: 10px;
@@ -809,8 +826,8 @@ body:not(.is-mobile) .rb-kanban-card:active { cursor: grabbing; }
 
 /* Grouped tables: each group scrolls sideways, kept in sync (see TableView). Totals
    shown on their own follow along without a scrollbar of their own. */
-.rb-summary-only { scrollbar-width: none; }
-.rb-summary-only::-webkit-scrollbar { display: none; }
+body .rb-table-wrap.rb-summary-only { scrollbar-width: none; }
+body .rb-table-wrap.rb-summary-only::-webkit-scrollbar { display: none; }
 
 .rb-grid-add {
   display: flex;
