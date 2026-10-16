@@ -95,7 +95,7 @@ export class FormulaEvaluator {
     }
     const values = { ...item.values };
     for (const prop of this.formulas) values[prop.name] = errors[prop.name] ? null : results.get(prop.name) ?? null;
-    const out: BoardItem = { ...item, values };
+    const out: BoardItem = { ...item, values, stored: item.values };
     if (Object.keys(errors).length) out.errors = errors;
     return out;
   }

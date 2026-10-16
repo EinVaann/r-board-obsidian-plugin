@@ -76,6 +76,14 @@ export class BoardView extends TextFileView {
           throw e;
         }
       },
+      addRow: (cells, after) => {
+        if (!this.isTable) return null;
+        let id = '';
+        this.store.getState().updateRows((rows) => void (id = addRow(rows, cells, after)));
+        return id;
+      },
+      deleteRows: (ids) => this.store.getState().updateRows((rows) => deleteRows(rows, ids)),
+      duplicateRow: (id) => this.store.getState().updateRows((rows) => void duplicateRow(rows, id)),
       openBoardSettings: () => openBoardSettings(this.app, this.ctx),
       openViewSettings: (index) => openViewSettings(this.app, this.ctx, index, () => this.deleteView(index)),
       openFilter: (index) => openFilterModal(this.app, this.ctx, index),

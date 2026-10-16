@@ -1,0 +1,75 @@
+/* Approximation of Obsidian's light theme variables, for the dev harness only. */
+:root {
+  --background-primary: #ffffff;
+  --background-secondary: #f6f6f6;
+  --background-secondary-alt: #efefef;
+  --background-modifier-border: #e0e0e0;
+  --background-modifier-border-hover: #ccc;
+  --background-modifier-hover: rgba(0, 0, 0, 0.06);
+  --text-normal: #222;
+  --text-muted: #666;
+  --text-faint: #999;
+  --text-accent: #7c3aed;
+  --text-error: #d00;
+  --text-on-accent: #fff;
+  --interactive-accent: #7c3aed;
+  --interactive-accent-hover: #6d28d9;
+  --font-ui-smaller: 11px;
+  --font-ui-small: 13px;
+  --font-ui-medium: 15px;
+  --font-monospace: ui-monospace, Menlo, monospace;
+  --radius-s: 4px;
+  --radius-m: 8px;
+  --shadow-l: 0 8px 24px rgba(0, 0, 0, 0.15);
+  --shadow-s: 0 2px 8px rgba(0, 0, 0, 0.12);
+  --layer-menu: 60;
+}
+html,
+body {
+  margin: 0;
+  height: 100%;
+  font: 13px system-ui, sans-serif;
+  color: var(--text-normal);
+  background: var(--background-primary);
+}
+#root {
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+button {
+  font: inherit;
+  padding: 4px 10px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  background: #fafafa;
+  cursor: pointer;
+}
+input,
+select,
+textarea {
+  font: inherit;
+  padding: 4px 6px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+}
+.setting-item { display: flex; align-items: center; gap: 12px; padding: 8px 0; border-bottom: 1px solid #eee; }
+.setting-item-info { flex: 1; }
+.setting-item-description { color: var(--text-muted); font-size: 12px; }
+.dev-modal-bg {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.3);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 50;
+}
+.dev-modal {
+  background: #fff;
+  border-radius: 10px;
+  padding: 16px 20px;
+  max-height: 90vh;
+  overflow: auto;
+  width: min(720px, 92vw);
+}

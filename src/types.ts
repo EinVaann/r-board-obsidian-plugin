@@ -282,4 +282,6 @@ export interface BoardItem {
   tags: string[];
   /** Formula property name → error message, for formulas that failed. */
   errors?: Record<string, string>;
+  /** The values as stored, before formulas were computed (set only when there are formulas). */
+  stored?: Record<string, unknown>;
 }

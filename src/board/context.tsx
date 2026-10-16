@@ -15,6 +15,12 @@ export interface BoardActions {
   editItem: (item: BoardItem) => void;
   /** Write one property of an item (`null` clears it). */
   setValue: (item: BoardItem, prop: PropertyConfig, value: StoredValue) => Promise<void>;
+  /** Tables: add a row (after `after`, else at the end) and return its id; boards: null. */
+  addRow: (cells?: Record<string, unknown>, after?: string) => string | null;
+  /** Tables: delete rows. */
+  deleteRows: (ids: string[]) => void;
+  /** Tables: copy a row below itself. */
+  duplicateRow: (id: string) => void;
   openBoardSettings: () => void;
   openViewSettings: (viewIndex: number) => void;
   openFilter: (viewIndex: number) => void;

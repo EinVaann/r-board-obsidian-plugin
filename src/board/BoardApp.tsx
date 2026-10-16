@@ -1,7 +1,7 @@
 import { useLayoutEffect, useRef, useState, type MouseEvent as ReactMouseEvent, type ReactNode } from 'react';
 import { Menu, Platform } from 'obsidian';
 import type { DatabaseConfig, ViewConfig, ViewType } from '../types';
-import { effectiveSort, makeDefaultView, NO_SORT_KEY, propertyLabel, titleLabel, TITLE_SORT_KEY } from '../config';
+import { effectiveSort, makeDefaultView, NO_SORT_KEY, propertyLabel, titleLabel, titlePropertyOf, TITLE_SORT_KEY } from '../config';
 import { countFilterRules } from '../data/filter';
 import { Icon } from '../react/Icon';
 import { useBoard, useBoardContext } from './context';
@@ -413,7 +413,7 @@ function Body({ config, view }: { config: DatabaseConfig; view: ViewConfig }) {
     case 'chart':
       return <div className="rb-empty">Chart views are not available yet.</div>;
     case 'table':
-      return <TableView view={view} viewIndex={viewIndex} items={items} properties={properties} sort={sort} titleLabel={titleLabel(config)} />;
+      return <TableView view={view} viewIndex={viewIndex} items={items} properties={properties} sort={sort} titleLabel={titleLabel(config)} titleProp={titlePropertyOf(config)} />;
     case 'recipe':
       return <RecipeView view={view} items={items} properties={properties} />;
     case 'gallery':

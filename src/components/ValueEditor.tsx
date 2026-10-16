@@ -5,6 +5,9 @@ import { asArray, asBoolean, optionFor } from '../render/values';
 import { formulaOverride } from '../data/compute';
 import { Toggle } from '../settings/controls';
 
+/** Where the selection goes after an edit finishes (grid): Enter → down, Tab → right / left. */
+export type EditMove = 'down' | 'right' | 'left' | null;
+
 /** The text a stored value is edited as (lists comma-separated). */
 export function editText(prop: PropertyConfig, raw: unknown): string {
   if (raw === undefined || raw === null) return '';
@@ -13,23 +16,39 @@ export function editText(prop: PropertyConfig, raw: unknown): string {
   return String(raw);
 }
 
-/** HTML input type for a property's text editor. */
+/**
+ * Typed or pasted text as a stored value: select / multi labels map to their
+ * option values; everything else is coerced when written (see `toStored`).
+ */
+export function fromText(prop: PropertyConfig, text: string): StoredValue {
+  const t = text.trim();
+  if (t === '') return null;
+  const byLabel = (s: string): string => {
+    const l = s.toLowerCase();
+    return prop.options?.find((o) => o.value.toLowerCase() === l || o.label?.toLowerCase() === l)?.value ?? s;
+  };
+  if (prop.type === 'select') return byLabel(t);
+  if (prop.type === 'multi') return t.split(',').map((s) => s.trim()).filter(Boolean).map(byLabel);
+  return t;
+}
+
+/** HTML input type for a property's text editor. Numbers use a text input: number inputs reformat by locale. */
 function inputType(prop: PropertyConfig): string {
-  if (prop.type === 'number') return 'number';
   if (prop.type === 'date') return prop.includeTime ? 'datetime-local' : 'date';
   if (prop.type === 'url') return 'url';
   return 'text';
 }
 
 /**
- * An editor for one stored value. Text-like values commit on blur / Enter
- * (Escape cancels); checkboxes and selects commit on change.
+ * An editor for one stored value. Text-like values commit on blur / Enter /
+ * Tab (Escape cancels); checkboxes and selects commit on change.
  */
 export function ValueEditor({
   prop,
   raw,
   onCommit,
   onDone,
+  seed,
   autoFocus = false,
   className,
 }: {
@@ -38,7 +57,9 @@ export function ValueEditor({
   raw: unknown;
   onCommit: (value: StoredValue) => void;
   /** Editing finished (committed or cancelled), e.g. to close a cell editor. */
-  onDone?: () => void;
+  onDone?: (move: EditMove) => void;
+  /** Start from this text instead of the stored value (a key typed on a grid cell). */
+  seed?: string;
   autoFocus?: boolean;
   className?: string;
 }) {
@@ -57,12 +78,15 @@ export function ValueEditor({
         autoFocus={autoFocus}
         onChange={(e) => {
           onCommit(e.target.value || null);
-          onDone?.();
+          onDone?.(null);
         }}
         onKeyDown={(e) => {
-          if (e.key === 'Escape') onDone?.();
+          if (e.key === 'Escape') {
+            e.stopPropagation();
+            onDone?.(null);
+          }
         }}
-        onBlur={() => onDone?.()}
+        onBlur={() => onDone?.(null)}
       >
         <option value="">—</option>
         {values.map((v) => (
@@ -74,13 +98,22 @@ export function ValueEditor({
     );
   }
   const suggestions = prop.type === 'multi' ? prop.options?.map((o) => o.value) : undefined;
+  const placeholder =
+    prop.type === 'formula'
+      ? formulaOverride(raw) === 'none'
+        ? prop.formula ?? ''
+        : 'Clear to use the formula'
+      : prop.type === 'multi' || prop.type === 'links'
+        ? 'Comma-separated'
+        : undefined;
   return (
     <>
       <TextEditor
         prop={prop}
-        initial={editText(prop, raw)}
+        original={editText(prop, raw)}
+        seed={seed}
         list={suggestions?.length ? listId : undefined}
-        placeholder={prop.type === 'formula' ? (formulaOverride(raw) === 'none' ? prop.formula ?? '' : 'Clear to use the formula') : prop.type === 'multi' || prop.type === 'links' ? 'Comma-separated' : undefined}
+        placeholder={placeholder}
         onCommit={onCommit}
         onDone={onDone}
         autoFocus={autoFocus}
@@ -101,7 +134,8 @@ export function ValueEditor({
 
 function TextEditor({
   prop,
-  initial,
+  original,
+  seed,
   list,
   placeholder,
   onCommit,
@@ -110,53 +144,66 @@ function TextEditor({
   className,
 }: {
   prop: PropertyConfig;
-  initial: string;
+  original: string;
+  seed?: string;
   list?: string;
   placeholder?: string;
   onCommit: (value: StoredValue) => void;
-  onDone?: () => void;
+  onDone?: (move: EditMove) => void;
   autoFocus: boolean;
   className?: string;
 }) {
-  const [draft, setDraft] = useState(initial);
+  const [draft, setDraft] = useState(seed ?? original);
   // Enter/Escape and the blur that follows must only finish once.
   const done = useRef(false);
   useEffect(() => {
-    setDraft(initial);
+    if (seed === undefined) setDraft(original);
     done.current = false;
-  }, [initial]);
+  }, [original, seed]);
 
-  const finish = (save: boolean): void => {
+  const finish = (save: boolean, move: EditMove): void => {
     if (done.current) return;
     done.current = true;
-    if (save && draft.trim() !== initial.trim()) onCommit(draft.trim() === '' ? null : draft.trim());
-    onDone?.();
+    if (save && draft.trim() !== original.trim()) onCommit(fromText(prop, draft));
+    onDone?.(move);
   };
 
   return (
     <input
       className={className}
       type={inputType(prop)}
+      inputMode={prop.type === 'number' ? 'decimal' : undefined}
       list={list}
       value={draft}
       placeholder={placeholder}
       autoFocus={autoFocus}
       onFocus={(e) => {
         done.current = false;
-        if (e.currentTarget.type === 'text') e.currentTarget.select();
+        const el = e.currentTarget;
+        // A typed first key continues after the caret; otherwise select the value.
+        if (el.type === 'text') {
+          if (seed !== undefined) el.setSelectionRange(el.value.length, el.value.length);
+          else el.select();
+        }
       }}
       onChange={(e) => {
         done.current = false;
         setDraft(e.target.value);
       }}
-      onBlur={() => finish(true)}
+      onBlur={() => finish(true, null)}
       onKeyDown={(e) => {
         if (e.key === 'Enter') {
           e.preventDefault();
-          finish(true);
-        } else if (e.key === 'Escape') {
           e.stopPropagation();
-          finish(false);
+          finish(true, 'down');
+        } else if (e.key === 'Tab') {
+          e.preventDefault();
+          e.stopPropagation();
+          finish(true, e.shiftKey ? 'left' : 'right');
+        } else if (e.key === 'Escape') {
+          e.preventDefault();
+          e.stopPropagation();
+          finish(false, null);
         }
       }}
     />

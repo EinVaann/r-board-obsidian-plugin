@@ -1,0 +1,39 @@
+{
+  "version": 1,
+  "columns": [
+    {"id":"citem","name":"Item","type":"text","width":180},
+    {"id":"ctype","name":"Type","type":"select","width":130,"options":[{"id":"ogro","label":"Groceries","color":"#4ECDC4"},{"id":"otreat","label":"Treat","color":"#FF6B9D"},{"id":"ofuel","label":"Fuel","color":"#FFB347"},{"id":"ogame","label":"Game","color":"#A78BFA"},{"id":"osub","label":"Subscription","color":"#FB923C"},{"id":"osal","label":"Salary","color":"#22C55E"},{"id":"ofood","label":"Food","color":"#F87171"}]},
+    {"id":"camt","name":"Amount","type":"number","width":110,"format":{"style":"currency","decimals":2,"currency":"$"}},
+    {"id":"cdate","name":"Date","type":"date","width":120},
+    {"id":"cpaid","name":"Paid","type":"checkbox","width":70},
+    {"id":"ctags","name":"Tags","type":"multiselect","width":160,"options":[{"id":"tneed","label":"need","color":"#60A5FA"},{"id":"twant","label":"want","color":"#F472B6"},{"id":"trec","label":"recurring","color":"#94A3B8"}]},
+    {"id":"cnet","name":"Net","type":"formula","width":110,"format":{"style":"currency","decimals":2,"currency":"$"},"formula":"if({Type} = \"Salary\", {Amount}, -{Amount})"},
+    {"id":"cmonth","name":"Month","type":"formula","width":100,"formula":"formatDate({Date}, \"YYYY-MM\")"},
+    {"id":"cnote","name":"Receipt","type":"link","width":150}
+  ],
+  "rows": [
+    {"id":"r01","cells":{"citem":"Monthly salary","ctype":"osal","camt":3200,"cdate":"2026-08-01","cpaid":true,"ctags":["trec"]}},
+    {"id":"r02","cells":{"citem":"Supermarket","ctype":"ogro","camt":86.4,"cdate":"2026-08-03","cpaid":true,"ctags":["tneed"]}},
+    {"id":"r03","cells":{"citem":"Gas station","ctype":"ofuel","camt":52,"cdate":"2026-08-05","cpaid":true,"ctags":["tneed"]}},
+    {"id":"r04","cells":{"citem":"Bubble tea","ctype":"otreat","camt":6.5,"cdate":"2026-08-06","cpaid":true,"ctags":["twant"]}},
+    {"id":"r05","cells":{"citem":"Music streaming","ctype":"osub","camt":10.99,"cdate":"2026-08-10","cpaid":true,"ctags":["trec","twant"]}},
+    {"id":"r06","cells":{"citem":"Dinner out","ctype":"ofood","camt":42,"cdate":"2026-08-14","cpaid":true,"ctags":["twant"],"cnet":"=-{Amount} / 2","cnote":"Dinner with Sam"}},
+    {"id":"r07","cells":{"citem":"Supermarket","ctype":"ogro","camt":120.75,"cdate":"2026-08-17","cpaid":true,"ctags":["tneed"]}},
+    {"id":"r08","cells":{"citem":"New game","ctype":"ogame","camt":59.99,"cdate":"2026-08-22","cpaid":true,"ctags":["twant"]}},
+    {"id":"r09","cells":{"citem":"Monthly salary","ctype":"osal","camt":3200,"cdate":"2026-09-01","cpaid":true,"ctags":["trec"]}},
+    {"id":"r10","cells":{"citem":"Supermarket","ctype":"ogro","camt":95.2,"cdate":"2026-09-02","cpaid":true,"ctags":["tneed"]}},
+    {"id":"r11","cells":{"citem":"Gas station","ctype":"ofuel","camt":48.3,"cdate":"2026-09-07","cpaid":true,"ctags":["tneed"]}},
+    {"id":"r12","cells":{"citem":"Music streaming","ctype":"osub","camt":10.99,"cdate":"2026-09-10","cpaid":true,"ctags":["trec","twant"]}},
+    {"id":"r13","cells":{"citem":"Cake","ctype":"otreat","camt":18,"cdate":"2026-09-12","cpaid":true,"ctags":["twant"]}},
+    {"id":"r14","cells":{"citem":"Lunch","ctype":"ofood","camt":14.5,"cdate":"2026-09-19","ctags":["tneed"]}},
+    {"id":"r15","cells":{"citem":"Monthly salary","ctype":"osal","camt":3350,"cdate":"2026-10-01","cpaid":true,"ctags":["trec"]}},
+    {"id":"r16","cells":{"citem":"Supermarket","ctype":"ogro","camt":102.1,"cdate":"2026-10-04","cpaid":true,"ctags":["tneed"]}},
+    {"id":"r17","cells":{"citem":"Gas station","ctype":"ofuel","camt":55.8,"cdate":"2026-10-06","ctags":["tneed"]}},
+    {"id":"r18","cells":{"citem":"Music streaming","ctype":"osub","camt":10.99,"cdate":"2026-10-10","ctags":["trec","twant"]}}
+  ],
+  "view": {"sort":[],"filter":{"match":"all","filters":[]},"hidden":[],"group":{"columnId":"cmonth","dateBucket":"none","dir":"asc","collapsed":["2026-09","2026-08","2026-10"]}},
+  "charts": [
+    {"id":"chmonthly","name":"Monthly spending by type","type":"bar","x":"cdate","dateBucket":"month","splitBy":"ctype","values":["camt"],"aggregate":"sum","stacked":true,"horizontal":false,"filter":{"match":"all","filters":[{"id":"fnosal","columnId":"ctype","op":"noneOf","value":["osal"]}]},"followTableFilter":false,"sort":"x","showLegend":true,"showLabels":false,"colors":{}},
+    {"id":"chshare","name":"Where the money goes","type":"donut","x":"ctype","dateBucket":"none","splitBy":null,"values":["camt"],"aggregate":"sum","stacked":false,"horizontal":false,"filter":{"match":"all","filters":[{"id":"fnosal2","columnId":"ctype","op":"noneOf","value":["osal"]}]},"followTableFilter":true,"sort":"value-desc","showLegend":true,"showLabels":true,"colors":{}}
+  ]
+}

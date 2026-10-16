@@ -20,8 +20,10 @@ export function toStored(prop: PropertyConfig, value: StoredValue): StoredValue 
   switch (prop.type) {
     case 'number': {
       if (typeof value === 'number') return value;
-      const n = Number(String(value).trim());
-      return Number.isNaN(n) ? String(value) : n;
+      const t = String(value).trim();
+      // A lone decimal comma ("6,5") reads as a decimal point; "1,234" stays a thousands separator.
+      const n = Number(/^-?\d+,\d{1,2}$|^-?\d+,\d{4,}$/.test(t) ? t.replace(',', '.') : t.replace(/,/g, ''));
+      return Number.isNaN(n) || t === '' ? t : n;
     }
     case 'checkbox':
       return typeof value === 'boolean' ? value : asBoolean(value) ?? false;

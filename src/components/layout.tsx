@@ -1,7 +1,7 @@
 import { useCallback, useLayoutEffect, useMemo, useRef, useState, type ReactNode, type RefObject } from 'react';
 import { useVirtualizer, type Virtualizer } from '@tanstack/react-virtual';
 import type { BoardItem, LoadLimit, PropertyConfig, ViewConfig } from '../types';
-import { groupItems } from '../data/group';
+import { groupItems, type ItemGroup } from '../data/group';
 import { useBoard, useBoardContext } from '../board/context';
 import { Icon } from '../react/Icon';
 
@@ -32,7 +32,7 @@ export function Sections({
   groupProp: PropertyConfig;
   view: ViewConfig;
   pagePrefix: string;
-  children: (items: BoardItem[], pageKey: string) => ReactNode;
+  children: (items: BoardItem[], pageKey: string, group: ItemGroup) => ReactNode;
 }) {
   const collapsed = useBoard((s) => s.collapsed);
   const toggle = useBoard((s) => s.toggleCollapsed);
@@ -53,7 +53,7 @@ export function Sections({
               <GroupLabel label={group.label} color={color} className="rb-section-title" />
               <span className="rb-section-count">{group.items.length}</span>
             </div>
-            {!isCollapsed && children(group.items, `${pagePrefix}:${group.label}`)}
+            {!isCollapsed && children(group.items, `${pagePrefix}:${group.label}`, group)}
           </div>
         );
       })}

@@ -19,7 +19,7 @@ import { ViewSettings } from '../settings/ViewSettings';
 import { FilterBuilder } from '../settings/FilterBuilder';
 import { openWizard } from '../settings/Wizard';
 import { setProperty } from '../data/properties';
-import { setCell } from '../table/rows';
+import { addRow, deleteRows, duplicateRow, setCell } from '../table/rows';
 import type { TableRow } from '../types';
 
 (globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true;
@@ -195,6 +195,14 @@ function makeContext(config: DatabaseConfig, rows: TableRow[] = []): { ctx: Boar
       openSetup: noop,
       reportItems: noop,
       editItem: noop,
+      addRow: (cells, after) => {
+        if (store.getState().config?.kind !== 'table') return null;
+        let id = '';
+        store.getState().updateRows((rows) => void (id = addRow(rows, cells, after)));
+        return id;
+      },
+      deleteRows: (ids) => store.getState().updateRows((rows) => deleteRows(rows, ids)),
+      duplicateRow: (id) => store.getState().updateRows((rows) => void duplicateRow(rows, id)),
       setValue: async (item, prop, value) => {
         if (item.file) return setProperty(app, item.file, prop, value);
         store.getState().updateRows((rows) => setCell(rows, item.id, prop, value));
@@ -598,17 +606,61 @@ describe('tables', () => {
     expect(el.querySelector('.rb-new-note-label')?.textContent).toBe('New row');
   });
 
-  it('edits a cell into the stored rows', async () => {
+  /** Type into a React-controlled input. */
+  const typeInto = (input: HTMLInputElement, value: string): void => {
+    Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value')!.set!.call(input, value);
+    input.dispatchEvent(new Event('input', { bubbles: true }));
+  };
+  const key = (target: Element, k: string, opts: KeyboardEventInit = {}) =>
+    act(async () => void target.dispatchEvent(new KeyboardEvent('keydown', { key: k, bubbles: true, ...opts })));
+  const cell = (el: HTMLElement, r: number, c: number): HTMLElement => el.querySelector(`[data-pos="${r}:${c}"]`)!;
+  const pointer = (target: Element, opts: Record<string, unknown> = {}) =>
+    act(async () => void target.dispatchEvent(Object.assign(new MouseEvent('pointerdown', { bubbles: true, ...opts }), { pointerType: 'mouse' })));
+
+  it('edits a cell into the stored rows (double-click, type, Enter)', async () => {
     const { el, store } = await renderBoard(TABLE, TABLE_ROWS);
-    const qty = el.querySelectorAll('.rb-tr')[2].children[3] as HTMLElement;
+    const qty = cell(el, 2, 3);
     await act(async () => qty.dispatchEvent(new MouseEvent('dblclick', { bubbles: true })));
     const input = qty.querySelector('input')!;
-    await act(async () => {
-      input.value = '4';
-      input.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true }));
-    });
+    await act(async () => typeInto(input, '4'));
+    await key(input, 'Enter');
     expect(store.getState().rows[2].cells.qty).toBe(4);
     expect(el.querySelectorAll('.rb-tr')[2].lastElementChild?.textContent).toBe('12');
+  });
+
+  it('selects with the pointer, moves with arrows, starts editing by typing, Enter moves down', async () => {
+    const { el, store } = await renderBoard(TABLE, TABLE_ROWS);
+    const grid = el.querySelector('.rb-grid')!;
+    await pointer(cell(el, 0, 2));
+    expect(cell(el, 0, 2).classList.contains('rb-cell-active')).toBe(true);
+    await key(grid, 'ArrowRight');
+    expect(cell(el, 0, 3).classList.contains('rb-cell-active')).toBe(true);
+    await key(grid, '9');
+    const input = cell(el, 0, 3).querySelector('input')!;
+    expect(input.value).toBe('9');
+    await key(input, 'Enter');
+    expect(store.getState().rows[0].cells.qty).toBe(9);
+    expect(cell(el, 1, 3).classList.contains('rb-cell-active')).toBe(true);
+    // Shift+arrow extends a range; Delete clears it.
+    await key(grid, 'ArrowUp', { shiftKey: true });
+    expect(cell(el, 0, 3).classList.contains('rb-cell-active')).toBe(true);
+    expect(cell(el, 1, 3).classList.contains('rb-cell-range')).toBe(true);
+    await key(grid, 'Delete');
+    expect(store.getState().rows.slice(0, 2).map((r) => r.cells.qty)).toEqual([undefined, undefined]);
+  });
+
+  it('edits the title column inline, and adds rows that start in edit mode', async () => {
+    const { el, store } = await renderBoard(TABLE, TABLE_ROWS);
+    await act(async () => el.querySelector<HTMLButtonElement>('.rb-grid-add')!.click());
+    await act(async () => {
+      await new Promise((r) => setTimeout(r, 20));
+    });
+    expect(store.getState().rows).toHaveLength(4);
+    const input = cell(el, 3, 0).querySelector('input')!;
+    await act(async () => typeInto(input, 'Milk'));
+    await key(input, 'Enter');
+    expect(store.getState().rows[3].cells.item).toBe('Milk');
+    expect(cell(el, 3, 0).textContent).toContain('Milk');
   });
 
   it('kanban groups rows by a select, in option order, with option labels and colors', async () => {
