@@ -1,10 +1,10 @@
-import { useLayoutEffect, useRef, useState, type MouseEvent as ReactMouseEvent, type ReactNode } from 'react';
+import { createRef, useEffect, useLayoutEffect, useMemo, useRef, useState, type MouseEvent as ReactMouseEvent, type ReactNode } from 'react';
 import { Menu, Platform } from 'obsidian';
 import type { DatabaseConfig, ViewConfig, ViewType } from '../types';
 import { effectiveSort, makeDefaultView, NO_SORT_KEY, propertyLabel, titleLabel, titlePropertyOf, TITLE_SORT_KEY } from '../config';
 import { countFilterRules } from '../data/filter';
 import { Icon } from '../react/Icon';
-import { useBoard, useBoardContext } from './context';
+import { BoardContext, useBoard, useBoardContext } from './context';
 import { selectCurrentView } from './store';
 import { useViewItems } from './useItems';
 import { useElementWidth } from '../components/layout';
@@ -41,10 +41,102 @@ export function BoardApp() {
     <>
       <Toolbar config={config} view={view} />
       <div className="rb-main">
-        <ScrollBody>{view ? <Body key={config.views.indexOf(view)} config={config} view={view} /> : <NoViews />}</ScrollBody>
+        {view ? (
+          <ViewArea key={config.views.indexOf(view)} config={config} view={view} />
+        ) : (
+          <ScrollBody>
+            <NoViews />
+          </ScrollBody>
+        )}
       </div>
     </>
   );
+}
+
+/** The active view, plus its companion view (split view) when it has one. */
+function ViewArea({ config, view }: { config: DatabaseConfig; view: ViewConfig }) {
+  const companion = view.companion && view.companion.view !== view.name ? config.views.find((v) => v.name === view.companion!.view) : undefined;
+  if (!companion) {
+    return (
+      <ScrollBody>
+        <Body config={config} view={view} />
+      </ScrollBody>
+    );
+  }
+  return <SplitView config={config} view={view} companion={companion} />;
+}
+
+const MIN_SPLIT = 20;
+const MAX_SPLIT = 80;
+
+/**
+ * Two views side by side (or stacked; always stacked on phones), each with
+ * its own scroll. The divider resizes them; the size is saved on release.
+ */
+function SplitView({ config, view, companion }: { config: DatabaseConfig; view: ViewConfig; companion: ViewConfig }) {
+  const ctx = useBoardContext();
+  const updateView = useBoard((s) => s.updateView);
+  const setActiveView = useBoard((s) => s.setActiveView);
+  const settings = view.companion!;
+  const below = settings.position === 'below' || Platform.isPhone;
+  const [size, setSize] = useState(settings.size);
+  useEffect(() => setSize(settings.size), [settings.size]);
+  const boxRef = useRef<HTMLDivElement>(null);
+  // The companion pane virtualizes against its own scroll element.
+  // (Prototype-derived, so the context's lazy `boardFile` getter keeps working.)
+  const companionCtx = useMemo(() => Object.assign(Object.create(ctx) as typeof ctx, { scrollRef: createRef<HTMLDivElement>() }), [ctx]);
+
+  const onDividerDown = (e: React.PointerEvent): void => {
+    e.preventDefault();
+    const box = boxRef.current;
+    const target = e.currentTarget as HTMLElement;
+    if (!box) return;
+    target.setPointerCapture?.(e.pointerId);
+    const rect = box.getBoundingClientRect();
+    let next = size;
+    const onMove = (ev: PointerEvent): void => {
+      const share = below ? (rect.bottom - ev.clientY) / rect.height : (rect.right - ev.clientX) / rect.width;
+      next = Math.round(Math.min(MAX_SPLIT, Math.max(MIN_SPLIT, share * 100)));
+      setSize(next);
+    };
+    const onUp = (): void => {
+      target.removeEventListener('pointermove', onMove);
+      target.removeEventListener('pointerup', onUp);
+      target.removeEventListener('pointercancel', onUp);
+      if (next !== settings.size) updateView(config.views.indexOf(view), (v) => void (v.companion && (v.companion.size = next)));
+    };
+    target.addEventListener('pointermove', onMove);
+    target.addEventListener('pointerup', onUp);
+    target.addEventListener('pointercancel', onUp);
+  };
+
+  return (
+    <div ref={boxRef} className={below ? 'rb-split rb-split-below' : 'rb-split rb-split-right'}>
+      <div className="rb-split-pane" style={{ flexBasis: `${100 - size}%` }}>
+        <ScrollBody>
+          <Body config={config} view={view} />
+        </ScrollBody>
+      </div>
+      <div className="rb-split-divider" onPointerDown={onDividerDown} role="separator" aria-label="Resize split view" />
+      <div className="rb-split-pane rb-split-companion" style={{ flexBasis: `${size}%` }}>
+        <button className="rb-split-title" title="Open this view" onClick={() => setActiveView(companion.name)}>
+          <Icon name={TYPE_ICON[companion.type]} />
+          <span>{companion.name}</span>
+          {settings.followFilter && <span className="rb-split-follow">filtered by {view.name}</span>}
+        </button>
+        <BoardContext.Provider value={companionCtx}>
+          <ScrollBody>{settings.followFilter ? <FollowingBody config={config} view={companion} lead={view} /> : <Body config={config} view={companion} />}</ScrollBody>
+        </BoardContext.Provider>
+      </div>
+    </div>
+  );
+}
+
+/** A companion that only shows the items passing the lead view's filter and search. */
+function FollowingBody({ config, view, lead }: { config: DatabaseConfig; view: ViewConfig; lead: ViewConfig }) {
+  const { items } = useViewItems(config, lead);
+  const ids = useMemo(() => new Set(items.map((i) => i.id)), [items]);
+  return <Body config={config} view={view} restrictTo={ids} />;
 }
 
 /**
@@ -399,8 +491,10 @@ function SortChip({ config, view, viewIndex }: { config: DatabaseConfig; view: V
 }
 
 /** The active view, or an empty state explaining why nothing shows. */
-function Body({ config, view }: { config: DatabaseConfig; view: ViewConfig }) {
-  const { all, items, properties, sort } = useViewItems(config, view);
+export function Body({ config, view, restrictTo }: { config: DatabaseConfig; view: ViewConfig; restrictTo?: Set<string> }) {
+  const viewed = useViewItems(config, view);
+  const { all, properties, sort } = viewed;
+  const items = useMemo(() => (restrictTo ? viewed.items.filter((i) => restrictTo.has(i.id)) : viewed.items), [viewed.items, restrictTo]);
   const viewIndex = config.views.indexOf(view);
 
   // An empty kanban still shows its columns so cards can be added to them.

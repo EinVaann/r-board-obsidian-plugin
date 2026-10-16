@@ -96,7 +96,12 @@ export function createBoardStore(persist: BoardPersistence): BoardStore {
         const view = config?.views[index];
         if (!config || !view) return;
         const wasActive = view.name === activeView;
-        const next = produce(config, (draft) => recipe(draft.views[index]));
+        const next = produce(config, (draft) => {
+          recipe(draft.views[index]);
+          // Split views pointing at a renamed view follow it.
+          const name = draft.views[index].name;
+          if (name !== view.name) for (const v of draft.views) if (v.companion?.view === view.name) v.companion.view = name;
+        });
         commit(next);
         const renamed = next.views[index].name;
         if (wasActive && renamed !== activeView) {

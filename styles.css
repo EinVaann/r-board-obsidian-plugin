@@ -2039,3 +2039,44 @@ body:not(.is-phone) .rb-edit-modal {
 /* Chart settings: value checkboxes. */
 .rb-chart-values { display: flex; flex-wrap: wrap; gap: 4px 14px; justify-content: flex-end; }
 .rb-chart-value { display: inline-flex; align-items: center; gap: 5px; font-size: 13px; cursor: pointer; }
+
+/* ===================== Split view (a view with a companion) ===================== */
+.rb-split { flex: 1 1 auto; display: flex; min-width: 0; min-height: 0; }
+.rb-split-below { flex-direction: column; }
+.rb-split-pane {
+  display: flex;
+  flex-direction: column;
+  flex-grow: 1;
+  flex-shrink: 1;
+  min-width: 0;
+  min-height: 0;
+  overflow: hidden;
+}
+.rb-split-divider {
+  flex: 0 0 6px;
+  background: var(--background-modifier-border);
+  background-clip: content-box;
+  padding: 0 2px;
+  cursor: col-resize;
+  touch-action: none;
+}
+.rb-split-below > .rb-split-divider { padding: 2px 0; cursor: row-resize; }
+.rb-split-divider:hover { background-color: var(--interactive-accent); }
+.rb-split-title {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: 8px 16px 0;
+  padding: 2px 6px;
+  height: auto;
+  align-self: flex-start;
+  background: transparent;
+  box-shadow: none;
+  color: var(--text-muted);
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.rb-split-title:hover { color: var(--text-normal); background: var(--background-modifier-hover); }
+.rb-split-title svg { width: 14px; height: 14px; }
+.rb-split-follow { font-weight: 400; color: var(--text-faint); }

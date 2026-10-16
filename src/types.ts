@@ -211,6 +211,19 @@ export interface ViewConfig {
   widths?: Record<string, number>;
   /** Chart settings (chart views). */
   chart?: ChartConfig;
+  /** Show another view beside or below this one (split view). */
+  companion?: Companion;
+}
+
+/** A second view shown next to a view. */
+export interface Companion {
+  /** Name of the other view. */
+  view: string;
+  position: 'right' | 'below';
+  /** The companion's share of the space, in percent. */
+  size: number;
+  /** The companion only shows items that pass this view's filter and search. */
+  followFilter: boolean;
 }
 
 /** `relative` = Today / Tomorrow / Next 7 days / … measured from today. */

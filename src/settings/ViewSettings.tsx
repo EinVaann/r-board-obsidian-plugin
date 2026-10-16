@@ -176,6 +176,38 @@ function General({ config, view, viewIndex, edit, onDelete }: TabProps & { viewI
       {view.type === 'kanban' && subProp && (
         <BucketRow prop={subProp} value={view.subGroupBucket} onChange={(b) => edit((d) => void (d.subGroupBucket = b))} />
       )}
+      <SettingRow name="Show beside" desc="Split view: show another view next to this one.">
+        <Select
+          value={view.companion?.view ?? ''}
+          options={[{ value: '', label: 'Nothing' }, ...config.views.filter((v) => v.name !== view.name).map((v) => ({ value: v.name, label: v.name }))]}
+          onChange={(v) =>
+            edit((d) => {
+              d.companion = v ? { view: v, position: d.companion?.position ?? 'right', size: d.companion?.size ?? 40, followFilter: d.companion?.followFilter ?? false } : undefined;
+            })
+          }
+        />
+      </SettingRow>
+      {view.companion && (
+        <>
+          <SettingRow name="Position">
+            <Segmented<'right' | 'below'>
+              value={view.companion.position}
+              options={[
+                { value: 'right', label: 'Right' },
+                { value: 'below', label: 'Below' },
+              ]}
+              onChange={(position) => edit((d) => void (d.companion && (d.companion.position = position)))}
+            />
+          </SettingRow>
+          <SettingRow name="Follow this view's filter" desc="The other view only shows items that pass this view's filter and search." toggle>
+            <Toggle
+              checked={view.companion.followFilter}
+              onChange={(on) => edit((d) => void (d.companion && (d.companion.followFilter = on)))}
+              label="Follow this view's filter"
+            />
+          </SettingRow>
+        </>
+      )}
       <SettingRow name="Filters" desc={`${filters} active`}>
         <button onClick={() => actions.openFilter(viewIndex)}>Edit filters…</button>
       </SettingRow>

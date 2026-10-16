@@ -3,6 +3,7 @@ import type {
   CardSize,
   ChartConfig,
   ChartType,
+  Companion,
   DatabaseConfig,
   DateBucket,
   FilterGroup,
@@ -217,7 +218,16 @@ function parseView(raw: unknown, index: number): ViewConfig | null {
       : undefined,
     widths: parseWidths(v.widths),
     chart: type === 'chart' ? parseChart(v.chart) : undefined,
+    companion: parseCompanion(v.companion),
   };
+}
+
+function parseCompanion(raw: unknown): Companion | undefined {
+  if (typeof raw !== 'object' || raw === null) return undefined;
+  const c = raw as Record<string, unknown>;
+  if (typeof c.view !== 'string' || c.view === '') return undefined;
+  const size = typeof c.size === 'number' ? Math.min(80, Math.max(20, Math.round(c.size))) : 40;
+  return { view: c.view, position: c.position === 'below' ? 'below' : 'right', size, followFilter: c.followFilter === true };
 }
 
 function parseWidths(raw: unknown): Record<string, number> | undefined {
@@ -324,6 +334,7 @@ export function serializeViews(views: ViewConfig[]): Record<string, unknown>[] {
     if (v.collapsed && v.collapsed.length) view.collapsed = v.collapsed;
     if (v.widths && Object.keys(v.widths).length) view.widths = v.widths;
     if (v.type === 'chart' && v.chart) view.chart = v.chart;
+    if (v.companion) view.companion = v.companion;
     return view;
   });
 }
