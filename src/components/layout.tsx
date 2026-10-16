@@ -45,7 +45,7 @@ export function Sections({
     <>
       {groups.map((group) => {
         const isCollapsed = !!collapsed[group.label];
-        const color = group.key != null ? view.groupConfig?.[group.key]?.color : undefined;
+        const color = group.color;
         return (
           <div key={group.key ?? '\u0000none'} className="rb-section">
             <div className="rb-section-header" onClick={() => toggle(group.label)}>

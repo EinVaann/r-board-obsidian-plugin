@@ -16,7 +16,6 @@ import { SortableContext, arrayMove, horizontalListSortingStrategy, useSortable 
 import { CSS } from '@dnd-kit/utilities';
 import type { BoardItem, DatabaseConfig, PropertyConfig, ViewConfig } from '../types';
 import { groupItems, groupValueOf, type ItemGroup } from '../data/group';
-import { setProperty } from '../data/properties';
 import { Card } from '../components/Card';
 import { GroupLabel, ViewMore, usePaged } from '../components/layout';
 import { useDragSensors } from '../components/dnd';
@@ -52,7 +51,7 @@ interface KanbanProps {
  * trailing "Add group" column creates a new empty column.
  */
 export function KanbanView({ config, view, viewIndex, items, properties }: KanbanProps) {
-  const { app } = useBoardContext();
+  const { actions } = useBoardContext();
   const updateView = useBoard((s) => s.updateView);
   const sensors = useDragSensors();
   const groupProp = view.group ? config.properties.find((p) => p.name === view.group) : undefined;
@@ -63,8 +62,8 @@ export function KanbanView({ config, view, viewIndex, items, properties }: Kanba
   const shown = useMemo(() => {
     if (!groupProp || Object.keys(pending).length === 0) return items;
     return items.map((item) =>
-      item.file.path in pending
-        ? { ...item, frontmatter: { ...item.frontmatter, [groupProp.name]: pending[item.file.path] ?? undefined } }
+      item.id in pending
+        ? { ...item, values: { ...item.values, [groupProp.name]: pending[item.id] ?? undefined } }
         : item,
     );
   }, [items, pending, groupProp]);
@@ -73,12 +72,12 @@ export function KanbanView({ config, view, viewIndex, items, properties }: Kanba
   useEffect(() => {
     if (!groupProp) return;
     const settled = items.filter(
-      (item) => item.file.path in pending && (groupValueOf(item, groupProp) ?? null) === pending[item.file.path],
+      (item) => item.id in pending && (groupValueOf(item, groupProp) ?? null) === pending[item.id],
     );
     if (settled.length === 0) return;
     setPending((p) => {
       const next = { ...p };
-      for (const item of settled) delete next[item.file.path];
+      for (const item of settled) delete next[item.id];
       return next;
     });
   }, [items, pending, groupProp]);
@@ -93,15 +92,14 @@ export function KanbanView({ config, view, viewIndex, items, properties }: Kanba
 
   const moveCard = (item: BoardItem, target: string | null): void => {
     if (!groupProp || (groupValueOf(item, groupProp) ?? null) === target) return;
-    const path = item.file.path;
-    setPending((p) => ({ ...p, [path]: target }));
-    setProperty(app, item.file, groupProp, target).catch((e) => {
+    const id = item.id;
+    setPending((p) => ({ ...p, [id]: target }));
+    actions.setValue(item, groupProp, target).catch(() => {
       setPending((p) => {
         const next = { ...p };
-        delete next[path];
+        delete next[id];
         return next;
       });
-      new Notice(`R Board: could not move note — ${(e as Error).message}`);
     });
   };
 
@@ -127,7 +125,7 @@ export function KanbanView({ config, view, viewIndex, items, properties }: Kanba
     const target = over?.data.current as { key: string | null } | undefined;
     if (!data || !target) return;
     if (data.type === 'card') {
-      const original = items.find((i) => i.file.path === data.item.file.path) ?? data.item;
+      const original = items.find((i) => i.id === data.item.id) ?? data.item;
       moveCard(original, target.key);
     } else if (data.key !== null && target.key !== null && data.key !== target.key) {
       const order = arrayMove(realKeys, realKeys.indexOf(data.key), realKeys.indexOf(target.key));
@@ -162,7 +160,7 @@ export function KanbanView({ config, view, viewIndex, items, properties }: Kanba
             />
           ))}
         </SortableContext>
-        <AddGroup realKeys={realKeys} view={view} viewIndex={viewIndex} />
+        <AddGroup realKeys={realKeys} view={view} viewIndex={viewIndex} groupProp={groupProp} />
       </TopScrollbar>
       <DragPreview active={active} view={view} properties={properties} />
     </DndContext>
@@ -257,7 +255,7 @@ function Column({ column, view, properties, getTargets, groupProp, onMove }: Col
   const drop = useDroppable({ id: `drop:${column.key ?? NONE}`, data: { key: column.key } });
   const draggingCard = drop.active?.data.current?.type === 'card';
 
-  const color = column.key !== null ? view.groupConfig?.[column.key]?.color : undefined;
+  const color = column.color;
   const cls = ['rb-kanban-col'];
   if (collapsed) cls.push('rb-collapsed');
   if (sortable.isDragging) cls.push('rb-col-dragging');
@@ -283,7 +281,7 @@ function Column({ column, view, properties, getTargets, groupProp, onMove }: Col
           <>
             {column.items.length === 0 && <div className="rb-kanban-empty-drop">{canDrag() ? 'Drop cards here' : 'No cards'}</div>}
             {visible.map((item) => (
-              <KanbanCard key={item.file.path} item={item} view={view} properties={properties} getTargets={getTargets} groupProp={groupProp} onMove={onMove} />
+              <KanbanCard key={item.id}item={item} view={view} properties={properties} getTargets={getTargets} groupProp={groupProp} onMove={onMove} />
             ))}
             <ViewMore more={more} remaining={remaining} />
           </>
@@ -306,7 +304,7 @@ const KanbanCard = memo(function KanbanCard({ item, view, properties, getTargets
   const { actions } = useBoardContext();
   const drag = canDrag();
   const { attributes, listeners, setNodeRef, isDragging } = useDraggable({
-    id: item.file.path,
+    id: item.id,
     data: { type: 'card', item },
     disabled: !drag,
   });
@@ -328,8 +326,10 @@ const KanbanCard = memo(function KanbanCard({ item, view, properties, getTargets
         });
       }
     });
-    menu.addSeparator();
-    menu.addItem((it) => it.setTitle('Open note').setIcon('file-text').onClick(() => actions.openNote(item, true)));
+    if (item.file) {
+      menu.addSeparator();
+      menu.addItem((it) => it.setTitle('Open note').setIcon('file-text').onClick(() => actions.openNote(item, true)));
+    }
     menu.showAtMouseEvent(e.nativeEvent);
   };
 
@@ -373,8 +373,9 @@ function DragPreview({ active, view, properties }: { active: DragData | null; vi
 }
 
 /** Trailing column with a button (then inline input) to add a new group. */
-function AddGroup({ realKeys, view, viewIndex }: { realKeys: string[]; view: ViewConfig; viewIndex: number }) {
+function AddGroup({ realKeys, view, viewIndex, groupProp }: { realKeys: string[]; view: ViewConfig; viewIndex: number; groupProp: PropertyConfig }) {
   const updateView = useBoard((s) => s.updateView);
+  const updateConfig = useBoard((s) => s.updateConfig);
   const [adding, setAdding] = useState(false);
   const done = useRef(false);
 
@@ -384,6 +385,14 @@ function AddGroup({ realKeys, view, viewIndex }: { realKeys: string[]; view: Vie
     setAdding(false);
     const name = value.trim();
     if (!save || !name || realKeys.includes(name)) return;
+    // Select properties own their values: a new column is a new option.
+    if (groupProp.type === 'select' && !view.columns) {
+      updateConfig((c) => {
+        const p = c.properties.find((q) => q.name === groupProp.name);
+        if (p && !p.options?.some((o) => o.value === name)) p.options = [...(p.options ?? []), { value: name }];
+      });
+      return;
+    }
     const cols = view.columns ? [...view.columns] : [...realKeys];
     if (!cols.includes(name)) cols.push(name);
     updateView(viewIndex, (v) => {

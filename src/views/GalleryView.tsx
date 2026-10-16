@@ -75,7 +75,7 @@ function MasonryLayout({ items, lanes, width, view, properties }: LayoutProps) {
     <div ref={listRef} className="rb-vlist" style={{ height: virtualizer.getTotalSize() }}>
       {virtualizer.getVirtualItems().map((v) => (
         <div
-          key={items[v.index].file.path}
+          key={items[v.index].id}
           ref={virtualizer.measureElement}
           data-index={v.index}
           className="rb-vitem"
@@ -104,7 +104,7 @@ function GridLayout({ items, lanes, view, properties }: LayoutProps) {
           style={{ gridTemplateColumns: `repeat(${lanes}, minmax(0, 1fr))`, transform: `translateY(${offset(v.start)}px)` }}
         >
           {items.slice(v.index * lanes, v.index * lanes + lanes).map((item) => (
-            <Card key={item.file.path} item={item} properties={properties} showContent={view.showContent} className="rb-gallery-card" />
+            <Card key={item.id}item={item} properties={properties} showContent={view.showContent} className="rb-gallery-card" />
           ))}
         </div>
       ))}

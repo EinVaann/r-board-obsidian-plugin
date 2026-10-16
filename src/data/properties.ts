@@ -1,33 +1,45 @@
 import type { App, TFile } from 'obsidian';
 import type { PropertyConfig } from '../types';
+import { asBoolean } from '../render/values';
+
+/** A value as written to frontmatter or a table cell. */
+export type StoredValue = string | number | boolean | string[] | null;
 
 /**
- * Set (or clear) a single frontmatter property on a note. Used by kanban drag
- * and table cell edits. `null` removes the key; an array is written as a list.
- *
- * Numeric properties are stored as numbers when the value parses cleanly.
+ * Coerce an edited value to what a property stores: numbers for `number`,
+ * booleans for `checkbox`, lists for `multi` / `links`, text otherwise.
+ * Returns null for an empty value (the key is removed).
  */
-export async function setProperty(
-  app: App,
-  file: TFile,
-  prop: PropertyConfig,
-  value: string | string[] | null,
-): Promise<void> {
+export function toStored(prop: PropertyConfig, value: StoredValue): StoredValue {
+  if (value === null || value === '') return null;
+  if (Array.isArray(value)) {
+    const list = value.map((v) => v.trim()).filter((v) => v !== '');
+    if (prop.type === 'multi' || prop.type === 'links') return list.length ? list : null;
+    return list.length ? list.join(', ') : null;
+  }
+  switch (prop.type) {
+    case 'number': {
+      if (typeof value === 'number') return value;
+      const n = Number(String(value).trim());
+      return Number.isNaN(n) ? String(value) : n;
+    }
+    case 'checkbox':
+      return typeof value === 'boolean' ? value : asBoolean(value) ?? false;
+    case 'multi':
+    case 'links':
+      return typeof value === 'string'
+        ? toStored(prop, value.split(',').map((s) => s.trim()))
+        : [String(value)];
+    default:
+      return typeof value === 'string' ? value : String(value);
+  }
+}
+
+/** Set (or clear, with `null`) a single frontmatter property on a note. */
+export async function setProperty(app: App, file: TFile, prop: PropertyConfig, value: StoredValue): Promise<void> {
+  const stored = toStored(prop, value);
   await app.fileManager.processFrontMatter(file, (fm) => {
-    if (value === null) {
-      delete fm[prop.name];
-      return;
-    }
-    if (Array.isArray(value)) {
-      fm[prop.name] = value;
-    } else if (prop.type === 'number') {
-      const n = Number(value);
-      fm[prop.name] = Number.isNaN(n) ? value : n;
-    } else if (prop.type === 'checkbox') {
-      const s = value.trim().toLowerCase();
-      fm[prop.name] = ['true', 'yes', 'y', '1', 'on'].includes(s);
-    } else {
-      fm[prop.name] = value;
-    }
+    if (stored === null) delete fm[prop.name];
+    else fm[prop.name] = stored;
   });
 }

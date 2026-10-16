@@ -1738,3 +1738,68 @@ body:not(.is-phone) .rb-edit-modal {
 .is-phone .rb-filter-rule { flex-wrap: wrap; }
 .is-phone .rb-filter-rule > .rb-filter-select { flex: 1 1 40%; min-width: 0; }
 .is-phone .rb-filter-rule > .rb-filter-value { flex: 1 1 100%; }
+
+/* Option-colored pills and tags (select / multi values). Color set inline via --oc. */
+.rb-pill.rb-opt,
+.rb-multi .rb-pill.rb-opt {
+  background: color-mix(in srgb, var(--oc) 24%, transparent);
+  color: color-mix(in srgb, var(--oc) 55%, var(--text-normal));
+  border: none;
+}
+.rb-tag.rb-opt,
+.rb-multi .rb-tag.rb-opt {
+  border-color: color-mix(in srgb, var(--oc) 55%, transparent);
+  color: color-mix(in srgb, var(--oc) 60%, var(--text-normal));
+}
+
+.rb-date { white-space: nowrap; }
+.rb-url { word-break: break-all; }
+.rb-formula-error {
+  color: var(--text-error);
+  font-family: var(--font-monospace);
+  font-size: 12px;
+  cursor: help;
+}
+
+/* Property editor: option list */
+.rb-options { display: flex; flex-direction: column; gap: 6px; width: 100%; }
+.rb-options-list { display: flex; flex-direction: column; gap: 4px; }
+.rb-option-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.rb-option-row input[type='text'] { flex: 1 1 0; min-width: 0; }
+.rb-option-color {
+  flex: none;
+  width: 26px;
+  height: 26px;
+  padding: 0;
+  border: none;
+  background: none;
+  cursor: pointer;
+}
+.rb-option-preview {
+  flex: none;
+  max-width: 110px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.rb-option-add { display: flex; gap: 6px; }
+.rb-option-add input { flex: 1; min-width: 0; }
+
+/* Property editor: formula */
+.rb-formula-edit { display: flex; flex-direction: column; gap: 4px; width: 100%; }
+.rb-formula-input {
+  width: 100%;
+  font-family: var(--font-monospace);
+  font-size: 13px;
+  resize: vertical;
+}
+.rb-formula-input.rb-invalid { border-color: var(--text-error); }
+.rb-formula-msg { color: var(--text-error); font-size: 12px; }
+.rb-formula-help { font-size: 12px; color: var(--text-muted); }
+.rb-formula-help summary { cursor: pointer; }
+.rb-formula-help ul { margin: 6px 0 0; padding-left: 18px; max-height: 180px; overflow: auto; }
+.rb-formula-help code { font-size: 12px; }

@@ -4,7 +4,17 @@ import type { TFile } from 'obsidian';
 export type ViewType = 'gallery' | 'kanban' | 'table' | 'recipe';
 
 /** A property's data type. */
-export type PropertyType = 'image' | 'text' | 'multi' | 'number' | 'checkbox' | 'links';
+export type PropertyType =
+  | 'image'
+  | 'text'
+  | 'multi'
+  | 'number'
+  | 'checkbox'
+  | 'links'
+  | 'select'
+  | 'date'
+  | 'url'
+  | 'formula';
 
 /** How an image property fills its card area. */
 export type ImageRender = 'fill' | 'fit';
@@ -18,6 +28,43 @@ export type NumberRender = 'text' | 'stars' | 'bar' | 'circle';
 export type CheckboxRender = 'check' | 'box' | 'toggle';
 /** How a links (list of links) property is presented. */
 export type LinksRender = 'list' | 'pills';
+/** How a select property is presented. */
+export type SelectRender = 'pill' | 'plain';
+/** How a date property is presented: as written, or relative ("in 3 days"). */
+export type DateRender = 'plain' | 'relative';
+
+export type PropertyRender =
+  | ImageRender
+  | TextRender
+  | MultiRender
+  | NumberRender
+  | CheckboxRender
+  | LinksRender
+  | SelectRender
+  | DateRender;
+
+/** A known value of a select / multi property. Values not listed still work. */
+export interface SelectOption {
+  /** The stored value (frontmatter value or table cell). */
+  value: string;
+  /** Shown instead of the raw value. */
+  label?: string;
+  /** CSS color for pills, group headers and chart series; absent = automatic. */
+  color?: string;
+}
+
+export type NumberStyle = 'plain' | 'currency' | 'percent' | 'compact';
+
+/** Display format for numbers (number properties and numeric formulas). */
+export interface NumberFormat {
+  style: NumberStyle;
+  /** Fixed decimals; absent = as many as needed. */
+  decimals?: number;
+  /** Currency symbol for style `currency`. */
+  currency?: string;
+  /** Thousands separators. */
+  grouping?: boolean;
+}
 
 /**
  * A property of the database, read from note frontmatter. Defined once at the
@@ -28,7 +75,7 @@ export interface PropertyConfig {
   name: string;
   type: PropertyType;
   /** Render style; meaning depends on `type`. */
-  render?: ImageRender | TextRender | MultiRender | NumberRender | CheckboxRender | LinksRender;
+  render?: PropertyRender;
   /** Upper bound for stars / bar / circle number renders. */
   max?: number;
   /** Human label shown in headers / cards (defaults to `name`). */
@@ -39,6 +86,14 @@ export interface PropertyConfig {
   prefix?: string;
   /** Text shown after the value on cards (e.g. "%"). */
   suffix?: string;
+  /** select / multi: known values, in order, with labels and colors. */
+  options?: SelectOption[];
+  /** formula: expression over other properties, e.g. `{Price} * {Qty}`. */
+  formula?: string;
+  /** number / formula: how numbers are written. */
+  format?: NumberFormat;
+  /** date: values carry a time of day. */
+  includeTime?: boolean;
 }
 
 /** How many items a view loads per page. `'none'` shows them all. */
@@ -155,12 +210,18 @@ export interface DatabaseConfig {
   newNoteFolder?: string;
 }
 
-/** A note matched into the database, with its parsed frontmatter. */
+/** A record shown by the views: a tagged note (`.board`) or a stored row (`.table`). */
 export interface BoardItem {
-  file: TFile;
-  /** Display title (frontmatter `title` if present, else basename). */
+  /** Note path, or the row id. */
+  id: string;
+  /** The note; absent for table rows. */
+  file?: TFile;
+  /** Display title (frontmatter `title` or basename; a table's title column). */
   title: string;
-  frontmatter: Record<string, unknown>;
+  /** Frontmatter or row cells, plus computed formula results. */
+  values: Record<string, unknown>;
   /** All tags on the note (without leading #), lower-cased. */
   tags: string[];
+  /** Formula property name → error message, for formulas that failed. */
+  errors?: Record<string, string>;
 }

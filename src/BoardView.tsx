@@ -4,6 +4,7 @@ import type RBoardPlugin from '../main';
 import type { BoardItem, DatabaseConfig } from './types';
 import { parseDatabaseConfig, serializeDatabase } from './config';
 import { tagsForFile } from './data/query';
+import { setProperty } from './data/properties';
 import { createBoardStore, type BoardStore } from './board/store';
 import { BoardContext, type BoardActions, type BoardContextValue } from './board/context';
 import { BoardApp } from './board/BoardApp';
@@ -46,14 +47,28 @@ export class BoardView extends TextFileView {
 
     const actions: BoardActions = {
       editFile: (file, title) => this.openEditModal(file, title),
-      openNote: (item, newLeaf) => void this.app.workspace.openLinkText(item.file.path, item.file.path, newLeaf),
+      openNote: (item, newLeaf) => {
+        if (item.file) void this.app.workspace.openLinkText(item.file.path, item.file.path, newLeaf);
+      },
+      editItem: (item) => {
+        if (item.file) this.openEditModal(item.file, item.title);
+      },
+      setValue: async (item, prop, value) => {
+        if (!item.file) return;
+        try {
+          await setProperty(this.app, item.file, prop, value);
+        } catch (e) {
+          new Notice(`R Board: could not update ${prop.name} — ${(e as Error).message}`);
+          throw e;
+        }
+      },
       openBoardSettings: () => openBoardSettings(this.app, this.ctx),
       openViewSettings: (index) => openViewSettings(this.app, this.ctx, index, () => this.deleteView(index)),
       openFilter: (index) => openFilterModal(this.app, this.ctx, index),
       createNewNote: () => void this.createNewNote(),
       openSetup: () => this.openSetup(),
       reportItems: (items: BoardItem[]) => {
-        this.itemPaths = new Set(items.map((i) => i.file.path));
+        this.itemPaths = new Set(items.map((i) => i.id));
       },
     };
 

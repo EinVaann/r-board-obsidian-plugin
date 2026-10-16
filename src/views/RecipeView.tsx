@@ -30,7 +30,7 @@ function RecipeList({ items, pageKey, view, properties }: { items: BoardItem[]; 
   return (
     <div className="rb-recipe-view">
       {visible.map((item) => (
-        <RecipeCard key={item.file.path} item={item} properties={properties} />
+        <RecipeCard key={item.id}item={item} properties={properties} />
       ))}
       <ViewMore more={more} remaining={remaining} />
     </div>
@@ -43,7 +43,7 @@ const RecipeCard = memo(function RecipeCard({ item, properties }: { item: BoardI
       item={item}
       properties={properties}
       className="rb-recipe-card"
-      footer={<NoteRecipe file={item.file} mtime={item.file.stat.mtime} />}
+      footer={item.file && <NoteRecipe file={item.file} mtime={item.file.stat.mtime} />}
     />
   );
 });

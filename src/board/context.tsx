@@ -1,7 +1,8 @@
 import { createContext, useContext, type RefObject } from 'react';
 import { useStore } from 'zustand';
 import type { App, TFile } from 'obsidian';
-import type { BoardItem } from '../types';
+import type { BoardItem, PropertyConfig } from '../types';
+import type { StoredValue } from '../data/properties';
 import type { BoardState, BoardStore } from './store';
 
 /** Imperative actions the board UI asks its Obsidian host (the BoardView) to do. */
@@ -10,6 +11,10 @@ export interface BoardActions {
   editFile: (file: TFile, title?: string) => void;
   /** Open a note in the workspace (new tab when `newLeaf`). */
   openNote: (item: BoardItem, newLeaf: boolean) => void;
+  /** Open an item for editing: the note edit modal, or the row editor. */
+  editItem: (item: BoardItem) => void;
+  /** Write one property of an item (`null` clears it). */
+  setValue: (item: BoardItem, prop: PropertyConfig, value: StoredValue) => Promise<void>;
   openBoardSettings: () => void;
   openViewSettings: (viewIndex: number) => void;
   openFilter: (viewIndex: number) => void;

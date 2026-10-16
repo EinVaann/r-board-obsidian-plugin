@@ -8,13 +8,16 @@ import type {
   GalleryLayout,
   GroupColumnConfig,
   LoadLimit,
+  NumberFormat,
   PropertyConfig,
+  SelectOption,
   SortSpec,
   ViewConfig,
   ViewType,
 } from './types';
 
-const PROPERTY_TYPES = new Set(['image', 'text', 'multi', 'number', 'checkbox', 'links']);
+const PROPERTY_TYPES = new Set(['image', 'text', 'multi', 'number', 'checkbox', 'links', 'select', 'date', 'url', 'formula']);
+const NUMBER_STYLES = new Set(['plain', 'currency', 'percent', 'compact']);
 const VIEW_TYPES = new Set(['gallery', 'kanban', 'table', 'recipe']);
 const CARD_SIZES = new Set<CardSize>(['small', 'medium', 'large']);
 const LIMITS = new Set<LoadLimit>([10, 50, 100, 'none']);
@@ -46,7 +49,38 @@ function parseProperty(raw: unknown): PropertyConfig | null {
     searchable: typeof f.searchable === 'boolean' ? f.searchable : undefined,
     prefix: typeof f.prefix === 'string' && f.prefix !== '' ? f.prefix : undefined,
     suffix: typeof f.suffix === 'string' && f.suffix !== '' ? f.suffix : undefined,
+    options: parseOptions(f.options),
+    formula: typeof f.formula === 'string' ? f.formula : undefined,
+    format: parseFormat(f.format),
+    includeTime: f.includeTime === true ? true : undefined,
   };
+}
+
+function parseOptions(raw: unknown): SelectOption[] | undefined {
+  if (!Array.isArray(raw)) return undefined;
+  const seen = new Set<string>();
+  const out: SelectOption[] = [];
+  for (const o of raw) {
+    const r = (typeof o === 'string' ? { value: o } : o) as Record<string, unknown> | null;
+    if (!r || typeof r.value !== 'string' || r.value === '' || seen.has(r.value)) continue;
+    seen.add(r.value);
+    const opt: SelectOption = { value: r.value };
+    if (typeof r.label === 'string' && r.label.trim() !== '') opt.label = r.label;
+    if (typeof r.color === 'string' && r.color.trim() !== '') opt.color = r.color;
+    out.push(opt);
+  }
+  return out.length ? out : undefined;
+}
+
+function parseFormat(raw: unknown): NumberFormat | undefined {
+  if (typeof raw !== 'object' || raw === null) return undefined;
+  const f = raw as Record<string, unknown>;
+  if (typeof f.style !== 'string' || !NUMBER_STYLES.has(f.style)) return undefined;
+  const out: NumberFormat = { style: f.style as NumberFormat['style'] };
+  if (typeof f.decimals === 'number' && f.decimals >= 0 && f.decimals <= 10) out.decimals = Math.round(f.decimals);
+  if (typeof f.currency === 'string' && f.currency !== '') out.currency = f.currency;
+  if (typeof f.grouping === 'boolean') out.grouping = f.grouping;
+  return out;
 }
 
 function parseFilterRule(raw: unknown): FilterRule | null {

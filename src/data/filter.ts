@@ -10,7 +10,7 @@ function isEmpty(value: unknown): boolean {
 
 /** Evaluate one filter rule against an item. */
 function matches(item: BoardItem, rule: FilterRule, prop: PropertyConfig | undefined): boolean {
-  const raw = item.frontmatter[rule.property];
+  const raw = item.values[rule.property];
 
   switch (rule.op) {
     case 'empty':

@@ -6,6 +6,7 @@ import { queryItems } from '../data/query';
 import { applyFilter } from '../data/filter';
 import { filterBySearch } from '../data/search';
 import { applySort } from '../render/sort';
+import { FormulaEvaluator } from '../data/compute';
 import { useBoard, useBoardContext } from './context';
 
 export interface ViewItems {
@@ -28,20 +29,39 @@ function useAllItems(app: App, sourceTag: string, vaultTick: number): BoardItem[
   return useMemo(() => {
     const next = new Map<string, BoardItem>();
     const items = queryItems(app, { sourceTag } as DatabaseConfig).map((item) => {
-      const prev = cache.current.get(item.file.path);
+      const prev = cache.current.get(item.id);
       const same = prev
         && prev.file === item.file
-        && prev.frontmatter === item.frontmatter
+        && prev.values === item.values
         && prev.title === item.title
         && prev.tags.join('\n') === item.tags.join('\n');
       const kept = same ? prev : item;
-      next.set(item.file.path, kept);
+      next.set(item.id, kept);
       return kept;
     });
     cache.current = next;
     return items;
     // vaultTick isn't read inside — it is the re-query trigger.
   }, [app, sourceTag, vaultTick]);
+}
+
+/**
+ * Items with formula results filled in. An item keeps its computed object while
+ * neither it nor the properties change, so memoized cards still skip re-rendering.
+ */
+export function useComputed(items: BoardItem[], properties: PropertyConfig[]): BoardItem[] {
+  const cache = useRef({ properties, map: new WeakMap<BoardItem, BoardItem>() });
+  return useMemo(() => {
+    if (cache.current.properties !== properties) cache.current = { properties, map: new WeakMap() };
+    const ev = new FormulaEvaluator(properties);
+    if (ev.formulas.length === 0) return items;
+    const map = cache.current.map;
+    return items.map((item) => {
+      let out = map.get(item);
+      if (!out) map.set(item, (out = ev.apply(item)));
+      return out;
+    });
+  }, [items, properties]);
 }
 
 /** The full query → filter → search → sort pipeline for one view, memoized per stage. */
@@ -51,8 +71,9 @@ export function useViewItems(config: DatabaseConfig, view: ViewConfig): ViewItem
   // Typing stays responsive: filtering a large board renders at lower priority.
   const search = useDeferredValue(useBoard((s) => s.search));
 
-  const all = useAllItems(app, config.sourceTag, vaultTick);
-  useEffect(() => actions.reportItems(all), [actions, all]);
+  const stored = useAllItems(app, config.sourceTag, vaultTick);
+  useEffect(() => actions.reportItems(stored), [actions, stored]);
+  const all = useComputed(stored, config.properties);
 
   const properties = useMemo(() => visibleProperties(config, view), [config.properties, view.properties]);
   const sort = useMemo(() => effectiveSort(view), [view.sort]);

@@ -40,8 +40,8 @@ interface TabProps {
 function General({ config, view, viewIndex, edit, onDelete }: TabProps & { viewIndex: number; onDelete: () => void }) {
   const { actions } = useBoardContext();
   const sort = view.sort ?? { property: TITLE_SORT_KEY, dir: 'asc' as const };
-  // Kanban columns can only come from plain-text properties.
-  const groupProps = view.type === 'kanban' ? config.properties.filter((p) => p.type === 'text') : config.properties;
+  // Kanban columns come from text or select properties (a card sits in exactly one column).
+  const groupProps = view.type === 'kanban' ? config.properties.filter((p) => p.type === 'text' || p.type === 'select') : config.properties;
   const filters = countFilterRules(view.filter);
 
   return (
@@ -108,11 +108,11 @@ function General({ config, view, viewIndex, edit, onDelete }: TabProps & { viewI
           onChange={(v) => edit((d) => void (d.sort = { property: sort.property, dir: v }))}
         />
       </SettingRow>
-      <SettingRow name="Group by" desc={view.type === 'kanban' ? 'Required: a text property defines the columns.' : 'Optional: section headers.'}>
+      <SettingRow name="Group by" desc={view.type === 'kanban' ? 'Required: a text or select property defines the columns.' : 'Optional: section headers.'}>
         <Select
           value={view.group ?? ''}
           options={[
-            { value: '', label: view.type === 'kanban' ? '(choose a text property)' : 'None' },
+            { value: '', label: view.type === 'kanban' ? '(choose a text or select property)' : 'None' },
             ...groupProps.map((p) => ({ value: p.name, label: propertyLabel(p) })),
           ]}
           onChange={(v) => edit((d) => void (d.group = v || undefined))}

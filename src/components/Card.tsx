@@ -16,8 +16,8 @@ export function bodyProperties(properties: PropertyConfig[]): PropertyConfig[] {
 
 /** Field renderer environment from the board context. */
 export function useFieldEnv(): FieldEnv {
-  const { app, actions } = useBoardContext();
-  return { app, editFile: actions.editFile };
+  const { app, actions, boardFile } = useBoardContext();
+  return { app, editFile: actions.editFile, sourceFile: boardFile };
 }
 
 /**
@@ -34,7 +34,7 @@ export function TitleLink({ item, className = 'rb-title' }: { item: BoardItem; c
         e.preventDefault();
         e.stopPropagation();
         if (e.ctrlKey || e.metaKey) actions.openNote(item, true);
-        else actions.editFile(item.file, item.title);
+        else actions.editItem(item);
       }}
     >
       {item.title}
@@ -72,7 +72,7 @@ export const Card = memo(function Card({ item, properties, showContent, classNam
           const node = fieldNode(env, item, prop);
           return node ? <div key={prop.name} className="rb-field">{node}</div> : null;
         })}
-        {showContent && <NoteExcerpt file={item.file} mtime={item.file.stat.mtime} />}
+        {showContent && item.file && <NoteExcerpt file={item.file} mtime={item.file.stat.mtime} />}
         {footer}
       </div>
     </div>

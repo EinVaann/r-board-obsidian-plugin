@@ -18,6 +18,7 @@ import { BoardSettings } from '../settings/BoardSettings';
 import { ViewSettings } from '../settings/ViewSettings';
 import { FilterBuilder } from '../settings/FilterBuilder';
 import { openWizard } from '../settings/Wizard';
+import { setProperty } from '../data/properties';
 
 (globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true;
 
@@ -167,6 +168,8 @@ function makeContext(config: DatabaseConfig): { ctx: BoardContextValue; store: B
       createNewNote: noop,
       openSetup: noop,
       reportItems: noop,
+      editItem: noop,
+      setValue: (item, prop, value) => (item.file ? setProperty(app, item.file, prop, value) : Promise.resolve()),
     },
   };
   return { ctx, store, saved };

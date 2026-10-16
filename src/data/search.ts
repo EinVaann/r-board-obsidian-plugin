@@ -17,7 +17,7 @@ export function filterBySearch(
   const searchProps =
     explicit.length > 0
       ? explicit
-      : properties.filter((p) => p.type === 'text' || p.type === 'multi' || p.type === 'links');
+      : properties.filter((p) => ['text', 'multi', 'links', 'select', 'url', 'formula'].includes(p.type));
 
   return items.filter((item) => {
     if (item.title.toLowerCase().includes(q)) return true;

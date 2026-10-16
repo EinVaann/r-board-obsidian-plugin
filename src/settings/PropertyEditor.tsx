@@ -2,43 +2,66 @@ import { useRef, useState } from 'react';
 import * as Collapsible from '@radix-ui/react-collapsible';
 import { Platform } from 'obsidian';
 import { arrayMove } from '@dnd-kit/sortable';
-import type { PropertyConfig, PropertyType } from '../types';
+import type { NumberFormat, NumberStyle, PropertyConfig, PropertyType } from '../types';
 import { Icon } from '../react/Icon';
-import { DragHandle, Segmented, SortableList, TextInput, Toggle, type HandleProps } from './controls';
+import { formatNumber } from '../render/values';
+import { FUNCTIONS } from '../formula/evaluate';
+import { parseFormula } from '../formula/parse';
+import { DragHandle, Segmented, Select, SortableList, TextInput, Toggle, type HandleProps } from './controls';
+import { OptionsEditor } from './OptionsEditor';
 
 /** Render options offered per property type. */
 const RENDER_OPTIONS: Record<PropertyType, string[]> = {
-  image: ['fill', 'fit'],
   text: ['plain', 'badge', 'pill'],
-  multi: ['pills', 'tags'],
   number: ['text', 'stars', 'bar', 'circle'],
+  select: ['pill', 'plain'],
+  multi: ['pills', 'tags'],
   checkbox: ['check', 'box', 'toggle'],
+  date: ['plain', 'relative'],
+  url: ['plain'],
   links: ['list', 'pills'],
+  image: ['fill', 'fit'],
+  formula: ['text', 'stars', 'bar', 'circle'],
 };
 
 const TYPE_LABELS: Record<PropertyType, string> = {
-  image: 'Image',
   text: 'Text',
-  multi: 'List',
   number: 'Number',
+  select: 'Select',
+  multi: 'Multi-select',
   checkbox: 'Checkbox',
+  date: 'Date',
+  url: 'URL',
   links: 'Links',
+  image: 'Image',
+  formula: 'Formula',
 };
 
 /** Icon per property type, shared by the property lists in settings. */
 export const PROPERTY_TYPE_ICON: Record<PropertyType, string> = {
-  image: 'image',
   text: 'type',
-  multi: 'tags',
   number: 'hash',
+  select: 'circle-dot',
+  multi: 'tags',
   checkbox: 'check-square',
+  date: 'calendar',
+  url: 'globe',
   links: 'link',
+  image: 'image',
+  formula: 'sigma',
 };
 
 /** Whether a number render needs a `max` value. */
 function needsMax(prop: PropertyConfig): boolean {
-  return prop.type === 'number' && ['stars', 'bar', 'circle'].includes(prop.render ?? '');
+  return (prop.type === 'number' || prop.type === 'formula') && ['stars', 'bar', 'circle'].includes(prop.render ?? '');
 }
+
+const NUMBER_STYLES: { value: NumberStyle; label: string }[] = [
+  { value: 'plain', label: 'Plain' },
+  { value: 'currency', label: 'Currency' },
+  { value: 'percent', label: 'Percent' },
+  { value: 'compact', label: 'Compact' },
+];
 
 const capitalize = (s: string): string => s.charAt(0).toUpperCase() + s.slice(1);
 
@@ -145,7 +168,15 @@ function PropertyRow({
       value={prop.type}
       onChange={(e) => {
         const type = e.target.value as PropertyType;
-        onChange({ type, render: RENDER_OPTIONS[type][0] as PropertyConfig['render'] });
+        const keepOptions = (type === 'select' || type === 'multi') && (prop.type === 'select' || prop.type === 'multi');
+        onChange({
+          type,
+          render: RENDER_OPTIONS[type][0] as PropertyConfig['render'],
+          options: keepOptions ? prop.options : undefined,
+          formula: type === 'formula' ? prop.formula : undefined,
+          format: type === 'number' || type === 'formula' ? prop.format : undefined,
+          includeTime: type === 'date' ? prop.includeTime : undefined,
+        });
       }}
     >
       {(Object.keys(RENDER_OPTIONS) as PropertyType[]).map((t) => (
@@ -182,13 +213,36 @@ function PropertyRow({
 
       <Collapsible.Content className="rb-prop-body">
         {phone && <Field label="Type" wide>{typeSelect}</Field>}
-        <Field label="Style" wide>
-          <Segmented
-            value={render}
-            options={RENDER_OPTIONS[prop.type].map((r) => ({ value: r, label: capitalize(r) }))}
-            onChange={(v) => onChange({ render: v as PropertyConfig['render'] })}
-          />
-        </Field>
+        {prop.type === 'formula' && (
+          <Field label="Formula" wide>
+            <FormulaInput value={prop.formula ?? ''} onChange={(v) => onChange({ formula: v || undefined })} />
+          </Field>
+        )}
+        {RENDER_OPTIONS[prop.type].length > 1 && (
+          <Field label="Style" wide>
+            <Segmented
+              value={render}
+              options={RENDER_OPTIONS[prop.type].map((r) => ({ value: r, label: capitalize(r) }))}
+              onChange={(v) => onChange({ render: v as PropertyConfig['render'] })}
+            />
+          </Field>
+        )}
+        {(prop.type === 'select' || prop.type === 'multi') && (
+          <Field label="Values" wide>
+            <OptionsEditor options={prop.options ?? []} onChange={(options) => onChange({ options })} />
+          </Field>
+        )}
+        {(prop.type === 'number' || prop.type === 'formula') && (
+          <NumberFormatFields format={prop.format} onChange={(format) => onChange({ format })} />
+        )}
+        {prop.type === 'date' && (
+          <Field label="Time" wide>
+            <div className="rb-prop-toggle-row">
+              <span className="rb-prop-toggle-desc">Dates include a time of day.</span>
+              <Toggle checked={!!prop.includeTime} onChange={(on) => onChange({ includeTime: on || undefined })} label="Include time" />
+            </div>
+          </Field>
+        )}
         <Field label="Label">
           <TextInput
             className="rb-prop-input"
@@ -237,6 +291,85 @@ function PropertyRow({
         )}
       </Collapsible.Content>
     </Collapsible.Root>
+  );
+}
+
+/** Formula source with a live syntax check and a function reference. */
+function FormulaInput({ value, onChange }: { value: string; onChange: (value: string) => void }) {
+  const [draft, setDraft] = useState(value);
+  let error: string | null = null;
+  if (draft.trim()) {
+    try {
+      parseFormula(draft);
+    } catch (e) {
+      error = (e as Error).message;
+    }
+  }
+  return (
+    <div className="rb-formula-edit">
+      <textarea
+        className={error ? 'rb-formula-input rb-invalid' : 'rb-formula-input'}
+        rows={2}
+        spellCheck={false}
+        placeholder="e.g. {Price} * {Quantity}"
+        value={draft}
+        onChange={(e) => {
+          setDraft(e.target.value);
+          onChange(e.target.value);
+        }}
+      />
+      {error && <div className="rb-formula-msg">{error}</div>}
+      <details className="rb-formula-help">
+        <summary>Refer to properties as {'{Name}'} and the title as {'{Title}'}. Functions…</summary>
+        <ul>
+          {Object.values(FUNCTIONS).map((f) => (
+            <li key={f.sig}>
+              <code>{f.sig}</code> — {f.doc}
+            </li>
+          ))}
+        </ul>
+      </details>
+    </div>
+  );
+}
+
+/** Number style, decimals, currency symbol and thousands separators, with a preview. */
+function NumberFormatFields({ format, onChange }: { format?: NumberFormat; onChange: (format: NumberFormat | undefined) => void }) {
+  const f: NumberFormat = format ?? { style: 'plain' };
+  const set = (patch: Partial<NumberFormat>): void => {
+    const next: NumberFormat = { ...f, ...patch };
+    for (const k of Object.keys(next) as (keyof NumberFormat)[]) if (next[k] === undefined) delete next[k];
+    onChange(next.style === 'plain' && next.decimals === undefined && !next.grouping ? undefined : next);
+  };
+  return (
+    <>
+      <Field label="Format">
+        <Select<NumberStyle> value={f.style} options={NUMBER_STYLES} onChange={(style) => set({ style })} />
+      </Field>
+      <Field label="Decimals">
+        <TextInput
+          className="rb-prop-input"
+          type="number"
+          value={f.decimals != null ? String(f.decimals) : ''}
+          placeholder="Auto"
+          onChange={(v) => {
+            const n = Number(v);
+            set({ decimals: v === '' || Number.isNaN(n) ? undefined : Math.max(0, Math.min(10, Math.round(n))) });
+          }}
+        />
+      </Field>
+      {f.style === 'currency' && (
+        <Field label="Symbol">
+          <TextInput className="rb-prop-input" value={f.currency ?? ''} placeholder="$" onChange={(v) => set({ currency: v || undefined })} />
+        </Field>
+      )}
+      <Field label="Separators" wide>
+        <div className="rb-prop-toggle-row">
+          <span className="rb-prop-toggle-desc">Thousands separators · e.g. {formatNumber(f.style === 'percent' ? 0.1234 : 1234.5, f)}</span>
+          <Toggle checked={f.grouping ?? f.style !== 'plain'} onChange={(on) => set({ grouping: on })} label="Thousands separators" />
+        </div>
+      </Field>
+    </>
   );
 }
 

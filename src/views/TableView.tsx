@@ -104,7 +104,7 @@ function TableEl({ view, viewIndex, items, properties, sort, pageKey }: TablePro
           <tbody>
             {padTop > 0 && <tr className="rb-spacer-row" style={{ height: padTop }} />}
             {rows.map((v) => (
-              <Row key={visible[v.index].file.path} index={v.index} measure={virtualizer.measureElement} item={visible[v.index]} properties={properties} />
+              <Row key={visible[v.index].id}index={v.index} measure={virtualizer.measureElement} item={visible[v.index]} properties={properties} />
             ))}
             {padBottom > 0 && <tr className="rb-spacer-row" style={{ height: padBottom }} />}
           </tbody>
@@ -181,7 +181,7 @@ const EDITABLE: ReadonlySet<PropertyType> = new Set(['text', 'number', 'multi', 
  */
 function Cell({ item, prop }: { item: BoardItem; prop: PropertyConfig }) {
   const env = useFieldEnv();
-  const { app } = useBoardContext();
+  const { actions } = useBoardContext();
   const [editing, setEditing] = useState<string | null>(null);
   // Enter/Escape and the blur that follows must only finish the edit once.
   const done = useRef(false);
@@ -190,9 +190,7 @@ function Cell({ item, prop }: { item: BoardItem; prop: PropertyConfig }) {
   if (!EDITABLE.has(prop.type)) return <td className="rb-td">{content}</td>;
 
   const write = (value: string | string[] | null): void => {
-    setProperty(app, item.file, prop, value).catch((e) =>
-      new Notice(`R Board: could not update ${prop.name} — ${(e as Error).message}`),
-    );
+    actions.setValue(item, prop, value).catch(() => undefined);
   };
 
   if (prop.type === 'checkbox') {

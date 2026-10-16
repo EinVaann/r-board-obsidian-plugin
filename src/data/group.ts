@@ -1,5 +1,5 @@
 import type { BoardItem, GroupColumnConfig, PropertyConfig } from '../types';
-import { asArray } from '../render/values';
+import { asArray, optionFor } from '../render/values';
 
 /** Label for the bucket of items missing the group property. */
 export const UNCATEGORIZED_LABEL = 'Uncategorized';
@@ -9,12 +9,14 @@ export interface ItemGroup {
   /** The group value (null = missing/empty). */
   key: string | null;
   label: string;
+  /** Header color: the view's override, else the option's color. */
+  color?: string;
   items: BoardItem[];
 }
 
 /** The group value of an item for a property: a single scalar string, or null. */
 export function groupValueOf(item: BoardItem, prop: PropertyConfig): string | null {
-  const raw = item.frontmatter[prop.name];
+  const raw = item.values[prop.name];
   if (raw === undefined || raw === null || raw === '') return null;
   if (Array.isArray(raw)) {
     const arr = asArray(raw);
@@ -50,26 +52,31 @@ export function groupItems(
     else buckets.set(value, [item]);
   }
 
-  const colLabel = (key: string): string => groupConfig?.[key]?.label ?? key;
+  const hasOptions = prop.type === 'select' || prop.type === 'multi';
+  const listed = new Set(prop.options?.map((o) => o.value));
+  const make = (key: string): ItemGroup => {
+    const cfg = groupConfig?.[key];
+    const opt = hasOptions ? optionFor(prop, key) : undefined;
+    // Free values only get a color once they are listed as options (or given one per view).
+    const color = cfg?.color ?? (opt && (listed.has(key) || prop.type === 'select') ? opt.color : undefined);
+    return { key, label: cfg?.label ?? opt?.label ?? key, color, items: buckets.get(key) ?? [] };
+  };
   const isHidden = (key: string): boolean => groupConfig?.[key]?.hidden === true;
 
   const groups: ItemGroup[] = [];
   const seen = new Set<string>();
 
-  if (order) {
-    for (const value of order) {
-      seen.add(value);
-      if (isHidden(value)) continue;
-      groups.push({ key: value, label: colLabel(value), items: buckets.get(value) ?? [] });
-    }
+  // Pinned columns first, else the property's listed values (always shown, even when empty).
+  for (const value of order ?? (hasOptions ? [...listed] : [])) {
+    seen.add(value);
+    if (!isHidden(value)) groups.push(make(value));
   }
 
   const rest = [...buckets.keys()]
     .filter((k) => !seen.has(k))
     .sort((a, b) => a.localeCompare(b));
   for (const value of rest) {
-    if (isHidden(value)) continue;
-    groups.push({ key: value, label: colLabel(value), items: buckets.get(value) ?? [] });
+    if (!isHidden(value)) groups.push(make(value));
   }
 
   if (uncategorized.length > 0) {

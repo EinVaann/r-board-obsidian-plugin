@@ -35,9 +35,10 @@ export function queryItems(app: App, config: DatabaseConfig): BoardItem[] {
     const cache = app.metadataCache.getFileCache(file);
     const frontmatter = (cache?.frontmatter ?? {}) as Record<string, unknown>;
     items.push({
+      id: file.path,
       file,
       title: titleForFile(file, frontmatter),
-      frontmatter,
+      values: frontmatter,
       tags,
     });
   }

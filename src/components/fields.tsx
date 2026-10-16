@@ -1,13 +1,33 @@
-import type { ReactNode, MouseEvent } from 'react';
+import type { ReactNode, MouseEvent, CSSProperties } from 'react';
 import type { App, TFile } from 'obsidian';
 import type { BoardItem, PropertyConfig } from '../types';
-import { asArray, asBoolean, asNumber, fieldValue, parseLink, resolveImageSrc } from '../render/values';
+import {
+  asArray,
+  asBoolean,
+  asDate,
+  asNumber,
+  fieldValue,
+  formatDateValue,
+  formatNumber,
+  optionFor,
+  parseLink,
+  relativeDate,
+  resolveImageSrc,
+} from '../render/values';
+import { toText } from '../formula/evaluate';
 import { openImageModal } from '../ui/ImageModal';
 
 /** What field renderers need from the host. */
 export interface FieldEnv {
   app: App;
   editFile: (file: TFile, title?: string) => void;
+  /** The `.board` / `.table` file: resolves links and images of table rows. */
+  sourceFile: TFile;
+}
+
+/** The file an item's links resolve from: its note, else the database file. */
+function sourceOf(env: FieldEnv, item: BoardItem): TFile {
+  return item.file ?? env.sourceFile;
 }
 
 /**
@@ -18,23 +38,87 @@ export interface FieldEnv {
 export function fieldNode(env: FieldEnv, item: BoardItem, field: PropertyConfig): ReactNode | null {
   switch (field.type) {
     case 'image':
-      return imageNode(env.app, item, field);
+      return imageNode(env, item, field);
     case 'multi':
       return multiNode(item, field);
     case 'number':
-      return numberNode(item, field);
+      return numberNode(fieldValue(item, field), field);
     case 'checkbox':
-      return checkboxNode(item, field);
+      return checkboxNode(fieldValue(item, field), field);
     case 'links':
       return linksNode(env, item, field);
+    case 'select':
+      return selectNode(item, field);
+    case 'date':
+      return dateNode(fieldValue(item, field), field);
+    case 'url':
+      return urlNode(item, field);
+    case 'formula':
+      return formulaNode(item, field);
     case 'text':
     default:
       return textNode(item, field);
   }
 }
 
-function imageNode(app: App, item: BoardItem, field: PropertyConfig): ReactNode | null {
-  const url = resolveImageSrc(app, item.file, fieldValue(item, field));
+/** Inline style carrying an option color (read by the `.rb-opt` CSS). */
+export function optionStyle(color: string): CSSProperties {
+  return { '--oc': color } as CSSProperties;
+}
+
+function selectNode(item: BoardItem, field: PropertyConfig): ReactNode | null {
+  const v = fieldValue(item, field);
+  if (v === undefined || v === null || v === '') return null;
+  const opt = optionFor(field, Array.isArray(v) ? asArray(v)[0] ?? '' : String(v));
+  if (field.render === 'plain') return <span className="rb-text">{affix(field, opt.label)}</span>;
+  return (
+    <Affixed field={field}>
+      <span className="rb-pill rb-opt" style={optionStyle(opt.color)}>
+        {opt.label}
+      </span>
+    </Affixed>
+  );
+}
+
+function dateNode(v: unknown, field: PropertyConfig): ReactNode | null {
+  const d = asDate(v);
+  if (!d) return v === undefined || v === null || v === '' ? null : <span className="rb-text">{String(v)}</span>;
+  const exact = formatDateValue(d, !!field.includeTime || (typeof v === 'string' && v.length > 10));
+  const text = field.render === 'relative' ? relativeDate(d) : exact;
+  return (
+    <span className="rb-text rb-date" title={exact}>
+      {affix(field, text)}
+    </span>
+  );
+}
+
+function urlNode(item: BoardItem, field: PropertyConfig): ReactNode | null {
+  const v = fieldValue(item, field);
+  if (v === undefined || v === null || v === '') return null;
+  const raw = String(v).trim();
+  const href = /^[a-z][a-z0-9+.-]*:/i.test(raw) ? raw : `https://${raw}`;
+  return (
+    <a className="rb-link rb-url" href={href} target="_blank" rel="noopener" onClick={(e) => e.stopPropagation()}>
+      {affix(field, raw.replace(/^https?:\/\//i, ''))}
+    </a>
+  );
+}
+
+/** A formula result, drawn by its type: numbers honor the number styles and format. */
+function formulaNode(item: BoardItem, field: PropertyConfig): ReactNode | null {
+  const error = item.errors?.[field.name];
+  if (error) return <span className="rb-formula-error" title={error}>#ERROR</span>;
+  const v = fieldValue(item, field);
+  if (v === undefined || v === null || v === '') return null;
+  if (typeof v === 'number') return numberNode(v, field);
+  if (typeof v === 'boolean') return checkboxNode(v, { ...field, render: 'check' });
+  if (v instanceof Date) return dateNode(v, { ...field, render: 'plain' });
+  return <span className="rb-text">{affix(field, toText(v as never))}</span>;
+}
+
+function imageNode(env: FieldEnv, item: BoardItem, field: PropertyConfig): ReactNode | null {
+  const app = env.app;
+  const url = resolveImageSrc(app, sourceOf(env, item), fieldValue(item, field));
   if (!url) return null;
   const mode = field.render === 'fit' ? 'fit' : 'fill';
   return (
@@ -77,16 +161,6 @@ function textNode(item: BoardItem, field: PropertyConfig): ReactNode | null {
   return <span className={cls}>{text}</span>;
 }
 
-/** Curated, evenly-spaced hues so each value gets a distinct, pleasant color. */
-const PILL_HUES = [0, 25, 45, 95, 150, 190, 215, 260, 290, 330];
-
-/** Deterministic hue for a value, so the same value is always the same color. */
-function pillHue(s: string): number {
-  let h = 0;
-  for (let i = 0; i < s.length; i++) h = (Math.imul(h, 31) + s.charCodeAt(i)) >>> 0;
-  return PILL_HUES[h % PILL_HUES.length];
-}
-
 function multiNode(item: BoardItem, field: PropertyConfig): ReactNode | null {
   const arr = asArray(fieldValue(item, field));
   if (arr.length === 0) return null;
@@ -94,23 +168,21 @@ function multiNode(item: BoardItem, field: PropertyConfig): ReactNode | null {
   return (
     <div className="rb-multi">
       <Affixed field={field}>
-        {arr.map((entry, i) => (
-          <span
-            key={i}
-            className={asTags ? 'rb-tag' : 'rb-pill'}
-            // Per-value color (read by the .rb-multi pill/tag CSS).
-            style={{ '--pc': String(pillHue(entry)) } as React.CSSProperties}
-          >
-            {asTags ? `#${entry}` : entry}
-          </span>
-        ))}
+        {arr.map((entry, i) => {
+          const opt = optionFor(field, entry);
+          return (
+            <span key={i} className={asTags ? 'rb-tag rb-opt' : 'rb-pill rb-opt'} style={optionStyle(opt.color)}>
+              {asTags ? `#${opt.label}` : opt.label}
+            </span>
+          );
+        })}
       </Affixed>
     </div>
   );
 }
 
-function numberNode(item: BoardItem, field: PropertyConfig): ReactNode | null {
-  const n = asNumber(fieldValue(item, field));
+function numberNode(v: unknown, field: PropertyConfig): ReactNode | null {
+  const n = asNumber(v);
   if (n === null) return null;
   const max = field.max ?? 100;
   switch (field.render ?? 'text') {
@@ -121,7 +193,7 @@ function numberNode(item: BoardItem, field: PropertyConfig): ReactNode | null {
     case 'circle':
       return <Affixed field={field}><Circle value={n} max={max} /></Affixed>;
     default:
-      return <span className="rb-text rb-number">{affix(field, String(n))}</span>;
+      return <span className="rb-text rb-number">{affix(field, field.format ? formatNumber(n, field.format) : toText(n))}</span>;
   }
 }
 
@@ -151,9 +223,10 @@ function linksNode(env: FieldEnv, item: BoardItem, field: PropertyConfig): React
                 e.preventDefault();
                 e.stopPropagation();
                 const newTab = e.ctrlKey || e.metaKey;
-                const dest = env.app.metadataCache.getFirstLinkpathDest(link.linkpath, item.file.path);
+                const from = sourceOf(env, item).path;
+                const dest = env.app.metadataCache.getFirstLinkpathDest(link.linkpath, from);
                 if (dest && !newTab) env.editFile(dest);
-                else void env.app.workspace.openLinkText(link.linkpath, item.file.path, newTab);
+                else void env.app.workspace.openLinkText(link.linkpath, from, newTab);
               }}
             >
               {link.text}
@@ -165,9 +238,9 @@ function linksNode(env: FieldEnv, item: BoardItem, field: PropertyConfig): React
   );
 }
 
-function checkboxNode(item: BoardItem, field: PropertyConfig): ReactNode {
+function checkboxNode(v: unknown, field: PropertyConfig): ReactNode {
   // A missing or unrecognized value renders as unchecked (false), never blank.
-  const b = asBoolean(fieldValue(item, field)) ?? false;
+  const b = asBoolean(v) ?? false;
   const render = field.render ?? 'check';
   if (render === 'toggle') {
     return (
