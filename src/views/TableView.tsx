@@ -55,6 +55,8 @@ export function TableView(props: TableProps) {
   // The group property may be hidden in the view: look it up among all properties.
   const allProperties = useBoard((s) => s.config?.properties ?? properties);
   const groupProp = view.group ? allProperties.find((p) => p.name === view.group) : undefined;
+  const isTable = useBoard((s) => s.config?.kind === 'table');
+  const { actions } = useBoardContext();
   const table = (list: BoardItem[], pageKey: string, group?: ItemGroup) => (
     <Grid key={pageKey} {...props} items={list} pageKey={pageKey} group={group} groupProp={groupProp} />
   );
@@ -71,6 +73,13 @@ export function TableView(props: TableProps) {
       >
         {table}
       </Sections>
+      {/* A row outside every group (it lands in Uncategorized). */}
+      {isTable && (
+        <button className="rb-grid-add rb-grid-add-ungrouped" onClick={() => actions.addRow({})}>
+          <Icon name="plus" />
+          <span>New row with no {propertyLabel(groupProp)}</span>
+        </button>
+      )}
       {view.summary && <SummaryTable {...props} label="Total" grand />}
     </SyncedScroll>
   );

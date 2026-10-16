@@ -845,6 +845,7 @@ body .rb-table-wrap.rb-summary-only::-webkit-scrollbar { display: none; }
   cursor: pointer;
   justify-content: flex-start;
 }
+.rb-grid-add-ungrouped { margin: 4px 0 12px; border-top: 1px solid var(--background-modifier-border); }
 .rb-grid-add:hover { background: var(--background-modifier-hover); color: var(--text-normal); }
 .rb-grid-add svg { width: 14px; height: 14px; }
 
