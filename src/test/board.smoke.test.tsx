@@ -674,6 +674,13 @@ describe('tables', () => {
     expect((el.querySelector('.rb-kanban-title') as HTMLElement).style.getPropertyValue('--gc')).toBe('#ff0000');
   });
 
+  it('sorts by a property that is hidden in the view', async () => {
+    const config = structuredClone(TABLE);
+    config.views[0] = { ...config.views[0], sort: { property: 'price', dir: 'desc' }, properties: ['qty'] };
+    const { el } = await renderBoard(config, TABLE_ROWS);
+    expect([...el.querySelectorAll('.rb-tr .rb-title')].map((a) => a.textContent)).toEqual(['Gas', 'Bread', 'Apples']);
+  });
+
   it('groups by a property that is hidden in the view', async () => {
     const config = structuredClone(TABLE);
     config.views[0] = { ...config.views[0], group: 'kind', properties: ['price', 'qty'] };
