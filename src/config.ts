@@ -1,6 +1,10 @@
 import type {
+  Aggregate,
   CardSize,
+  ChartConfig,
+  ChartType,
   DatabaseConfig,
+  DateBucket,
   FilterGroup,
   FilterNode,
   FilterOp,
@@ -18,12 +22,58 @@ import type {
 
 const PROPERTY_TYPES = new Set(['image', 'text', 'multi', 'number', 'checkbox', 'links', 'select', 'date', 'url', 'formula']);
 const NUMBER_STYLES = new Set(['plain', 'currency', 'percent', 'compact']);
-const VIEW_TYPES = new Set(['gallery', 'kanban', 'table', 'recipe']);
+const VIEW_TYPES = new Set(['gallery', 'kanban', 'table', 'recipe', 'chart']);
 const CARD_SIZES = new Set<CardSize>(['small', 'medium', 'large']);
 const LIMITS = new Set<LoadLimit>([10, 50, 100, 'none']);
 const FILTER_OPS = new Set<FilterOp>([
-  'eq', 'ne', 'contains', 'gt', 'gte', 'lt', 'lte', 'empty', 'notempty',
+  'eq', 'ne', 'contains', 'notContains', 'startsWith', 'endsWith', 'gt', 'gte', 'lt', 'lte',
+  'before', 'after', 'onOrBefore', 'onOrAfter', 'anyOf', 'noneOf', 'checked', 'unchecked', 'empty', 'notempty',
 ]);
+const DATE_BUCKETS = new Set<DateBucket>(['none', 'relative', 'day', 'week', 'month', 'quarter', 'year']);
+const CHART_TYPES = new Set<ChartType>(['bar', 'line', 'area', 'pie', 'donut', 'scatter']);
+const AGGREGATES = new Set<Aggregate>(['sum', 'count', 'avg', 'min', 'max']);
+
+/** Chart settings with every field filled in. */
+export function defaultChartConfig(): ChartConfig {
+  return {
+    type: 'bar',
+    x: null,
+    dateBucket: 'none',
+    splitBy: null,
+    values: [],
+    aggregate: 'sum',
+    stacked: false,
+    horizontal: false,
+    sort: 'x',
+    showLegend: true,
+    showLabels: false,
+    colors: {},
+  };
+}
+
+export function parseChart(raw: unknown): ChartConfig {
+  const c = (typeof raw === 'object' && raw !== null ? raw : {}) as Record<string, unknown>;
+  const d = defaultChartConfig();
+  const strOrNull = (v: unknown): string | null => (typeof v === 'string' && v !== '' ? v : null);
+  const colors: Record<string, string> = {};
+  if (typeof c.colors === 'object' && c.colors !== null) {
+    for (const [k, v] of Object.entries(c.colors)) if (typeof v === 'string' && v) colors[k] = v;
+  }
+  return {
+    type: CHART_TYPES.has(c.type as ChartType) ? (c.type as ChartType) : d.type,
+    x: strOrNull(c.x),
+    dateBucket: DATE_BUCKETS.has(c.dateBucket as DateBucket) ? (c.dateBucket as DateBucket) : d.dateBucket,
+    splitBy: strOrNull(c.splitBy),
+    values: Array.isArray(c.values) ? c.values.filter((v): v is string => typeof v === 'string') : [],
+    aggregate: AGGREGATES.has(c.aggregate as Aggregate) ? (c.aggregate as Aggregate) : d.aggregate,
+    stacked: c.stacked === true,
+    horizontal: c.horizontal === true,
+    sort: c.sort === 'value-asc' || c.sort === 'value-desc' ? c.sort : 'x',
+    showLegend: c.showLegend !== false,
+    showLabels: c.showLabels === true,
+    colors,
+  };
+}
 
 /** Result of parsing a `.board` file: a config, or a human-readable error. */
 export type ParseResult =
@@ -159,7 +209,20 @@ function parseView(raw: unknown, index: number): ViewConfig | null {
     showContent: typeof v.showContent === 'boolean' ? v.showContent : undefined,
     layout: v.layout === 'grid' ? 'grid' : v.layout === 'masonry' ? 'masonry' : undefined,
     paging: v.paging === 'pages' ? 'pages' : undefined,
+    groupBucket: DATE_BUCKETS.has(v.groupBucket as DateBucket) && v.groupBucket !== 'none' ? (v.groupBucket as DateBucket) : undefined,
+    collapsed: Array.isArray(v.collapsed) && v.collapsed.length
+      ? [...new Set(v.collapsed.filter((c): c is string => typeof c === 'string'))]
+      : undefined,
+    widths: parseWidths(v.widths),
+    chart: type === 'chart' ? parseChart(v.chart) : undefined,
   };
+}
+
+function parseWidths(raw: unknown): Record<string, number> | undefined {
+  if (typeof raw !== 'object' || raw === null) return undefined;
+  const out: Record<string, number> = {};
+  for (const [k, w] of Object.entries(raw)) if (typeof w === 'number' && w > 0) out[k] = Math.round(w);
+  return Object.keys(out).length ? out : undefined;
 }
 
 /** Parse and validate the raw text of a `.board` file. */
@@ -179,6 +242,21 @@ export function parseDatabaseConfig(raw: string): ParseResult {
     return { ok: false, error: 'Database config requires a non-empty "sourceTag".' };
   }
 
+  return {
+    ok: true,
+    config: {
+      ...parseSchema(obj),
+      sourceTag: normalizeTag(obj.sourceTag),
+      newNoteFolder:
+        typeof obj.newNoteFolder === 'string' && obj.newNoteFolder.trim() !== ''
+          ? obj.newNoteFolder.trim()
+          : undefined,
+    },
+  };
+}
+
+/** The parts shared by `.board` and `.table` files: name, properties, views. */
+export function parseSchema(obj: Record<string, unknown>): Pick<DatabaseConfig, 'name' | 'properties' | 'views' | 'defaultView'> {
   const properties: PropertyConfig[] = Array.isArray(obj.properties)
     ? obj.properties.map(parseProperty).filter((p): p is PropertyConfig => p !== null)
     : [];
@@ -193,20 +271,7 @@ export function parseDatabaseConfig(raw: string): ParseResult {
       ? obj.defaultView
       : views[0]?.name;
 
-  return {
-    ok: true,
-    config: {
-      name: typeof obj.name === 'string' ? obj.name : undefined,
-      sourceTag: normalizeTag(obj.sourceTag),
-      properties,
-      views,
-      defaultView,
-      newNoteFolder:
-        typeof obj.newNoteFolder === 'string' && obj.newNoteFolder.trim() !== ''
-          ? obj.newNoteFolder.trim()
-          : undefined,
-    },
-  };
+  return { name: typeof obj.name === 'string' ? obj.name : undefined, properties, views, defaultView };
 }
 
 /** The label shown for a property (explicit label, else the frontmatter key). */
@@ -230,7 +295,15 @@ export function serializeDatabase(config: DatabaseConfig): string {
   if (config.name) out.name = config.name;
   out.sourceTag = config.sourceTag;
   out.properties = config.properties;
-  out.views = config.views.map((v) => {
+  out.views = serializeViews(config.views);
+  if (config.defaultView) out.defaultView = config.defaultView;
+  if (config.newNoteFolder) out.newNoteFolder = config.newNoteFolder;
+  return JSON.stringify(out, null, 2);
+}
+
+/** Views as written to the file: defaults and empty settings left out. */
+export function serializeViews(views: ViewConfig[]): Record<string, unknown>[] {
+  return views.map((v) => {
     const view: Record<string, unknown> = { name: v.name, type: v.type };
     if (v.properties && v.properties.length) view.properties = v.properties;
     if (v.limit !== undefined) view.limit = v.limit;
@@ -243,17 +316,18 @@ export function serializeDatabase(config: DatabaseConfig): string {
     if (v.showContent) view.showContent = v.showContent;
     if (v.layout) view.layout = v.layout;
     if (v.paging === 'pages') view.paging = v.paging;
+    if (v.groupBucket && v.groupBucket !== 'none') view.groupBucket = v.groupBucket;
+    if (v.collapsed && v.collapsed.length) view.collapsed = v.collapsed;
+    if (v.widths && Object.keys(v.widths).length) view.widths = v.widths;
+    if (v.type === 'chart' && v.chart) view.chart = v.chart;
     return view;
   });
-  if (config.defaultView) out.defaultView = config.defaultView;
-  if (config.newNoteFolder) out.newNoteFolder = config.newNoteFolder;
-  return JSON.stringify(out, null, 2);
 }
 
 /** A fresh view of the given type, with a name unique among `existing`. */
 export function makeDefaultView(type: ViewType, existing: ViewConfig[]): ViewConfig {
   const baseName =
-    type === 'gallery' ? 'Gallery' : type === 'kanban' ? 'Board' : type === 'recipe' ? 'Recipes' : 'Table';
+    type === 'gallery' ? 'Gallery' : type === 'kanban' ? 'Board' : type === 'recipe' ? 'Recipes' : type === 'chart' ? 'Chart' : 'Table';
   let name = baseName;
   let n = 2;
   while (existing.some((v) => v.name === name)) name = `${baseName} ${n++}`;
@@ -264,6 +338,8 @@ export function makeDefaultView(type: ViewType, existing: ViewConfig[]): ViewCon
     view.cardSize = 'medium';
   } else if (type === 'kanban') {
     view.cardSize = 'medium';
+  } else if (type === 'chart') {
+    view.chart = defaultChartConfig();
   }
   return view;
 }
@@ -274,9 +350,22 @@ export function makeDefaultView(type: ViewType, existing: ViewConfig[]): ViewCon
  * every property in declaration order.
  */
 export function visibleProperties(config: DatabaseConfig, view: ViewConfig): PropertyConfig[] {
-  if (!view.properties || view.properties.length === 0) return config.properties;
-  const byName = new Map(config.properties.map((p) => [p.name, p]));
+  // A table's title property is drawn as the title, never as a field.
+  const all = config.titleProperty ? config.properties.filter((p) => p.name !== config.titleProperty) : config.properties;
+  if (!view.properties || view.properties.length === 0) return all;
+  const byName = new Map(all.map((p) => [p.name, p]));
   return view.properties
     .map((name) => byName.get(name))
     .filter((p): p is PropertyConfig => p !== undefined);
+}
+
+/** A table's title property, if any. */
+export function titlePropertyOf(config: DatabaseConfig): PropertyConfig | undefined {
+  return config.titleProperty ? config.properties.find((p) => p.name === config.titleProperty) : undefined;
+}
+
+/** Label of the title column: "Title" for boards, the title property's label for tables. */
+export function titleLabel(config: DatabaseConfig): string {
+  const p = titlePropertyOf(config);
+  return p ? propertyLabel(p) : 'Title';
 }

@@ -1,6 +1,6 @@
 import { createStore, type StoreApi } from 'zustand/vanilla';
 import { produce } from 'immer';
-import type { DatabaseConfig, ViewConfig } from '../types';
+import type { DatabaseConfig, TableRow, ViewConfig } from '../types';
 
 /**
  * State for one open board. Config edits go through `updateConfig` (an Immer
@@ -21,6 +21,13 @@ export interface BoardState {
   collapsed: Record<string, true>;
   /** Revealed item count per paginated list, for the active view. */
   pages: Record<string, number>;
+  /** Tables: the stored rows (boards: unused). */
+  rows: TableRow[];
+
+  /** Edit the rows (Immer draft); persists to the file. */
+  updateRows: (recipe: (draft: TableRow[]) => void) => void;
+  /** Replace the rows after (re)reading the `.table` file. */
+  loadRows: (rows: TableRow[]) => void;
 
   /** Replace the config after (re)reading the `.board` file. */
   loadConfig: (config: DatabaseConfig | null, parseError: string | null, savedView?: string) => void;
@@ -40,6 +47,8 @@ export type BoardStore = StoreApi<BoardState>;
 export interface BoardPersistence {
   /** Write the config back to the `.board` file. */
   saveConfig: (config: DatabaseConfig) => void;
+  /** Tables: write the rows back to the `.table` file. */
+  saveRows?: (rows: TableRow[]) => void;
   /** Remember the active view for this board (plugin data). */
   saveActiveView: (name: string) => void;
 }
@@ -59,6 +68,15 @@ export function createBoardStore(persist: BoardPersistence): BoardStore {
       vaultTick: 0,
       collapsed: {},
       pages: {},
+      rows: [],
+
+      updateRows: (recipe) => {
+        const rows = produce(get().rows, recipe);
+        if (rows === get().rows) return;
+        set({ rows });
+        persist.saveRows?.(rows);
+      },
+      loadRows: (rows) => set({ rows }),
 
       loadConfig: (config, parseError, savedView) => {
         const keep = savedView ?? get().activeView;

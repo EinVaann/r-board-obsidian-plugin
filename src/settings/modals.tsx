@@ -18,7 +18,7 @@ export function openBoardSettings(app: App, ctx: BoardContextValue): void {
         <BoardSettings />
       </BoardContext.Provider>
     ),
-    { title: 'Board settings', cls: 'rb-settings-modal' },
+    { title: ctx.store.getState().config?.kind === 'table' ? 'Table settings' : 'Board settings', cls: 'rb-settings-modal' },
   ).open();
 }
 

@@ -19,6 +19,8 @@ import { ViewSettings } from '../settings/ViewSettings';
 import { FilterBuilder } from '../settings/FilterBuilder';
 import { openWizard } from '../settings/Wizard';
 import { setProperty } from '../data/properties';
+import { setCell } from '../table/rows';
+import type { TableRow } from '../types';
 
 (globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true;
 
@@ -107,6 +109,29 @@ const app = {
   },
 } as unknown as App;
 
+/** A `.table` database: rows stored in the file, a formula, a select. */
+const TABLE: DatabaseConfig = {
+  kind: 'table',
+  sourceTag: '',
+  titleProperty: 'item',
+  properties: [
+    { name: 'item', label: 'Item', type: 'text' },
+    { name: 'kind', label: 'Kind', type: 'select', options: [{ value: 'k1', label: 'Food', color: '#ff0000' }, { value: 'k2', label: 'Fuel' }] },
+    { name: 'price', label: 'Price', type: 'number' },
+    { name: 'qty', label: 'Qty', type: 'number' },
+    { name: 'total', label: 'Total', type: 'formula', formula: '{Price} * {Qty}' },
+  ],
+  views: [
+    { name: 'Rows', type: 'table', limit: 'none', sort: { property: '$none', dir: 'asc' } },
+    { name: 'Lanes', type: 'kanban', group: 'kind' },
+  ],
+};
+const TABLE_ROWS: TableRow[] = [
+  { id: 'r1', cells: { item: 'Apples', kind: 'k1', price: 2, qty: 3 } },
+  { id: 'r2', cells: { item: 'Gas', kind: 'k2', price: 50, qty: 1, total: '=99' } },
+  { id: 'r3', cells: { item: 'Bread', price: 3 } },
+];
+
 const GAMES: DatabaseConfig = {
   name: 'Games',
   sourceTag: 'backlog',
@@ -149,9 +174,10 @@ afterEach(() => {
   document.body.innerHTML = '';
 });
 
-function makeContext(config: DatabaseConfig): { ctx: BoardContextValue; store: BoardStore; saved: DatabaseConfig[] } {
+function makeContext(config: DatabaseConfig, rows: TableRow[] = []): { ctx: BoardContextValue; store: BoardStore; saved: DatabaseConfig[] } {
   const saved: DatabaseConfig[] = [];
   const store = createBoardStore({ saveConfig: (c) => saved.push(c), saveActiveView: () => {} });
+  store.getState().loadRows(structuredClone(rows));
   store.getState().loadConfig(structuredClone(config), null);
   const noop = (): void => {};
   const ctx: BoardContextValue = {
@@ -169,7 +195,10 @@ function makeContext(config: DatabaseConfig): { ctx: BoardContextValue; store: B
       openSetup: noop,
       reportItems: noop,
       editItem: noop,
-      setValue: (item, prop, value) => (item.file ? setProperty(app, item.file, prop, value) : Promise.resolve()),
+      setValue: async (item, prop, value) => {
+        if (item.file) return setProperty(app, item.file, prop, value);
+        store.getState().updateRows((rows) => setCell(rows, item.id, prop, value));
+      },
     },
   };
   return { ctx, store, saved };
@@ -187,8 +216,8 @@ async function render(node: React.ReactNode): Promise<HTMLElement> {
   return el;
 }
 
-async function renderBoard(config: DatabaseConfig) {
-  const { ctx, store, saved } = makeContext(config);
+async function renderBoard(config: DatabaseConfig, rows?: TableRow[]) {
+  const { ctx, store, saved } = makeContext(config, rows);
   const el = await render(
     <BoardContext.Provider value={ctx}>
       <BoardApp />
@@ -533,6 +562,20 @@ describe('settings', () => {
     });
   });
 
+  it('table settings name columns instead of frontmatter keys and pick a title column', async () => {
+    const { ctx } = makeContext(TABLE, TABLE_ROWS);
+    const el = await render(
+      <BoardContext.Provider value={ctx}>
+        <BoardSettings />
+      </BoardContext.Provider>,
+    );
+    expect(el.textContent).toContain('Title column');
+    expect(el.textContent).not.toContain('Base tag');
+    await act(async () => mousedown(el.querySelectorAll('.rb-settings-tab')[1]));
+    const names = [...el.querySelectorAll<HTMLInputElement>('.rb-prop-name')].map((i) => i.value);
+    expect(names).toEqual(['Item', 'Kind', 'Price', 'Qty', 'Total']);
+  });
+
   it('wizard opens in a modal and requires a tag', async () => {
     let created: DatabaseConfig | null = null;
     await act(async () => openWizard(app, {}, 'Create database', (c) => (created = c)));
@@ -541,5 +584,38 @@ describe('settings', () => {
     expect(created).toBeNull();
     const { Notice } = await import('obsidian');
     expect((Notice as unknown as { messages: string[] }).messages.at(-1)).toContain('base tag is required');
+  });
+});
+
+describe('tables', () => {
+  it('lists rows in stored order under the title column, with computed formulas', async () => {
+    const { el } = await renderBoard(TABLE, TABLE_ROWS);
+    expect(el.querySelector('.rb-th')?.textContent).toBe('Item');
+    const titles = [...el.querySelectorAll('.rb-tr .rb-title')].map((a) => a.textContent);
+    expect(titles).toEqual(['Apples', 'Gas', 'Bread']);
+    const totals = [...el.querySelectorAll('.rb-tr')].map((tr) => tr.lastElementChild?.textContent);
+    expect(totals).toEqual(['6', '99', '0']);
+    expect(el.querySelector('.rb-new-note-label')?.textContent).toBe('New row');
+  });
+
+  it('edits a cell into the stored rows', async () => {
+    const { el, store } = await renderBoard(TABLE, TABLE_ROWS);
+    const qty = el.querySelectorAll('.rb-tr')[2].children[3] as HTMLElement;
+    await act(async () => qty.dispatchEvent(new MouseEvent('dblclick', { bubbles: true })));
+    const input = qty.querySelector('input')!;
+    await act(async () => {
+      input.value = '4';
+      input.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true }));
+    });
+    expect(store.getState().rows[2].cells.qty).toBe(4);
+    expect(el.querySelectorAll('.rb-tr')[2].lastElementChild?.textContent).toBe('12');
+  });
+
+  it('kanban groups rows by a select, in option order, with option labels and colors', async () => {
+    const { el, show } = await renderBoard(TABLE, TABLE_ROWS);
+    await show('Lanes');
+    const titles = [...el.querySelectorAll('.rb-kanban-title')].map((t) => t.textContent);
+    expect(titles).toEqual(['Food', 'Fuel', 'Uncategorized']);
+    expect((el.querySelector('.rb-kanban-title') as HTMLElement).style.getPropertyValue('--gc')).toBe('#ff0000');
   });
 });

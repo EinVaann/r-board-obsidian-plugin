@@ -9,6 +9,8 @@ import { FUNCTIONS } from '../formula/evaluate';
 import { parseFormula } from '../formula/parse';
 import { DragHandle, Segmented, Select, SortableList, TextInput, Toggle, type HandleProps } from './controls';
 import { OptionsEditor } from './OptionsEditor';
+import { renameRefs } from '../formula/tokenize';
+import { newId as newKey } from '../table/format';
 
 /** Render options offered per property type. */
 const RENDER_OPTIONS: Record<PropertyType, string[]> = {
@@ -83,12 +85,32 @@ function useRowIds(count: number) {
  * compact row (key + type) that expands to its display options. Controlled:
  * every edit reports a new array.
  */
-export function PropertyEditor({ properties, onChange }: { properties: PropertyConfig[]; onChange: (next: PropertyConfig[]) => void }) {
+export function PropertyEditor({
+  properties,
+  onChange,
+  table = false,
+}: {
+  properties: PropertyConfig[];
+  onChange: (next: PropertyConfig[]) => void;
+  /** Tables: properties are named columns (the key is an internal id). */
+  table?: boolean;
+}) {
   const ids = useRowIds(properties.length);
   const [open, setOpen] = useState<Set<string>>(() => new Set());
 
-  const update = (index: number, patch: Partial<PropertyConfig>): void =>
-    onChange(properties.map((p, i) => (i === index ? { ...p, ...patch } : p)));
+  const update = (index: number, patch: Partial<PropertyConfig>): void => {
+    const before = properties[index];
+    const after = { ...before, ...patch };
+    // Formulas refer to properties by label (or key): follow renames.
+    const oldRef = before.label ?? before.name;
+    const newRef = after.label ?? after.name;
+    onChange(
+      properties.map((p, i) => {
+        const q = i === index ? after : p;
+        return oldRef && newRef && oldRef !== newRef && q.formula ? { ...q, formula: renameRefs(q.formula, oldRef, newRef) } : q;
+      }),
+    );
+  };
 
   const remove = (index: number): void => {
     ids.current = ids.current.filter((_, i) => i !== index);
@@ -99,7 +121,8 @@ export function PropertyEditor({ properties, onChange }: { properties: PropertyC
     const id = newId();
     ids.current = [...ids.current, id];
     setOpen((s) => new Set(s).add(id));
-    onChange([...properties, { name: '', type: 'text', render: 'plain' }]);
+    const name = table ? newKey('c', properties.map((p) => p.name)) : '';
+    onChange([...properties, table ? { name, label: '', type: 'text', render: 'plain' } : { name, type: 'text', render: 'plain' }]);
   };
 
   const reorder = (from: number, to: number): void => {
@@ -130,7 +153,8 @@ export function PropertyEditor({ properties, onChange }: { properties: PropertyC
             onOpenChange={(o) => setRowOpen(id, o)}
             onChange={(patch) => update(i, patch)}
             onRemove={() => remove(i)}
-            autoFocus={open.has(id) && properties[i].name === ''}
+            autoFocus={open.has(id) && (table ? properties[i].label === '' : properties[i].name === '')}
+            table={table}
           />
         )}
       />
@@ -150,6 +174,7 @@ function PropertyRow({
   onChange,
   onRemove,
   autoFocus,
+  table,
 }: {
   prop: PropertyConfig;
   handle: HandleProps;
@@ -158,6 +183,7 @@ function PropertyRow({
   onChange: (patch: Partial<PropertyConfig>) => void;
   onRemove: () => void;
   autoFocus: boolean;
+  table: boolean;
 }) {
   const render = prop.render ?? RENDER_OPTIONS[prop.type][0];
   // Phones: too narrow for type + remove in the header; they move into the body.
@@ -191,15 +217,27 @@ function PropertyRow({
       <div className="rb-prop-head">
         <DragHandle handle={handle} />
         <Icon name={PROPERTY_TYPE_ICON[prop.type]} className="rb-prop-type-icon" />
-        <input
-          className={prop.name.trim() ? 'rb-prop-name' : 'rb-prop-name rb-invalid'}
-          type="text"
-          placeholder="frontmatter key"
-          aria-label="Frontmatter key"
-          value={prop.name}
-          autoFocus={autoFocus}
-          onChange={(e) => onChange({ name: e.target.value })}
-        />
+        {table ? (
+          <input
+            className={(prop.label ?? '').trim() ? 'rb-prop-name' : 'rb-prop-name rb-invalid'}
+            type="text"
+            placeholder="Column name"
+            aria-label="Column name"
+            value={prop.label ?? ''}
+            autoFocus={autoFocus}
+            onChange={(e) => onChange({ label: e.target.value })}
+          />
+        ) : (
+          <input
+            className={prop.name.trim() ? 'rb-prop-name' : 'rb-prop-name rb-invalid'}
+            type="text"
+            placeholder="frontmatter key"
+            aria-label="Frontmatter key"
+            value={prop.name}
+            autoFocus={autoFocus}
+            onChange={(e) => onChange({ name: e.target.value })}
+          />
+        )}
         {!phone && typeSelect}
         <Collapsible.Trigger className="rb-icon-btn rb-prop-expand" aria-label={open ? 'Hide options' : 'Show options'}>
           <Icon name="chevron-down" />
@@ -243,14 +281,16 @@ function PropertyRow({
             </div>
           </Field>
         )}
-        <Field label="Label">
-          <TextInput
-            className="rb-prop-input"
-            value={prop.label ?? ''}
-            placeholder={prop.name || 'Same as key'}
-            onChange={(v) => onChange({ label: v.trim() || undefined })}
-          />
-        </Field>
+        {!table && (
+          <Field label="Label">
+            <TextInput
+              className="rb-prop-input"
+              value={prop.label ?? ''}
+              placeholder={prop.name || 'Same as key'}
+              onChange={(v) => onChange({ label: v.trim() || undefined })}
+            />
+          </Field>
+        )}
         {needsMax(prop) && (
           <Field label="Max">
             <TextInput

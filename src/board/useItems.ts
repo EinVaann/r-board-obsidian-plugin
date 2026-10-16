@@ -1,12 +1,13 @@
 import { useDeferredValue, useEffect, useMemo, useRef } from 'react';
 import type { App } from 'obsidian';
-import type { BoardItem, DatabaseConfig, PropertyConfig, SortSpec, ViewConfig } from '../types';
+import type { BoardItem, DatabaseConfig, PropertyConfig, SortSpec, TableRow, ViewConfig } from '../types';
 import { effectiveSort, visibleProperties } from '../config';
 import { queryItems } from '../data/query';
 import { applyFilter } from '../data/filter';
 import { filterBySearch } from '../data/search';
 import { applySort } from '../render/sort';
 import { FormulaEvaluator } from '../data/compute';
+import { rowsToItems } from '../table/rows';
 import { useBoard, useBoardContext } from './context';
 
 export interface ViewItems {
@@ -27,6 +28,7 @@ export interface ViewItems {
 function useAllItems(app: App, sourceTag: string, vaultTick: number): BoardItem[] {
   const cache = useRef(new Map<string, BoardItem>());
   return useMemo(() => {
+    if (!sourceTag) return [];
     const next = new Map<string, BoardItem>();
     const items = queryItems(app, { sourceTag } as DatabaseConfig).map((item) => {
       const prev = cache.current.get(item.id);
@@ -43,6 +45,16 @@ function useAllItems(app: App, sourceTag: string, vaultTick: number): BoardItem[
     return items;
     // vaultTick isn't read inside — it is the re-query trigger.
   }, [app, sourceTag, vaultTick]);
+}
+
+/** A table's rows as items (empty for boards, whose store holds no rows). */
+function useRowItems(titleProperty: string | undefined): BoardItem[] {
+  const rows = useBoard((s) => s.rows);
+  const cache = useRef({ titleProperty, map: new WeakMap<TableRow, BoardItem>() });
+  return useMemo(() => {
+    if (cache.current.titleProperty !== titleProperty) cache.current = { titleProperty, map: new WeakMap() };
+    return rowsToItems(rows, titleProperty, cache.current.map);
+  }, [rows, titleProperty]);
 }
 
 /**
@@ -71,7 +83,10 @@ export function useViewItems(config: DatabaseConfig, view: ViewConfig): ViewItem
   // Typing stays responsive: filtering a large board renders at lower priority.
   const search = useDeferredValue(useBoard((s) => s.search));
 
-  const stored = useAllItems(app, config.sourceTag, vaultTick);
+  const isTable = config.kind === 'table';
+  const notes = useAllItems(app, isTable ? '' : config.sourceTag, isTable ? -1 : vaultTick);
+  const rows = useRowItems(config.titleProperty);
+  const stored = isTable ? rows : notes;
   useEffect(() => actions.reportItems(stored), [actions, stored]);
   const all = useComputed(stored, config.properties);
 

@@ -1,5 +1,6 @@
 import { Notice, Plugin, TFile, TFolder, WorkspaceLeaf, normalizePath } from 'obsidian';
-import { BOARD_EXTENSION, BOARD_VIEW_TYPE, BoardView } from './src/BoardView';
+import { BOARD_EXTENSION, BOARD_VIEW_TYPE, BoardView, TABLE_EXTENSION } from './src/BoardView';
+import { newTableFile, serializeTableFile } from './src/table/format';
 import { BoardHomeView, HOME_VIEW_TYPE } from './src/home/HomeView';
 import { serializeDatabase } from './src/config';
 import type { DatabaseConfig } from './src/types';
@@ -22,6 +23,12 @@ export default class RBoardPlugin extends Plugin {
     this.registerView(BOARD_VIEW_TYPE, (leaf) => new BoardView(leaf, this));
     this.registerView(HOME_VIEW_TYPE, (leaf) => new BoardHomeView(leaf, this));
     this.registerExtensions([BOARD_EXTENSION], BOARD_VIEW_TYPE);
+    try {
+      this.registerExtensions([TABLE_EXTENSION], BOARD_VIEW_TYPE);
+    } catch {
+      // Another plugin (R Sheet) already handles .table files.
+      new Notice('R Board: .table files are handled by another plugin (R Sheet?). Disable it to open tables in R Board.');
+    }
 
     // Interactive recipe blocks: ```recipe → portions-scaled ingredients/times.
     this.registerMarkdownCodeBlockProcessor('recipe', (source, el, ctx) => {
@@ -40,6 +47,11 @@ export default class RBoardPlugin extends Plugin {
       name: 'Create new database',
       callback: () => this.openCreateWizard(),
     });
+    this.addCommand({
+      id: 'create-table',
+      name: 'Create new table',
+      callback: () => void this.createTable(),
+    });
 
     // File-explorer right-click → "New board" (in the folder, or a file's folder).
     this.registerEvent(
@@ -53,6 +65,13 @@ export default class RBoardPlugin extends Plugin {
             // Group with the core "New note / New folder / New canvas" actions.
             .setSection('action')
             .onClick(() => this.openCreateWizard(folder.path)),
+        );
+        menu.addItem((item) =>
+          item
+            .setTitle('New table')
+            .setIcon('table')
+            .setSection('action')
+            .onClick(() => void this.createTable(folder.path)),
         );
       }),
     );
@@ -86,12 +105,17 @@ export default class RBoardPlugin extends Plugin {
     this.app.workspace.revealLeaf(leaf);
   }
 
-  /** Every `.board` file in the vault, sorted by path. */
+  /** Every `.board` and `.table` file in the vault, sorted by path. */
   listBoardFiles(): TFile[] {
     return this.app.vault
       .getFiles()
-      .filter((f) => f.extension === BOARD_EXTENSION)
+      .filter((f) => f.extension === BOARD_EXTENSION || f.extension === TABLE_EXTENSION)
       .sort((a, b) => a.path.localeCompare(b.path));
+  }
+
+  /** Create an empty `.table` (Name + Notes columns) and open it. */
+  async createTable(folderPath?: string): Promise<void> {
+    await this.createFile('New Table', TABLE_EXTENSION, serializeTableFile(newTableFile()), folderPath);
   }
 
   /** Open a `.board` file as a board view. */
@@ -107,22 +131,27 @@ export default class RBoardPlugin extends Plugin {
 
   /** Write a new `.board` file from a config and open it. */
   async createDatabaseFromConfig(config: DatabaseConfig, folderPath?: string): Promise<void> {
+    await this.createFile(config.name?.trim() || 'New Database', BOARD_EXTENSION, serializeDatabase(config), folderPath);
+  }
+
+  /** Write a new file (unique name in the folder, default: Obsidian's new-file location) and open it. */
+  private async createFile(name: string, extension: string, content: string, folderPath?: string): Promise<void> {
     const folder = folderPath !== undefined
       ? this.app.vault.getAbstractFileByPath(folderPath)
       : this.app.fileManager.getNewFileParent('');
     const dir = folder instanceof TFolder && folder.path ? `${folder.path}/` : '';
-    const base = (config.name?.trim() || 'New Database').replace(/[\\/:*?"<>|]/g, '-');
+    const base = name.replace(/[\\/:*?"<>|]/g, '-');
 
-    let path = normalizePath(`${dir}${base}.${BOARD_EXTENSION}`);
+    let path = normalizePath(`${dir}${base}.${extension}`);
     let i = 2;
     while (this.app.vault.getAbstractFileByPath(path)) {
-      path = normalizePath(`${dir}${base} ${i++}.${BOARD_EXTENSION}`);
+      path = normalizePath(`${dir}${base} ${i++}.${extension}`);
     }
     try {
-      const file = await this.app.vault.create(path, serializeDatabase(config));
+      const file = await this.app.vault.create(path, content);
       await this.openBoard(file);
     } catch (e) {
-      new Notice(`R Board: could not create database — ${(e as Error).message}`);
+      new Notice(`R Board: could not create file — ${(e as Error).message}`);
     }
   }
 }

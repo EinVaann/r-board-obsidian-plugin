@@ -5,6 +5,9 @@ import type { BoardItem, DatabaseConfig } from './types';
 import { parseDatabaseConfig, serializeDatabase } from './config';
 import { tagsForFile } from './data/query';
 import { setProperty } from './data/properties';
+import { parseTableFile, serializeTableFile } from './table/format';
+import { addRow, deleteRows, duplicateRow, setCell } from './table/rows';
+import { openRecordEditor } from './table/RecordEditor';
 import { createBoardStore, type BoardStore } from './board/store';
 import { BoardContext, type BoardActions, type BoardContextValue } from './board/context';
 import { BoardApp } from './board/BoardApp';
@@ -15,6 +18,7 @@ import { openBoardSettings, openFilterModal, openViewSettings } from './settings
 
 export const BOARD_VIEW_TYPE = 'r-board-view';
 export const BOARD_EXTENSION = 'board';
+export const TABLE_EXTENSION = 'table';
 
 /**
  * A board pane. Obsidian side only: it owns the `.board` file, the store, and
@@ -37,7 +41,13 @@ export class BoardView extends TextFileView {
 
     this.store = createBoardStore({
       saveConfig: (config) => {
-        this.data = serializeDatabase(config);
+        this.data = config.kind === 'table' ? serializeTableFile({ config, rows: this.store.getState().rows }) : serializeDatabase(config);
+        this.requestSave();
+      },
+      saveRows: (rows) => {
+        const config = this.store.getState().config;
+        if (!config) return;
+        this.data = serializeTableFile({ config, rows });
         this.requestSave();
       },
       saveActiveView: (name) => {
@@ -52,9 +62,13 @@ export class BoardView extends TextFileView {
       },
       editItem: (item) => {
         if (item.file) this.openEditModal(item.file, item.title);
+        else this.openRowEditor(item.id);
       },
       setValue: async (item, prop, value) => {
-        if (!item.file) return;
+        if (!item.file) {
+          this.store.getState().updateRows((rows) => setCell(rows, item.id, prop, value));
+          return;
+        }
         try {
           await setProperty(this.app, item.file, prop, value);
         } catch (e) {
@@ -90,7 +104,7 @@ export class BoardView extends TextFileView {
   }
 
   getIcon(): string {
-    return 'layout-dashboard';
+    return this.isTable ? 'table' : 'layout-dashboard';
   }
 
   getDisplayText(): string {
@@ -103,15 +117,33 @@ export class BoardView extends TextFileView {
     return this.data;
   }
 
+  /** Whether this pane shows a `.table` file (rows stored in the file). */
+  private get isTable(): boolean {
+    return this.file?.extension === TABLE_EXTENSION;
+  }
+
   setViewData(data: string, _clear: boolean): void {
     this.data = data;
-    const result = parseDatabaseConfig(data);
     const saved = this.file ? this.plugin.getActiveView(this.file.path) : undefined;
+    if (this.isTable) {
+      const result = parseTableFile(data);
+      if (!result.ok) {
+        this.store.getState().loadRows([]);
+        this.store.getState().loadConfig(null, result.error);
+        return;
+      }
+      if (result.migrated) new Notice(`R Board: ${this.file?.basename} is an R Sheet table. It will be saved in R Board's format on the first edit.`);
+      this.store.getState().loadRows(result.table.rows);
+      this.store.getState().loadConfig(result.table.config, null, saved);
+      return;
+    }
+    const result = parseDatabaseConfig(data);
     if (result.ok) this.store.getState().loadConfig(result.config, null, saved);
     else this.store.getState().loadConfig(null, data.trim() === '' || data.trim() === '{}' ? null : result.error);
   }
 
   clear(): void {
+    this.store.getState().loadRows([]);
     this.store.getState().loadConfig(null, null);
   }
 
@@ -173,7 +205,30 @@ export class BoardView extends TextFileView {
     }).open();
   }
 
+  private openRowEditor(rowId: string): void {
+    const { updateRows } = this.store.getState();
+    openRecordEditor(this.app, this.ctx, rowId, {
+      remove: () => updateRows((rows) => deleteRows(rows, [rowId])),
+      duplicate: () => {
+        let id: string | null = null;
+        updateRows((rows) => void (id = duplicateRow(rows, rowId)));
+        if (id) this.openRowEditor(id);
+      },
+    });
+  }
+
+  /** Tables: add a row (with optional starting cells) and open it. */
+  private addRow(cells?: Record<string, unknown>): void {
+    let id = '';
+    this.store.getState().updateRows((rows) => void (id = addRow(rows, cells)));
+    this.openRowEditor(id);
+  }
+
   private openSetup(): void {
+    if (this.isTable) {
+      new Notice('R Board: this table file could not be read. Fix or replace its contents.');
+      return;
+    }
     openWizard(this.app, {}, 'Set up board', (config: DatabaseConfig) => {
       this.store.getState().loadConfig(config, null);
       this.data = serializeDatabase(config);
@@ -200,6 +255,7 @@ export class BoardView extends TextFileView {
   private async createNewNote(): Promise<void> {
     const config = this.store.getState().config;
     if (!config) return;
+    if (config.kind === 'table') return this.addRow();
     const folder = config.newNoteFolder?.trim();
     if (!folder) {
       new Notice('R Board: set a "New note location" in board settings to use this.');

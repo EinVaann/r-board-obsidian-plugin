@@ -5,6 +5,7 @@ import { parseDatabaseConfig, type ParseResult } from '../config';
 import { mountReact, useApp } from '../react/mount';
 import { Icon } from '../react/Icon';
 import { openWizard } from '../settings/Wizard';
+import { parseTableFile } from '../table/format';
 
 export const HOME_VIEW_TYPE = 'r-board-home';
 
@@ -57,6 +58,14 @@ export class BoardHomeView extends ItemView {
 interface BoardEntry {
   file: TFile;
   result: ParseResult;
+  /** Tables: how many rows the file holds. */
+  rows?: number;
+}
+
+function readEntry(file: TFile, raw: string): BoardEntry {
+  if (file.extension !== 'table') return { file, result: parseDatabaseConfig(raw) };
+  const t = parseTableFile(raw);
+  return t.ok ? { file, result: { ok: true, config: t.table.config }, rows: t.table.rows.length } : { file, result: t };
 }
 
 function Home({ plugin, subscribe }: { plugin: RBoardPlugin; subscribe: (fn: () => void) => () => void }) {
@@ -71,7 +80,7 @@ function Home({ plugin, subscribe }: { plugin: RBoardPlugin; subscribe: (fn: () 
     void Promise.all(
       plugin.listBoardFiles().map(async (file) => {
         const raw = await app.vault.cachedRead(file).catch(() => '');
-        return { file, result: parseDatabaseConfig(raw) };
+        return readEntry(file, raw);
       }),
     ).then((list) => {
       if (!cancelled) setBoards(list);
@@ -88,24 +97,29 @@ function Home({ plugin, subscribe }: { plugin: RBoardPlugin; subscribe: (fn: () 
     <>
       <div className="rb-home-header">
         <h2>Boards</h2>
+        <button className="rb-home-create" onClick={() => void plugin.createTable()}>
+          <Icon name="table" className="rb-home-create-icon" />
+          <span>Create table</span>
+        </button>
         <button className="rb-home-create" onClick={create}>
           <Icon name="plus" className="rb-home-create-icon" />
           <span>Create board</span>
         </button>
       </div>
       {boards && boards.length === 0 && (
-        <div className="rb-home-empty">No boards yet. Click “Create board” to make your first one.</div>
+        <div className="rb-home-empty">No boards yet. A board shows notes by tag; a table keeps its rows in the file.</div>
       )}
       {boards && boards.length > 0 && (
         <div className="rb-home-grid">
-          {boards.map(({ file, result }) => (
+          {boards.map(({ file, result, rows }) => (
             <div key={file.path} className="rb-home-card" onClick={() => void plugin.openBoard(file)}>
-              <Icon name="layout-dashboard" className="rb-home-card-icon" />
+              <Icon name={file.extension === 'table' ? 'table' : 'layout-dashboard'} className="rb-home-card-icon" />
               <div className="rb-home-card-body">
                 <div className="rb-home-card-title">{result.ok ? result.config.name ?? file.basename : file.basename}</div>
                 {result.ok ? (
                   <div className="rb-home-card-meta">
-                    #{result.config.sourceTag} · {result.config.views.length} view{result.config.views.length === 1 ? '' : 's'}
+                    {rows !== undefined ? `${rows} row${rows === 1 ? '' : 's'}` : `#${result.config.sourceTag}`} · {result.config.views.length} view
+                    {result.config.views.length === 1 ? '' : 's'}
                   </div>
                 ) : (
                   <div className="rb-home-card-meta rb-home-card-error">Not configured yet</div>

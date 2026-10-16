@@ -1,7 +1,10 @@
 import type { TFile } from 'obsidian';
 
 /** The layouts a view can be displayed as. */
-export type ViewType = 'gallery' | 'kanban' | 'table' | 'recipe';
+export type ViewType = 'gallery' | 'kanban' | 'table' | 'recipe' | 'chart';
+
+/** Where records come from: tagged notes (`.board`) or rows stored in the file (`.table`). */
+export type DatabaseKind = 'board' | 'table';
 
 /** A property's data type. */
 export type PropertyType =
@@ -104,10 +107,21 @@ export type FilterOp =
   | 'eq'
   | 'ne'
   | 'contains'
+  | 'notContains'
+  | 'startsWith'
+  | 'endsWith'
   | 'gt'
   | 'gte'
   | 'lt'
   | 'lte'
+  | 'before'
+  | 'after'
+  | 'onOrBefore'
+  | 'onOrAfter'
+  | 'anyOf'
+  | 'noneOf'
+  | 'checked'
+  | 'unchecked'
   | 'empty'
   | 'notempty';
 
@@ -185,6 +199,40 @@ export interface ViewConfig {
   layout?: GalleryLayout;
   /** Table paging (defaults to `more`). `limit` is the page size. */
   paging?: PagingMode;
+  /** How a date group property is bucketed (defaults to one group per value). */
+  groupBucket?: DateBucket;
+  /** Group labels currently collapsed (saved with the view). */
+  collapsed?: string[];
+  /** Table column widths by property name. */
+  widths?: Record<string, number>;
+  /** Chart settings (chart views). */
+  chart?: ChartConfig;
+}
+
+/** `relative` = Today / Tomorrow / Next 7 days / … measured from today. */
+export type DateBucket = 'none' | 'relative' | 'day' | 'week' | 'month' | 'quarter' | 'year';
+
+export type ChartType = 'bar' | 'line' | 'area' | 'pie' | 'donut' | 'scatter';
+export type Aggregate = 'sum' | 'count' | 'avg' | 'min' | 'max';
+
+/** A chart view's settings. Property references are property names. */
+export interface ChartConfig {
+  type: ChartType;
+  /** Category axis / slice names; null = one bucket per record. */
+  x: string | null;
+  dateBucket: DateBucket;
+  /** Split into one series per value of this property. */
+  splitBy: string | null;
+  /** Numeric properties to plot; empty = count records. */
+  values: string[];
+  aggregate: Aggregate;
+  stacked: boolean;
+  horizontal: boolean;
+  sort: 'x' | 'value-asc' | 'value-desc';
+  showLegend: boolean;
+  showLabels: boolean;
+  /** Series name → color override. */
+  colors: Record<string, string>;
 }
 
 /** Per-column display overrides for a kanban view. */
@@ -208,6 +256,16 @@ export interface DatabaseConfig {
   defaultView?: string;
   /** Vault folder where the "New note" button creates notes. */
   newNoteFolder?: string;
+  /** `board` (default) reads notes by tag; `table` stores rows in the file. */
+  kind?: DatabaseKind;
+  /** Tables: the property shown as each row's title. */
+  titleProperty?: string;
+}
+
+/** A row stored in a `.table` file. Cells are keyed by property name. */
+export interface TableRow {
+  id: string;
+  cells: Record<string, unknown>;
 }
 
 /** A record shown by the views: a tagged note (`.board`) or a stored row (`.table`). */

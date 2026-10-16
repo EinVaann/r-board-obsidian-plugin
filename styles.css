@@ -1789,6 +1789,28 @@ body:not(.is-phone) .rb-edit-modal {
 .rb-option-add { display: flex; gap: 6px; }
 .rb-option-add input { flex: 1; min-width: 0; }
 
+/* Filter builder: option chips for "is any of" / "is none of" */
+.rb-filter-options { display: flex; flex-wrap: wrap; gap: 4px; flex: 1; min-width: 0; }
+.rb-filter-option {
+  cursor: pointer;
+  opacity: 0.45;
+  font-size: 12px;
+  box-shadow: none;
+  height: auto;
+}
+.rb-filter-option.rb-on { opacity: 1; outline: 1px solid color-mix(in srgb, var(--oc) 70%, transparent); }
+
+/* Row editor (tables) */
+.rb-record .setting-item-name { display: flex; align-items: center; gap: 6px; }
+.rb-record-icon { color: var(--text-muted); display: inline-flex; }
+.rb-record-icon svg { width: 14px; height: 14px; }
+.rb-record .setting-item-control input:not([type='checkbox']),
+.rb-record .setting-item-control select { width: 220px; max-width: 100%; }
+.rb-record-result { display: flex; gap: 4px; align-items: center; }
+.rb-record-actions { display: flex; justify-content: flex-end; gap: 8px; padding-top: 12px; }
+.rb-record-actions button { display: inline-flex; align-items: center; gap: 4px; }
+.rb-record-actions svg { width: 14px; height: 14px; }
+
 /* Property editor: formula */
 .rb-formula-edit { display: flex; flex-direction: column; gap: 4px; width: 100%; }
 .rb-formula-input {

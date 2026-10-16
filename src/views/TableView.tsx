@@ -20,6 +20,8 @@ interface TableProps {
   items: BoardItem[];
   properties: PropertyConfig[];
   sort: SortSpec;
+  /** Header of the title column. */
+  titleLabel: string;
 }
 
 /**
@@ -43,7 +45,7 @@ export function TableView(props: TableProps) {
 
 const ROW_ESTIMATE = 41;
 
-function TableEl({ view, viewIndex, items, properties, sort, pageKey }: TableProps & { pageKey: string }) {
+function TableEl({ view, viewIndex, items, properties, sort, titleLabel, pageKey }: TableProps & { pageKey: string }) {
   const updateView = useBoard((s) => s.updateView);
   const { scrollRef } = useBoardContext();
   const sensors = useDragSensors();
@@ -94,7 +96,7 @@ function TableEl({ view, viewIndex, items, properties, sort, pageKey }: TablePro
           <thead>
             <SortableContext items={properties.map((p) => p.name)} strategy={horizontalListSortingStrategy}>
               <tr>
-                <HeaderCell label="Title" sortKey={TITLE_SORT_KEY} sort={sort} onSort={setSort} />
+                <HeaderCell label={titleLabel} sortKey={TITLE_SORT_KEY} sort={sort} onSort={setSort} />
                 {properties.map((p) => (
                   <HeaderCell key={p.name} label={propertyLabel(p)} sortKey={p.name} sort={sort} onSort={setSort} sortable />
                 ))}

@@ -1,7 +1,7 @@
 import { useLayoutEffect, useRef, useState, type MouseEvent as ReactMouseEvent, type ReactNode } from 'react';
 import { Menu, Platform } from 'obsidian';
 import type { DatabaseConfig, ViewConfig, ViewType } from '../types';
-import { effectiveSort, makeDefaultView, NO_SORT_KEY, propertyLabel, TITLE_SORT_KEY } from '../config';
+import { effectiveSort, makeDefaultView, NO_SORT_KEY, propertyLabel, titleLabel, TITLE_SORT_KEY } from '../config';
 import { countFilterRules } from '../data/filter';
 import { Icon } from '../react/Icon';
 import { useBoard, useBoardContext } from './context';
@@ -26,6 +26,7 @@ export const TYPE_ICON: Record<ViewType, string> = {
   kanban: 'columns-3',
   table: 'table',
   recipe: 'utensils',
+  chart: 'bar-chart-3',
 };
 
 /** The whole board pane: setup prompt, or toolbar + the active view. */
@@ -96,7 +97,9 @@ function useViewMenus() {
 
   const createView = (e: ReactMouseEvent): void => {
     const menu = new Menu();
-    (['gallery', 'kanban', 'table', 'recipe'] as ViewType[]).forEach((type) => {
+    // Recipe views read note bodies, so tables don't offer them.
+    const types: ViewType[] = store.getState().config?.kind === 'table' ? ['table', 'gallery', 'kanban'] : ['gallery', 'kanban', 'table', 'recipe'];
+    types.forEach((type) => {
       menu.addItem((item) =>
         item
           .setTitle(`New ${type} view`)
@@ -105,6 +108,8 @@ function useViewMenus() {
             const { config, updateConfig, setActiveView } = store.getState();
             if (!config) return;
             const view = makeDefaultView(type, config.views);
+            // Tables keep their rows' own order until a sort is chosen.
+            if (config.kind === 'table') view.sort = { property: NO_SORT_KEY, dir: 'asc' };
             updateConfig((c) => void c.views.push(view));
             setActiveView(view.name);
             actions.openViewSettings(store.getState().config!.views.length - 1);
@@ -246,9 +251,13 @@ function Toolbar({ config, view }: { config: DatabaseConfig; view: ViewConfig | 
         </div>
         <div className="rb-spacer" />
         <div className="rb-tools" ref={toolsRef}>
-          <button className="rb-new-note" title="Create a new note in this database" onClick={actions.createNewNote}>
-            <Icon name="file-plus" className="rb-new-note-icon" />
-            <span className="rb-new-note-label">New note</span>
+          <button
+            className="rb-new-note"
+            title={config.kind === 'table' ? 'Add a row to this table' : 'Create a new note in this database'}
+            onClick={actions.createNewNote}
+          >
+            <Icon name={config.kind === 'table' ? 'plus' : 'file-plus'} className="rb-new-note-icon" />
+            <span className="rb-new-note-label">{config.kind === 'table' ? 'New row' : 'New note'}</span>
           </button>
           {view && <ToolButton icon="sliders-horizontal" label="View settings" onClick={() => actions.openViewSettings(viewIndex)} />}
           <ToolButton icon="settings" label="Board settings" onClick={actions.openBoardSettings} />
@@ -358,7 +367,7 @@ function SortChip({ config, view, viewIndex }: { config: DatabaseConfig; view: V
   const unsorted = sort.property === NO_SORT_KEY;
   const active = !!view.sort && !unsorted;
   const labelFor = (key: string): string => {
-    if (key === TITLE_SORT_KEY) return 'Title';
+    if (key === TITLE_SORT_KEY) return titleLabel(config);
     const p = config.properties.find((q) => q.name === key);
     return p ? propertyLabel(p) : key;
   };
@@ -372,7 +381,7 @@ function SortChip({ config, view, viewIndex }: { config: DatabaseConfig; view: V
       item.onClick(() => updateView(viewIndex, (v) => void (v.sort = { property: NO_SORT_KEY, dir: 'asc' })));
     });
     menu.addSeparator();
-    for (const key of [TITLE_SORT_KEY, ...config.properties.map((p) => p.name)]) {
+    for (const key of [TITLE_SORT_KEY, ...config.properties.filter((p) => p.name !== config.titleProperty).map((p) => p.name)]) {
       menu.addItem((item) => {
         item.setTitle(labelFor(key));
         if (sort.property === key) item.setIcon(sort.dir === 'asc' ? 'arrow-up' : 'arrow-down');
@@ -395,14 +404,16 @@ function Body({ config, view }: { config: DatabaseConfig; view: ViewConfig }) {
 
   // An empty kanban still shows its columns so cards can be added to them.
   if (items.length === 0 && !(all.length === 0 && view.type === 'kanban')) {
-    return <EmptyState view={view} viewIndex={viewIndex} total={all.length} sourceTag={config.sourceTag} />;
+    return <EmptyState config={config} view={view} viewIndex={viewIndex} total={all.length} />;
   }
 
   switch (view.type) {
     case 'kanban':
       return <KanbanView config={config} view={view} viewIndex={viewIndex} items={items} properties={properties} />;
+    case 'chart':
+      return <div className="rb-empty">Chart views are not available yet.</div>;
     case 'table':
-      return <TableView view={view} viewIndex={viewIndex} items={items} properties={properties} sort={sort} />;
+      return <TableView view={view} viewIndex={viewIndex} items={items} properties={properties} sort={sort} titleLabel={titleLabel(config)} />;
     case 'recipe':
       return <RecipeView view={view} items={items} properties={properties} />;
     case 'gallery':
@@ -412,7 +423,8 @@ function Body({ config, view }: { config: DatabaseConfig; view: ViewConfig }) {
 }
 
 /** Explain why the view is empty and offer the matching way out. */
-function EmptyState({ view, viewIndex, total, sourceTag }: { view: ViewConfig; viewIndex: number; total: number; sourceTag: string }) {
+function EmptyState({ config, view, viewIndex, total }: { config: DatabaseConfig; view: ViewConfig; viewIndex: number; total: number }) {
+  const table = config.kind === 'table';
   const { actions } = useBoardContext();
   const search = useBoard((s) => s.search);
   const setSearch = useBoard((s) => s.setSearch);
@@ -423,10 +435,10 @@ function EmptyState({ view, viewIndex, total, sourceTag }: { view: ViewConfig; v
   if (total === 0) {
     return (
       <div className="rb-empty rb-empty-state">
-        <div>No notes tagged #{sourceTag} yet.</div>
+        <div>{table ? 'This table has no rows yet.' : `No notes tagged #${config.sourceTag} yet.`}</div>
         <div className="rb-empty-actions">
           <button className="rb-home-create" onClick={actions.createNewNote}>
-            New note
+            {table ? 'New row' : 'New note'}
           </button>
         </div>
       </div>
@@ -439,7 +451,7 @@ function EmptyState({ view, viewIndex, total, sourceTag }: { view: ViewConfig; v
   return (
     <div className="rb-empty rb-empty-state">
       <div>
-        All {total} notes are hidden by the current {reasonRef.current || 'filter'}.
+        All {total} {table ? 'rows' : 'notes'} are hidden by the current {reasonRef.current || 'filter'}.
       </div>
       <div className="rb-empty-actions">
         {hasSearch && <button onClick={() => setSearch('')}>Clear search</button>}
