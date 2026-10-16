@@ -875,6 +875,14 @@ body:not(.is-mobile) .rb-kanban-card:active { cursor: grabbing; }
   border-radius: 999px;
   padding: 1px 8px;
 }
+/* "New item in this group": shown on hover (always on touch). */
+.rb-section-add {
+  margin-left: auto;
+  opacity: 0;
+  color: var(--text-muted);
+}
+.rb-section-header:hover .rb-section-add, .rb-section-add:focus-visible, .is-mobile .rb-section-add { opacity: 1; }
+.rb-section-add svg { width: 15px; height: 15px; }
 
 /* Colored group-label pill (kanban columns + gallery/table sections). The
    chosen color (--gc) tints the background and colors the text. */

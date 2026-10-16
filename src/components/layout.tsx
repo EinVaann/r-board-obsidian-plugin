@@ -1,7 +1,7 @@
 import { useCallback, useLayoutEffect, useMemo, useRef, useState, type ReactNode, type RefObject } from 'react';
 import { useVirtualizer, type Virtualizer } from '@tanstack/react-virtual';
 import type { BoardItem, LoadLimit, PropertyConfig, ViewConfig } from '../types';
-import { groupItems, type ItemGroup } from '../data/group';
+import { cellsForGroup, collapseKey, groupItems, type ItemGroup } from '../data/group';
 import { useBoard, useBoardContext } from '../board/context';
 import { Icon } from '../react/Icon';
 
@@ -34,24 +34,34 @@ export function Sections({
   pagePrefix: string;
   children: (items: BoardItem[], pageKey: string, group: ItemGroup) => ReactNode;
 }) {
-  const collapsed = useBoard((s) => s.collapsed);
+  const { actions } = useBoardContext();
+  const properties = useBoard((s) => s.config?.properties);
+  const viewIndex = useBoard((s) => s.config?.views.indexOf(view) ?? -1);
   const toggle = useBoard((s) => s.toggleCollapsed);
+  const collapsed = useMemo(() => new Set(view.collapsed), [view.collapsed]);
   const groups = useMemo(
-    () => groupItems(items, groupProp, view.columns, view.groupConfig),
-    [items, groupProp, view.columns, view.groupConfig],
+    () => groupItems(items, groupProp, { order: view.columns, groupConfig: view.groupConfig, bucket: view.groupBucket }),
+    [items, groupProp, view.columns, view.groupConfig, view.groupBucket],
   );
 
   return (
     <>
       {groups.map((group) => {
-        const isCollapsed = !!collapsed[group.label];
-        const color = group.color;
+        const isCollapsed = collapsed.has(collapseKey(group.key));
+        const add = (e: React.MouseEvent): void => {
+          e.stopPropagation();
+          const template = group.items[group.items.length - 1];
+          actions.createNewNote(cellsForGroup(groupProp, properties ?? [], view.groupBucket ?? 'none', group, template));
+        };
         return (
           <div key={group.key ?? '\u0000none'} className="rb-section">
-            <div className="rb-section-header" onClick={() => toggle(group.label)}>
+            <div className="rb-section-header" onClick={() => toggle(viewIndex, collapseKey(group.key))}>
               <Icon name={isCollapsed ? 'chevron-right' : 'chevron-down'} className="rb-section-caret" />
-              <GroupLabel label={group.label} color={color} className="rb-section-title" />
+              <GroupLabel label={group.label} color={group.color} className="rb-section-title" />
               <span className="rb-section-count">{group.items.length}</span>
+              <button className="rb-icon-btn rb-section-add" aria-label="New item in this group" title="New item in this group" onClick={add}>
+                <Icon name="plus" />
+              </button>
             </div>
             {!isCollapsed && children(group.items, `${pagePrefix}:${group.label}`, group)}
           </div>

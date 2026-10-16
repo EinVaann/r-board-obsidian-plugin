@@ -24,8 +24,8 @@ export interface BoardActions {
   openBoardSettings: () => void;
   openViewSettings: (viewIndex: number) => void;
   openFilter: (viewIndex: number) => void;
-  /** Create a note tagged for this board in its "new note" folder. */
-  createNewNote: () => void;
+  /** Create a note tagged for this board in its "new note" folder (a row, for tables), with optional starting values. */
+  createNewNote: (values?: Record<string, unknown>) => void;
   /** Open the setup wizard for an empty / invalid `.board` file. */
   openSetup: () => void;
   /** Tell the host which notes are on the board (for change detection). */

@@ -145,8 +145,9 @@ async function main(): Promise<void> {
       openBoardSettings: () => openBoardSettings(app, ctx),
       openViewSettings: (i) => openViewSettings(app, ctx, i, () => undefined),
       openFilter: (i) => openFilterModal(app, ctx, i),
-      createNewNote: () => {
-        if (kind === 'table') ctx.actions.addRow();
+      createNewNote: (values) => {
+        if (kind === 'table') ctx.actions.addRow(values);
+        else console.info('[new note]', values);
       },
       openSetup: () => undefined,
       reportItems: () => undefined,

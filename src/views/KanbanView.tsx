@@ -15,7 +15,7 @@ import {
 import { SortableContext, arrayMove, horizontalListSortingStrategy, useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import type { BoardItem, DatabaseConfig, PropertyConfig, ViewConfig } from '../types';
-import { groupItems, groupValueOf, type ItemGroup } from '../data/group';
+import { collapseKey, groupItems, groupValueOf, type ItemGroup } from '../data/group';
 import { Card } from '../components/Card';
 import { GroupLabel, ViewMore, usePaged } from '../components/layout';
 import { useDragSensors } from '../components/dnd';
@@ -83,7 +83,7 @@ export function KanbanView({ config, view, viewIndex, items, properties }: Kanba
   }, [items, pending, groupProp]);
 
   const columns = useMemo(
-    () => (groupProp ? groupItems(shown, groupProp, view.columns, view.groupConfig) : []),
+    () => (groupProp ? groupItems(shown, groupProp, { order: view.columns, groupConfig: view.groupConfig }) : []),
     [shown, groupProp, view.columns, view.groupConfig],
   );
   const realKeys = useMemo(() => columns.filter((c) => c.key !== null).map((c) => c.key as string), [columns]);
@@ -240,8 +240,10 @@ interface ColumnProps {
 }
 
 function Column({ column, view, properties, getTargets, groupProp, onMove }: ColumnProps) {
-  const collapsed = useBoard((s) => !!s.collapsed[column.label]);
-  const toggle = useBoard((s) => s.toggleCollapsed);
+  const collapsed = !!view.collapsed?.includes(collapseKey(column.key));
+  const viewIndex = useBoard((s) => s.config?.views.indexOf(view) ?? -1);
+  const toggleCollapsed = useBoard((s) => s.toggleCollapsed);
+  const toggle = (): void => toggleCollapsed(viewIndex, collapseKey(column.key));
   const { visible, more, remaining } = usePaged(`k:${column.label}`, column.items, view.limit ?? 50);
 
   // The column itself is sortable (by its header); Uncategorized stays put.
@@ -268,7 +270,7 @@ function Column({ column, view, properties, getTargets, groupProp, onMove }: Col
     >
       <div
         className={draggable ? 'rb-kanban-header rb-draggable' : 'rb-kanban-header'}
-        onClick={() => toggle(column.label)}
+        onClick={toggle}
         {...(draggable ? sortable.attributes : {})}
         {...(draggable ? sortable.listeners : {})}
       >

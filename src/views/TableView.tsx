@@ -8,7 +8,7 @@ import type { BoardItem, PropertyConfig, SortSpec, ViewConfig } from '../types';
 import { propertyLabel, TITLE_SORT_KEY } from '../config';
 import { asArray, asBoolean, fieldValue, optionFor } from '../render/values';
 import { toText, type FValue } from '../formula/evaluate';
-import type { ItemGroup } from '../data/group';
+import { cellsForGroup, type ItemGroup } from '../data/group';
 import type { StoredValue } from '../data/properties';
 import { TitleLink, useFieldEnv } from '../components/Card';
 import { fieldNode } from '../components/fields';
@@ -113,12 +113,6 @@ function cellText(item: BoardItem, col: Col): string {
   }
 }
 
-/** The starting cells of a row added inside a group: the group's value, when it can be stored. */
-function groupCells(groupProp: PropertyConfig | undefined, group: ItemGroup | undefined): Record<string, unknown> {
-  if (!groupProp || !group || group.key === null || groupProp.type === 'formula') return {};
-  return { [groupProp.name]: groupProp.type === 'multi' || groupProp.type === 'links' ? [group.key] : group.key };
-}
-
 const isInEditor = (t: EventTarget | null): boolean => t instanceof Element && !!t.closest('.rb-cell-editor');
 
 function Grid({
@@ -135,6 +129,7 @@ function Grid({
 }: TableProps & { pageKey: string; group?: ItemGroup; groupProp?: PropertyConfig }) {
   const updateView = useBoard((s) => s.updateView);
   const isTable = useBoard((s) => s.config?.kind === 'table');
+  const allProperties = useBoard((s) => s.config?.properties);
   const { scrollRef, actions } = useBoardContext();
   const sensors = useDragSensors();
   const usingPages = view.paging === 'pages';
@@ -375,7 +370,10 @@ function Grid({
 
   const addRow = (after?: string): void => {
     const last = after ?? visible[visible.length - 1]?.id;
-    const id = actions.addRow(groupCells(groupProp, group), last);
+    // Inside a group, the new row lands in it (formula groups copy the formula's inputs from a row there).
+    const template = group?.items.find((i) => i.id === last) ?? group?.items[group.items.length - 1];
+    const cells = groupProp && group ? cellsForGroup(groupProp, allProperties ?? [], view.groupBucket ?? 'none', group, template) : {};
+    const id = actions.addRow(cells, last);
     if (id) {
       pending.current = { id, edit: true };
       focusGrid();

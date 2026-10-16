@@ -17,8 +17,6 @@ export interface BoardState {
   search: string;
   /** Bumped whenever notes the board reads change; drives re-querying. */
   vaultTick: number;
-  /** Collapsed group labels (sections / kanban columns), for the active view. */
-  collapsed: Record<string, true>;
   /** Revealed item count per paginated list, for the active view. */
   pages: Record<string, number>;
   /** Tables: the stored rows (boards: unused). */
@@ -38,7 +36,8 @@ export interface BoardState {
   setActiveView: (name: string) => void;
   setSearch: (search: string) => void;
   bumpVault: () => void;
-  toggleCollapsed: (label: string) => void;
+  /** Collapse / expand a group of a view (saved with the view). */
+  toggleCollapsed: (viewIndex: number, key: string) => void;
   setPage: (key: string, shown: number) => void;
 }
 
@@ -66,7 +65,6 @@ export function createBoardStore(persist: BoardPersistence): BoardStore {
       activeView: '',
       search: '',
       vaultTick: 0,
-      collapsed: {},
       pages: {},
       rows: [],
 
@@ -109,19 +107,19 @@ export function createBoardStore(persist: BoardPersistence): BoardStore {
 
       setActiveView: (name) => {
         if (get().activeView === name) return;
-        set({ activeView: name, collapsed: {}, pages: {} });
+        set({ activeView: name, pages: {} });
         persist.saveActiveView(name);
       },
 
       setSearch: (search) => set({ search }),
       bumpVault: () => set((s) => ({ vaultTick: s.vaultTick + 1 })),
 
-      toggleCollapsed: (label) =>
-        set((s) => {
-          const collapsed = { ...s.collapsed };
-          if (collapsed[label]) delete collapsed[label];
-          else collapsed[label] = true;
-          return { collapsed };
+      toggleCollapsed: (viewIndex, key) =>
+        get().updateView(viewIndex, (v) => {
+          const set = new Set(v.collapsed ?? []);
+          if (set.has(key)) set.delete(key);
+          else set.add(key);
+          v.collapsed = set.size ? [...set] : undefined;
         }),
 
       setPage: (key, shown) => set((s) => ({ pages: { ...s.pages, [key]: shown } })),

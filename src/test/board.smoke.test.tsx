@@ -294,10 +294,12 @@ describe('board views', () => {
     await show('Grid');
     expect(count(el, '.rb-section')).toBe(STATUSES.length);
     expect(count(el, '.rb-vgrid-row')).toBeGreaterThan(0);
-    // Collapsing a section hides its cards.
+    // Collapsing a section hides its cards, and the view remembers it.
     const before = count(el, '.rb-gallery-card');
-    await act(async () => store.getState().toggleCollapsed('to-play'));
+    const index = store.getState().config!.views.findIndex((v) => v.name === 'Grid');
+    await act(async () => el.querySelector<HTMLElement>('.rb-section-header')!.click());
     expect(count(el, '.rb-gallery-card')).toBeLessThan(before);
+    expect(store.getState().config!.views[index].collapsed).toEqual(['completed']);
   });
 
   it('kanban: pinned columns first, labels, every card', async () => {

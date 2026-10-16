@@ -254,7 +254,7 @@ function Toolbar({ config, view }: { config: DatabaseConfig; view: ViewConfig | 
           <button
             className="rb-new-note"
             title={config.kind === 'table' ? 'Add a row to this table' : 'Create a new note in this database'}
-            onClick={actions.createNewNote}
+            onClick={() => actions.createNewNote()}
           >
             <Icon name={config.kind === 'table' ? 'plus' : 'file-plus'} className="rb-new-note-icon" />
             <span className="rb-new-note-label">{config.kind === 'table' ? 'New row' : 'New note'}</span>
@@ -437,7 +437,7 @@ function EmptyState({ config, view, viewIndex, total }: { config: DatabaseConfig
       <div className="rb-empty rb-empty-state">
         <div>{table ? 'This table has no rows yet.' : `No notes tagged #${config.sourceTag} yet.`}</div>
         <div className="rb-empty-actions">
-          <button className="rb-home-create" onClick={actions.createNewNote}>
+          <button className="rb-home-create" onClick={() => actions.createNewNote()}>
             {table ? 'New row' : 'New note'}
           </button>
         </div>

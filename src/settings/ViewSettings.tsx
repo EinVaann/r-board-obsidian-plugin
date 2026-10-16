@@ -1,7 +1,7 @@
 import { useCallback, useMemo, useState } from 'react';
 import { debounce } from 'obsidian';
 import { arrayMove } from '@dnd-kit/sortable';
-import type { CardSize, DatabaseConfig, GalleryLayout, GroupColumnConfig, LoadLimit, PagingMode, SortDir, ViewConfig, ViewType } from '../types';
+import type { CardSize, DatabaseConfig, DateBucket, GalleryLayout, GroupColumnConfig, LoadLimit, PagingMode, SortDir, ViewConfig, ViewType } from '../types';
 import { NO_SORT_KEY, propertyLabel, TITLE_SORT_KEY } from '../config';
 import { countFilterRules } from '../data/filter';
 import { useBoard, useBoardContext } from '../board/context';
@@ -43,6 +43,7 @@ function General({ config, view, viewIndex, edit, onDelete }: TabProps & { viewI
   // Kanban columns come from text or select properties (a card sits in exactly one column).
   const groupProps = view.type === 'kanban' ? config.properties.filter((p) => p.type === 'text' || p.type === 'select') : config.properties;
   const filters = countFilterRules(view.filter);
+  const groupProp = view.group ? config.properties.find((p) => p.name === view.group) : undefined;
 
   return (
     <>
@@ -115,9 +116,33 @@ function General({ config, view, viewIndex, edit, onDelete }: TabProps & { viewI
             { value: '', label: view.type === 'kanban' ? '(choose a text or select property)' : 'None' },
             ...groupProps.map((p) => ({ value: p.name, label: propertyLabel(p) })),
           ]}
-          onChange={(v) => edit((d) => void (d.group = v || undefined))}
+          onChange={(v) =>
+            edit((d) => {
+              d.group = v || undefined;
+              // Collapsed keys and date buckets belong to the old property.
+              d.collapsed = undefined;
+              d.groupBucket = undefined;
+            })
+          }
         />
       </SettingRow>
+      {groupProp && (groupProp.type === 'date' || groupProp.type === 'formula') && (
+        <SettingRow name="Date groups" desc="How dates are grouped. Relative: Today, Tomorrow, Next 7 days, …">
+          <Select<DateBucket>
+            value={view.groupBucket ?? 'none'}
+            options={[
+              { value: 'none', label: groupProp.type === 'date' ? 'Exact date' : 'As computed' },
+              { value: 'relative', label: 'Relative to today' },
+              { value: 'day', label: 'Day' },
+              { value: 'week', label: 'Week' },
+              { value: 'month', label: 'Month' },
+              { value: 'quarter', label: 'Quarter' },
+              { value: 'year', label: 'Year' },
+            ]}
+            onChange={(v) => edit((d) => void (d.groupBucket = v === 'none' ? undefined : v))}
+          />
+        </SettingRow>
+      )}
       <SettingRow name="Filters" desc={`${filters} active`}>
         <button onClick={() => actions.openFilter(viewIndex)}>Edit filters…</button>
       </SettingRow>

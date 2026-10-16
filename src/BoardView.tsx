@@ -87,7 +87,7 @@ export class BoardView extends TextFileView {
       openBoardSettings: () => openBoardSettings(this.app, this.ctx),
       openViewSettings: (index) => openViewSettings(this.app, this.ctx, index, () => this.deleteView(index)),
       openFilter: (index) => openFilterModal(this.app, this.ctx, index),
-      createNewNote: () => void this.createNewNote(),
+      createNewNote: (values) => void this.createNewNote(values),
       openSetup: () => this.openSetup(),
       reportItems: (items: BoardItem[]) => {
         this.itemPaths = new Set(items.map((i) => i.id));
@@ -260,10 +260,10 @@ export class BoardView extends TextFileView {
    * "New note location" and open it. If that location isn't set, open Board
    * settings so the user can set it first.
    */
-  private async createNewNote(): Promise<void> {
+  private async createNewNote(values?: Record<string, unknown>): Promise<void> {
     const config = this.store.getState().config;
     if (!config) return;
-    if (config.kind === 'table') return this.addRow();
+    if (config.kind === 'table') return this.addRow(values);
     const folder = config.newNoteFolder?.trim();
     if (!folder) {
       new Notice('R Board: set a "New note location" in board settings to use this.');
@@ -282,6 +282,10 @@ export class BoardView extends TextFileView {
         path = normalizePath(`${dir}/Untitled ${i++}.md`);
       }
       const file = await this.app.vault.create(path, `---\ntags:\n  - ${config.sourceTag}\n---\n`);
+      // Starting values (e.g. the group it was added in) go through Obsidian's YAML writer.
+      if (values && Object.keys(values).length) {
+        await this.app.fileManager.processFrontMatter(file, (fm) => void Object.assign(fm, values));
+      }
       // Open in a new tab so the board stays put.
       await this.app.workspace.getLeaf('tab').openFile(file);
     } catch (e) {
