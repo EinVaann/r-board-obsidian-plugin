@@ -1,9 +1,9 @@
 {
   "id": "r-board",
   "name": "R Board",
-  "version": "0.5.1",
+  "version": "0.6.0",
   "minAppVersion": "1.4.0",
-  "description": "Configurable board views (Kanban, Gallery, Table) driven by note frontmatter and tag queries, defined by .board config files.",
+  "description": "Databases over your notes (.board) or rows stored in the file (.table): Kanban, Gallery, Table and Chart views with formulas, filters and grouping.",
   "author": "EinVaann",
   "authorUrl": "https://github.com/EinVaann",
   "isDesktopOnly": false

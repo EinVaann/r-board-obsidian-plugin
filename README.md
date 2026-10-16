@@ -1,6 +1,8 @@
 # R Board
 
-A native Obsidian plugin that turns your notes into **databases** with multiple configurable **views** (Gallery, Kanban, Table), driven by note frontmatter and tags. No Datacore, no dataview queries — a database is a plain `.board` config file read through Obsidian's own metadata cache.
+A native Obsidian plugin that turns your notes into **databases** with multiple configurable **views** (Gallery, Kanban, Table, Chart), driven by note frontmatter and tags. No Datacore, no dataview queries — a database is a plain `.board` config file read through Obsidian's own metadata cache.
+
+It also has **tables**: `.table` files whose rows live in the file itself, edited in a spreadsheet grid, with formulas and charts — the same views and settings as boards. (Tables replace the separate R Sheet plugin; its `.table` files open directly.)
 
 It also renders **interactive content blocks** inside notes — starting with [**Recipes**](#recipes), where ingredient amounts and cooking times scale with a portions stepper.
 
@@ -78,7 +80,16 @@ A database is a single `.board` file (JSON). Opening it shows the board pane wit
 | `text`   | Plain string                    | `plain`, `badge`, `pill`        |
 | `multi`  | Array of strings                | `pills`, `tags`                 |
 | `number` | Numeric value                   | `text`, `stars`, `bar`, `circle`|
+| `checkbox` | true / false                  | `check`, `box`, `toggle`        |
+| `links`  | Wikilinks / URLs                | `list`, `pills`                 |
+| `select` | One value from a list of options (label + color each) | `pill`, `plain` |
+| `date`   | `YYYY-MM-DD` (optionally with time) | `plain`, `relative` ("in 3 days") |
+| `url`    | A web link                      | —                               |
+| `formula`| Computed from other properties, e.g. `{Price} * {Qty}` | as `number`     |
 
+- `select` and `multi` properties can list **options** (`{ "value", "label", "color" }`): they set the order of groups and kanban columns and the colors of pills, columns and chart series. Values not listed still work.
+- **Formulas** refer to properties by label or key in braces (`{Amount}`) and to the title as `{Title}`; functions include `if`, `round`, `sum`, `concat`, `dateAdd`, `dateDiff`, `formatDate`, `today` (full list in the property editor). A table row can override a formula with its own `=expr` or a fixed value.
+- `number` and `formula` properties take a **format** (plain, currency, percent, compact; decimals; thousands separators).
 - Image `fill` crops to fill (`object-fit: cover`); `fit` shrinks without cropping (`object-fit: contain`).
 - `stars` / `bar` / `circle` use the property's `max`. `stars` renders fractional values (e.g. `4.3` fills three and a bit stars).
 - Add `"searchable": true` to a property to include it in the search bar (by default the title plus all visible text/multi properties are searched).
@@ -104,11 +115,34 @@ A database is a single `.board` file (JSON). Opening it shows the board pane wit
 ## Views
 
 - **Gallery** — masonry or fixed grid of cards; optional note-content excerpts. Not draggable.
-- **Kanban** — one column per value of the `group` property, plus an Uncategorized column. Cards can be dragged between columns, which **rewrites the group property** in the note's frontmatter (dropping into Uncategorized clears it); columns reorder by dragging their header. On phones and tablets, drag is off so the board scrolls cleanly; move cards with the card's ⋯ → Move to group menu. Fixed card size.
-- **Table** — one row per note, a column per visible property; click a header to sort.
+- **Kanban** — one column per value of the `group` property (text, select, date, checkbox, number or formula), plus an Uncategorized column; optionally split into **rows (swimlanes)** by a second property (`subGroup`). Cards can be dragged between cells, which **rewrites the group (and row) property** (dropping into Uncategorized clears it); columns reorder by dragging their header; every cell has a **New** button that pre-fills its values. On phones and tablets, drag is off so the board scrolls cleanly; move cards with the card's ⋯ menu. Fixed card size.
+- **Table** — a spreadsheet grid: one row per item, a column per visible property. Click / shift-click / drag to select cells, arrows and Tab to move, type or tap a selected cell to edit, copy and paste as TSV, Delete to clear. Click a header to sort, drag to reorder, drag its edge to resize; right-click a row for its menu.
+- **Chart** — bar, line, area, pie, donut or scatter over the view's filtered items (`chart` settings: categories, date grouping, series split, values and how they combine). Click a bar or slice to list its items.
 - **Recipe** — one card per note showing its title, properties, and full interactive [recipe block](#recipes). The card isn't click-to-open (so the portions stepper stays usable); the title link opens the note.
 
-Shared across views: a search bar, "View More" pagination, sort & filter, and grouping. **Clicking an item opens its note** in every view (Ctrl/Cmd-click opens in a new tab); clicking a cover image opens it fullscreen instead. The active view is remembered per database.
+Shared across views: a search bar, "View More" pagination, sort & filter (typed operators: *is any of*, *is before*, *is checked*, …), and grouping — dates can group relative to today (Older … Today, Tomorrow … Later) or by week / month / quarter / year, collapsed groups are saved with the view, and a group's **＋** adds an item already in it. **Clicking an item opens its note** in every view (Ctrl/Cmd-click opens in a new tab); clicking a cover image opens it fullscreen instead. The active view is remembered per database.
+
+**Split view** — right-click a view tab → *Show beside* to show another view to its right or below (optionally filtered by the first); drag the divider to resize, × to close.
+
+## Tables
+
+A `.table` file is a database whose rows are stored in the file (one row per line), created with **Create table** on the home screen, the **"Create new table"** command, or a folder's **New table** menu item. Its properties are named columns; one of them is the row's title. Everything else — views, filters, formulas, charts, split view — works as for boards. Rows are edited in the grid, or in a full row editor (the ⤢ button next to a row's title).
+
+R Sheet's `.table` files open directly and are converted on the first edit (R Sheet itself must be disabled: only one plugin can open `.table` files).
+
+## Embeds
+
+Show a view inside any note (right-click a view tab → *Copy embed code*):
+
+````markdown
+```rboard
+file: Finance/Expenses.table
+view: Monthly spending
+height: 300
+```
+````
+
+Edits made in an embed are written to the database file. R Sheet's old ` ```table-chart ` blocks render the matching chart view.
 
 ## Recipes
 
@@ -165,10 +199,12 @@ npm test         # unit tests + UI smoke tests (vitest)
 
 The UI is React 19. `src/BoardView.tsx` is the Obsidian side (file, vault events) and mounts `src/board/BoardApp.tsx`; each open board has its own Zustand store (`src/board/store.ts`), and config edits are Immer recipes so unchanged views and cards keep their identity and skip re-rendering. Libraries: dnd-kit (all drag and drop, touch included), TanStack Virtual (gallery and table only render what's on screen), Radix UI primitives (settings tabs, switches, segmented controls, collapsibles), styled with Obsidian's CSS variables.
 
+`node dev/build-harness.mjs` bundles the real UI with a fake `obsidian` into `dev/out/` for a browser (`?kind=board` for a notes board, `?embed` for embeds, `?mobile` for phone layout).
+
 `npm run dev` bundles React's development build (slower, with extra checks); judge performance with `npm run build`.
 
 CSS lives as numbered partials under `styles/` and is concatenated into `styles.css` by `build-css.mjs`. The recipe token parser/resolver (`src/recipe/token.ts`) is pure and covered by tests; `src/test/board.smoke.test.tsx` renders every view and settings tab against a mock vault (`src/test/obsidian-mock.ts`) under happy-dom.
 
 ## Out of scope (for now)
 
-Chart view, cross-database references, writing scaled recipe amounts back to the note, cross-recipe shopping lists, mobile layout tuning.
+Cross-database references (relations / rollups), undo, writing scaled recipe amounts back to the note, cross-recipe shopping lists.
