@@ -213,6 +213,8 @@ export function useBodyVirtualizer(opts: {
   const virtualizer = useVirtualizer({
     count: opts.count,
     getScrollElement: () => scrollRef.current,
+    // The body is shared (e.g. a group opened mid-scroll): start where it is, not at 0.
+    initialOffset: () => scrollRef.current?.scrollTop ?? 0,
     estimateSize: useCallback(() => estimate, [estimate]),
     overscan: 6,
     scrollMargin: margin,
