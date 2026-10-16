@@ -1,6 +1,5 @@
-/* ===================== Kanban: tints, "New" buttons, swimlanes ===================== */
-/* Columns take their option / custom color as a light tint. */
-.rb-kanban-col.rb-tinted { background: color-mix(in srgb, var(--gc) 9%, var(--background-secondary-alt)); }
+/* ===================== Kanban: "New" buttons, swimlanes ===================== */
+/* Columns stay flat: the option color shows only on the header label. */
 
 /* "New" at the bottom of each column / cell (pre-fills the column and row values). */
 .rb-kanban-new {
@@ -63,5 +62,4 @@
   overflow: visible;
   min-height: 60px;
 }
-.rb-kanban-cell.rb-tinted { background: color-mix(in srgb, var(--gc) 9%, var(--background-secondary-alt)); }
 .rb-kanban-cell.rb-collapsed { flex-basis: 200px; min-height: 0; background: transparent; }

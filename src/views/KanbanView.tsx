@@ -1,4 +1,4 @@
-import { memo, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type CSSProperties, type MouseEvent as ReactMouseEvent, type ReactNode } from 'react';
+import { memo, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type MouseEvent as ReactMouseEvent, type ReactNode } from 'react';
 import { createPortal } from 'react-dom';
 import { Menu, Platform } from 'obsidian';
 import {
@@ -331,8 +331,6 @@ function TopScrollbar({ size, lanes, children }: { size: string; lanes: boolean;
   );
 }
 
-/** Column tint from its color (read by the kanban CSS). */
-const tint = (color: string | undefined): CSSProperties | undefined => (color ? ({ '--gc': color } as CSSProperties) : undefined);
 
 /**
  * A sortable column shell. Without swimlanes (`whole`) it is the whole column
@@ -353,7 +351,6 @@ function SortableHeader({
   const draggable = canDrag() && column.key !== null;
   const sortable = useSortable({ id: colId(column.key), data: { type: 'column', key: column.key }, disabled: !draggable });
   const cls = [whole ? 'rb-kanban-col' : 'rb-kanban-col rb-kanban-col-head'];
-  if (column.color) cls.push('rb-tinted');
   if (collapsed) cls.push('rb-collapsed');
   if (sortable.isDragging) cls.push('rb-col-dragging');
   // Only the header drags the column; cards inside drag themselves.
@@ -362,7 +359,7 @@ function SortableHeader({
     <div
       ref={sortable.setNodeRef}
       className={cls.join(' ')}
-      style={{ ...tint(column.color), transform: CSS.Translate.toString(sortable.transform), transition: sortable.transition }}
+      style={{ transform: CSS.Translate.toString(sortable.transform), transition: sortable.transition }}
     >
       {children(handle)}
     </div>
@@ -407,8 +404,7 @@ function Cell({ column, lane, items, collapsed, view, properties, getTargets, gr
   return (
     <div
       ref={drop.setNodeRef}
-      className={`${inLane ? 'rb-kanban-cell ' : ''}rb-kanban-list${column.color ? ' rb-tinted' : ''}${draggingCard && drop.isOver ? ' rb-drop-active' : ''}`}
-      style={inLane ? tint(column.color) : undefined}
+      className={`${inLane ? 'rb-kanban-cell ' : ''}rb-kanban-list${draggingCard && drop.isOver ? ' rb-drop-active' : ''}`}
     >
       {items.length === 0 && !inLane && <div className="rb-kanban-empty-drop">{canDrag() && movable ? 'Drop cards here' : 'No cards'}</div>}
       {visible.map((item) => (
