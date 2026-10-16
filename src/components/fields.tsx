@@ -225,7 +225,8 @@ function linksNode(env: FieldEnv, item: BoardItem, field: PropertyConfig): React
                 const newTab = e.ctrlKey || e.metaKey;
                 const from = sourceOf(env, item).path;
                 const dest = env.app.metadataCache.getFirstLinkpathDest(link.linkpath, from);
-                if (dest && !newTab) env.editFile(dest);
+                // Only notes open in the edit modal; other files (PDFs, .ark…) open in their own view.
+                if (dest && dest.extension === 'md' && !newTab) env.editFile(dest);
                 else void env.app.workspace.openLinkText(link.linkpath, from, newTab);
               }}
             >
