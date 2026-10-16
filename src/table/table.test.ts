@@ -99,6 +99,64 @@ describe('R Sheet v1 migration', () => {
   });
 });
 
+// Trimmed from a table the react-unify preview build rewrote.
+const UNIFY = JSON.stringify({
+  version: 2,
+  primaryField: 'citem',
+  defaultView: 'v-table',
+  fields: [
+    { id: 'citem', name: 'Item', type: 'text' },
+    { id: 'ctype', name: 'Type', type: 'select', options: [{ id: 'ogro', label: 'Groceries', color: '#4ECDC4' }, { id: 'osal', label: 'Salary', color: '#22C55E' }] },
+    { id: 'camt', name: 'Amount', type: 'number', format: { style: 'currency', decimals: 2, currency: '$' } },
+    { id: 'cnet', name: 'Net', type: 'formula', formula: 'if({Type} = "Salary", {Amount}, -{Amount})' },
+    { id: 'cnote', name: 'Receipt', type: 'link' },
+  ],
+  views: [
+    { id: 'v-table', name: 'Table', type: 'table', limit: 'none', group: { field: 'ctype', dateBucket: 'none', dir: 'asc', collapsed: ['ogro', '￿'], hidden: [] }, widths: { citem: 180 } },
+    {
+      id: 'v-share',
+      name: 'Where the money goes',
+      type: 'chart',
+      chart: { type: 'donut', x: 'ctype', values: ['camt'], aggregate: 'sum', sort: 'value-desc' },
+      filter: { id: 'g1', conjunction: 'and', conditions: [{ id: 'f1', field: 'ctype', op: 'noneOf', value: ['osal'] }] },
+      companion: { view: 'v-table', position: 'below', size: 30 },
+    },
+  ],
+  rows: [
+    { id: 'r01', cells: { citem: 'Monthly salary', ctype: 'osal', camt: 3200 } },
+    { id: 'r06', cells: { citem: 'Dinner out', ctype: 'ogro', camt: 42, cnet: '=-{Amount} / 2', cnote: 'Dinner with Sam' } },
+  ],
+});
+
+describe('react-unify preview tables', () => {
+  const parsed = parseTableFile(UNIFY);
+  if (!parsed.ok) throw new Error(parsed.error);
+  const { config, rows } = parsed.table;
+
+  it('reads fields, the title field, views by name, groups, filters, charts and split views', () => {
+    expect(parsed.migrated).toBe(true);
+    expect(config.titleProperty).toBe('citem');
+    expect(config.defaultView).toBe('Table');
+    expect(config.properties.map((p) => [p.name, p.label, p.type])).toEqual([
+      ['citem', 'Item', 'text'],
+      ['ctype', 'Type', 'select'],
+      ['camt', 'Amount', 'number'],
+      ['cnet', 'Net', 'formula'],
+      ['cnote', 'Receipt', 'links'],
+    ]);
+    const [table, chart] = config.views;
+    expect(table).toMatchObject({ group: 'ctype', collapsed: ['ogro', '__none__'], widths: { citem: 180 }, sort: { property: '$none' } });
+    expect(chart).toMatchObject({ type: 'chart', chart: { type: 'donut', x: 'ctype' }, companion: { view: 'Table', position: 'below', size: 30 } });
+    expect(chart.filter?.conditions[0]).toMatchObject({ property: 'ctype', op: 'noneOf', value: ['osal'] });
+  });
+
+  it('keeps rows and formula overrides', () => {
+    const [, dinner] = computeItems(items(rows, 'citem'), config.properties);
+    expect(dinner.values.cnet).toBe(-21);
+    expect(parseTableFile(serializeTableFile(parsed.table)).ok).toBe(true);
+  });
+});
+
 describe('table files', () => {
   it('opens empty files as a new table and rejects unknown shapes', () => {
     const empty = parseTableFile('');

@@ -53,6 +53,7 @@ export function parseTableFile(text: string): TableResult {
   }
   const o = rec(data);
   if (Array.isArray(o.columns)) return { ok: true, table: fromSheetV1(o), migrated: true };
+  if (Array.isArray(o.fields)) return { ok: true, table: fromUnify(o), migrated: true };
   if (!Array.isArray(o.properties)) return { ok: false, error: 'Not an R Board table: it has no "properties".' };
 
   const schema = parseSchema(o);
@@ -133,22 +134,8 @@ function fromSheetV1(o: Record<string, unknown>): TableFile {
     const c = rec(raw);
     const name = str(c.id) || str(c.name);
     if (!name || properties.some((p) => p.name === name)) continue;
-    const prop: PropertyConfig = { name, type: V1_TYPES[str(c.type)] ?? 'text' };
-    if (str(c.name) && str(c.name) !== name) prop.label = str(c.name);
-    const options = arr(c.options).map(rec).filter((x) => str(x.id));
-    if (options.length) {
-      prop.options = options.map((x) => {
-        const opt: SelectOption = { value: str(x.id) };
-        if (str(x.label) && str(x.label) !== str(x.id)) opt.label = str(x.label);
-        if (str(x.color)) opt.color = str(x.color);
-        return opt;
-      });
-    }
-    if (str(c.formula)) prop.formula = str(c.formula);
-    if (c.format && typeof c.format === 'object') prop.format = c.format as PropertyConfig['format'];
-    if (c.includeTime === true) prop.includeTime = true;
     if (typeof c.width === 'number') widths[name] = Math.round(c.width);
-    properties.push(prop);
+    properties.push(toProperty(c, name));
   }
   const keys = new Set(properties.map((p) => p.name));
   const titleProperty = (properties.find((p) => p.type === 'text') ?? properties[0])?.name;
@@ -186,6 +173,119 @@ function fromSheetV1(o: Record<string, unknown>): TableFile {
     config: { kind: 'table', sourceTag: '', name: str(o.name) || undefined, titleProperty, properties, views, defaultView: table.name },
     rows: parseRows(o.rows),
   });
+}
+
+// ---------------------------------------------------------------- react-unify preview → R Board
+
+/** Field → property, shared by the R Sheet and react-unify readers (id = key, name = label). */
+function toProperty(c: Record<string, unknown>, name: string): PropertyConfig {
+  const prop: PropertyConfig = { name, type: V1_TYPES[str(c.type)] ?? (str(c.type) === 'image' ? 'image' : 'text') };
+  if (str(c.name) && str(c.name) !== name) prop.label = str(c.name);
+  const options = arr(c.options).map(rec).filter((x) => str(x.id));
+  if (options.length) {
+    prop.options = options.map((x) => {
+      const opt: SelectOption = { value: str(x.id) };
+      if (str(x.label) && str(x.label) !== str(x.id)) opt.label = str(x.label);
+      if (str(x.color)) opt.color = str(x.color);
+      return opt;
+    });
+  }
+  if (str(c.display)) prop.render = str(c.display) as PropertyConfig['render'];
+  if (typeof c.max === 'number') prop.max = c.max;
+  if (str(c.prefix)) prop.prefix = str(c.prefix);
+  if (str(c.suffix)) prop.suffix = str(c.suffix);
+  if (str(c.formula)) prop.formula = str(c.formula);
+  if (c.format && typeof c.format === 'object') prop.format = c.format as PropertyConfig['format'];
+  if (c.includeTime === true) prop.includeTime = true;
+  return prop;
+}
+
+/** The react-unify preview's empty-group key; R Board saves it as `__none__`. */
+const UNIFY_EMPTY = String.fromCharCode(0xffff);
+
+/** Tables saved by the react-unify preview build (`fields`, view ids, sort lists, group objects). */
+function fromUnify(o: Record<string, unknown>): TableFile {
+  const properties: PropertyConfig[] = [];
+  for (const raw of arr(o.fields)) {
+    const f = rec(raw);
+    const name = str(f.id) || str(f.name);
+    if (name && !properties.some((p) => p.name === name)) properties.push(toProperty(f, name));
+  }
+  const keys = new Set(properties.map((p) => p.name));
+  const titleProperty = keys.has(str(o.primaryField)) ? str(o.primaryField) : (properties.find((p) => p.type === 'text') ?? properties[0])?.name;
+  const rawViews = arr(o.views).map(rec);
+  const nameOf = new Map(rawViews.map((v, i) => [str(v.id), str(v.name).trim() || `View ${i + 1}`]));
+
+  const views: ViewConfig[] = rawViews.map((v, i) => {
+    const type = (['table', 'gallery', 'kanban', 'recipe', 'chart'].includes(str(v.type)) ? str(v.type) : 'table') as ViewConfig['type'];
+    const view: ViewConfig = { name: nameOf.get(str(v.id)) ?? `View ${i + 1}`, type, limit: [10, 50, 100, 'none'].includes(v.limit as never) ? (v.limit as ViewConfig['limit']) : 'none' };
+    if (Array.isArray(v.fields)) view.properties = arr(v.fields).map(str).filter((n) => keys.has(n) && n !== titleProperty);
+    const sort = arr(v.sort).map(rec).find((s) => keys.has(str(s.field)) || str(s.field) === '$title');
+    view.sort = sort ? { property: str(sort.field), dir: sort.dir === 'desc' ? 'desc' : 'asc' } : { property: NO_SORT_KEY, dir: 'asc' };
+    const filter = unifyFilter(v.filter);
+    if (filter) view.filter = filter;
+    const g = rec(v.group);
+    if (keys.has(str(g.field))) {
+      view.group = str(g.field);
+      if (str(g.dateBucket) && str(g.dateBucket) !== 'none') view.groupBucket = str(g.dateBucket) as ViewConfig['groupBucket'];
+      const collapsed = arr(g.collapsed).map(str).map((k) => (k === UNIFY_EMPTY ? '__none__' : k)).filter(Boolean);
+      if (collapsed.length) view.collapsed = collapsed;
+      const hidden = arr(g.hidden).map(str).filter(Boolean);
+      if (hidden.length) view.groupConfig = Object.fromEntries(hidden.map((k) => [k === UNIFY_EMPTY ? '__none__' : k, { hidden: true }]));
+      const order = arr(g.order).map(str).filter(Boolean);
+      if (order.length) view.columns = order;
+    }
+    const sg = rec(v.subGroup);
+    if (keys.has(str(sg.field))) {
+      view.subGroup = str(sg.field);
+      if (str(sg.dateBucket) && str(sg.dateBucket) !== 'none') view.subGroupBucket = str(sg.dateBucket) as ViewConfig['subGroupBucket'];
+    }
+    const widths = Object.fromEntries(Object.entries(rec(v.widths)).filter(([, w]) => typeof w === 'number')) as Record<string, number>;
+    if (Object.keys(widths).length) view.widths = widths;
+    if (['small', 'medium', 'large'].includes(str(v.cardSize))) view.cardSize = str(v.cardSize) as ViewConfig['cardSize'];
+    if (v.showContent === true) view.showContent = true;
+    if (v.layout === 'grid' || v.layout === 'masonry') view.layout = v.layout;
+    if (type === 'chart') view.chart = parseChart(v.chart);
+    const c = rec(v.companion);
+    if (nameOf.has(str(c.view))) {
+      view.companion = {
+        view: nameOf.get(str(c.view))!,
+        position: c.position === 'below' ? 'below' : 'right',
+        size: typeof c.size === 'number' ? Math.round(c.size) : 40,
+        followFilter: c.followFilter !== false,
+      };
+    }
+    return view;
+  });
+
+  return finish({
+    config: {
+      kind: 'table',
+      sourceTag: '',
+      name: str(o.name) || undefined,
+      titleProperty,
+      properties,
+      views,
+      defaultView: nameOf.get(str(o.defaultView)),
+    },
+    rows: parseRows(o.rows),
+  });
+}
+
+/** react-unify filters: `field` instead of `property`, and its own op names. */
+function unifyFilter(raw: unknown): FilterGroup | undefined {
+  const g = rec(raw);
+  if (!Array.isArray(g.conditions)) return undefined;
+  const conditions: FilterNode[] = [];
+  for (const c of arr(g.conditions).map(rec)) {
+    if (Array.isArray(c.conditions)) {
+      const sub = unifyFilter(c);
+      if (sub) conditions.push(sub);
+    } else if (str(c.field) && str(c.op)) {
+      conditions.push({ property: str(c.field), op: V1_OPS[str(c.op)] ?? (str(c.op) as FilterOp), value: c.value });
+    }
+  }
+  return conditions.length ? { conjunction: g.conjunction === 'or' ? 'or' : 'and', conditions } : undefined;
 }
 
 function v1Filter(raw: unknown): FilterGroup | undefined {
