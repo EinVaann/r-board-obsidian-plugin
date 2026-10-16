@@ -106,15 +106,17 @@ export default class RBoardPlugin extends Plugin {
 
   /** Open (or reveal) the R Board home view in a tab. */
   async openHome(): Promise<void> {
-    const existing = this.app.workspace.getLeavesOfType(HOME_VIEW_TYPE);
+    const { workspace } = this.app;
+    const existing = workspace.getLeavesOfType(HOME_VIEW_TYPE);
     if (existing.length > 0) {
-      this.app.workspace.revealLeaf(existing[0]);
+      // revealLeaf flashes the tab header yellow; a tab in the main area only needs activating.
+      if (existing[0].getRoot() === workspace.rootSplit) workspace.setActiveLeaf(existing[0], { focus: true });
+      else void workspace.revealLeaf(existing[0]);
       (existing[0].view as BoardHomeView).render();
       return;
     }
-    const leaf: WorkspaceLeaf = this.app.workspace.getLeaf(true);
+    const leaf: WorkspaceLeaf = workspace.getLeaf(true);
     await leaf.setViewState({ type: HOME_VIEW_TYPE, active: true });
-    this.app.workspace.revealLeaf(leaf);
   }
 
   /** Every `.board` and `.table` file in the vault, sorted by path. */
