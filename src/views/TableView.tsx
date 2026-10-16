@@ -49,8 +49,9 @@ export function TableView(props: TableProps) {
   );
   if (items.length === 0) return table([], 't');
   if (!groupProp) return table(items, 't');
+  // One horizontal scroll for every group (and the total), so their columns stay lined up.
   return (
-    <>
+    <div className="rb-grid-groups">
       <Sections
         items={items}
         groupProp={groupProp}
@@ -61,7 +62,7 @@ export function TableView(props: TableProps) {
         {table}
       </Sections>
       {view.summary && <SummaryTable {...props} label="Total" grand />}
-    </>
+    </div>
   );
 }
 
@@ -88,7 +89,8 @@ function SummaryTable({ view, viewIndex, items, properties, titleProp, label, gr
           ))}
         </colgroup>
         <tfoot>
-          <SummaryRow view={view} viewIndex={viewIndex} cols={cols} items={items} label={label} />
+          {/* No column headers above these rows: each total names its column. */}
+          <SummaryRow view={view} viewIndex={viewIndex} cols={cols} items={items} label={label} named />
         </tfoot>
       </table>
     </div>
@@ -99,7 +101,22 @@ function SummaryTable({ view, viewIndex, items, properties, titleProp, label, gr
  * The summary row: the row count under the title, and per column the chosen
  * calculation (click a cell to choose; saved with the view).
  */
-function SummaryRow({ view, viewIndex, cols, items, label }: { view: ViewConfig; viewIndex: number; cols: Col[]; items: BoardItem[]; label?: string }) {
+function SummaryRow({
+  view,
+  viewIndex,
+  cols,
+  items,
+  label,
+  named = false,
+}: {
+  view: ViewConfig;
+  viewIndex: number;
+  cols: Col[];
+  items: BoardItem[];
+  label?: string;
+  /** Captions include the column name (rows shown without column headers). */
+  named?: boolean;
+}) {
   const updateView = useBoard((s) => s.updateView);
   const choose = (e: ReactMouseEvent, prop: PropertyConfig): void => {
     const current = view.calculations?.[prop.name];
@@ -141,7 +158,10 @@ function SummaryRow({ view, viewIndex, cols, items, label }: { view: ViewConfig;
             title={calc ? `${CALCULATION_LABELS[calc]} of ${propertyLabel(prop)} · click to change` : 'Choose a calculation'}
           >
             {calc ? (
-              <span className="rb-summary-value">{calculationText(calculate(items, prop, calc), prop, calc)}</span>
+              <>
+                <span className="rb-summary-caption">{named ? `${propertyLabel(prop)} · ${CALCULATION_LABELS[calc]}` : CALCULATION_LABELS[calc]}</span>
+                <span className="rb-summary-value">{calculationText(calculate(items, prop, calc), prop, calc)}</span>
+              </>
             ) : (
               <span className="rb-summary-hint">Calculate</span>
             )}

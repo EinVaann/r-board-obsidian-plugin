@@ -678,16 +678,18 @@ describe('tables', () => {
     const config = structuredClone(TABLE);
     config.views[0] = { ...config.views[0], group: 'kind', summary: true, calculations: { price: 'sum', total: 'sum', qty: 'filled' } };
     const { el } = await renderBoard(config, TABLE_ROWS);
-    const rows = [...el.querySelectorAll('.rb-summary-row')].map((tr) => [...tr.children].map((td) => td.textContent));
+    const value = (td: Element): string | null | undefined => td.querySelector('.rb-summary-value')?.textContent;
+    const rows = [...el.querySelectorAll('.rb-summary-row')].map((tr) => [...tr.children]);
     // Groups: Food (Apples), Fuel (Gas), Uncategorized (Bread); then the grand total.
     expect(rows).toHaveLength(4);
     const [food, , , grand] = rows;
-    expect(food.slice(0, 1)).toEqual(['1 row']);
-    expect(grand[0]).toBe('Total3 rows');
-    // Columns: title, kind, price, qty, total.
-    expect(grand[2]).toBe('55');
-    expect(grand[3]).toBe('2');
-    expect(grand[4]).toBe('105');
+    expect(food[0].textContent).toBe('1 row');
+    expect(grand[0].textContent).toBe('Total3 rows');
+    // Columns: title, kind, price, qty, total. Under column headers the caption is the calculation;
+    // in the grand total (no headers) it also names the column.
+    expect(food[2].querySelector('.rb-summary-caption')?.textContent).toBe('Sum');
+    expect(grand[2].querySelector('.rb-summary-caption')?.textContent).toBe('Price · Sum');
+    expect([value(grand[2]), value(grand[3]), value(grand[4])]).toEqual(['55', '2', '105']);
   });
 
   it('summary row: a collapsed group still shows its totals', async () => {
@@ -695,7 +697,7 @@ describe('tables', () => {
     config.views[0] = { ...config.views[0], group: 'kind', summary: true, calculations: { price: 'sum' }, collapsed: ['k1', 'k2'] };
     const { el } = await renderBoard(config, TABLE_ROWS);
     expect(count(el, '.rb-tr')).toBe(1); // only Uncategorized (Bread) is open
-    const sums = [...el.querySelectorAll('.rb-summary-row')].map((tr) => tr.children[2].textContent);
+    const sums = [...el.querySelectorAll('.rb-summary-row')].map((tr) => tr.children[2].querySelector('.rb-summary-value')?.textContent);
     expect(sums).toEqual(['2', '50', '3', '55']); // Food, Fuel, Uncategorized, Total
   });
 
