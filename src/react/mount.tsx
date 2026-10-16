@@ -41,7 +41,8 @@ export class ReactModal extends Modal {
 
   onOpen(): void {
     if (this.opts.title) this.titleEl.setText(this.opts.title);
-    if (this.opts.cls) this.modalEl.addClass(this.opts.cls);
+    // addClass() takes one class per argument; a space-separated string throws.
+    if (this.opts.cls) this.modalEl.addClass(...this.opts.cls.split(/\s+/).filter(Boolean));
     applySheet(this);
     this.unmount = mountReact(this.app, this.contentEl, this.render(this));
   }
