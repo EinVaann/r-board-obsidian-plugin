@@ -27,12 +27,15 @@ export function Sections({
   view,
   pagePrefix,
   children,
+  collapsedContent,
 }: {
   items: BoardItem[];
   groupProp: PropertyConfig;
   view: ViewConfig;
   pagePrefix: string;
   children: (items: BoardItem[], pageKey: string, group: ItemGroup) => ReactNode;
+  /** Shown instead of the items while a group is collapsed (e.g. a table's summary row). */
+  collapsedContent?: (items: BoardItem[], group: ItemGroup) => ReactNode;
 }) {
   const { actions } = useBoardContext();
   const properties = useBoard((s) => s.config?.properties);
@@ -63,7 +66,7 @@ export function Sections({
                 <Icon name="plus" />
               </button>
             </div>
-            {!isCollapsed && children(group.items, `${pagePrefix}:${group.label}`, group)}
+            {isCollapsed ? collapsedContent?.(group.items, group) : children(group.items, `${pagePrefix}:${group.label}`, group)}
           </div>
         );
       })}

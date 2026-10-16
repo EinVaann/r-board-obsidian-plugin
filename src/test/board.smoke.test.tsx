@@ -690,6 +690,15 @@ describe('tables', () => {
     expect(grand[4]).toBe('105');
   });
 
+  it('summary row: a collapsed group still shows its totals', async () => {
+    const config = structuredClone(TABLE);
+    config.views[0] = { ...config.views[0], group: 'kind', summary: true, calculations: { price: 'sum' }, collapsed: ['k1', 'k2'] };
+    const { el } = await renderBoard(config, TABLE_ROWS);
+    expect(count(el, '.rb-tr')).toBe(1); // only Uncategorized (Bread) is open
+    const sums = [...el.querySelectorAll('.rb-summary-row')].map((tr) => tr.children[2].textContent);
+    expect(sums).toEqual(['2', '50', '3', '55']); // Food, Fuel, Uncategorized, Total
+  });
+
   it('sorts by a property that is hidden in the view', async () => {
     const config = structuredClone(TABLE);
     config.views[0] = { ...config.views[0], sort: { property: 'price', dir: 'desc' }, properties: ['qty'] };

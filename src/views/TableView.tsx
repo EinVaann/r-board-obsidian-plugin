@@ -51,8 +51,16 @@ export function TableView(props: TableProps) {
   if (!groupProp) return table(items, 't');
   return (
     <>
-      <Sections items={items} groupProp={groupProp} view={view} pagePrefix="t">{table}</Sections>
-      {view.summary && <GrandTotal {...props} />}
+      <Sections
+        items={items}
+        groupProp={groupProp}
+        view={view}
+        pagePrefix="t"
+        collapsedContent={view.summary ? (list) => <SummaryTable {...props} items={list} /> : undefined}
+      >
+        {table}
+      </Sections>
+      {view.summary && <SummaryTable {...props} label="Total" grand />}
     </>
   );
 }
@@ -64,12 +72,15 @@ function gridColumns(properties: PropertyConfig[], titleProp: PropertyConfig | u
 
 const columnWidth = (view: ViewConfig, col: Col): number => view.widths?.[col.key] ?? defaultWidth(col);
 
-/** A grouped table's grand total: a summary row over every group, aligned with the tables above. */
-function GrandTotal({ view, viewIndex, items, properties, titleProp }: TableProps) {
+/**
+ * A summary row on its own, aligned with the tables around it: a collapsed
+ * group's totals, or (`grand`) the total over every group.
+ */
+function SummaryTable({ view, viewIndex, items, properties, titleProp, label, grand = false }: TableProps & { label?: string; grand?: boolean }) {
   const cols = useMemo(() => gridColumns(properties, titleProp), [properties, titleProp]);
   const widths = cols.map((c) => columnWidth(view, c));
   return (
-    <div className="rb-table-wrap rb-grid rb-grand-total">
+    <div className={grand ? 'rb-table-wrap rb-grid rb-summary-only rb-grand-total' : 'rb-table-wrap rb-grid rb-summary-only'}>
       <table className="rb-table" style={{ width: widths.reduce((a, b) => a + b, 0) }}>
         <colgroup>
           {widths.map((w, i) => (
@@ -77,7 +88,7 @@ function GrandTotal({ view, viewIndex, items, properties, titleProp }: TableProp
           ))}
         </colgroup>
         <tfoot>
-          <SummaryRow view={view} viewIndex={viewIndex} cols={cols} items={items} label="Total" />
+          <SummaryRow view={view} viewIndex={viewIndex} cols={cols} items={items} label={label} />
         </tfoot>
       </table>
     </div>

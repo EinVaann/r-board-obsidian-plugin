@@ -116,6 +116,9 @@
 .rb-summary-hint { color: var(--text-faint); opacity: 0; }
 .rb-summary-cell:hover .rb-summary-hint { opacity: 1; }
 .rb-summary-cell:hover { background: var(--background-modifier-hover); }
+/* A collapsed group's totals sit right under its header. */
+.rb-summary-only .rb-summary-cell { border-top: none; }
+.rb-section > .rb-summary-only { margin-top: -6px; }
 .rb-grand-total { margin-top: -10px; }
 .rb-grand-total .rb-summary-cell { border-top: 2px solid var(--background-modifier-border); }
 .rb-grand-total .rb-summary-title .rb-summary-label { color: var(--text-normal); font-weight: 600; }
