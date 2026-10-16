@@ -9,6 +9,7 @@ import { propertyLabel, TITLE_SORT_KEY } from '../config';
 import { asArray, asBoolean, fieldValue, optionFor } from '../render/values';
 import { toText, type FValue } from '../formula/evaluate';
 import { cellsForGroup, type ItemGroup } from '../data/group';
+import { CALCULATION_LABELS, calculate, calculationText, calculationsFor } from '../data/summary';
 import type { StoredValue } from '../data/properties';
 import { TitleLink, useFieldEnv } from '../components/Card';
 import { fieldNode } from '../components/fields';
@@ -47,10 +48,96 @@ export function TableView(props: TableProps) {
     <Grid key={pageKey} {...props} items={list} pageKey={pageKey} group={group} groupProp={groupProp} />
   );
   if (items.length === 0) return table([], 't');
-  return groupProp ? (
-    <Sections items={items} groupProp={groupProp} view={view} pagePrefix="t">{table}</Sections>
-  ) : (
-    table(items, 't')
+  if (!groupProp) return table(items, 't');
+  return (
+    <>
+      <Sections items={items} groupProp={groupProp} view={view} pagePrefix="t">{table}</Sections>
+      {view.summary && <GrandTotal {...props} />}
+    </>
+  );
+}
+
+/** The grid's columns: the title, then each visible property. */
+function gridColumns(properties: PropertyConfig[], titleProp: PropertyConfig | undefined): Col[] {
+  return [{ key: TITLE_SORT_KEY, prop: titleProp, title: true }, ...properties.map((p) => ({ key: p.name, prop: p, title: false }))];
+}
+
+const columnWidth = (view: ViewConfig, col: Col): number => view.widths?.[col.key] ?? defaultWidth(col);
+
+/** A grouped table's grand total: a summary row over every group, aligned with the tables above. */
+function GrandTotal({ view, viewIndex, items, properties, titleProp }: TableProps) {
+  const cols = useMemo(() => gridColumns(properties, titleProp), [properties, titleProp]);
+  const widths = cols.map((c) => columnWidth(view, c));
+  return (
+    <div className="rb-table-wrap rb-grid rb-grand-total">
+      <table className="rb-table" style={{ width: widths.reduce((a, b) => a + b, 0) }}>
+        <colgroup>
+          {widths.map((w, i) => (
+            <col key={cols[i].key} style={{ width: w }} />
+          ))}
+        </colgroup>
+        <tfoot>
+          <SummaryRow view={view} viewIndex={viewIndex} cols={cols} items={items} label="Total" />
+        </tfoot>
+      </table>
+    </div>
+  );
+}
+
+/**
+ * The summary row: the row count under the title, and per column the chosen
+ * calculation (click a cell to choose; saved with the view).
+ */
+function SummaryRow({ view, viewIndex, cols, items, label }: { view: ViewConfig; viewIndex: number; cols: Col[]; items: BoardItem[]; label?: string }) {
+  const updateView = useBoard((s) => s.updateView);
+  const choose = (e: ReactMouseEvent, prop: PropertyConfig): void => {
+    const current = view.calculations?.[prop.name];
+    const m = new Menu();
+    m.addItem((i) => {
+      i.setTitle('None').onClick(() => updateView(viewIndex, (v) => {
+        if (v.calculations) delete v.calculations[prop.name];
+      }));
+      if (!current) i.setChecked(true);
+    });
+    for (const calc of calculationsFor(prop)) {
+      m.addItem((i) => {
+        i.setTitle(CALCULATION_LABELS[calc]).onClick(() => updateView(viewIndex, (v) => void (v.calculations = { ...v.calculations, [prop.name]: calc })));
+        if (calc === current) i.setChecked(true);
+      });
+    }
+    m.showAtMouseEvent(e.nativeEvent);
+  };
+  return (
+    <tr className="rb-summary-row">
+      {cols.map((col) => {
+        if (col.title) {
+          return (
+            <td key={col.key} className="rb-td rb-summary-cell rb-summary-title">
+              {label && <span className="rb-summary-label">{label}</span>}
+              <span className="rb-summary-count">
+                {items.length} row{items.length === 1 ? '' : 's'}
+              </span>
+            </td>
+          );
+        }
+        const prop = col.prop!;
+        const calc = view.calculations?.[prop.name];
+        return (
+          <td
+            key={col.key}
+            className="rb-td rb-summary-cell"
+            onClick={(e) => choose(e, prop)}
+            title={calc ? `${CALCULATION_LABELS[calc]} of ${propertyLabel(prop)} · click to change` : 'Choose a calculation'}
+          >
+            {calc ? (
+              <span className="rb-summary-value">{calculationText(calculate(items, prop, calc), prop, calc)}</span>
+            ) : (
+              <span className="rb-summary-hint">Calculate</span>
+            )}
+          </td>
+        );
+      })}
+    </tr>
   );
 }
 
@@ -142,11 +229,8 @@ function Grid({
   const { listRef, virtualizer } = useBodyVirtualizer({ count: visible.length, estimateSize: ROW_ESTIMATE });
   const wrapRef = useRef<HTMLDivElement>(null);
 
-  const cols = useMemo<Col[]>(
-    () => [{ key: TITLE_SORT_KEY, prop: titleProp, title: true }, ...properties.map((p) => ({ key: p.name, prop: p, title: false }))],
-    [properties, titleProp],
-  );
-  const widths = cols.map((c) => view.widths?.[c.key] ?? defaultWidth(c));
+  const cols = useMemo<Col[]>(() => gridColumns(properties, titleProp), [properties, titleProp]);
+  const widths = cols.map((c) => columnWidth(view, c));
   const total = widths.reduce((a, b) => a + b, 0);
 
   const [active, setActive] = useState<Pos | null>(null);
@@ -516,6 +600,12 @@ function Grid({
               ))}
               {padBottom > 0 && <tr className="rb-spacer-row" style={{ height: padBottom }} />}
             </tbody>
+            {view.summary && (
+              <tfoot>
+                {/* Over every row of this table (or group), not just the page shown. */}
+                <SummaryRow view={view} viewIndex={viewIndex} cols={cols} items={items} />
+              </tfoot>
+            )}
           </table>
         </DndContext>
       </div>

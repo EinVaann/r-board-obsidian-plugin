@@ -118,6 +118,11 @@ function General({ config, view, viewIndex, edit, onDelete }: TabProps & { viewI
           />
         </SettingRow>
       )}
+      {view.type === 'table' && (
+        <SettingRow name="Summary row" desc="A row under the table (and each group) with totals. Click a cell in it to choose Sum, Average, Count…" toggle>
+          <Toggle checked={!!view.summary} onChange={(on) => edit((d) => void (d.summary = on || undefined))} label="Summary row" />
+        </SettingRow>
+      )}
       <SettingRow name="Sort by">
         <Select
           value={sort.property}

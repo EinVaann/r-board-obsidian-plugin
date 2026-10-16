@@ -1,5 +1,6 @@
 import type {
   Aggregate,
+  Calculation,
   CardSize,
   ChartConfig,
   ChartType,
@@ -217,6 +218,8 @@ function parseView(raw: unknown, index: number): ViewConfig | null {
       ? [...new Set(v.collapsed.filter((c): c is string => typeof c === 'string'))]
       : undefined,
     widths: parseWidths(v.widths),
+    summary: v.summary === true ? true : undefined,
+    calculations: parseCalculations(v.calculations),
     chart: type === 'chart' ? parseChart(v.chart) : undefined,
     companion: parseCompanion(v.companion),
   };
@@ -228,6 +231,15 @@ function parseCompanion(raw: unknown): Companion | undefined {
   if (typeof c.view !== 'string' || c.view === '') return undefined;
   const size = typeof c.size === 'number' ? Math.min(80, Math.max(20, Math.round(c.size))) : 40;
   return { view: c.view, position: c.position === 'below' ? 'below' : 'right', size, followFilter: c.followFilter === true };
+}
+
+const CALCULATIONS = new Set<Calculation>(['sum', 'avg', 'min', 'max', 'filled', 'empty', 'checked', 'unchecked']);
+
+function parseCalculations(raw: unknown): Record<string, Calculation> | undefined {
+  if (typeof raw !== 'object' || raw === null) return undefined;
+  const out: Record<string, Calculation> = {};
+  for (const [k, c] of Object.entries(raw)) if (CALCULATIONS.has(c as Calculation)) out[k] = c as Calculation;
+  return Object.keys(out).length ? out : undefined;
 }
 
 function parseWidths(raw: unknown): Record<string, number> | undefined {
@@ -333,6 +345,8 @@ export function serializeViews(views: ViewConfig[]): Record<string, unknown>[] {
     if (v.subGroup && v.subGroupBucket && v.subGroupBucket !== 'none') view.subGroupBucket = v.subGroupBucket;
     if (v.collapsed && v.collapsed.length) view.collapsed = v.collapsed;
     if (v.widths && Object.keys(v.widths).length) view.widths = v.widths;
+    if (v.summary) view.summary = true;
+    if (v.calculations && Object.keys(v.calculations).length) view.calculations = v.calculations;
     if (v.type === 'chart' && v.chart) view.chart = v.chart;
     if (v.companion) view.companion = v.companion;
     return view;

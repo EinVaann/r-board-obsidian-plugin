@@ -209,6 +209,10 @@ export interface ViewConfig {
   collapsed?: string[];
   /** Table column widths by property name. */
   widths?: Record<string, number>;
+  /** Table: show a summary row (per group, plus a grand total). */
+  summary?: boolean;
+  /** Table summary row: the calculation per property name. */
+  calculations?: Record<string, Calculation>;
   /** Chart settings (chart views). */
   chart?: ChartConfig;
   /** Show another view beside or below this one (split view). */
@@ -225,6 +229,9 @@ export interface Companion {
   /** The companion only shows items that pass this view's filter and search. */
   followFilter: boolean;
 }
+
+/** What a summary-row cell shows for its column. */
+export type Calculation = 'sum' | 'avg' | 'min' | 'max' | 'filled' | 'empty' | 'checked' | 'unchecked';
 
 /** `relative` = Today / Tomorrow / Next 7 days / … measured from today. */
 export type DateBucket = 'none' | 'relative' | 'day' | 'week' | 'month' | 'quarter' | 'year';

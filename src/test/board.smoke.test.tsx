@@ -674,6 +674,22 @@ describe('tables', () => {
     expect((el.querySelector('.rb-kanban-title') as HTMLElement).style.getPropertyValue('--gc')).toBe('#ff0000');
   });
 
+  it('summary row: per-group totals and a grand total, over the chosen calculations', async () => {
+    const config = structuredClone(TABLE);
+    config.views[0] = { ...config.views[0], group: 'kind', summary: true, calculations: { price: 'sum', total: 'sum', qty: 'filled' } };
+    const { el } = await renderBoard(config, TABLE_ROWS);
+    const rows = [...el.querySelectorAll('.rb-summary-row')].map((tr) => [...tr.children].map((td) => td.textContent));
+    // Groups: Food (Apples), Fuel (Gas), Uncategorized (Bread); then the grand total.
+    expect(rows).toHaveLength(4);
+    const [food, , , grand] = rows;
+    expect(food.slice(0, 1)).toEqual(['1 row']);
+    expect(grand[0]).toBe('Total3 rows');
+    // Columns: title, kind, price, qty, total.
+    expect(grand[2]).toBe('55');
+    expect(grand[3]).toBe('2');
+    expect(grand[4]).toBe('105');
+  });
+
   it('sorts by a property that is hidden in the view', async () => {
     const config = structuredClone(TABLE);
     config.views[0] = { ...config.views[0], sort: { property: 'price', dir: 'desc' }, properties: ['qty'] };
