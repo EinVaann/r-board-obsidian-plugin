@@ -97,14 +97,16 @@ function Home({ plugin, subscribe }: { plugin: RBoardPlugin; subscribe: (fn: () 
     <>
       <div className="rb-home-header">
         <h2>Boards</h2>
-        <button className="rb-home-create" onClick={() => void plugin.createTable()}>
-          <Icon name="table" className="rb-home-create-icon" />
-          <span>Create table</span>
-        </button>
-        <button className="rb-home-create" onClick={create}>
-          <Icon name="plus" className="rb-home-create-icon" />
-          <span>Create board</span>
-        </button>
+        <div className="rb-home-actions">
+          <button className="rb-home-create" onClick={() => void plugin.createTable()}>
+            <Icon name="table" className="rb-home-create-icon" />
+            <span>Create table</span>
+          </button>
+          <button className="rb-home-create" onClick={create}>
+            <Icon name="plus" className="rb-home-create-icon" />
+            <span>Create board</span>
+          </button>
+        </div>
       </div>
       {boards && boards.length === 0 && (
         <div className="rb-home-empty">No boards yet. A board shows notes by tag; a table keeps its rows in the file.</div>

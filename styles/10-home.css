@@ -7,6 +7,7 @@
   margin-bottom: 18px;
 }
 .rb-home-header h2 { margin: 0; }
+.rb-home-actions { display: flex; gap: 8px; flex-wrap: wrap; justify-content: flex-end; }
 .rb-home-create {
   display: inline-flex;
   align-items: center;
