@@ -722,7 +722,8 @@ body .rb-table-wrap.rb-grid::-webkit-scrollbar-thumb:active { background-color: 
 }
 /* Spreadsheet grid: fixed column widths (resizable), cell selection. */
 .rb-grid { outline: none; padding-bottom: 2px; }
-.rb-grid .rb-table { table-layout: fixed; min-width: 100%; }
+/* Exactly the sum of the column widths: stretching it would resize every column. */
+.rb-grid .rb-table { table-layout: fixed; }
 .rb-grid .rb-th { position: relative; overflow: hidden; text-overflow: ellipsis; }
 .rb-th-inner { display: inline-flex; align-items: center; gap: 5px; max-width: 100%; }
 .rb-th-label { overflow: hidden; text-overflow: ellipsis; }
