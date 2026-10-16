@@ -753,12 +753,19 @@ function HeaderCell({
     const startX = e.clientX;
     resizing.current = true;
     const th = target.parentElement as HTMLTableCellElement;
+    // Every table sharing these columns (a grouped table's groups and totals) follows live.
+    const own = th.closest('table')!;
+    const tables = [...(th.closest('.rb-grid-groups')?.querySelectorAll<HTMLTableElement>('table.rb-table') ?? [own])];
+    const starts = tables.map((t) => t.getBoundingClientRect().width);
     let w = width;
     const onMove = (ev: PointerEvent): void => {
       w = Math.max(MIN_WIDTH, width + ev.clientX - startX);
-      // Live feedback on the <col>; the view is saved once, on release.
-      const colEl = th.closest('table')?.querySelectorAll('col')[th.cellIndex] as HTMLElement | undefined;
-      if (colEl) colEl.style.width = `${w}px`;
+      // Live feedback on the <col> and the table width (else the neighbours absorb it); saved on release.
+      tables.forEach((t, i) => {
+        const colEl = t.querySelectorAll('col')[th.cellIndex] as HTMLElement | undefined;
+        if (colEl) colEl.style.width = `${w}px`;
+        t.style.width = `${starts[i] + w - width}px`;
+      });
     };
     const onUp = (): void => {
       target.removeEventListener('pointermove', onMove);
