@@ -1,6 +1,7 @@
 import type { BoardItem, PropertyConfig, ViewConfig } from '../types';
 import { Card } from '../components/Card';
 import { Sections, ViewMore, useBodyVirtualizer, useElementWidth, usePaged } from '../components/layout';
+import { useBoard } from '../board/context';
 import { useRef } from 'react';
 
 /** Card width per size; must match the `--rb-card-w` values in the gallery CSS. */
@@ -16,7 +17,9 @@ const GAP = 14;
 export function GalleryView({ view, items, properties }: { view: ViewConfig; items: BoardItem[]; properties: PropertyConfig[] }) {
   if (items.length === 0) return <div className="rb-empty">No notes match this view.</div>;
 
-  const groupProp = view.group ? properties.find((p) => p.name === view.group) : undefined;
+  // The group property may be hidden in the view: look it up among all properties.
+  const allProperties = useBoard((s) => s.config?.properties ?? properties);
+  const groupProp = view.group ? allProperties.find((p) => p.name === view.group) : undefined;
   const grid = (list: BoardItem[], pageKey: string) => (
     <GalleryList key={pageKey} items={list} pageKey={pageKey} view={view} properties={properties} />
   );

@@ -3,6 +3,7 @@ import type { TFile } from 'obsidian';
 import type { BoardItem, PropertyConfig, ViewConfig } from '../types';
 import { Card } from '../components/Card';
 import { Sections, ViewMore, usePaged } from '../components/layout';
+import { useBoard } from '../board/context';
 import { useApp } from '../react/mount';
 import { extractRecipeBlock, parseRecipe, type Recipe as RecipeData } from '../recipe/parse';
 import { Recipe } from '../recipe/Recipe';
@@ -16,7 +17,9 @@ import { Recipe } from '../recipe/Recipe';
 export function RecipeView({ view, items, properties }: { view: ViewConfig; items: BoardItem[]; properties: PropertyConfig[] }) {
   if (items.length === 0) return <div className="rb-empty">No notes match this view.</div>;
 
-  const groupProp = view.group ? properties.find((p) => p.name === view.group) : undefined;
+  // The group property may be hidden in the view: look it up among all properties.
+  const allProperties = useBoard((s) => s.config?.properties ?? properties);
+  const groupProp = view.group ? allProperties.find((p) => p.name === view.group) : undefined;
   const list = (group: BoardItem[], pageKey: string) => <RecipeList key={pageKey} items={group} pageKey={pageKey} view={view} properties={properties} />;
   return groupProp ? (
     <Sections items={items} groupProp={groupProp} view={view} pagePrefix="r">{list}</Sections>

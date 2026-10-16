@@ -40,7 +40,9 @@ interface TableProps {
  */
 export function TableView(props: TableProps) {
   const { view, items, properties } = props;
-  const groupProp = view.group ? properties.find((p) => p.name === view.group) : undefined;
+  // The group property may be hidden in the view: look it up among all properties.
+  const allProperties = useBoard((s) => s.config?.properties ?? properties);
+  const groupProp = view.group ? allProperties.find((p) => p.name === view.group) : undefined;
   const table = (list: BoardItem[], pageKey: string, group?: ItemGroup) => (
     <Grid key={pageKey} {...props} items={list} pageKey={pageKey} group={group} groupProp={groupProp} />
   );
