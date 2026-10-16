@@ -20,11 +20,18 @@
 }
 .rb-split-below > .rb-split-divider { padding: 2px 0; cursor: row-resize; }
 .rb-split-divider:hover { background-color: var(--interactive-accent); }
+.rb-split-bar {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: 8px 12px 0 16px;
+}
+.rb-split-close { margin-left: auto; color: var(--text-muted); }
+.rb-split-close svg { width: 15px; height: 15px; }
 .rb-split-title {
   display: flex;
   align-items: center;
   gap: 6px;
-  margin: 8px 16px 0;
   padding: 2px 6px;
   height: auto;
   align-self: flex-start;

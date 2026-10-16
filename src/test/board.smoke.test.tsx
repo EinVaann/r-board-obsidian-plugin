@@ -674,6 +674,17 @@ describe('tables', () => {
     expect((el.querySelector('.rb-kanban-title') as HTMLElement).style.getPropertyValue('--gc')).toBe('#ff0000');
   });
 
+  it('split view: shows the companion beside the view; its × closes it', async () => {
+    const config = structuredClone(TABLE);
+    config.views[0].companion = { view: 'Lanes', position: 'right', size: 40, followFilter: false };
+    const { el, store } = await renderBoard(config, TABLE_ROWS);
+    expect(count(el, '.rb-split-pane')).toBe(2);
+    expect(el.querySelector('.rb-split-title')?.textContent).toContain('Lanes');
+    await act(async () => el.querySelector<HTMLButtonElement>('.rb-split-close')!.click());
+    expect(store.getState().config!.views[0].companion).toBeUndefined();
+    expect(count(el, '.rb-split-pane')).toBe(0);
+  });
+
   it('kanban swimlanes: every row has every column; "New" in a cell pre-fills both values', async () => {
     const { el, show, ctx } = await renderBoard(TABLE, TABLE_ROWS);
     const created: unknown[] = [];

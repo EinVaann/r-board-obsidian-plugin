@@ -119,11 +119,21 @@ function SplitView({ config, view, companion }: { config: DatabaseConfig; view: 
       </div>
       <div className="rb-split-divider" onPointerDown={onDividerDown} role="separator" aria-label="Resize split view" />
       <div className="rb-split-pane rb-split-companion" style={{ flexBasis: `${size}%` }}>
-        <button className="rb-split-title" title="Open this view" onClick={() => setActiveView(companion.name)}>
-          <Icon name={TYPE_ICON[companion.type]} />
-          <span>{companion.name}</span>
-          {settings.followFilter && <span className="rb-split-follow">filtered by {view.name}</span>}
-        </button>
+        <div className="rb-split-bar">
+          <button className="rb-split-title" title="Open this view" onClick={() => setActiveView(companion.name)}>
+            <Icon name={TYPE_ICON[companion.type]} />
+            <span>{companion.name}</span>
+            {settings.followFilter && <span className="rb-split-follow">filtered by {view.name}</span>}
+          </button>
+          <button
+            className="rb-icon-btn rb-split-close"
+            aria-label="Close split view"
+            title="Close split view"
+            onClick={() => updateView(config.views.indexOf(view), (v) => void (v.companion = undefined))}
+          >
+            <Icon name="x" />
+          </button>
+        </div>
         <BoardContext.Provider value={companionCtx}>
           <ScrollBody>{settings.followFilter ? <FollowingBody config={config} view={companion} lead={view} /> : <Body config={config} view={companion} />}</ScrollBody>
         </BoardContext.Provider>
@@ -301,6 +311,28 @@ function Toolbar({ config, view }: { config: DatabaseConfig; view: ViewConfig | 
         actions.openViewSettings(index);
       }),
     );
+    const others = config.views.filter((v) => v.name !== name);
+    const current = config.views[index]?.companion?.view;
+    if (others.length) {
+      menu.addItem((i) => {
+        i.setTitle('Show beside').setIcon('columns-2');
+        // setSubmenu() exists at runtime (Obsidian 1.4+) but isn't in the bundled types.
+        const sub = (i as unknown as { setSubmenu: () => Menu }).setSubmenu();
+        for (const other of others) {
+          sub.addItem((si) => {
+            si.setTitle(other.name).setIcon(TYPE_ICON[other.type]);
+            if (other.name === current) si.setChecked(true);
+            si.onClick(() => {
+              setActiveView(name);
+              store.getState().updateView(index, (v) => {
+                v.companion = { view: other.name, position: v.companion?.position ?? 'right', size: v.companion?.size ?? 40, followFilter: v.companion?.followFilter ?? false };
+              });
+            });
+          });
+        }
+      });
+      if (current) menu.addItem((i) => i.setTitle('Close split view').setIcon('x').onClick(() => store.getState().updateView(index, (v) => void (v.companion = undefined))));
+    }
     menu.addItem((i) =>
       i.setTitle('Copy embed code').setIcon('code').onClick(() => {
         const code = `\`\`\`rboard\nfile: ${boardFile.path}\nview: ${name}\n\`\`\`\n`;
