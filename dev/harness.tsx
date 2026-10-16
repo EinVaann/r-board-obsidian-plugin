@@ -11,6 +11,7 @@ import { BoardApp } from '../src/board/BoardApp';
 import { setProperty } from '../src/data/properties';
 import { openBoardSettings, openFilterModal, openViewSettings } from '../src/settings/modals';
 import { openRecordEditor } from '../src/table/RecordEditor';
+import { DatabaseEmbed, parseEmbed } from '../src/embed/Embed';
 
 declare global {
   interface Window {
@@ -89,8 +90,37 @@ function fakeApp(onNotesChanged: () => void): App {
   } as unknown as App;
 }
 
+/** ?embed: a "note" with two embed blocks over the sample table, edited through a fake file. */
+async function embedMain(): Promise<void> {
+  let text = await (await fetch('./sample.table')).text();
+  const file = new TFile('R Sheet/Expenses.table');
+  const handlers: ((f: TFile) => void)[] = [];
+  const app = {
+    vault: {
+      read: async () => text,
+      modify: async (_f: TFile, t: string) => {
+        text = t;
+        window.__saved = t;
+        handlers.forEach((h) => h(file));
+      },
+      on: (name: string, fn: (f: TFile) => void) => (name === 'modify' && handlers.push(fn), {}),
+      getAbstractFileByPath: (p: string) => (p === file.path ? file : null),
+    },
+    metadataCache: { getFirstLinkpathDest: (p: string) => (p === file.path ? file : null), on: () => ({}) },
+    workspace: { on: () => ({}), offref: () => undefined, getLeaf: () => ({ openFile: (f: TFile) => console.info('[open]', f.path) }) },
+  } as unknown as App;
+  const root = document.getElementById('root')!;
+  root.style.cssText = 'height:auto;display:block;max-width:760px;margin:0 auto;padding:16px';
+  root.createEl('h2', { text: 'Monthly review' });
+  for (const block of ['file: R Sheet/Expenses.table\nchart: Where the money goes\nid: chshare\nheight: 260', 'file: R Sheet/Expenses.table\nview: Table\nheight: 300']) {
+    const el = root.createDiv();
+    new DatabaseEmbed(app, el, parseEmbed(block), 'Monthly review.md').onload();
+  }
+}
+
 async function main(): Promise<void> {
   const params = new URLSearchParams(location.search);
+  if (params.has('embed')) return embedMain();
   const kind = params.get('kind') === 'board' ? 'board' : 'table';
   if (params.has('mobile')) document.body.classList.add('is-mobile', 'is-phone');
 

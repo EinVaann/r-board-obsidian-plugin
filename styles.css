@@ -2080,3 +2080,30 @@ body:not(.is-phone) .rb-edit-modal {
 .rb-split-title:hover { color: var(--text-normal); background: var(--background-modifier-hover); }
 .rb-split-title svg { width: 14px; height: 14px; }
 .rb-split-follow { font-weight: 400; color: var(--text-faint); }
+
+/* ===================== Embeds (```rboard blocks in notes) ===================== */
+.rb-embed-root {
+  border: 1px solid var(--background-modifier-border);
+  border-radius: 10px;
+  overflow: hidden;
+  background: var(--background-primary);
+  margin: 4px 0;
+}
+.rb-embed-head {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 10px;
+  border-bottom: 1px solid var(--background-modifier-border);
+  background: var(--background-secondary);
+  font-size: 13px;
+}
+.rb-embed-head svg { width: 14px; height: 14px; color: var(--text-muted); }
+.rb-embed-name { font-weight: 600; }
+.rb-embed-view { color: var(--text-muted); }
+.rb-embed-open { margin-left: auto; }
+.rb-embed-body { max-height: 520px; overflow: auto; padding: 10px 12px; }
+.rb-embed-body.rb-embed-chart { max-height: none; overflow: visible; }
+/* A kanban inside a note grows with its cards instead of filling a pane. */
+.rb-embed-body .rb-kanban-wrap { height: auto; }
+.rb-embed-error { padding: 8px 12px; color: var(--text-error); font-size: 13px; }

@@ -1,5 +1,5 @@
 import { createRef, useEffect, useLayoutEffect, useMemo, useRef, useState, type MouseEvent as ReactMouseEvent, type ReactNode } from 'react';
-import { Menu, Platform } from 'obsidian';
+import { Menu, Notice, Platform } from 'obsidian';
 import type { DatabaseConfig, ViewConfig, ViewType } from '../types';
 import { effectiveSort, makeDefaultView, NO_SORT_KEY, propertyLabel, titleLabel, titlePropertyOf, TITLE_SORT_KEY } from '../config';
 import { countFilterRules } from '../data/filter';
@@ -268,7 +268,7 @@ function useFittingTabs(views: ViewConfig[], activeIndex: number) {
 }
 
 function Toolbar({ config, view }: { config: DatabaseConfig; view: ViewConfig | null }) {
-  const { actions, store } = useBoardContext();
+  const { actions, store, boardFile } = useBoardContext();
   const setActiveView = useBoard((s) => s.setActiveView);
   const search = useBoard((s) => s.search);
   const setSearch = useBoard((s) => s.setSearch);
@@ -299,6 +299,12 @@ function Toolbar({ config, view }: { config: DatabaseConfig; view: ViewConfig | 
       i.setTitle('View settings').setIcon('sliders-horizontal').onClick(() => {
         setActiveView(name);
         actions.openViewSettings(index);
+      }),
+    );
+    menu.addItem((i) =>
+      i.setTitle('Copy embed code').setIcon('code').onClick(() => {
+        const code = `\`\`\`rboard\nfile: ${boardFile.path}\nview: ${name}\n\`\`\`\n`;
+        void navigator.clipboard.writeText(code).then(() => new Notice('R Board: embed code copied — paste it into a note.'));
       }),
     );
     menu.addItem((i) => i.setTitle('Delete view').setIcon('trash').onClick(() => deleteView(name)));
@@ -491,7 +497,18 @@ function SortChip({ config, view, viewIndex }: { config: DatabaseConfig; view: V
 }
 
 /** The active view, or an empty state explaining why nothing shows. */
-export function Body({ config, view, restrictTo }: { config: DatabaseConfig; view: ViewConfig; restrictTo?: Set<string> }) {
+export function Body({
+  config,
+  view,
+  restrictTo,
+  chartHeight,
+}: {
+  config: DatabaseConfig;
+  view: ViewConfig;
+  /** Only show these item ids (a companion following another view). */
+  restrictTo?: Set<string>;
+  chartHeight?: number;
+}) {
   const viewed = useViewItems(config, view);
   const { all, properties, sort } = viewed;
   const items = useMemo(() => (restrictTo ? viewed.items.filter((i) => restrictTo.has(i.id)) : viewed.items), [viewed.items, restrictTo]);
@@ -506,7 +523,7 @@ export function Body({ config, view, restrictTo }: { config: DatabaseConfig; vie
     case 'kanban':
       return <KanbanView config={config} view={view} viewIndex={viewIndex} items={items} properties={properties} />;
     case 'chart':
-      return <ChartView chart={view.chart} properties={config.properties} items={items} detailProperties={properties} />;
+      return <ChartView chart={view.chart} properties={config.properties} items={items} detailProperties={properties} height={chartHeight} />;
     case 'table':
       return <TableView view={view} viewIndex={viewIndex} items={items} properties={properties} sort={sort} titleLabel={titleLabel(config)} titleProp={titlePropertyOf(config)} />;
     case 'recipe':

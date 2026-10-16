@@ -8,6 +8,7 @@ import { openWizard } from './src/settings/Wizard';
 import { parseRecipe } from './src/recipe/parse';
 import { Recipe } from './src/recipe/Recipe';
 import { ReactRenderChild } from './src/react/mount';
+import { DatabaseEmbed, parseEmbed } from './src/embed/Embed';
 
 interface RBoardData {
   /** Active view name chosen per database, keyed by the `.board` file path. */
@@ -28,6 +29,17 @@ export default class RBoardPlugin extends Plugin {
     } catch {
       // Another plugin (R Sheet) already handles .table files.
       new Notice('R Board: .table files are handled by another plugin (R Sheet?). Disable it to open tables in R Board.');
+    }
+
+    // Database views inside notes: ```rboard (and R Sheet's old ```table-chart).
+    for (const lang of ['rboard', 'table-chart']) {
+      try {
+        this.registerMarkdownCodeBlockProcessor(lang, (source, el, ctx) => {
+          ctx.addChild(new DatabaseEmbed(this.app, el, parseEmbed(source), ctx.sourcePath));
+        });
+      } catch {
+        // Another plugin (R Sheet) already handles this block.
+      }
     }
 
     // Interactive recipe blocks: ```recipe → portions-scaled ingredients/times.

@@ -1,10 +1,11 @@
 import { createRef } from 'react';
-import { Notice, TFile, TFolder, TextFileView, WorkspaceLeaf, debounce, normalizePath } from 'obsidian';
+import { Notice, TFile, TextFileView, WorkspaceLeaf, debounce } from 'obsidian';
 import type RBoardPlugin from '../main';
 import type { BoardItem, DatabaseConfig } from './types';
 import { parseDatabaseConfig, serializeDatabase } from './config';
 import { tagsForFile } from './data/query';
 import { setProperty } from './data/properties';
+import { createNoteFor } from './data/notes';
 import { parseTableFile, serializeTableFile } from './table/format';
 import { addRow, deleteRows, duplicateRow, setCell } from './table/rows';
 import { openRecordEditor } from './table/RecordEditor';
@@ -264,32 +265,8 @@ export class BoardView extends TextFileView {
     const config = this.store.getState().config;
     if (!config) return;
     if (config.kind === 'table') return this.addRow(values);
-    const folder = config.newNoteFolder?.trim();
-    if (!folder) {
-      new Notice('R Board: set a "New note location" in board settings to use this.');
-      openBoardSettings(this.app, this.ctx);
-      return;
-    }
-
-    try {
-      const dir = normalizePath(folder);
-      if (!(this.app.vault.getAbstractFileByPath(dir) instanceof TFolder)) {
-        await this.app.vault.createFolder(dir).catch(() => undefined);
-      }
-      let path = normalizePath(`${dir}/Untitled.md`);
-      let i = 1;
-      while (this.app.vault.getAbstractFileByPath(path)) {
-        path = normalizePath(`${dir}/Untitled ${i++}.md`);
-      }
-      const file = await this.app.vault.create(path, `---\ntags:\n  - ${config.sourceTag}\n---\n`);
-      // Starting values (e.g. the group it was added in) go through Obsidian's YAML writer.
-      if (values && Object.keys(values).length) {
-        await this.app.fileManager.processFrontMatter(file, (fm) => void Object.assign(fm, values));
-      }
-      // Open in a new tab so the board stays put.
-      await this.app.workspace.getLeaf('tab').openFile(file);
-    } catch (e) {
-      new Notice(`R Board: could not create note — ${(e as Error).message}`);
-    }
+    // Without a location, open settings so it can be set.
+    if (!config.newNoteFolder?.trim()) openBoardSettings(this.app, this.ctx);
+    await createNoteFor(this.app, config, values);
   }
 }
