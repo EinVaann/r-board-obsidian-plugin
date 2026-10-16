@@ -39,6 +39,9 @@ const RELATIVE = [
   { key: 'r8', label: 'Later', days: 31 },
 ];
 
+/** All relative-date group keys, in order (kanban shows every one as a column). */
+export const RELATIVE_KEYS = RELATIVE.map((r) => r.key);
+
 const startOfDay = (d: Date): Date => new Date(d.getFullYear(), d.getMonth(), d.getDate());
 
 /** The group of a date in a bucket. Keys sort chronologically as strings. */
@@ -69,10 +72,10 @@ export function bucketDate(d: Date, bucket: DateBucket, today = new Date()): Cat
 /** The group an item falls in for a property, or null (Uncategorized). A list groups by its first value. */
 function categoryOf(item: BoardItem, prop: PropertyConfig, bucket: DateBucket, today: Date): Category | null {
   const raw = item.values[prop.name];
+  // A checkbox is never empty: a missing value is unchecked.
+  if (prop.type === 'checkbox') return asBoolean(raw) ? { key: 'true', label: 'Checked' } : { key: 'false', label: 'Unchecked' };
   if (raw === undefined || raw === null || raw === '') return null;
   switch (prop.type) {
-    case 'checkbox':
-      return asBoolean(raw) ? { key: 'true', label: 'Checked' } : { key: 'false', label: 'Unchecked' };
     case 'select':
     case 'multi': {
       const first = asArray(raw)[0];

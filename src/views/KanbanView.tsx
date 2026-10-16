@@ -1,6 +1,6 @@
-import { memo, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type MouseEvent as ReactMouseEvent, type ReactNode } from 'react';
+import { memo, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type CSSProperties, type MouseEvent as ReactMouseEvent, type ReactNode } from 'react';
 import { createPortal } from 'react-dom';
-import { Menu, Notice, Platform } from 'obsidian';
+import { Menu, Platform } from 'obsidian';
 import {
   DndContext,
   DragOverlay,
@@ -14,17 +14,19 @@ import {
 } from '@dnd-kit/core';
 import { SortableContext, arrayMove, horizontalListSortingStrategy, useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
-import type { BoardItem, DatabaseConfig, PropertyConfig, ViewConfig } from '../types';
-import { collapseKey, groupItems, groupValueOf, type ItemGroup } from '../data/group';
+import type { BoardItem, DatabaseConfig, DateBucket, PropertyConfig, ViewConfig } from '../types';
+import { RELATIVE_KEYS, cellForGroup, cellsForGroup, collapseKey, groupItems, groupValueOf, type ItemGroup } from '../data/group';
 import { Card } from '../components/Card';
 import { GroupLabel, ViewMore, usePaged } from '../components/layout';
 import { useDragSensors } from '../components/dnd';
 import { useBoard, useBoardContext } from '../board/context';
 import { Icon } from '../react/Icon';
 
-/** Column id for the Uncategorized bucket (its group key is null). */
+/** Id part for the Uncategorized bucket (its group key is null). */
 const NONE = '\u0000uncategorized';
 const colId = (key: string | null): string => `col:${key ?? NONE}`;
+const cellId = (col: string | null, lane: string | null | undefined): string => `drop:${col ?? NONE}|${lane === undefined ? '' : lane ?? NONE}`;
+const laneKey = (key: string | null): string => `lane:${collapseKey(key)}`;
 
 /**
  * Drag and drop is desktop-only. On touch it competes with scrolling the board
@@ -35,6 +37,8 @@ const NO_SENSORS: never[] = [];
 
 /** Drag payloads, read back in the drop handler. */
 type DragData = { type: 'card'; item: BoardItem } | { type: 'column'; key: string | null };
+/** A drop target: a column (and, with swimlanes, a lane). `lane` undefined = no lanes. */
+type Target = { key: string | null; lane?: string | null };
 
 interface KanbanProps {
   config: DatabaseConfig;
@@ -44,70 +48,110 @@ interface KanbanProps {
   properties: PropertyConfig[];
 }
 
+/** Group options for a kanban axis: relative dates always show all nine buckets. */
+function axisOptions(view: ViewConfig, bucket: DateBucket | undefined, pinned?: string[]) {
+  return { order: pinned ?? (bucket === 'relative' ? RELATIVE_KEYS : undefined), groupConfig: pinned ? view.groupConfig : undefined, bucket };
+}
+
 /**
- * Kanban board: one column per distinct value of the view's group property,
- * plus Uncategorized for notes missing it. Cards drag between columns
- * (rewriting the group property); columns reorder by dragging their header; a
- * trailing "Add group" column creates a new empty column.
+ * Kanban board: one column per value of the view's group property (plus
+ * Uncategorized), optionally split into rows (swimlanes) by a sub-group
+ * property; every row has every column. Cards drag between cells, rewriting
+ * the group (and sub-group) values; columns reorder by dragging their header;
+ * each cell has a "New" button that pre-fills both values.
  */
 export function KanbanView({ config, view, viewIndex, items, properties }: KanbanProps) {
   const { actions } = useBoardContext();
   const updateView = useBoard((s) => s.updateView);
+  const toggleCollapsed = useBoard((s) => s.toggleCollapsed);
   const sensors = useDragSensors();
   const groupProp = view.group ? config.properties.find((p) => p.name === view.group) : undefined;
+  const subProp = view.subGroup && view.subGroup !== view.group ? config.properties.find((p) => p.name === view.subGroup) : undefined;
+  const bucket = view.groupBucket ?? 'none';
+  const subBucket = view.subGroupBucket ?? 'none';
 
-  // Moves applied optimistically until the metadata cache catches up, so a
-  // dropped card doesn't flash back to its old column while the note is written.
-  const [pending, setPending] = useState<Record<string, string | null>>({});
+  // Moves applied optimistically until the data catches up, so a dropped card
+  // doesn't flash back to its old cell while the note (or row) is written.
+  const [pending, setPending] = useState<Record<string, { values: Record<string, unknown>; target: Target }>>({});
   const shown = useMemo(() => {
-    if (!groupProp || Object.keys(pending).length === 0) return items;
-    return items.map((item) =>
-      item.id in pending
-        ? { ...item, values: { ...item.values, [groupProp.name]: pending[item.id] ?? undefined } }
-        : item,
-    );
-  }, [items, pending, groupProp]);
+    if (Object.keys(pending).length === 0) return items;
+    return items.map((item) => (item.id in pending ? { ...item, values: { ...item.values, ...pending[item.id].values } } : item));
+  }, [items, pending]);
 
   // Drop each pending move once the real data agrees with it.
   useEffect(() => {
     if (!groupProp) return;
-    const settled = items.filter(
-      (item) => item.id in pending && (groupValueOf(item, groupProp) ?? null) === pending[item.id],
-    );
+    const settled = items.filter((item) => {
+      const p = pending[item.id];
+      if (!p) return false;
+      const inCol = groupValueOf(item, groupProp, bucket) === p.target.key;
+      const inLane = !subProp || p.target.lane === undefined || groupValueOf(item, subProp, subBucket) === p.target.lane;
+      return inCol && inLane;
+    });
     if (settled.length === 0) return;
     setPending((p) => {
       const next = { ...p };
       for (const item of settled) delete next[item.id];
       return next;
     });
-  }, [items, pending, groupProp]);
+  }, [items, pending, groupProp, subProp, bucket, subBucket]);
 
   const columns = useMemo(
-    () => (groupProp ? groupItems(shown, groupProp, { order: view.columns, groupConfig: view.groupConfig }) : []),
-    [shown, groupProp, view.columns, view.groupConfig],
+    () => (groupProp ? groupItems(shown, groupProp, axisOptions(view, bucket, view.columns)) : []),
+    [shown, groupProp, view.columns, view.groupConfig, bucket], // eslint-disable-line react-hooks/exhaustive-deps
+  );
+  const lanes = useMemo(
+    () => (subProp ? groupItems(shown, subProp, axisOptions(view, subBucket)) : null),
+    [shown, subProp, subBucket], // eslint-disable-line react-hooks/exhaustive-deps
   );
   const realKeys = useMemo(() => columns.filter((c) => c.key !== null).map((c) => c.key as string), [columns]);
+  // Formula columns are computed: cards can't be moved into them.
+  const movable = !!groupProp && groupProp.type !== 'formula' && (!subProp || subProp.type !== 'formula');
 
   const [active, setActive] = useState<DragData | null>(null);
 
-  const moveCard = (item: BoardItem, target: string | null): void => {
-    if (!groupProp || (groupValueOf(item, groupProp) ?? null) === target) return;
+  const moveCard = (item: BoardItem, target: Target): void => {
+    if (!groupProp || !movable) return;
+    const values: Record<string, unknown> = {};
+    const writes: [PropertyConfig, unknown][] = [];
+    if (groupValueOf(item, groupProp, bucket) !== target.key) writes.push([groupProp, cellForGroup(groupProp, bucket, target.key)]);
+    if (subProp && target.lane !== undefined && groupValueOf(item, subProp, subBucket) !== target.lane) {
+      writes.push([subProp, cellForGroup(subProp, subBucket, target.lane)]);
+    }
+    if (writes.length === 0) return;
+    for (const [p, v] of writes) values[p.name] = v ?? undefined;
     const id = item.id;
-    setPending((p) => ({ ...p, [id]: target }));
-    actions.setValue(item, groupProp, target).catch(() => {
-      setPending((p) => {
-        const next = { ...p };
-        delete next[id];
-        return next;
-      });
-    });
+    setPending((p) => ({ ...p, [id]: { values, target } }));
+    void (async () => {
+      try {
+        for (const [p, v] of writes) await actions.setValue(item, p, (v ?? null) as never);
+      } catch {
+        setPending((p) => {
+          const next = { ...p };
+          delete next[id];
+          return next;
+        });
+      }
+    })();
+  };
+
+  /** New item in a cell: the column's (and lane's) values, copied formula inputs included. */
+  const addInto = (column: ItemGroup, lane?: ItemGroup): void => {
+    if (!groupProp) return;
+    const inCell = lane ? column.items.filter((i) => lane.items.includes(i)) : column.items;
+    const template = inCell[inCell.length - 1];
+    const values = {
+      ...cellsForGroup(groupProp, config.properties, bucket, column, template),
+      ...(lane && subProp ? cellsForGroup(subProp, config.properties, subBucket, lane, template) : {}),
+    };
+    actions.createNewNote(values);
   };
 
   // Stable callbacks for the memoized cards, reading the latest state at call time.
-  const latest = useRef({ moveCard, columns });
-  latest.current = { moveCard, columns };
-  const onMove = useCallback((item: BoardItem, target: string | null) => latest.current.moveCard(item, target), []);
-  const getTargets = useCallback(() => latest.current.columns, []);
+  const latest = useRef({ moveCard, columns, lanes });
+  latest.current = { moveCard, columns, lanes };
+  const onMove = useCallback((item: BoardItem, target: Target) => latest.current.moveCard(item, target), []);
+  const getTargets = useCallback(() => ({ columns: latest.current.columns, lanes: latest.current.lanes }), []);
 
   if (!groupProp) {
     return (
@@ -122,45 +166,102 @@ export function KanbanView({ config, view, viewIndex, items, properties }: Kanba
   const onDragEnd = ({ active: a, over }: DragEndEvent): void => {
     setActive(null);
     const data = a.data.current as DragData | undefined;
-    const target = over?.data.current as { key: string | null } | undefined;
+    const target = over?.data.current as Target | undefined;
     if (!data || !target) return;
     if (data.type === 'card') {
       const original = items.find((i) => i.id === data.item.id) ?? data.item;
-      moveCard(original, target.key);
+      moveCard(original, target);
     } else if (data.key !== null && target.key !== null && data.key !== target.key) {
       const order = arrayMove(realKeys, realKeys.indexOf(data.key), realKeys.indexOf(target.key));
-      updateView(viewIndex, (v) => {
-        v.columns = order;
-      });
+      updateView(viewIndex, (v) => void (v.columns = order));
     }
   };
 
-  // Cards land in whichever column the pointer is over; columns sort by center.
+  // Cards land in whichever cell the pointer is over; columns sort by center.
   const collision: CollisionDetection = (args) => {
     const kind = (args.active.data.current as DragData | undefined)?.type;
     const columnsOnly = args.droppableContainers.filter((c) => String(c.id).startsWith('col:'));
     if (kind === 'column') return closestCenter({ ...args, droppableContainers: columnsOnly });
-    const hits = pointerWithin({ ...args, droppableContainers: args.droppableContainers.filter((c) => String(c.id).startsWith('drop:')) });
-    return hits.length > 0 ? hits : pointerWithin({ ...args, droppableContainers: columnsOnly });
+    return pointerWithin({ ...args, droppableContainers: args.droppableContainers.filter((c) => String(c.id).startsWith('drop:')) });
   };
+
+  const collapsed = new Set(view.collapsed);
+  const shared = { view, properties, getTargets, groupProp, subProp, onMove, movable };
+  const header = (column: ItemGroup, handle: Record<string, unknown>) => (
+    <ColumnHeader
+      column={column}
+      collapsed={collapsed.has(collapseKey(column.key))}
+      onToggle={() => toggleCollapsed(viewIndex, collapseKey(column.key))}
+      handle={handle}
+    />
+  );
 
   return (
     <DndContext sensors={canDrag() ? sensors : NO_SENSORS} collisionDetection={collision} onDragStart={onDragStart} onDragEnd={onDragEnd} onDragCancel={() => setActive(null)}>
-      <TopScrollbar size={view.cardSize ?? 'medium'}>
-        <SortableContext items={columns.map((c) => colId(c.key))} strategy={horizontalListSortingStrategy}>
-          {columns.map((column) => (
-            <Column
-              key={colId(column.key)}
-              column={column}
-              view={view}
-              properties={properties}
-              getTargets={getTargets}
-              groupProp={groupProp}
-              onMove={onMove}
-            />
-          ))}
-        </SortableContext>
-        <AddGroup realKeys={realKeys} view={view} viewIndex={viewIndex} groupProp={groupProp} />
+      <TopScrollbar size={view.cardSize ?? 'medium'} lanes={!!lanes}>
+        {lanes ? (
+          <>
+            <div className="rb-lane-row rb-lane-head">
+              <SortableContext items={columns.map((c) => colId(c.key))} strategy={horizontalListSortingStrategy}>
+                {columns.map((column) => (
+                  <SortableHeader key={colId(column.key)} column={column} collapsed={collapsed.has(collapseKey(column.key))}>
+                    {(handle) => header(column, handle)}
+                  </SortableHeader>
+                ))}
+              </SortableContext>
+              <AddGroup realKeys={realKeys} view={view} viewIndex={viewIndex} groupProp={groupProp} />
+            </div>
+            {lanes.map((lane) => {
+              const laneCollapsed = collapsed.has(laneKey(lane.key));
+              return (
+                <div key={laneKey(lane.key)} className={laneCollapsed ? 'rb-lane rb-collapsed' : 'rb-lane'}>
+                  <div className="rb-lane-header" onClick={() => toggleCollapsed(viewIndex, laneKey(lane.key))}>
+                    <Icon name={laneCollapsed ? 'chevron-right' : 'chevron-down'} className="rb-kanban-caret" />
+                    <GroupLabel label={lane.label} color={lane.color} className="rb-kanban-title" />
+                    <span className="rb-kanban-count">{lane.items.length}</span>
+                  </div>
+                  {!laneCollapsed && (
+                    <div className="rb-lane-row">
+                      {columns.map((column) => (
+                        <Cell
+                          key={colId(column.key)}
+                          {...shared}
+                          column={column}
+                          lane={lane}
+                          items={column.items.filter((i) => lane.items.includes(i))}
+                          collapsed={collapsed.has(collapseKey(column.key))}
+                          onAdd={() => addInto(column, lane)}
+                        />
+                      ))}
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+          </>
+        ) : (
+          <>
+            <SortableContext items={columns.map((c) => colId(c.key))} strategy={horizontalListSortingStrategy}>
+              {columns.map((column) => (
+                <SortableHeader key={colId(column.key)} column={column} whole collapsed={collapsed.has(collapseKey(column.key))}>
+                  {(handle) => (
+                    <>
+                      {header(column, handle)}
+                      <Cell
+                        {...shared}
+                        column={column}
+                        items={column.items}
+                        collapsed={collapsed.has(collapseKey(column.key))}
+                        onAdd={() => addInto(column)}
+                      />
+                    </>
+                  )}
+                </SortableHeader>
+              ))}
+            </SortableContext>
+            <AddGroup realKeys={realKeys} view={view} viewIndex={viewIndex} groupProp={groupProp} />
+          </>
+        )}
       </TopScrollbar>
       <DragPreview active={active} view={view} properties={properties} />
     </DndContext>
@@ -172,7 +273,7 @@ export function KanbanView({ config, view, viewIndex, items, properties }: Kanba
  * in sync with the board's own (hidden) scrollbar. On mobile there's no top
  * bar: the board just scrolls under the finger.
  */
-function TopScrollbar({ size, children }: { size: string; children: ReactNode }) {
+function TopScrollbar({ size, lanes, children }: { size: string; lanes: boolean; children: ReactNode }) {
   const topRef = useRef<HTMLDivElement>(null);
   const innerRef = useRef<HTMLDivElement>(null);
   const boardRef = useRef<HTMLDivElement>(null);
@@ -223,72 +324,101 @@ function TopScrollbar({ size, children }: { size: string; children: ReactNode })
           <div ref={innerRef} className="rb-kanban-scrolltop-inner" />
         </div>
       )}
-      <div ref={boardRef} className={`rb-kanban rb-size-${size}`}>
+      <div ref={boardRef} className={`rb-kanban rb-size-${size}${lanes ? ' rb-kanban-lanes' : ''}`}>
         {children}
       </div>
     </div>
   );
 }
 
-interface ColumnProps {
+/** Column tint from its color (read by the kanban CSS). */
+const tint = (color: string | undefined): CSSProperties | undefined => (color ? ({ '--gc': color } as CSSProperties) : undefined);
+
+/**
+ * A sortable column shell. Without swimlanes (`whole`) it is the whole column
+ * (header + cards); with them, just the header in the top row.
+ */
+function SortableHeader({
+  column,
+  whole = false,
+  collapsed,
+  children,
+}: {
   column: ItemGroup;
-  view: ViewConfig;
-  properties: PropertyConfig[];
-  getTargets: () => ItemGroup[];
-  groupProp: PropertyConfig;
-  onMove: (item: BoardItem, target: string | null) => void;
-}
-
-function Column({ column, view, properties, getTargets, groupProp, onMove }: ColumnProps) {
-  const collapsed = !!view.collapsed?.includes(collapseKey(column.key));
-  const viewIndex = useBoard((s) => s.config?.views.indexOf(view) ?? -1);
-  const toggleCollapsed = useBoard((s) => s.toggleCollapsed);
-  const toggle = (): void => toggleCollapsed(viewIndex, collapseKey(column.key));
-  const { visible, more, remaining } = usePaged(`k:${column.label}`, column.items, view.limit ?? 50);
-
-  // The column itself is sortable (by its header); Uncategorized stays put.
+  whole?: boolean;
+  collapsed: boolean;
+  children: (handle: Record<string, unknown>) => ReactNode;
+}) {
+  // Uncategorized stays put.
   const draggable = canDrag() && column.key !== null;
-  const sortable = useSortable({
-    id: colId(column.key),
-    data: { type: 'column', key: column.key },
-    disabled: !draggable,
-  });
-  // Its card list is the drop target for cards.
-  const drop = useDroppable({ id: `drop:${column.key ?? NONE}`, data: { key: column.key } });
-  const draggingCard = drop.active?.data.current?.type === 'card';
-
-  const color = column.color;
-  const cls = ['rb-kanban-col'];
+  const sortable = useSortable({ id: colId(column.key), data: { type: 'column', key: column.key }, disabled: !draggable });
+  const cls = [whole ? 'rb-kanban-col' : 'rb-kanban-col rb-kanban-col-head'];
+  if (column.color) cls.push('rb-tinted');
   if (collapsed) cls.push('rb-collapsed');
   if (sortable.isDragging) cls.push('rb-col-dragging');
-
+  // Only the header drags the column; cards inside drag themselves.
+  const handle = draggable ? { ...sortable.attributes, ...sortable.listeners } : {};
   return (
     <div
       ref={sortable.setNodeRef}
       className={cls.join(' ')}
-      style={{ transform: CSS.Translate.toString(sortable.transform), transition: sortable.transition }}
+      style={{ ...tint(column.color), transform: CSS.Translate.toString(sortable.transform), transition: sortable.transition }}
     >
-      <div
-        className={draggable ? 'rb-kanban-header rb-draggable' : 'rb-kanban-header'}
-        onClick={toggle}
-        {...(draggable ? sortable.attributes : {})}
-        {...(draggable ? sortable.listeners : {})}
-      >
-        <Icon name={collapsed ? 'chevron-right' : 'chevron-down'} className="rb-kanban-caret" />
-        <GroupLabel label={column.label} color={color} className="rb-kanban-title" />
-        <span className="rb-kanban-count">{column.items.length}</span>
-      </div>
-      <div ref={drop.setNodeRef} className={`rb-kanban-list${draggingCard && drop.isOver ? ' rb-drop-active' : ''}`}>
-        {!collapsed && (
-          <>
-            {column.items.length === 0 && <div className="rb-kanban-empty-drop">{canDrag() ? 'Drop cards here' : 'No cards'}</div>}
-            {visible.map((item) => (
-              <KanbanCard key={item.id}item={item} view={view} properties={properties} getTargets={getTargets} groupProp={groupProp} onMove={onMove} />
-            ))}
-            <ViewMore more={more} remaining={remaining} />
-          </>
-        )}
-      </div>
+      {children(handle)}
+    </div>
+  );
+}
+
+function ColumnHeader({ column, collapsed, onToggle, handle }: { column: ItemGroup; collapsed: boolean; onToggle: () => void; handle: Record<string, unknown> }) {
+  return (
+    <div className={canDrag() && column.key !== null ? 'rb-kanban-header rb-draggable' : 'rb-kanban-header'} onClick={onToggle} {...handle}>
+      <Icon name={collapsed ? 'chevron-right' : 'chevron-down'} className="rb-kanban-caret" />
+      <GroupLabel label={column.label} color={column.color} className="rb-kanban-title" />
+      <span className="rb-kanban-count">{column.items.length}</span>
+    </div>
+  );
+}
+
+interface CellProps {
+  column: ItemGroup;
+  lane?: ItemGroup;
+  items: BoardItem[];
+  collapsed: boolean;
+  view: ViewConfig;
+  properties: PropertyConfig[];
+  getTargets: () => { columns: ItemGroup[]; lanes: ItemGroup[] | null };
+  groupProp: PropertyConfig;
+  subProp?: PropertyConfig;
+  movable: boolean;
+  onMove: (item: BoardItem, target: Target) => void;
+  onAdd: () => void;
+}
+
+/** The cards of one column (in one lane): a drop target with paging and a "New" button. */
+function Cell({ column, lane, items, collapsed, view, properties, getTargets, groupProp, subProp, movable, onMove, onAdd }: CellProps) {
+  const pageKey = `k:${collapseKey(column.key)}|${lane ? collapseKey(lane.key) : ''}`;
+  const { visible, more, remaining } = usePaged(pageKey, items, view.limit ?? 50);
+  const target: Target = lane ? { key: column.key, lane: lane.key } : { key: column.key };
+  const drop = useDroppable({ id: cellId(column.key, lane ? lane.key : undefined), data: target, disabled: !movable });
+  const draggingCard = drop.active?.data.current?.type === 'card';
+  const inLane = !!lane;
+
+  if (collapsed) return inLane ? <div className="rb-kanban-cell rb-collapsed" /> : null;
+  return (
+    <div
+      ref={drop.setNodeRef}
+      className={`${inLane ? 'rb-kanban-cell ' : ''}rb-kanban-list${column.color ? ' rb-tinted' : ''}${draggingCard && drop.isOver ? ' rb-drop-active' : ''}`}
+      style={inLane ? tint(column.color) : undefined}
+    >
+      {items.length === 0 && !inLane && <div className="rb-kanban-empty-drop">{canDrag() && movable ? 'Drop cards here' : 'No cards'}</div>}
+      {visible.map((item) => (
+        <KanbanCard key={item.id} item={item} view={view} properties={properties} getTargets={getTargets} groupProp={groupProp} subProp={subProp} movable={movable} onMove={onMove} />
+      ))}
+      <ViewMore more={more} remaining={remaining} />
+      <button className="rb-kanban-new" onClick={onAdd}>
+        <Icon name="plus" />
+        <span>New</span>
+      </button>
     </div>
   );
 }
@@ -297,41 +427,45 @@ interface KanbanCardProps {
   item: BoardItem;
   view: ViewConfig;
   properties: PropertyConfig[];
-  getTargets: () => ItemGroup[];
+  getTargets: () => { columns: ItemGroup[]; lanes: ItemGroup[] | null };
   groupProp: PropertyConfig;
-  onMove: (item: BoardItem, target: string | null) => void;
+  subProp?: PropertyConfig;
+  movable: boolean;
+  onMove: (item: BoardItem, target: Target) => void;
 }
 
-const KanbanCard = memo(function KanbanCard({ item, view, properties, getTargets, groupProp, onMove }: KanbanCardProps) {
+const KanbanCard = memo(function KanbanCard({ item, view, properties, getTargets, groupProp, subProp, movable, onMove }: KanbanCardProps) {
   const { actions } = useBoardContext();
-  const drag = canDrag();
-  const { attributes, listeners, setNodeRef, isDragging } = useDraggable({
-    id: item.id,
-    data: { type: 'card', item },
-    disabled: !drag,
-  });
+  const drag = canDrag() && movable;
+  const { attributes, listeners, setNodeRef, isDragging } = useDraggable({ id: item.id, data: { type: 'card', item }, disabled: !drag });
 
   const openMenu = (e: ReactMouseEvent): void => {
     e.preventDefault();
     e.stopPropagation();
-    const current = groupValueOf(item, groupProp);
+    const { columns, lanes } = getTargets();
+    const col = groupValueOf(item, groupProp, view.groupBucket);
+    const lane = subProp ? groupValueOf(item, subProp, view.subGroupBucket) : undefined;
     const menu = new Menu();
-    menu.addItem((it) => {
-      it.setTitle('Move to group').setIcon('arrow-right-circle');
-      // setSubmenu() exists at runtime (Obsidian 1.4+) but isn't in the bundled types.
-      const sub = (it as unknown as { setSubmenu: () => Menu }).setSubmenu();
-      for (const t of getTargets()) {
-        sub.addItem((si) => {
-          si.setTitle(t.label);
-          if ((t.key ?? null) === (current ?? null)) si.setChecked(true);
-          si.onClick(() => onMove(item, t.key));
-        });
-      }
-    });
-    if (item.file) {
-      menu.addSeparator();
-      menu.addItem((it) => it.setTitle('Open note').setIcon('file-text').onClick(() => actions.openNote(item, true)));
+    const submenu = (title: string, icon: string, targets: ItemGroup[], current: string | null | undefined, to: (key: string | null) => Target): void => {
+      menu.addItem((it) => {
+        it.setTitle(title).setIcon(icon);
+        // setSubmenu() exists at runtime (Obsidian 1.4+) but isn't in the bundled types.
+        const sub = (it as unknown as { setSubmenu: () => Menu }).setSubmenu();
+        for (const t of targets) {
+          sub.addItem((si) => {
+            si.setTitle(t.label);
+            if (t.key === current) si.setChecked(true);
+            si.onClick(() => onMove(item, to(t.key)));
+          });
+        }
+      });
+    };
+    if (movable) {
+      submenu('Move to group', 'arrow-right-circle', columns, col, (key) => (lanes ? { key, lane } : { key }));
+      if (lanes) submenu('Move to row', 'arrow-down-circle', lanes, lane, (l) => ({ key: col, lane: l }));
     }
+    menu.addItem((it) => it.setTitle(item.file ? 'Edit note' : 'Expand row').setIcon('pencil').onClick(() => actions.editItem(item)));
+    if (item.file) menu.addItem((it) => it.setTitle('Open note').setIcon('file-text').onClick(() => actions.openNote(item, true)));
     menu.showAtMouseEvent(e.nativeEvent);
   };
 
@@ -358,7 +492,7 @@ const KanbanCard = memo(function KanbanCard({ item, view, properties, getTargets
   );
 });
 
-/** The card / column following the pointer while dragging (portaled out of the scroll area). */
+/** The card following the pointer while dragging (portaled out of the scroll area). */
 function DragPreview({ active, view, properties }: { active: DragData | null; view: ViewConfig; properties: PropertyConfig[] }) {
   const { scrollRef } = useBoardContext();
   const doc = scrollRef.current?.ownerDocument ?? document;
@@ -380,6 +514,8 @@ function AddGroup({ realKeys, view, viewIndex, groupProp }: { realKeys: string[]
   const updateConfig = useBoard((s) => s.updateConfig);
   const [adding, setAdding] = useState(false);
   const done = useRef(false);
+  // Computed or bucketed columns can't be added by name.
+  if (groupProp.type === 'formula' || groupProp.type === 'checkbox' || (groupProp.type === 'date' && view.groupBucket)) return null;
 
   const finish = (save: boolean, value: string): void => {
     if (done.current) return;
@@ -397,9 +533,7 @@ function AddGroup({ realKeys, view, viewIndex, groupProp }: { realKeys: string[]
     }
     const cols = view.columns ? [...view.columns] : [...realKeys];
     if (!cols.includes(name)) cols.push(name);
-    updateView(viewIndex, (v) => {
-      v.columns = cols;
-    });
+    updateView(viewIndex, (v) => void (v.columns = cols));
   };
 
   return (

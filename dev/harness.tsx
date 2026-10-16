@@ -22,8 +22,8 @@ declare global {
 
 // An in-memory "vault" of game notes for the board harness.
 const NOTES: Record<string, Record<string, unknown>> = {
-  'Games/Hades.md': { tags: ['backlog'], status: 'playing', score: 9, genre: ['roguelike', 'action'], released: '2020-09-17' },
-  'Games/Celeste.md': { tags: ['backlog'], status: 'to-play', score: 8.5, genre: ['platformer'], released: '2018-01-25' },
+  'Games/Hades.md': { tags: ['backlog'], status: 'playing', score: 9, genre: ['roguelike', 'action'], released: '2020-09-17', owned: true },
+  'Games/Celeste.md': { tags: ['backlog'], status: 'to-play', score: 8.5, genre: ['platformer'], released: '2018-01-25', owned: true },
   'Games/Outer Wilds.md': { tags: ['backlog'], status: 'completed', score: 10, genre: ['exploration'], released: '2019-05-28' },
   'Games/Hollow Knight.md': { tags: ['backlog'], status: 'playing', score: 9.5, genre: ['metroidvania', 'action'] },
   'Games/Stardew Valley.md': { tags: ['backlog'], status: 'on-hold', score: 7, genre: ['farming'] },
@@ -41,13 +41,16 @@ const BACKLOG = {
     { name: 'genre', label: 'Genre', type: 'multi', render: 'pills' },
     { name: 'released', label: 'Released', type: 'date', render: 'relative' },
     { name: 'age', label: 'Age', type: 'formula', formula: 'dateDiff(today(), {Released}, "years")', suffix: ' yrs' },
+    { name: 'owned', label: 'Owned', type: 'checkbox' },
   ],
   views: [
     { name: 'Board', type: 'kanban', group: 'status', sort: { property: 'score', dir: 'desc' }, cardSize: 'small' },
+    { name: 'Lanes', type: 'kanban', group: 'status', subGroup: 'owned', cardSize: 'small', properties: ['score'] },
+    { name: 'By year', type: 'kanban', group: 'released', groupBucket: 'year', cardSize: 'small', properties: ['status'] },
     { name: 'Table', type: 'table', limit: 50 },
     { name: 'Gallery', type: 'gallery', limit: 50, group: 'status' },
   ],
-  defaultView: 'Table',
+  defaultView: 'Lanes',
 };
 
 function fakeApp(onNotesChanged: () => void): App {

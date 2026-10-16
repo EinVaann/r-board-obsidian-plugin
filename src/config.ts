@@ -210,6 +210,8 @@ function parseView(raw: unknown, index: number): ViewConfig | null {
     layout: v.layout === 'grid' ? 'grid' : v.layout === 'masonry' ? 'masonry' : undefined,
     paging: v.paging === 'pages' ? 'pages' : undefined,
     groupBucket: DATE_BUCKETS.has(v.groupBucket as DateBucket) && v.groupBucket !== 'none' ? (v.groupBucket as DateBucket) : undefined,
+    subGroup: typeof v.subGroup === 'string' && v.subGroup.trim() !== '' ? v.subGroup : undefined,
+    subGroupBucket: DATE_BUCKETS.has(v.subGroupBucket as DateBucket) && v.subGroupBucket !== 'none' ? (v.subGroupBucket as DateBucket) : undefined,
     collapsed: Array.isArray(v.collapsed) && v.collapsed.length
       ? [...new Set(v.collapsed.filter((c): c is string => typeof c === 'string'))]
       : undefined,
@@ -317,6 +319,8 @@ export function serializeViews(views: ViewConfig[]): Record<string, unknown>[] {
     if (v.layout) view.layout = v.layout;
     if (v.paging === 'pages') view.paging = v.paging;
     if (v.groupBucket && v.groupBucket !== 'none') view.groupBucket = v.groupBucket;
+    if (v.subGroup) view.subGroup = v.subGroup;
+    if (v.subGroup && v.subGroupBucket && v.subGroupBucket !== 'none') view.subGroupBucket = v.subGroupBucket;
     if (v.collapsed && v.collapsed.length) view.collapsed = v.collapsed;
     if (v.widths && Object.keys(v.widths).length) view.widths = v.widths;
     if (v.type === 'chart' && v.chart) view.chart = v.chart;

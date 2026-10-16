@@ -201,6 +201,10 @@ export interface ViewConfig {
   paging?: PagingMode;
   /** How a date group property is bucketed (defaults to one group per value). */
   groupBucket?: DateBucket;
+  /** Kanban: split the board into rows (swimlanes) by another property. */
+  subGroup?: string;
+  /** How a date sub-group property is bucketed. */
+  subGroupBucket?: DateBucket;
   /** Group labels currently collapsed (saved with the view). */
   collapsed?: string[];
   /** Table column widths by property name. */

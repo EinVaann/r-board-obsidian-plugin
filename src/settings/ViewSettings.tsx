@@ -1,7 +1,7 @@
 import { useCallback, useMemo, useState } from 'react';
 import { debounce } from 'obsidian';
 import { arrayMove } from '@dnd-kit/sortable';
-import type { CardSize, DatabaseConfig, DateBucket, GalleryLayout, GroupColumnConfig, LoadLimit, PagingMode, SortDir, ViewConfig, ViewType } from '../types';
+import type { CardSize, DatabaseConfig, DateBucket, GalleryLayout, GroupColumnConfig, LoadLimit, PagingMode, PropertyConfig, SortDir, ViewConfig, ViewType } from '../types';
 import { NO_SORT_KEY, propertyLabel, TITLE_SORT_KEY } from '../config';
 import { countFilterRules } from '../data/filter';
 import { useBoard, useBoardContext } from '../board/context';
@@ -40,10 +40,14 @@ interface TabProps {
 function General({ config, view, viewIndex, edit, onDelete }: TabProps & { viewIndex: number; onDelete: () => void }) {
   const { actions } = useBoardContext();
   const sort = view.sort ?? { property: TITLE_SORT_KEY, dir: 'asc' as const };
-  // Kanban columns come from text or select properties (a card sits in exactly one column).
-  const groupProps = view.type === 'kanban' ? config.properties.filter((p) => p.type === 'text' || p.type === 'select') : config.properties;
+  // Kanban columns need one value per card (lists can't be columns).
+  const groupProps =
+    view.type === 'kanban'
+      ? config.properties.filter((p) => ['text', 'select', 'date', 'checkbox', 'number', 'formula'].includes(p.type))
+      : config.properties;
   const filters = countFilterRules(view.filter);
   const groupProp = view.group ? config.properties.find((p) => p.name === view.group) : undefined;
+  const subProp = view.subGroup ? config.properties.find((p) => p.name === view.subGroup) : undefined;
 
   return (
     <>
@@ -109,39 +113,41 @@ function General({ config, view, viewIndex, edit, onDelete }: TabProps & { viewI
           onChange={(v) => edit((d) => void (d.sort = { property: sort.property, dir: v }))}
         />
       </SettingRow>
-      <SettingRow name="Group by" desc={view.type === 'kanban' ? 'Required: a text or select property defines the columns.' : 'Optional: section headers.'}>
+      <SettingRow name={view.type === 'kanban' ? 'Columns' : 'Group by'} desc={view.type === 'kanban' ? 'Required: the property whose values are the columns.' : 'Optional: section headers.'}>
         <Select
           value={view.group ?? ''}
           options={[
-            { value: '', label: view.type === 'kanban' ? '(choose a text or select property)' : 'None' },
+            { value: '', label: view.type === 'kanban' ? '(choose a property)' : 'None' },
             ...groupProps.map((p) => ({ value: p.name, label: propertyLabel(p) })),
           ]}
           onChange={(v) =>
             edit((d) => {
               d.group = v || undefined;
-              // Collapsed keys and date buckets belong to the old property.
+              // Collapsed keys, pinned columns and date buckets belong to the old property.
               d.collapsed = undefined;
               d.groupBucket = undefined;
+              if (d.subGroup === d.group) d.subGroup = undefined;
             })
           }
         />
       </SettingRow>
-      {groupProp && (groupProp.type === 'date' || groupProp.type === 'formula') && (
-        <SettingRow name="Date groups" desc="How dates are grouped. Relative: Today, Tomorrow, Next 7 days, …">
-          <Select<DateBucket>
-            value={view.groupBucket ?? 'none'}
-            options={[
-              { value: 'none', label: groupProp.type === 'date' ? 'Exact date' : 'As computed' },
-              { value: 'relative', label: 'Relative to today' },
-              { value: 'day', label: 'Day' },
-              { value: 'week', label: 'Week' },
-              { value: 'month', label: 'Month' },
-              { value: 'quarter', label: 'Quarter' },
-              { value: 'year', label: 'Year' },
-            ]}
-            onChange={(v) => edit((d) => void (d.groupBucket = v === 'none' ? undefined : v))}
+      {groupProp && <BucketRow prop={groupProp} value={view.groupBucket} onChange={(b) => edit((d) => void ((d.groupBucket = b), (d.collapsed = undefined)))} />}
+      {view.type === 'kanban' && (
+        <SettingRow name="Rows" desc="Optional: split the board into swimlanes by another property. Every row has every column.">
+          <Select
+            value={view.subGroup ?? ''}
+            options={[{ value: '', label: 'None' }, ...groupProps.filter((p) => p.name !== view.group).map((p) => ({ value: p.name, label: propertyLabel(p) }))]}
+            onChange={(v) =>
+              edit((d) => {
+                d.subGroup = v || undefined;
+                d.subGroupBucket = undefined;
+              })
+            }
           />
         </SettingRow>
+      )}
+      {view.type === 'kanban' && subProp && (
+        <BucketRow prop={subProp} value={view.subGroupBucket} onChange={(b) => edit((d) => void (d.subGroupBucket = b))} />
       )}
       <SettingRow name="Filters" desc={`${filters} active`}>
         <button onClick={() => actions.openFilter(viewIndex)}>Edit filters…</button>
@@ -152,6 +158,28 @@ function General({ config, view, viewIndex, edit, onDelete }: TabProps & { viewI
         </button>
       </SettingRow>
     </>
+  );
+}
+
+/** How a date (or date formula) group property is bucketed. */
+function BucketRow({ prop, value, onChange }: { prop: PropertyConfig; value?: DateBucket; onChange: (bucket: DateBucket | undefined) => void }) {
+  if (prop.type !== 'date' && prop.type !== 'formula') return null;
+  return (
+    <SettingRow name={`Group ${propertyLabel(prop)} by`} desc="Relative: Older, Last 7 days, Yesterday, Today, Tomorrow, Next 7 days, …">
+      <Select<DateBucket>
+        value={value ?? 'none'}
+        options={[
+          { value: 'none', label: prop.type === 'date' ? 'Exact date' : 'As computed' },
+          { value: 'relative', label: 'Relative to today' },
+          { value: 'day', label: 'Day' },
+          { value: 'week', label: 'Week' },
+          { value: 'month', label: 'Month' },
+          { value: 'quarter', label: 'Quarter' },
+          { value: 'year', label: 'Year' },
+        ]}
+        onChange={(v) => onChange(v === 'none' ? undefined : v)}
+      />
+    </SettingRow>
   );
 }
 

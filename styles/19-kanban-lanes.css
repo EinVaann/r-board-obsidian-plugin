@@ -1,0 +1,67 @@
+/* ===================== Kanban: tints, "New" buttons, swimlanes ===================== */
+/* Columns take their option / custom color as a light tint. */
+.rb-kanban-col.rb-tinted { background: color-mix(in srgb, var(--gc) 9%, var(--background-secondary-alt)); }
+
+/* "New" at the bottom of each column / cell (pre-fills the column and row values). */
+.rb-kanban-new {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  width: 100%;
+  height: auto;
+  padding: 6px 8px;
+  background: transparent;
+  box-shadow: none;
+  border-radius: 6px;
+  color: var(--text-faint);
+  font-size: 12px;
+  cursor: pointer;
+  justify-content: flex-start;
+}
+.rb-kanban-new:hover { background: var(--background-modifier-hover); color: var(--text-normal); }
+.rb-kanban-new svg { width: 13px; height: 13px; }
+
+/* Swimlanes: the board scrolls both ways; a header row of columns, then one row per lane. */
+.rb-kanban.rb-kanban-lanes {
+  flex-direction: column;
+  align-items: stretch;
+  gap: 0;
+  overflow-y: auto;
+}
+.rb-lane-row {
+  display: flex;
+  gap: 14px;
+  align-items: stretch;
+  min-width: max-content;
+}
+.rb-lane-head {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  background: var(--background-primary);
+  padding-bottom: 6px;
+}
+.rb-kanban-col-head { max-height: none; }
+.rb-lane { min-width: max-content; padding-bottom: 10px; }
+.rb-lane-header {
+  position: sticky;
+  left: 0;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 4px;
+  cursor: pointer;
+  user-select: none;
+}
+.rb-lane-header .rb-kanban-count { margin-left: 4px; }
+.rb-kanban-cell {
+  box-sizing: border-box;
+  flex: 0 0 var(--rb-col-w);
+  background: var(--background-secondary-alt);
+  border-radius: 10px;
+  padding-top: 10px;
+  overflow: visible;
+  min-height: 60px;
+}
+.rb-kanban-cell.rb-tinted { background: color-mix(in srgb, var(--gc) 9%, var(--background-secondary-alt)); }
+.rb-kanban-cell.rb-collapsed { flex-basis: 200px; min-height: 0; background: transparent; }

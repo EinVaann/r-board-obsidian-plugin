@@ -124,6 +124,7 @@ const TABLE: DatabaseConfig = {
   views: [
     { name: 'Rows', type: 'table', limit: 'none', sort: { property: '$none', dir: 'asc' } },
     { name: 'Lanes', type: 'kanban', group: 'kind' },
+    { name: 'Swim', type: 'kanban', group: 'kind', subGroup: 'qty' },
   ],
 };
 const TABLE_ROWS: TableRow[] = [
@@ -671,5 +672,21 @@ describe('tables', () => {
     const titles = [...el.querySelectorAll('.rb-kanban-title')].map((t) => t.textContent);
     expect(titles).toEqual(['Food', 'Fuel', 'Uncategorized']);
     expect((el.querySelector('.rb-kanban-title') as HTMLElement).style.getPropertyValue('--gc')).toBe('#ff0000');
+  });
+
+  it('kanban swimlanes: every row has every column; "New" in a cell pre-fills both values', async () => {
+    const { el, show, ctx } = await renderBoard(TABLE, TABLE_ROWS);
+    const created: unknown[] = [];
+    ctx.actions.createNewNote = (values) => void created.push(values);
+    await show('Swim');
+    const lanes = [...el.querySelectorAll('.rb-lane-header .rb-kanban-title')].map((t) => t.textContent);
+    expect(lanes).toEqual(['1', '3', 'Uncategorized']);
+    const heads = [...el.querySelectorAll('.rb-lane-head .rb-kanban-title')].map((t) => t.textContent);
+    expect(heads).toEqual(['Food', 'Fuel', 'Uncategorized']);
+    expect(count(el, '.rb-kanban-cell')).toBe(9);
+    // Row "3", column "Fuel": the empty cell between Apples (Food, 3) and nothing.
+    const cell = el.querySelectorAll('.rb-lane')[1].querySelectorAll('.rb-kanban-cell')[1];
+    await act(async () => cell.querySelector<HTMLButtonElement>('.rb-kanban-new')!.click());
+    expect(created).toEqual([{ kind: 'k2', qty: 3 }]);
   });
 });
