@@ -30,7 +30,6 @@ import { useBoard, useBoardContext } from '../board/context';
 import { useDragSensors } from '../components/dnd';
 import { PROPERTY_TYPE_ICON } from '../settings/PropertyEditor';
 import { Icon } from '../react/Icon';
-import { HScrollbar } from '../components/HScrollbar';
 
 interface TableProps {
   view: ViewConfig;
@@ -644,7 +643,6 @@ function Grid({
   };
 
   return (
-    <>
     <div className="rb-table-wrap rb-grid" ref={wrapRef} tabIndex={0} onKeyDown={onKeyDown}>
       <div ref={listRef}>
         {/* The drag context wraps the table: it adds a screen-reader <div>, which can't live in <thead>. */}
@@ -711,8 +709,6 @@ function Grid({
         <ViewMore more={growing.more} remaining={growing.remaining} />
       )}
     </div>
-    <HScrollbar target={wrapRef} />
-    </>
   );
 }
 
