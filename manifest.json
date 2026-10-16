@@ -1,7 +1,7 @@
 {
   "id": "r-board",
   "name": "R Board",
-  "version": "0.6.3",
+  "version": "0.6.4",
   "minAppVersion": "1.4.0",
   "description": "Databases over your notes (.board) or rows stored in the file (.table): Kanban, Gallery, Table and Chart views with formulas, filters and grouping.",
   "author": "EinVaann",
