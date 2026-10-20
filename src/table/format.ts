@@ -97,6 +97,7 @@ export function serializeTableFile({ config, rows }: TableFile): string {
   if (config.name) head.name = config.name;
   if (config.titleProperty) head.titleProperty = config.titleProperty;
   if (config.defaultView) head.defaultView = config.defaultView;
+  if (config.quickAdd) head.quickAdd = config.quickAdd;
   const lines = Object.entries(head).map(([k, v]) => `  ${JSON.stringify(k)}: ${JSON.stringify(v)}`);
   const block = (key: string, items: unknown[]): string =>
     items.length ? `  "${key}": [\n${items.map((i) => `    ${JSON.stringify(i)}`).join(',\n')}\n  ]` : `  "${key}": []`;

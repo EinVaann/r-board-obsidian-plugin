@@ -16,6 +16,7 @@ import type {
   LoadLimit,
   NumberFormat,
   PropertyConfig,
+  QuickAddConfig,
   SelectOption,
   SortSpec,
   ViewConfig,
@@ -280,7 +281,7 @@ export function parseDatabaseConfig(raw: string): ParseResult {
 }
 
 /** The parts shared by `.board` and `.table` files: name, properties, views. */
-export function parseSchema(obj: Record<string, unknown>): Pick<DatabaseConfig, 'name' | 'properties' | 'views' | 'defaultView'> {
+export function parseSchema(obj: Record<string, unknown>): Pick<DatabaseConfig, 'name' | 'properties' | 'views' | 'defaultView' | 'quickAdd'> {
   const properties: PropertyConfig[] = Array.isArray(obj.properties)
     ? obj.properties.map(parseProperty).filter((p): p is PropertyConfig => p !== null)
     : [];
@@ -295,7 +296,16 @@ export function parseSchema(obj: Record<string, unknown>): Pick<DatabaseConfig, 
       ? obj.defaultView
       : views[0]?.name;
 
-  return { name: typeof obj.name === 'string' ? obj.name : undefined, properties, views, defaultView };
+  return { name: typeof obj.name === 'string' ? obj.name : undefined, properties, views, defaultView, quickAdd: parseQuickAdd(obj.quickAdd) };
+}
+
+/** A file's quick-add settings; undefined when absent or without an id. */
+export function parseQuickAdd(raw: unknown): QuickAddConfig | undefined {
+  if (!raw || typeof raw !== 'object') return undefined;
+  const q = raw as Record<string, unknown>;
+  if (typeof q.id !== 'string' || !q.id) return undefined;
+  const properties = Array.isArray(q.properties) ? q.properties.filter((p): p is string => typeof p === 'string') : [];
+  return { id: q.id, properties, openNote: q.openNote === true || undefined };
 }
 
 /** The label shown for a property (explicit label, else the frontmatter key). */
@@ -322,6 +332,7 @@ export function serializeDatabase(config: DatabaseConfig): string {
   out.views = serializeViews(config.views);
   if (config.defaultView) out.defaultView = config.defaultView;
   if (config.newNoteFolder) out.newNoteFolder = config.newNoteFolder;
+  if (config.quickAdd) out.quickAdd = config.quickAdd;
   return JSON.stringify(out, null, 2);
 }
 

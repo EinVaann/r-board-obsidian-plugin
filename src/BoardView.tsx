@@ -44,6 +44,7 @@ export class BoardView extends TextFileView {
       saveConfig: (config) => {
         this.data = config.kind === 'table' ? serializeTableFile({ config, rows: this.store.getState().rows }) : serializeDatabase(config);
         this.requestSave();
+        if (this.file) this.plugin.quickAdds.sync(this.file, config);
       },
       saveRows: (rows) => {
         const config = this.store.getState().config;
@@ -144,11 +145,28 @@ export class BoardView extends TextFileView {
       if (result.migrated) new Notice(`R Board: ${this.file?.basename} is an R Sheet table. It will be saved in R Board's format on the first edit.`);
       this.store.getState().loadRows(result.table.rows);
       this.store.getState().loadConfig(result.table.config, null, saved);
+      if (this.file) this.plugin.quickAdds.sync(this.file, result.table.config);
       return;
     }
     const result = parseDatabaseConfig(data);
     if (result.ok) this.store.getState().loadConfig(result.config, null, saved);
     else this.store.getState().loadConfig(null, data.trim() === '' || data.trim() === '{}' ? null : result.error);
+    if (this.file && result.ok) this.plugin.quickAdds.sync(this.file, result.config);
+  }
+
+  /** The database config as currently shown (unsaved edits included). */
+  currentConfig(): DatabaseConfig | null {
+    return this.store.getState().config;
+  }
+
+  /** Edit the config through the store (saved, and shown live). */
+  updateConfig(recipe: (draft: DatabaseConfig) => void): void {
+    this.store.getState().updateConfig(recipe);
+  }
+
+  /** Tables: append a row through the store, so this pane's next save keeps it. */
+  appendRow(cells: Record<string, unknown>): void {
+    this.store.getState().updateRows((rows) => void addRow(rows, cells));
   }
 
   clear(): void {

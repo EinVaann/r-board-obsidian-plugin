@@ -2,8 +2,9 @@ import { useBoard } from '../board/context';
 import { propertyLabel } from '../config';
 import { PropertyEditor } from './PropertyEditor';
 import { Select, SettingRow, SettingsTabs, TextInput } from './controls';
+import { QuickAddSettings } from './QuickAddSettings';
 
-/** Board settings modal content: General (name, tag, folder — or a table's title column) and Properties. */
+/** Board settings modal content: General (name, tag, folder — or a table's title column), Properties and Quick add. */
 export function BoardSettings() {
   const config = useBoard((s) => s.config);
   const updateConfig = useBoard((s) => s.updateConfig);
@@ -68,6 +69,7 @@ export function BoardSettings() {
       tabs={[
         { id: 'general', label: 'General', icon: 'settings', content: general },
         { id: 'properties', label: table ? 'Columns' : 'Properties', icon: 'list', content: properties },
+        { id: 'quick-add', label: 'Quick add', icon: 'zap', content: <QuickAddSettings /> },
       ]}
     />
   );

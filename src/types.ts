@@ -284,6 +284,18 @@ export interface DatabaseConfig {
   kind?: DatabaseKind;
   /** Tables: the property shown as each row's title. */
   titleProperty?: string;
+  /** Quick add: a command (and optional hotkey) that adds a record from a small form. */
+  quickAdd?: QuickAddConfig;
+}
+
+/** A database's quick-add command. */
+export interface QuickAddConfig {
+  /** Stable id: the command is `r-board:quick-add-<id>`, so hotkeys survive renames. */
+  id: string;
+  /** Properties the form asks for, besides the title, in this order. */
+  properties: string[];
+  /** Boards: open the new note after adding it. */
+  openNote?: boolean;
 }
 
 /** A row stored in a `.table` file. Cells are keyed by property name. */

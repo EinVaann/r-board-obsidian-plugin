@@ -9,6 +9,7 @@ import { parseRecipe } from './src/recipe/parse';
 import { Recipe } from './src/recipe/Recipe';
 import { ReactRenderChild } from './src/react/mount';
 import { DatabaseEmbed, parseEmbed } from './src/embed/Embed';
+import { QuickAddCommands } from './src/quickadd/QuickAdd';
 
 interface RBoardData {
   /** Active view name chosen per database, keyed by the `.board` file path. */
@@ -17,9 +18,17 @@ interface RBoardData {
 
 export default class RBoardPlugin extends Plugin {
   private data: RBoardData = {};
+  /** One "Quick add to …" command per database that has quick add set up. */
+  readonly quickAdds = new QuickAddCommands(this);
 
   async onload(): Promise<void> {
     this.data = ((await this.loadData()) as RBoardData) ?? {};
+
+    this.app.workspace.onLayoutReady(() => void this.quickAdds.scan());
+    this.registerEvent(this.app.vault.on('rename', (file, oldPath) => {
+      if (file instanceof TFile) void this.quickAdds.rename(oldPath, file);
+    }));
+    this.registerEvent(this.app.vault.on('delete', (file) => this.quickAdds.deleted(file.path)));
 
     this.registerView(BOARD_VIEW_TYPE, (leaf) => new BoardView(leaf, this));
     this.registerView(HOME_VIEW_TYPE, (leaf) => new BoardHomeView(leaf, this));

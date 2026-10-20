@@ -1,0 +1,95 @@
+/* Quick add: settings tab + form */
+.rb-quick-add-warning {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: 8px 0;
+  padding: 8px 10px;
+  border-radius: var(--radius-s);
+  background: rgba(var(--color-orange-rgb), 0.12);
+  color: var(--text-normal);
+  font-size: var(--font-ui-small);
+}
+.rb-quick-add-warning svg { width: 14px; height: 14px; color: var(--color-orange); flex-shrink: 0; }
+.rb-hotkey { font-family: var(--font-monospace); min-width: 110px; }
+.rb-quick-add-modal .setting-item-name { display: flex; align-items: center; gap: 6px; }
+
+/* Label left, one column of equal-width controls right; switches stay right-aligned. */
+.rb-quick-add .setting-item-control { flex: 0 1 340px; justify-content: flex-end; }
+.rb-quick-add .setting-item-control > input:not([type='checkbox']),
+.rb-quick-add .setting-item-control > select { width: 100%; }
+.rb-qa-choices { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; width: 100%; }
+.rb-quick-add .rb-qa-choices input.rb-qa-new { flex: 1 1 120px; width: auto; min-width: 120px; }
+
+/* Select / multi dropdown */
+.rb-qa-dropdown { position: relative; width: 100%; }
+.rb-qa-select {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px;
+  min-height: var(--input-height);
+  padding: 3px 28px 3px 8px;
+  position: relative;
+  border: var(--input-border-width) solid var(--background-modifier-border);
+  border-radius: var(--input-radius);
+  background: var(--background-modifier-form-field);
+  cursor: pointer;
+  box-sizing: border-box;
+}
+.rb-qa-select:hover { border-color: var(--background-modifier-border-hover); }
+.rb-qa-select:focus-visible, .rb-qa-select.is-open { outline: none; box-shadow: 0 0 0 2px var(--background-modifier-border-focus); }
+.rb-qa-placeholder { color: var(--text-faint); font-size: var(--font-ui-small); }
+.rb-qa-caret { position: absolute; right: 8px; top: 50%; transform: translateY(-50%); color: var(--text-muted); display: inline-flex; }
+.rb-qa-caret svg { width: 14px; height: 14px; }
+.rb-qa-chip { display: inline-flex; align-items: center; gap: 2px; padding-right: 4px; }
+.rb-qa-menu {
+  position: absolute;
+  z-index: var(--layer-popover);
+  left: 0;
+  right: 0;
+  top: calc(100% + 4px);
+  min-width: 200px;
+  padding: 6px;
+  border: 1px solid var(--background-modifier-border);
+  border-radius: var(--radius-m);
+  background: var(--background-secondary);
+  box-shadow: var(--shadow-l);
+}
+.rb-quick-add .rb-qa-menu input.rb-qa-search { width: 100%; margin-bottom: 4px; }
+.rb-qa-options { max-height: 220px; overflow-y: auto; }
+.rb-qa-option { display: flex; align-items: center; gap: 6px; padding: 4px 6px; border-radius: var(--radius-s); cursor: pointer; }
+.rb-qa-option.is-active { background: var(--background-modifier-hover); }
+.rb-qa-check { width: 14px; display: inline-flex; color: var(--text-accent); }
+.rb-qa-check svg { width: 14px; height: 14px; }
+.rb-qa-create { color: var(--text-muted); font-size: var(--font-ui-small); }
+.rb-qa-empty { padding: 6px; color: var(--text-faint); font-size: var(--font-ui-small); }
+
+.rb-qa-browse { display: inline-flex; align-items: center; padding: 4px 8px; }
+.rb-qa-browse svg { width: 16px; height: 16px; }
+.rb-qa-link { display: inline-flex; align-items: center; gap: 4px; color: var(--text-accent); }
+.rb-qa-thumb { width: 22px; height: 22px; object-fit: cover; border-radius: 4px; margin-left: -6px; }
+/* A bare ✕ in the pill's own color: beats Obsidian's default button look. */
+.rb-quick-add .rb-qa-choices button.rb-qa-remove,
+.rb-quick-add .rb-qa-select button.rb-qa-remove {
+  display: inline-flex;
+  align-items: center;
+  margin: 0 0 0 2px;
+  padding: 1px;
+  height: auto;
+  width: auto;
+  border: none;
+  border-radius: 50%;
+  background: none;
+  box-shadow: none;
+  color: inherit;
+  opacity: 0.6;
+  cursor: pointer;
+}
+.rb-quick-add .rb-qa-choices button.rb-qa-remove:hover,
+.rb-quick-add .rb-qa-select button.rb-qa-remove:hover {
+  opacity: 1;
+  background: color-mix(in srgb, currentColor 18%, transparent);
+}
+.rb-qa-remove svg { width: 12px; height: 12px; }
+.rb-qa-suggest-path { font-size: var(--font-ui-smaller); color: var(--text-muted); }
