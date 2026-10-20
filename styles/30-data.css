@@ -1,0 +1,91 @@
+/* ===================== .factory Data tab ===================== */
+.rb-dx { flex: 1; min-height: 0; display: flex; flex-direction: column; font-size: 13px; }
+.rb-dx-pane { flex: 1; min-height: 0; display: flex; flex-direction: column; }
+.rb-dx-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 12px;
+  padding: 8px 12px;
+  border-bottom: 1px solid var(--background-modifier-border);
+}
+.rb-dx-search { flex: 0 1 280px; }
+.rb-dx-count { margin-left: auto; color: var(--text-muted); font-size: 12px; }
+.rb-dx-hint { color: var(--text-muted); font-size: 12px; }
+.rb-dx-warn { color: var(--color-orange); display: inline-flex; align-items: center; gap: 6px; }
+.rb-dx-toggle { display: inline-flex; align-items: center; gap: 6px; color: var(--text-muted); cursor: pointer; }
+.rb-dx-empty { padding: 32px 16px; text-align: center; color: var(--text-muted); }
+.rb-dx-scroll { flex: 1; min-height: 0; overflow: auto; padding: 0 12px 24px; }
+
+.rb-dx-table { width: 100%; border-collapse: collapse; }
+.rb-dx-table th {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  background: var(--background-primary);
+  text-align: left;
+  font-weight: 600;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--text-muted);
+  padding: 8px 6px 6px;
+  border-bottom: 1px solid var(--background-modifier-border);
+}
+.rb-dx-table td { padding: 4px 6px; border-bottom: 1px solid var(--background-modifier-border-hover, var(--background-modifier-border)); vertical-align: middle; }
+.rb-dx-table td input[type="text"], .rb-dx-table td input:not([type]) { width: 100%; min-width: 90px; }
+.rb-dx-table .rb-dx-num { text-align: right; width: 80px; }
+.rb-dx-table td.rb-dx-num input { width: 70px; text-align: right; }
+.rb-dx-table tr.is-unused td { opacity: 0.55; }
+.rb-dx-table tr.is-flagged td:first-child { box-shadow: inset 3px 0 0 var(--color-orange); }
+.rb-dx-table select.is-missing { color: var(--color-orange); border-color: var(--color-orange); }
+
+/* Item chips in recipes */
+.rb-dx-chips { display: flex; flex-wrap: wrap; align-items: center; gap: 4px; min-width: 160px; }
+.rb-dx-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 8px;
+  border-radius: 12px;
+  background: var(--background-secondary);
+  border: 1px solid var(--background-modifier-border);
+  font-size: 12px;
+  white-space: nowrap;
+  cursor: pointer;
+}
+.rb-dx-chip:hover { border-color: var(--interactive-accent); }
+.rb-dx-chip b { font-variant-numeric: tabular-nums; }
+.rb-dx-chip.is-main { border-color: color-mix(in srgb, var(--color-green) 60%, var(--background-modifier-border)); }
+.rb-dx-chip.is-editing { padding: 1px 4px; cursor: default; border-color: var(--interactive-accent); }
+.rb-dx input.rb-dx-qty { width: 54px; height: 24px; text-align: right; padding: 0 4px; }
+.rb-dx input.rb-dx-item { width: 150px; height: 24px; padding: 0 6px; }
+.rb-dx .rb-dx-add,
+.rb-dx .rb-dx-icon {
+  width: 24px;
+  height: 24px;
+  padding: 0;
+  border-radius: 12px;
+  background: none;
+  box-shadow: none;
+  border: 1px dashed var(--background-modifier-border);
+  color: var(--text-muted);
+  cursor: pointer;
+  line-height: 1;
+}
+.rb-dx .rb-dx-icon { border: none; border-radius: 4px; }
+.rb-dx .rb-dx-add:hover, .rb-dx .rb-dx-icon:hover { color: var(--text-normal); border-color: var(--interactive-accent); background: var(--background-modifier-hover); }
+
+/* Transport types */
+.rb-dx-types { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 12px; padding-top: 12px; align-content: start; }
+.rb-dx-type { border: 1px solid var(--background-modifier-border); border-radius: 8px; padding: 8px 10px; }
+.rb-dx-type-head { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; }
+.rb-dx-type-head input { font-weight: 600; flex: 1; min-width: 0; }
+.rb-dx-tier { display: flex; align-items: center; gap: 6px; padding: 2px 0; }
+.rb-dx-tier input[type="text"] { flex: 1; min-width: 0; }
+.rb-dx-tier input[type="number"] { width: 72px; text-align: right; }
+
+.rb-dx-dialog label { display: flex; flex-direction: column; gap: 4px; margin-bottom: 10px; font-size: 13px; color: var(--text-muted); }
+.rb-dx-badge { color: var(--color-orange); }
+.rb-fg-lane.is-missing { color: var(--color-orange); }
+.rb-pl-link { cursor: pointer; margin-left: 4px; }

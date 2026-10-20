@@ -1,5 +1,5 @@
 /** Dev harness: the real R Board UI in a browser, with a fake `obsidian` and an in-memory vault. */
-import { createRef } from 'react';
+import { createRef, useState } from 'react';
 import { TFile, type App } from 'obsidian';
 import { mountReact } from '../src/react/mount';
 import { parseDatabaseConfig, serializeDatabase } from '../src/config';
@@ -12,6 +12,11 @@ import { setProperty } from '../src/data/properties';
 import { openBoardSettings, openFilterModal, openViewSettings } from '../src/settings/modals';
 import { openRecordEditor } from '../src/table/RecordEditor';
 import { DatabaseEmbed, parseEmbed } from '../src/embed/Embed';
+import { parseFactory } from '../src/factory/parse';
+import { Factory } from '../src/factory/Factory';
+import { FactoryWorkspace } from '../src/factory/Workspace';
+import { newPlan, serializeFactoryDoc, type FactoryDoc } from '../src/factory/plan';
+import { parseData } from '../src/factory/book';
 
 declare global {
   interface Window {
@@ -118,9 +123,67 @@ async function embedMain(): Promise<void> {
   }
 }
 
+/** ?factory: a "note" with ```factory blocks over a sample recipe table, plus an inline recycling loop. */
+async function factoryMain(): Promise<void> {
+  const text = await (await fetch('./factory.table')).text();
+  const file = new TFile('Games/Satisfactory.table');
+  const app = {
+    vault: {
+      read: async () => text,
+      on: () => ({}),
+      offref: () => undefined,
+      getAbstractFileByPath: (p: string) => (p === file.path ? file : null),
+    },
+    metadataCache: { getFirstLinkpathDest: (p: string) => (p === 'Satisfactory' || p === 'Satisfactory.table' ? file : null) },
+    workspace: { on: () => ({}), offref: () => undefined },
+  } as unknown as App;
+  const root = document.getElementById('root')!;
+  root.style.cssText = 'height:auto;display:block;max-width:820px;margin:0 auto;padding:16px';
+  const blocks: [string, string][] = [
+    ['Reinforced plates (alternatives)', 'recipes: [[Satisfactory]]\nmake: 5 Reinforced Iron Plate/min'],
+    ['Recycling loop (input mode)', 'make: Plate\ninput: 20 Ore\nrecipe: Press | Press | 2 | 2 Ore | 1 Plate, 1 Scrap\nrecipe: Recycler | Recycler | 4 | 2 Scrap | 1 Ore'],
+  ];
+  for (const [title, block] of blocks) {
+    root.createEl('h3', { text: title });
+    const el = root.createDiv();
+    mountReact(app, el, <Factory spec={parseFactory(block)} sourcePath="Games/Factory.md" />);
+  }
+}
+
+/** ?planner: a `.factory` file (Planner + Data tabs) built from the sample tables; edits land in window.__saved. */
+async function plannerMain(): Promise<void> {
+  const json = async (name: string): Promise<unknown> => JSON.parse(await (await fetch(`./${name}.table`)).text());
+  // The sample tables are in R Board's table format: parseData converts them.
+  const data = parseData({ recipes: await json('factory'), items: await json('factory-items'), transport: await json('factory-transport') });
+  const file = new TFile('Games/Satisfactory.factory');
+  const app = fakeApp(() => undefined);
+  const root = document.getElementById('root')!;
+  root.classList.add('rb-root', 'rb-planner-root');
+  root.style.cssText = 'height:100vh;display:block';
+  function Host() {
+    const [doc, setDoc] = useState<FactoryDoc>({
+      data,
+      plans: [{ ...newPlan('Iron line'), outputs: [{ item: 'Reinforced Iron Plate', rate: 5 }] }, { ...newPlan('Ore budget'), priority: 'input', outputs: [{ item: 'Iron Plate', rate: 2 }, { item: 'Iron Rod', rate: 1 }], inputs: [{ item: 'Iron Ore', mode: 'max', qty: 120 }] }],
+      active: 0,
+    });
+    return (
+      <FactoryWorkspace
+        doc={doc}
+        onChange={(next) => {
+          window.__saved = serializeFactoryDoc(next);
+          setDoc(next);
+        }}
+      />
+    );
+  }
+  mountReact(app, root, <Host />);
+}
+
 async function main(): Promise<void> {
   const params = new URLSearchParams(location.search);
+  if (params.has('planner')) return plannerMain();
   if (params.has('embed')) return embedMain();
+  if (params.has('factory')) return factoryMain();
   const kind = params.get('kind') === 'board' ? 'board' : 'table';
   if (params.has('mobile')) document.body.classList.add('is-mobile', 'is-phone');
 

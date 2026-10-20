@@ -9,13 +9,20 @@ import { fileURLToPath } from "url";
 const root = path.dirname(fileURLToPath(import.meta.url));
 const stylesDir = path.join(root, "styles");
 const outFile = path.join(root, "styles.css");
+// React Flow's structural CSS (the factory graph). Theme colors live in styles/29-flow.css.
+const VENDOR = ["node_modules/@xyflow/react/dist/base.css"];
 
 export async function buildCss() {
   const entries = (await fs.readdir(stylesDir))
     .filter((f) => f.endsWith(".css"))
     .sort((a, b) => a.localeCompare(b, "en", { numeric: true }));
 
+  // Library styles first, so the partials can override them.
   const parts = [];
+  for (const file of VENDOR) {
+    parts.push(`/* ===================== ${file} (vendored) ===================== */
+` + (await fs.readFile(path.join(root, file), "utf8")));
+  }
   for (const file of entries) {
     parts.push(await fs.readFile(path.join(stylesDir, file), "utf8"));
   }

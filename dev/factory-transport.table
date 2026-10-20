@@ -1,0 +1,19 @@
+{
+  "version": 1,
+  "kind": "table",
+  "name": "Transport",
+  "titleProperty": "name",
+  "properties": [
+    {"name":"name","label":"Name","type":"text"},
+    {"name":"type","label":"Type","type":"select","options":[{"value":"belt","label":"Belt"},{"value":"pipe","label":"Pipe"}]},
+    {"name":"rate","label":"Rate","type":"number","suffix":" /min"}
+  ],
+  "views": [{"name":"Table","type":"table","limit":"none"}],
+  "rows": [
+    {"id":"t1","cells":{"name":"Belt Mk1","type":"belt","rate":60}},
+    {"id":"t2","cells":{"name":"Belt Mk2","type":"belt","rate":120}},
+    {"id":"t3","cells":{"name":"Belt Mk3","type":"belt","rate":270}},
+    {"id":"t4","cells":{"name":"Pipe Mk1","type":"pipe","rate":300}},
+    {"id":"t5","cells":{"name":"Pipe Mk2","type":"pipe","rate":600}}
+  ]
+}

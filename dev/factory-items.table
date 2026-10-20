@@ -1,0 +1,14 @@
+{
+  "version": 1,
+  "kind": "table",
+  "name": "Items",
+  "titleProperty": "item",
+  "properties": [
+    {"name":"item","label":"Item","type":"text"},
+    {"name":"transport","label":"Transport","type":"select","options":[{"value":"belt","label":"Belt"},{"value":"pipe","label":"Pipe"}]}
+  ],
+  "views": [{"name":"Table","type":"table","limit":"none"}],
+  "rows": [
+    {"id":"i1","cells":{"item":"Water","transport":"pipe"}}
+  ]
+}

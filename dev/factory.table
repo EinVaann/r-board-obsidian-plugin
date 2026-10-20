@@ -1,0 +1,26 @@
+{
+  "version": 1,
+  "kind": "table",
+  "name": "Satisfactory",
+  "titleProperty": "recipe",
+  "defaultView": "Table",
+  "properties": [
+    {"name":"recipe","label":"Recipe","type":"text"},
+    {"name":"machine","label":"Machine","type":"select","options":[{"value":"smelter","label":"Smelter"},{"value":"constructor","label":"Constructor"},{"value":"assembler","label":"Assembler"},{"value":"refinery","label":"Refinery"}]},
+    {"name":"time","label":"Time","type":"number","suffix":" s"},
+    {"name":"inputs","label":"Inputs","type":"text"},
+    {"name":"outputs","label":"Outputs","type":"text"}
+  ],
+  "views": [
+    {"name":"Table","type":"table","limit":"none"}
+  ],
+  "rows": [
+    {"id":"r1","cells":{"recipe":"Iron Ingot","machine":"smelter","time":2,"inputs":"1 Iron Ore","outputs":"1 Iron Ingot"}},
+    {"id":"r2","cells":{"recipe":"Pure Iron Ingot","machine":"refinery","time":12,"inputs":"7 Iron Ore, 4 Water","outputs":"13 Iron Ingot"}},
+    {"id":"r3","cells":{"recipe":"Iron Plate","machine":"constructor","time":6,"inputs":"3 Iron Ingot","outputs":"2 Iron Plate"}},
+    {"id":"r4","cells":{"recipe":"Iron Rod","machine":"constructor","time":4,"inputs":"1 Iron Ingot","outputs":"1 Iron Rod"}},
+    {"id":"r5","cells":{"recipe":"Screw","machine":"constructor","time":6,"inputs":"1 Iron Rod","outputs":"4 Screw"}},
+    {"id":"r6","cells":{"recipe":"Cast Screw","machine":"constructor","time":24,"inputs":"5 Iron Ingot","outputs":"20 Screw"}},
+    {"id":"r7","cells":{"recipe":"Reinforced Iron Plate","machine":"assembler","time":12,"inputs":"6 Iron Plate, 12 Screw","outputs":"1 Reinforced Iron Plate"}}
+  ]
+}

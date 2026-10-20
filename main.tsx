@@ -10,6 +10,10 @@ import { Recipe } from './src/recipe/Recipe';
 import { ReactRenderChild } from './src/react/mount';
 import { DatabaseEmbed, parseEmbed } from './src/embed/Embed';
 import { QuickAddCommands } from './src/quickadd/QuickAdd';
+import { parseFactory } from './src/factory/parse';
+import { Factory } from './src/factory/Factory';
+import { FACTORY_VIEW_TYPE, FactoryPlanView } from './src/factory/PlannerView';
+import { FACTORY_EXTENSION, newFactoryDoc, serializeFactoryDoc } from './src/factory/plan';
 
 interface RBoardData {
   /** Active view name chosen per database, keyed by the `.board` file path. */
@@ -32,6 +36,8 @@ export default class RBoardPlugin extends Plugin {
 
     this.registerView(BOARD_VIEW_TYPE, (leaf) => new BoardView(leaf, this));
     this.registerView(HOME_VIEW_TYPE, (leaf) => new BoardHomeView(leaf, this));
+    this.registerView(FACTORY_VIEW_TYPE, (leaf) => new FactoryPlanView(leaf));
+    this.registerExtensions([FACTORY_EXTENSION], FACTORY_VIEW_TYPE);
     this.registerExtensions([BOARD_EXTENSION], BOARD_VIEW_TYPE);
     try {
       this.registerExtensions([TABLE_EXTENSION], BOARD_VIEW_TYPE);
@@ -56,6 +62,11 @@ export default class RBoardPlugin extends Plugin {
       ctx.addChild(new ReactRenderChild(this.app, el, <Recipe recipe={parseRecipe(source)} />));
     });
 
+    // Factory planner blocks: ```factory → recipes solved into production graphs.
+    this.registerMarkdownCodeBlockProcessor('factory', (source, el, ctx) => {
+      ctx.addChild(new ReactRenderChild(this.app, el, <Factory spec={parseFactory(source)} sourcePath={ctx.sourcePath} />));
+    });
+
     this.addRibbonIcon('circuit-board', 'R Board', () => void this.openHome());
 
     this.addCommand({
@@ -72,6 +83,11 @@ export default class RBoardPlugin extends Plugin {
       id: 'create-table',
       name: 'Create new table',
       callback: () => void this.createTable(),
+    });
+    this.addCommand({
+      id: 'create-factory',
+      name: 'Create new factory plan',
+      callback: () => void this.createFactory(),
     });
 
     // File-explorer right-click → "New board" (in the folder, or a file's folder).
@@ -93,6 +109,13 @@ export default class RBoardPlugin extends Plugin {
             .setIcon('table')
             .setSection('action')
             .onClick(() => void this.createTable(folder.path)),
+        );
+        menu.addItem((item) =>
+          item
+            .setTitle('New factory plan')
+            .setIcon('factory')
+            .setSection('action')
+            .onClick(() => void this.createFactory(folder.path)),
         );
       }),
     );
@@ -139,6 +162,11 @@ export default class RBoardPlugin extends Plugin {
   /** Create an empty `.table` (Name + Notes columns) and open it. */
   async createTable(folderPath?: string): Promise<void> {
     await this.createFile('New Table', TABLE_EXTENSION, serializeTableFile(newTableFile()), folderPath);
+  }
+
+  /** Create an empty `.factory` plan and open it. */
+  async createFactory(folderPath?: string): Promise<void> {
+    await this.createFile('New Factory', FACTORY_EXTENSION, serializeFactoryDoc(newFactoryDoc()), folderPath);
   }
 
   /** Open a `.board` file as a board view. */

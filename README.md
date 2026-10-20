@@ -4,7 +4,7 @@ A native Obsidian plugin that turns your notes into **databases** with multiple 
 
 It also has **tables**: `.table` files whose rows live in the file itself, edited in a spreadsheet grid, with formulas and charts — the same views and settings as boards. (Tables replace the separate R Sheet plugin; its `.table` files open directly.)
 
-It also renders **interactive content blocks** inside notes — starting with [**Recipes**](#recipes), where ingredient amounts and cooking times scale with a portions stepper.
+It also renders **interactive content blocks** inside notes — starting with [**Recipes**](#recipes), where ingredient amounts and cooking times scale with a portions stepper, and the [**Factory planner**](#factory-planner), which solves recipe chains (with byproducts, loops and alternative recipes) into production graphs.
 
 ## Concepts
 
@@ -188,6 +188,66 @@ Overlapping conditions resolve by specificity (exact beats range beats bound bea
 
 **Full grammar, resolution rules, and error handling:** [`docs/recipe-tokens.md`](docs/recipe-tokens.md).
 
+## Factory planner
+
+A ` ```factory ` block turns a list of recipes into a **production graph**: how many of each machine you need, what raw inputs go in, and what is left over. Recipes live in a `.table` (edit them in the grid) and/or in the block itself.
+
+**The recipe table** — one row per recipe, with these columns (matched by label, case-insensitive):
+
+| Column | Example | Notes |
+| --- | --- | --- |
+| Recipe | `Pure Iron Ingot` | the recipe's name (falls back to the title column) |
+| Machine | `Refinery` | text or select |
+| Time | `12`, `12s`, `1.5 min` | seconds per craft; a bare number is seconds |
+| Inputs | `7 Iron Ore, 4 Water` | `3x Plate`, `Screw x4` and `+` also work |
+| Outputs | `13 Iron Ingot` | the **first** output is the main product; the rest are byproducts |
+
+**The block:**
+
+````markdown
+```factory
+recipes: [[Satisfactory]]          # a .table file
+make: 5 Reinforced Iron Plate/min  # what to make, and how fast
+```
+````
+
+| Setting | Meaning |
+| --- | --- |
+| `make: 60 Iron Plate` | the product and its output rate. Add `/sec`, `/min` or `/hour`, or use `per:` (default `min`) |
+| `input: 120 Iron Ore` | **input mode**: with `make: Iron Plate` (no rate), make as much as this input allows |
+| `recipe: name \| machine \| time \| inputs \| outputs` | a recipe written in the block (repeatable) |
+| `raw: Water, Iron Ingot` | treat these as bought / mined, even if a recipe makes them |
+| `use: Pure Iron Ingot` | always use this recipe for its product |
+| `avoid: Cast Screw` | never use this recipe |
+| `speed: Smelter = 2, Assembler = 1.5` | machine speed multipliers (default 1) |
+| `cost: Water = 0` | weight of a raw input when ranking plans (default 1 per item) |
+| `height: 400` | graph height in pixels |
+
+The rate is also editable right in the card. Edits to the recipe table re-solve live.
+
+- **Alternatives** — when an item has more than one recipe, each combination becomes a **plan** (tabs above the graph), best first: fewest raw inputs, then fewest machines. Pin choices with `use:` / `avoid:`.
+- **Byproducts and loops** — the planner balances every item, so byproducts are used wherever the chain needs them, and recycling loops (scrap → recycler → ore → press) are solved exactly: `20 Ore` in makes `13.33 Plate`, not 10. Byproducts nothing uses are listed as **surplus**. Loop edges are drawn dashed.
+- **Raw inputs** — items no recipe makes, items listed in `raw:`, and items made only by recycling recipes (fed purely by byproducts). An item that is only ever a byproduct (water) is taken in too when the plan can't balance without it.
+- **Machines** — shown exact and rounded up (`1.5 → 2 × Constructor`). Hover a machine for its per-period inputs and outputs.
+
+### Planner (`.factory` files)
+
+**Create new factory plan** (command, or right-click a folder → *New factory plan*) makes a `.factory` file. It opens in its own tab with two parts:
+
+- **Data** — stored inside the file, in three tabs:
+  - **Recipes**: name, machine, time, and inputs / outputs as item chips (click to edit, + to add; the first output is the main product). Every item you type is registered in Items.
+  - **Items**: every item the recipes use, each with a **transport type**. Items without one are flagged ⚠ (tab badge, "only missing" filter, "set all to…"); pick **New transport type…** to create one from here. Renaming an item renames it in every recipe.
+  - **Transport**: types (Belt, Pipe…) with tiers and a rate per lane per minute.
+- **Planner** — one tab per saved plan (**+** adds one; click the active tab or right-click to rename, duplicate or delete). The graph (drag nodes, scroll to zoom) has **Output**, **Input** and **Recipes** tabs beside it:
+  - **Priority** (header): *Output* delivers the output rates and ignores input limits; *Input* makes as much as the input limits allow, outputs in the ratio of their numbers; *Both* applies every rule.
+  - **Output**: items to make (rate, or max), and byproducts that must be used up.
+  - **Input**: filled from the plan; each input can be ∞, ≤ n or = n. A rule the plan no longer uses stays, dimmed.
+  - **Recipes**: one picker per item with alternatives (Auto tries every combination; each becomes a plan tab).
+  - **Click a machine** → *Bring X in instead* / *Use recipe: …*; **an input** → *Craft instead*; **surplus** → *Must be used up*.
+  - **Transport**: arrows show lanes needed (`Iron Ore 258 · 3× Belt Mk2`). Pick the default tier per type in the header, or click an arrow's label to change that connection. Arrows needing more than one lane, or carrying an item with no transport type, turn orange.
+
+A block can read a `.factory` file's data: `recipes: [[Satisfactory.factory]]` (plus `tier: Belt Mk2`).
+
 ## Development
 
 ```bash
@@ -203,7 +263,7 @@ The UI is React 19. `src/BoardView.tsx` is the Obsidian side (file, vault events
 
 `npm run dev` bundles React's development build (slower, with extra checks); judge performance with `npm run build`.
 
-CSS lives as numbered partials under `styles/` and is concatenated into `styles.css` by `build-css.mjs`. The recipe token parser/resolver (`src/recipe/token.ts`) is pure and covered by tests; `src/test/board.smoke.test.tsx` renders every view and settings tab against a mock vault (`src/test/obsidian-mock.ts`) under happy-dom.
+CSS lives as numbered partials under `styles/` and is concatenated into `styles.css` by `build-css.mjs`. The recipe token parser/resolver (`src/recipe/token.ts`) and the factory solver (`src/factory/`: a small simplex LP in `simplex.ts`, plans in `solve.ts`, flows in `graph.ts`, transport in `transport.ts`; the graph is React Flow laid out by dagre in `FlowGraph.tsx`) are pure and covered by tests; `src/test/board.smoke.test.tsx` renders every view and settings tab against a mock vault (`src/test/obsidian-mock.ts`) under happy-dom.
 
 ## Out of scope (for now)
 

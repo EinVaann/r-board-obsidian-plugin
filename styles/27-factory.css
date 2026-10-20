@@ -1,0 +1,93 @@
+/* ===================== Factory block ===================== */
+.rb-factory {
+  border: 1px solid var(--background-modifier-border);
+  border-radius: 10px;
+  padding: 12px 14px;
+  margin: 8px 0;
+}
+.rb-factory-header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px 10px;
+  margin-bottom: 8px;
+}
+.rb-factory-title {
+  font-weight: 600;
+  font-size: 13px;
+  color: var(--text-accent);
+}
+.rb-factory-rate {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-left: auto;
+  font-size: 13px;
+  color: var(--text-muted);
+}
+.rb-factory-rate b { color: var(--text-normal); font-weight: 600; }
+.rb-factory input.rb-factory-input {
+  width: 80px;
+  height: 26px;
+  padding: 0 6px;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+/* One tab per alternative plan. */
+.rb-factory-plans {
+  display: flex;
+  gap: 6px;
+  overflow-x: auto;
+  margin-bottom: 8px;
+  padding-bottom: 2px;
+}
+.rb-factory .rb-factory-plan,
+.rb-planner .rb-factory-plan {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 1px;
+  height: auto;
+  padding: 5px 10px;
+  border: 1px solid var(--background-modifier-border);
+  border-radius: 8px;
+  background: var(--background-primary);
+  box-shadow: none;
+  cursor: pointer;
+  flex: 0 0 auto;
+  max-width: 240px;
+}
+.rb-factory .rb-factory-plan.is-active,
+.rb-planner .rb-factory-plan.is-active {
+  border-color: var(--interactive-accent);
+  background: color-mix(in srgb, var(--interactive-accent) 10%, var(--background-primary));
+}
+.rb-factory-plan-name { font-size: 12px; font-weight: 600; color: var(--text-normal); }
+.rb-factory-plan-meta {
+  font-size: 11px;
+  color: var(--text-muted);
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.rb-factory-empty { color: var(--text-muted); font-size: 13px; padding: 8px 0; }
+
+.rb-factory-summary {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+  gap: 4px 18px;
+  margin-top: 6px;
+  font-size: 13px;
+}
+.rb-factory-summary ul {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.rb-factory-summary li { padding: 1px 0; }
+.rb-factory-qty { font-weight: 600; font-variant-numeric: tabular-nums; }
+.rb-factory-per, .rb-factory-none { color: var(--text-muted); }
+.rb-factory-errors { margin-top: 8px; }

@@ -1,0 +1,162 @@
+/* ===================== Factory planner (.factory tab) ===================== */
+.rb-planner-root { padding: 0 !important; }
+.rb-planner {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 0;
+  font-size: 13px;
+}
+.rb-pl-header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px 14px;
+  padding: 8px 12px;
+  border-bottom: 1px solid var(--background-modifier-border);
+}
+.rb-pl-title { font-weight: 600; font-size: 14px; margin-right: auto; }
+.rb-pl-field { display: inline-flex; align-items: center; gap: 6px; color: var(--text-muted); }
+.rb-pl-field select { max-width: 260px; }
+
+.rb-pl-body {
+  flex: 1;
+  min-height: 0;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 340px;
+}
+.rb-pl-graph {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  min-height: 0;
+  padding: 8px;
+}
+.rb-pl-plans { flex: 0 0 auto; }
+.rb-pl-empty {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 24px;
+  color: var(--text-muted);
+}
+
+.rb-pl-side {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  border-left: 1px solid var(--background-modifier-border);
+  background: var(--background-secondary);
+}
+.rb-pl-tabs {
+  display: flex;
+  gap: 2px;
+  padding: 6px 8px 0;
+  border-bottom: 1px solid var(--background-modifier-border);
+}
+.rb-planner .rb-pl-tab {
+  height: auto;
+  padding: 6px 10px;
+  border: none;
+  border-bottom: 2px solid transparent;
+  border-radius: 0;
+  background: none;
+  box-shadow: none;
+  color: var(--text-muted);
+  cursor: pointer;
+}
+.rb-planner .rb-pl-tab.is-active { color: var(--text-normal); border-bottom-color: var(--interactive-accent); }
+.rb-pl-count {
+  margin-left: 5px;
+  padding: 0 5px;
+  border-radius: 8px;
+  font-size: 11px;
+  background: var(--background-modifier-hover);
+}
+.rb-pl-pane { flex: 1; overflow-y: auto; padding: 8px 10px 16px; }
+.rb-pl-section + .rb-pl-section { margin-top: 14px; }
+.rb-pl-hint { color: var(--text-muted); font-size: 12px; margin: -2px 0 6px; }
+
+.rb-pl-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 3px 0;
+}
+.rb-pl-row.is-unused { opacity: 0.55; }
+.rb-pl-row select { flex: 0 0 auto; max-width: 150px; }
+.rb-pl-row .rb-pl-text { flex: 1; min-width: 0; }
+.rb-pl-item { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.rb-planner input.rb-pl-num { width: 64px; text-align: right; font-variant-numeric: tabular-nums; }
+.rb-pl-num-gap { width: 64px; flex: 0 0 auto; }
+.rb-pl-made { color: var(--text-muted); font-size: 12px; white-space: nowrap; font-variant-numeric: tabular-nums; }
+.rb-planner .rb-pl-x {
+  width: 24px;
+  height: 24px;
+  padding: 0;
+  flex: 0 0 auto;
+  background: none;
+  box-shadow: none;
+  color: var(--text-muted);
+  cursor: pointer;
+}
+.rb-pl-x-gap { width: 24px; flex: 0 0 auto; }
+.rb-pl-check { cursor: pointer; }
+
+.rb-pl-status {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 16px;
+  padding: 6px 12px;
+  border-top: 1px solid var(--background-modifier-border);
+  color: var(--text-muted);
+}
+.rb-pl-status b { color: var(--text-normal); }
+.rb-pl-muted { color: var(--text-faint); }
+.rb-pl-problem { color: var(--text-warning, var(--color-orange)); margin-left: auto; }
+
+/* Narrow panes and phones: the panel goes under the graph. */
+@media (max-width: 720px) {
+  .rb-pl-body { grid-template-columns: minmax(0, 1fr); grid-template-rows: 55% minmax(0, 1fr); }
+  .rb-pl-side { border-left: none; border-top: 1px solid var(--background-modifier-border); }
+}
+.rb-pl-ignored { color: var(--text-faint); text-decoration: line-through; font-size: 12px; text-align: right; }
+
+/* ===================== .factory tab: Planner / Data ===================== */
+.rb-fx { display: flex; flex-direction: column; height: 100%; min-height: 0; }
+.rb-fx-top {
+  display: flex;
+  align-items: flex-end;
+  gap: 2px;
+  padding: 6px 12px 0;
+  border-bottom: 1px solid var(--background-modifier-border);
+  background: var(--background-secondary);
+}
+.rb-fx .rb-fx-toptab,
+.rb-fx .rb-fx-subtab {
+  height: auto;
+  padding: 6px 12px;
+  border: none;
+  border-bottom: 2px solid transparent;
+  border-radius: 0;
+  background: none;
+  box-shadow: none;
+  color: var(--text-muted);
+  cursor: pointer;
+  font-weight: 600;
+}
+.rb-fx .rb-fx-toptab.is-active,
+.rb-fx .rb-fx-subtab.is-active { color: var(--text-normal); border-bottom-color: var(--interactive-accent); }
+.rb-fx-sub { display: flex; gap: 2px; margin-left: 16px; padding-left: 16px; border-left: 1px solid var(--background-modifier-border); }
+.rb-fx .rb-fx-subtab { font-weight: 500; }
+.rb-fx-body { flex: 1; min-height: 0; display: flex; flex-direction: column; }
+.rb-fx-body > .rb-planner { flex: 1; }
+.rb-fx-table { flex: 1; min-height: 0; }
+.rb-pl-empty .mod-cta { margin-left: 10px; }
+.rb-fx-caret { margin-left: 5px; font-size: 10px; color: var(--text-faint); }
+.rb-fx .rb-fx-add { font-size: 16px; line-height: 1; padding: 4px 10px; color: var(--text-faint); }
+.rb-fx .rb-fx-add:hover { color: var(--text-normal); }
+.rb-fx-dialog input[type="text"] { width: 100%; }
+.rb-fx-dialog-buttons { display: flex; justify-content: flex-end; gap: 8px; margin-top: 12px; }

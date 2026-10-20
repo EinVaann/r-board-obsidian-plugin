@@ -1,5 +1,5 @@
 // Bundle the dev harness (real UI + fake obsidian) into dev/out/ for a browser.
-// Open dev/out/index.html (?kind=board for the notes board, ?mobile for phone layout).
+// Open dev/out/index.html (?kind=board for the notes board, ?factory for factory blocks, ?mobile for phone layout).
 import esbuild from "esbuild";
 import { copyFile, mkdir, writeFile } from "fs/promises";
 import path from "path";
@@ -26,6 +26,7 @@ await esbuild.build({
 await copyFile(path.join(root, "styles.css"), path.join(out, "styles.css"));
 await copyFile(path.join(root, "dev/theme.css"), path.join(out, "theme.css"));
 await copyFile(path.join(root, "dev/sample.table"), path.join(out, "sample.table"));
+for (const t of ["factory", "factory-items", "factory-transport"]) await copyFile(path.join(root, `dev/${t}.table`), path.join(out, `${t}.table`));
 // A build stamp on the asset URLs keeps the browser from serving a stale bundle.
 const v = Date.now();
 await writeFile(
