@@ -842,7 +842,10 @@ const Row = memo(
           else if (col.title) {
             content = (
               <span className="rb-title-cell">
-                <span className="rb-title">{item.title}</span>
+                {/* A links / url / … title renders like its column would; plain text as is. */}
+                <span className="rb-title">
+                  {col.prop && col.prop.type !== 'text' ? (fieldNode(env, item, col.prop) ?? item.title) : item.title}
+                </span>
                 <button
                   className="rb-row-expand"
                   aria-label="Expand row"
