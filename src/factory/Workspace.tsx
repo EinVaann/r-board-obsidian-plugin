@@ -20,7 +20,13 @@ export function FactoryWorkspace({ doc, onChange }: { doc: FactoryDoc; onChange:
   const [top, setTop] = useState<Top>(() => (doc.data.recipes.length ? 'planner' : 'data'));
   const [tab, setTab] = useState<DataTab>('recipes');
   const view = useMemo(() => docView(doc), [doc]);
-  const counts: Record<DataTab, number> = { recipes: doc.data.recipes.length, items: itemList(doc.data).length, transport: typeNames(doc.data).length };
+  const counts: Record<DataTab, number> = {
+    recipes: doc.data.recipes.length,
+    items: itemList(doc.data).length,
+    transport: typeNames(doc.data).length,
+    machines: doc.data.machines.length,
+    environments: doc.data.environments.length,
+  };
   const missing = doc.data.transport.length ? missingTransport(doc.data) : 0;
 
   const planMenu = (i: number, evt: MouseEvent): void => {

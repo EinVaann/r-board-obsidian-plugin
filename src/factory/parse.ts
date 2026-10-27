@@ -19,6 +19,8 @@ export interface FactoryRecipe {
   inputs: Amount[];
   /** The first output is the recipe's main product; the rest are byproducts. */
   outputs: Amount[];
+  /** An environment the machine must stand in (e.g. "Stable ENV"); empty: none. */
+  env?: string;
 }
 
 export type Per = 'sec' | 'min' | 'hour';
@@ -52,6 +54,8 @@ export interface FactorySpec {
   /** Weight of each raw item when ranking plans (default 1). */
   cost: Record<string, number>;
   height?: number;
+  /** Graph flow: `down` (default) or `right`. */
+  direction?: 'down' | 'right';
   /** Problems found while parsing. */
   errors: string[];
 }
@@ -184,6 +188,12 @@ export function parseFactory(source: string): FactorySpec {
           if (nn) spec[key][itemKey(nn[0])] = nn[1];
           else spec.errors.push(`${key}: expected "Name = number" (got "${part}")`);
         }
+        break;
+      case 'direction':
+      case 'layout':
+        if (/^(right|horizontal|lr|left)/i.test(value)) spec.direction = 'right';
+        else if (/^(down|vertical|tb|top)/i.test(value)) spec.direction = 'down';
+        else spec.errors.push(`direction: should be down or right (got "${value}")`);
         break;
       case 'height': {
         const h = Number(value);

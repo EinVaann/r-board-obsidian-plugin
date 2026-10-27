@@ -15,7 +15,7 @@ import { DatabaseEmbed, parseEmbed } from '../src/embed/Embed';
 import { parseFactory } from '../src/factory/parse';
 import { Factory } from '../src/factory/Factory';
 import { FactoryWorkspace } from '../src/factory/Workspace';
-import { newPlan, serializeFactoryDoc, type FactoryDoc } from '../src/factory/plan';
+import { newPlan, parseFactoryDoc, serializeFactoryDoc, type FactoryDoc } from '../src/factory/plan';
 import { parseData } from '../src/factory/book';
 
 declare global {
@@ -155,13 +155,16 @@ async function plannerMain(): Promise<void> {
   const json = async (name: string): Promise<unknown> => JSON.parse(await (await fetch(`./${name}.table`)).text());
   // The sample tables are in R Board's table format: parseData converts them.
   const data = parseData({ recipes: await json('factory'), items: await json('factory-items'), transport: await json('factory-transport') });
+  // ?planner&file=x.factory opens a copy of a real .factory file put in dev/out.
+  const fileParam = new URLSearchParams(location.search).get('file');
+  const loaded = fileParam ? parseFactoryDoc(await (await fetch('./' + fileParam)).text()) : null;
   const file = new TFile('Games/Satisfactory.factory');
   const app = fakeApp(() => undefined);
   const root = document.getElementById('root')!;
   root.classList.add('rb-root', 'rb-planner-root');
   root.style.cssText = 'height:100vh;display:block';
   function Host() {
-    const [doc, setDoc] = useState<FactoryDoc>({
+    const [doc, setDoc] = useState<FactoryDoc>(loaded?.ok ? loaded.doc : {
       data,
       plans: [{ ...newPlan('Iron line'), outputs: [{ item: 'Reinforced Iron Plate', rate: 5 }] }, { ...newPlan('Ore budget'), priority: 'input', outputs: [{ item: 'Iron Plate', rate: 2 }, { item: 'Iron Rod', rate: 1 }], inputs: [{ item: 'Iron Ore', mode: 'max', qty: 120 }] }],
       active: 0,

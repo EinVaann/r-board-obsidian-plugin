@@ -17,6 +17,8 @@ File version 2 keeps `plans: [...]` and `active`; version 1 (one plan at the top
 | Recipes | name · machine · time · inputs · outputs (item chips) | first output = main product; typed items register automatically |
 | Items | item → transport type | built from the recipes; missing transport is flagged (no silent default) |
 | Transport | tiers: name · type · rate (per minute, per lane) | grouped by type |
+| Machines | machine · fuel · per minute | fuel is added to every recipe of that machine as `rate × time ÷ 60` per craft |
+| Environments | name · made by · gas · per minute | zones a recipe must run in (e.g. Stable ENV from a Gas Dispersing Unit burning Inergen); recipes carry `env`, the planner lists what a plan needs and the gas per disperser |
 
 The Data tab is its own editor (`DataEditor.tsx`, model in `book.ts`), not the `.table` grid. Data saved
 by earlier builds as R Board tables is converted on load.

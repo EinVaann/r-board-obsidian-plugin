@@ -17,7 +17,7 @@
 .rb-dx-empty { padding: 32px 16px; text-align: center; color: var(--text-muted); }
 .rb-dx-scroll { flex: 1; min-height: 0; overflow: auto; padding: 0 12px 24px; }
 
-.rb-dx-table { width: 100%; border-collapse: collapse; }
+.rb-dx-table { border-collapse: collapse; }
 .rb-dx-table th {
   position: sticky;
   top: 0;
@@ -89,3 +89,33 @@
 .rb-dx-badge { color: var(--color-orange); }
 .rb-fg-lane.is-missing { color: var(--color-orange); }
 .rb-pl-link { cursor: pointer; margin-left: 4px; }
+
+/* Resizable columns */
+.rb-dx-table { table-layout: fixed; }
+.rb-dx-table th { position: sticky; overflow: visible; }
+.rb-dx-th-label { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.rb-dx-resize {
+  position: absolute;
+  top: 0;
+  right: -4px;
+  width: 8px;
+  height: 100%;
+  cursor: col-resize;
+  z-index: 2;
+}
+.rb-dx-resize::after {
+  content: "";
+  position: absolute;
+  top: 25%;
+  bottom: 25%;
+  left: 3px;
+  width: 2px;
+  border-radius: 1px;
+  background: transparent;
+}
+.rb-dx-table th:hover .rb-dx-resize::after { background: var(--background-modifier-border); }
+.rb-dx-resize:hover::after, .rb-dx-resizing .rb-dx-resize:hover::after { background: var(--interactive-accent); }
+body.rb-dx-resizing { cursor: col-resize; user-select: none; }
+.rb-dx-table td { overflow: hidden; }
+.rb-dx-table td input[type="text"], .rb-dx-table td input:not([type]) { min-width: 0; }
+.rb-dx-table td.rb-dx-num input { width: 100%; }

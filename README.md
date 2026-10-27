@@ -238,7 +238,11 @@ The rate is also editable right in the card. Edits to the recipe table re-solve 
   - **Recipes**: name, machine, time, and inputs / outputs as item chips (click to edit, + to add; the first output is the main product). Every item you type is registered in Items.
   - **Items**: every item the recipes use, each with a **transport type**. Items without one are flagged ⚠ (tab badge, "only missing" filter, "set all to…"); pick **New transport type…** to create one from here. Renaming an item renames it in every recipe.
   - **Transport**: types (Belt, Pipe…) with tiers and a rate per lane per minute.
+  - Columns in these tables can be resized by dragging a header's edge (double-click to reset).
+  - **Machines**: machines that burn fuel while working (e.g. a transmuter burning 6 Xiranite/min); the fuel becomes an input of each of their recipes.
+  - **Environments**: zones some recipes must run in (e.g. Stable ENV, kept up by a Gas Dispersing Unit burning Inergen). Set a recipe's Environment in Recipes; machine nodes show it as a badge and the status bar lists what a plan needs.
 - **Planner** — one tab per saved plan (**+** adds one; click the active tab or right-click to rename, duplicate or delete). The graph (drag nodes, scroll to zoom) has **Output**, **Input** and **Recipes** tabs beside it:
+  - **Graph** (header): top to bottom (default) or left to right, per plan. A ```factory block takes `direction: right`.
   - **Priority** (header): *Output* delivers the output rates and ignores input limits; *Input* makes as much as the input limits allow, outputs in the ratio of their numbers; *Both* applies every rule.
   - **Output**: items to make (rate, or max), and byproducts that must be used up.
   - **Input**: filled from the plan; each input can be ∞, ≤ n or = n. A rule the plan no longer uses stays, dimmed.

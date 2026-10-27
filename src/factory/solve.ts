@@ -124,7 +124,8 @@ export function solveFactory(allRecipes: FactoryRecipe[], req: FactoryRequest): 
   const inputKeys = new Set(req.inputs.map((i) => itemKey(i.item)));
   for (const t of outputs) if (inputKeys.has(itemKey(t.item))) problems.push(`"${t.item}" is both an output and an input.`);
   if (problems.length) return empty();
-  const mainOf = (r: FactoryRecipe): string => itemKey(r.outputs[0].item);
+  // A treatment recipe (no outputs) is grouped by what it removes.
+  const mainOf = (r: FactoryRecipe): string => (isSink(r) ? `sink:${itemKey(r.inputs[0].item)}` : itemKey(r.outputs[0].item));
   const byName = new Map(recipes.map((r) => [itemKey(r.name), r]));
 
   for (const n of req.avoid) if (!byName.has(itemKey(n))) problems.push(`avoid: no recipe named "${n}".`);
@@ -159,6 +160,9 @@ export function solveFactory(allRecipes: FactoryRecipe[], req: FactoryRequest): 
         }
       }
     }
+    // Treatment recipes join for whatever the chain makes, so it can be removed instead of kept.
+    const made0 = new Set([...used].flatMap((r) => r.outputs.map((o) => itemKey(o.item))));
+    for (const r of from) if (isSink(r) && r.inputs.every((i) => made0.has(itemKey(i.item)))) used.add(r);
     // A recycling recipe only belongs if something here makes what it recycles.
     let kept = from.filter((r) => used.has(r));
     for (let changed = true; changed; ) {
@@ -172,6 +176,7 @@ export function solveFactory(allRecipes: FactoryRecipe[], req: FactoryRequest): 
 
   // Alternatives (before pins, so the picker can offer every recipe).
   for (const r of closure(pool)) {
+    if (isSink(r)) continue;
     const k = mainOf(r);
     const a = alternatives.get(k) ?? { item: names.get(k) ?? r.outputs[0].item, recipes: [] };
     a.recipes.push(r.name);
@@ -263,11 +268,14 @@ interface Ctx {
   recycles: (r: FactoryRecipe) => boolean;
 }
 
+/** A treatment recipe: it only removes items (a water treatment unit for sewage). */
+export const isSink = (r: FactoryRecipe): boolean => !r.outputs.length;
+
 /** Is a recipe recycling — fed only by byproducts (items some recipe makes, but never as its main product)? */
 function recyclingTest(rs: FactoryRecipe[]): (r: FactoryRecipe) => boolean {
-  const main = new Set(rs.map((r) => itemKey(r.outputs[0].item)));
+  const main = new Set(rs.filter((r) => !isSink(r)).map((r) => itemKey(r.outputs[0].item)));
   const made = new Set(rs.flatMap((r) => r.outputs.map((o) => itemKey(o.item))));
-  return (r) => r.inputs.length > 0 && r.inputs.every((i) => made.has(itemKey(i.item)) && !main.has(itemKey(i.item)));
+  return (r) => !isSink(r) && r.inputs.length > 0 && r.inputs.every((i) => made.has(itemKey(i.item)) && !main.has(itemKey(i.item)));
 }
 
 /**
@@ -278,7 +286,7 @@ function recyclingTest(rs: FactoryRecipe[]): (r: FactoryRecipe) => boolean {
  * plan can't balance.
  */
 function rawItems(rs: FactoryRecipe[], items: string[], forced: Set<string>, byproducts: boolean, recycling: (r: FactoryRecipe) => boolean): string[] {
-  const main = new Set(rs.map((r) => itemKey(r.outputs[0].item)));
+  const main = new Set(rs.filter((r) => !isSink(r)).map((r) => itemKey(r.outputs[0].item)));
   return items.filter((k) => {
     if (forced.has(k)) return true;
     const makers = rs.filter((r) => r.outputs.some((o) => itemKey(o.item) === k));

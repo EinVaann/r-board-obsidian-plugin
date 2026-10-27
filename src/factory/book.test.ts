@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { bookFromData, itemList, newData, parseData, renameItem, setItemTransport, type FactoryData } from './book';
+import { bookFromData, dataJson, itemList, neededEnvs, newData, parseData, renameItem, setItemTransport, type FactoryData } from './book';
 
 const sample = (): FactoryData => ({
   recipes: [
@@ -9,6 +9,8 @@ const sample = (): FactoryData => ({
   ],
   items: [{ name: 'Water', transport: 'Pipe' }, { name: 'Old Thing', transport: 'Belt' }],
   transport: [{ id: 't1', name: 'Belt Mk1', type: 'Belt', rate: 60 }, { id: 't2', name: 'Pipe Mk1', type: 'Pipe', rate: 300 }],
+  environments: [],
+  machines: [],
 });
 
 describe('factory data', () => {
@@ -58,5 +60,34 @@ describe('factory data', () => {
     expect(d.items).toEqual([{ name: 'Iron Ore', transport: 'Belt' }]); // recipe spelling restored
     expect(d.transport.map((t) => [t.name, t.type, t.rate])).toEqual([['Belt Mk1', 'Belt', 60]]);
     expect(parseData(undefined)).toEqual(newData());
+  });
+});
+
+describe('machines and environments', () => {
+  const data = (): FactoryData => ({
+    ...newData(),
+    recipes: [
+      { id: 'a', name: 'Gas', machine: 'Fluid-Gas Transmuting Unit', time: 2, inputs: [{ item: 'Water', qty: 1 }], outputs: [{ item: 'Aquagen', qty: 1 }] },
+      { id: 'b', name: 'Pure Gas', machine: 'Purification Unit', time: 2, inputs: [{ item: 'Aquagen', qty: 2 }], outputs: [{ item: 'Pure Aquagen', qty: 1 }], env: 'Stable ENV' },
+    ],
+    machines: [{ id: 'm', name: 'fluid-gas transmuting unit', fuel: 'Liquid Xiranite', rate: 6 }],
+    environments: [{ id: 'e', name: 'Stable ENV', source: 'Gas Dispersing Unit', gas: 'Inergen', rate: 6 }],
+  });
+
+  it('adds machine fuel to each of its recipes, by craft time', () => {
+    const b = bookFromData(data());
+    expect(b.recipes[0].inputs).toEqual([{ item: 'Water', qty: 1 }, { item: 'Liquid Xiranite', qty: 0.2 }]); // 6/min × 2 s
+    expect(b.recipes[1].inputs).toEqual([{ item: 'Aquagen', qty: 2 }]);
+  });
+
+  it('keeps recipe environments and lists what a plan needs', () => {
+    const b = bookFromData(data());
+    expect(b.recipes[1].env).toBe('Stable ENV');
+    expect(neededEnvs(b.recipes, b.environments)).toEqual([{ name: 'Stable ENV', row: data().environments[0] }]);
+    expect(neededEnvs([{ env: 'Acrid ENV' }], b.environments)).toEqual([{ name: 'Acrid ENV', row: undefined }]);
+  });
+
+  it('round-trips machines, environments and recipe environments', () => {
+    expect(parseData(dataJson(data()))).toEqual(data());
   });
 });

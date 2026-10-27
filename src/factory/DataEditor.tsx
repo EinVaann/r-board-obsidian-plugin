@@ -10,16 +10,21 @@ import { ReactModal, useApp } from '../react/mount';
 import { itemKey, type Amount } from './parse';
 import { fmt } from './FlowGraph';
 import { NumCommit, TextCommit } from './inputs';
+import { DxTable } from './DxTable';
 import {
   itemList,
   machineNames,
+  newEnv,
+  newMachine,
   newRecipe,
   newTier,
   renameItem,
   setItemTransport,
   typeNames,
   type DataTab,
+  type EnvRow,
   type FactoryData,
+  type MachineRow,
   type RecipeRow,
   type TierRow,
 } from './book';
@@ -46,6 +51,13 @@ export function DataEditor({ tab, data, onChange }: PaneProps & { tab: DataTab }
       {tab === 'recipes' && <RecipesPane data={data} onChange={onChange} />}
       {tab === 'items' && <ItemsPane data={data} onChange={onChange} />}
       {tab === 'transport' && <TransportPane data={data} onChange={onChange} />}
+      {tab === 'machines' && <MachinesPane data={data} onChange={onChange} />}
+      {tab === 'environments' && <EnvironmentsPane data={data} onChange={onChange} />}
+      <datalist id="rb-dx-envs">
+        {data.environments.map((e) => (
+          <option key={e.id} value={e.name} />
+        ))}
+      </datalist>
     </div>
   );
 }
@@ -110,17 +122,14 @@ function RecipesPane({ data, onChange }: PaneProps) {
         </div>
       ) : (
         <div className="rb-dx-scroll">
-          <table className="rb-dx-table">
-            <thead>
-              <tr>
-                <th>Recipe</th>
-                <th>Machine</th>
-                <th className="rb-dx-num">Time (s)</th>
-                <th>Inputs</th>
-                <th>Outputs</th>
-                <th />
-              </tr>
-            </thead>
+          <DxTable id="recipes" columns={[
+                { key: 'name', label: 'Recipe', width: 220 },
+                { key: 'machine', label: 'Machine', width: 170 },
+                { key: 'time', label: 'Time (s)', width: 80, num: true },
+                { key: 'inputs', label: 'Inputs', width: 280 },
+                { key: 'outputs', label: 'Outputs', width: 280 },
+                ...(data.environments.length ? [{ key: 'env', label: 'Environment', width: 140 }] : []),
+              ]}>
             <tbody>
               {shown.map((r) => (
                 <tr key={r.id}>
@@ -139,6 +148,11 @@ function RecipesPane({ data, onChange }: PaneProps) {
                   <td>
                     <AmountList amounts={r.outputs} autoAdd={fresh === r.id} onChange={(outputs) => setRecipe(r.id, { outputs })} main />
                   </td>
+                  {data.environments.length > 0 && (
+                    <td>
+                      <TextCommit value={r.env ?? ''} placeholder="—" list="rb-dx-envs" onCommit={(env) => setRecipe(r.id, { env: env || undefined })} />
+                    </td>
+                  )}
                   <td>
                     <button className="rb-dx-icon" aria-label="Recipe actions" onClick={(e) => menu(r, e.nativeEvent)}>
                       ⋯
@@ -147,7 +161,7 @@ function RecipesPane({ data, onChange }: PaneProps) {
                 </tr>
               ))}
             </tbody>
-          </table>
+          </DxTable>
         </div>
       )}
     </div>
@@ -261,16 +275,12 @@ function ItemsPane({ data, onChange }: PaneProps) {
         <div className="rb-dx-empty">Items appear here as you add them to recipes.</div>
       ) : (
         <div className="rb-dx-scroll">
-          <table className="rb-dx-table">
-            <thead>
-              <tr>
-                <th>Item</th>
-                <th>Transport</th>
-                <th className="rb-dx-num">Made by</th>
-                <th className="rb-dx-num">Used by</th>
-                <th />
-              </tr>
-            </thead>
+          <DxTable id="items" columns={[
+                { key: 'item', label: 'Item', width: 260 },
+                { key: 'transport', label: 'Transport', width: 170 },
+                { key: 'made', label: 'Made by', width: 80, num: true },
+                { key: 'used', label: 'Used by', width: 80, num: true },
+              ]}>
             <tbody>
               {shown.map((i) => {
                 const unused = i.made + i.used === 0;
@@ -305,7 +315,7 @@ function ItemsPane({ data, onChange }: PaneProps) {
                 );
               })}
             </tbody>
-          </table>
+          </DxTable>
         </div>
       )}
     </div>
@@ -421,4 +431,107 @@ function newTypeDialog(app: App, data: FactoryData, done: (d: FactoryData, type:
     ),
     { title: 'New transport type' },
   ).open();
+}
+
+// ------------------------------------------------------------------ Machines (fuel)
+
+function MachinesPane({ data, onChange }: PaneProps) {
+  const set = (id: string, patch: Partial<MachineRow>): void => onChange({ ...data, machines: data.machines.map((m) => (m.id === id ? { ...m, ...patch } : m)) });
+  return (
+    <div className="rb-dx-pane">
+      <div className="rb-dx-toolbar">
+        <button className="mod-cta" onClick={() => onChange({ ...data, machines: [...data.machines, newMachine(data)] })}>
+          + Machine
+        </button>
+        <span className="rb-dx-hint">Machines that burn fuel while they work. The fuel is added to each of their recipes (rate × craft time).</span>
+      </div>
+      {data.machines.length === 0 ? (
+        <div className="rb-dx-empty">No fuelled machines.</div>
+      ) : (
+        <div className="rb-dx-scroll">
+          <DxTable id="machines" columns={[
+                { key: 'machine', label: 'Machine', width: 240 },
+                { key: 'fuel', label: 'Fuel', width: 220 },
+                { key: 'rate', label: 'Per min', width: 90, num: true },
+              ]}>
+            <tbody>
+              {data.machines.map((m) => (
+                <tr key={m.id}>
+                  <td>
+                    <TextCommit value={m.name} placeholder="Machine" list="rb-dx-machines" onCommit={(name) => set(m.id, { name })} />
+                  </td>
+                  <td>
+                    <TextCommit value={m.fuel} placeholder="Fuel item" list="rb-dx-items" onCommit={(fuel) => set(m.id, { fuel })} />
+                  </td>
+                  <td className="rb-dx-num">
+                    <NumCommit value={m.rate} label={`${m.name} fuel per minute`} onCommit={(rate) => set(m.id, { rate })} />
+                  </td>
+                  <td>
+                    <button className="rb-dx-icon" aria-label="Remove" onClick={() => onChange({ ...data, machines: data.machines.filter((x) => x.id !== m.id) })}>
+                      ×
+                    </button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </DxTable>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ------------------------------------------------------------------ Environments
+
+function EnvironmentsPane({ data, onChange }: PaneProps) {
+  const set = (id: string, patch: Partial<EnvRow>): void => onChange({ ...data, environments: data.environments.map((e) => (e.id === id ? { ...e, ...patch } : e)) });
+  const users = (name: string): number => data.recipes.filter((r) => r.env && itemKey(r.env) === itemKey(name)).length;
+  return (
+    <div className="rb-dx-pane">
+      <div className="rb-dx-toolbar">
+        <button className="mod-cta" onClick={() => onChange({ ...data, environments: [...data.environments, newEnv(data)] })}>
+          + Environment
+        </button>
+        <span className="rb-dx-hint">Zones some recipes must run in, kept up by a dispersing machine burning gas. Set a recipe's Environment in Recipes.</span>
+      </div>
+      {data.environments.length === 0 ? (
+        <div className="rb-dx-empty">No environments.</div>
+      ) : (
+        <div className="rb-dx-scroll">
+          <DxTable id="environments" columns={[
+                { key: 'name', label: 'Environment', width: 160 },
+                { key: 'source', label: 'Made by', width: 190 },
+                { key: 'gas', label: 'Gas', width: 180 },
+                { key: 'rate', label: 'Per min', width: 80, num: true },
+                { key: 'recipes', label: 'Recipes', width: 80, num: true },
+              ]}>
+            <tbody>
+              {data.environments.map((e) => (
+                <tr key={e.id}>
+                  <td>
+                    <TextCommit value={e.name} placeholder="Stable ENV" onCommit={(name) => set(e.id, { name })} />
+                  </td>
+                  <td>
+                    <TextCommit value={e.source} placeholder="Gas Dispersing Unit" onCommit={(source) => set(e.id, { source })} />
+                  </td>
+                  <td>
+                    <TextCommit value={e.gas} placeholder="Gas" list="rb-dx-items" onCommit={(gas) => set(e.id, { gas })} />
+                  </td>
+                  <td className="rb-dx-num">
+                    <NumCommit value={e.rate} label={`${e.name} gas per minute`} onCommit={(rate) => set(e.id, { rate })} />
+                  </td>
+                  <td className="rb-dx-num">{users(e.name) || '—'}</td>
+                  <td>
+                    <button className="rb-dx-icon" aria-label="Remove" onClick={() => onChange({ ...data, environments: data.environments.filter((x) => x.id !== e.id) })}>
+                      ×
+                    </button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </DxTable>
+        </div>
+      )}
+    </div>
+  );
 }

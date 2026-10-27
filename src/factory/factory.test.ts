@@ -87,6 +87,20 @@ describe('solveFactory', () => {
     near(m['Iron Ingot'], 3); // 90 crafts/min × 2 s
   });
 
+  it('treats a byproduct that must be used up, and leaves it alone otherwise', () => {
+    const recipes = [
+      { name: 'Cuprium', machine: 'Refinery', time: 2, inputs: [{ item: 'Ore', qty: 1 }], outputs: [{ item: 'Cuprium', qty: 1 }, { item: 'Sewage', qty: 1 }] },
+      { name: 'Treat Sewage', machine: 'Water Treatment Unit', time: 1, inputs: [{ item: 'Sewage', qty: 1 }], outputs: [] },
+    ];
+    const req: FactoryRequest = { outputs: [{ item: 'Cuprium', rate: 30 }], inputs: [], per: 'min', use: [], avoid: [], useUp: [], speed: {}, cost: {} };
+    const kept = solveFactory(recipes, req).plans[0];
+    expect(kept.recipes.map((r) => r.recipe.name)).toEqual(['Cuprium']);
+    near(kept.surplus[0].qty, 30);
+    const treated = solveFactory(recipes, { ...req, useUp: ['Sewage'] }).plans[0];
+    expect(treated.surplus).toEqual([]);
+    near(treated.recipes.find((r) => r.recipe.name === 'Treat Sewage')!.machines, 0.5); // 30/min at 60/min each
+  });
+
   it('recycles a byproduct back into the chain (output mode)', () => {
     const s = parseFactory(`make: 10 Plate\n${LOOP}`);
     const p = solveFactory(s.recipes, requestFromSpec(s)).plans[0];

@@ -9,9 +9,9 @@ import { Menu } from 'obsidian';
 import { itemKey, PER_SECONDS, type Amount, type Per } from './parse';
 import { solveFactory, type InputRule, type Plan, type SolveResult } from './solve';
 import { fmt } from './FlowGraph';
-import { bookFromData } from './book';
+import { bookFromData, neededEnvs } from './book';
 import { NumCommit, TextCommit } from './inputs';
-import { FlowGraph, machineUse } from './FlowGraph';
+import { FlowGraph, machineUse, type Direction } from './FlowGraph';
 import { buildGraph, type GEdge, type GNode } from './graph';
 import { bringIn, craftInstead, setAllTier, setEdgeTier, setInput, setUseUp, toRequest, useRecipe, type FactoryFile, type Priority } from './plan';
 import { defaultTier, haul, haulKey, tiersOf, transportTypes, type Haul, type TransportChoice } from './transport';
@@ -64,7 +64,7 @@ export function Planner({ file, onChange, openData }: Props) {
 
   const onNodeClick = (node: GNode, evt: MouseEvent): void => {
     const menu = new Menu();
-    if (node.step) {
+    if (node.step && node.step.recipe.outputs.length) {
       const main = node.step.recipe.outputs[0].item;
       menu.addItem((i) => i.setTitle(`Bring ${main} in instead`).setIcon('log-in').onClick(() => onChange(bringIn(file, main))));
       const alts = result?.alternatives.get(itemKey(main));
@@ -128,6 +128,13 @@ export function Planner({ file, onChange, openData }: Props) {
             <option value="both">Both</option>
           </select>
         </label>
+        <label className="rb-pl-field" title="Which way the graph flows">
+          Graph
+          <select value={file.direction} onChange={(e) => onChange({ ...file, direction: e.target.value as Direction })}>
+            <option value="down">↓ Top to bottom</option>
+            <option value="right">→ Left to right</option>
+          </select>
+        </label>
         {transport &&
           transportTypes(transport).map((type) => (
             <label key={type} className="rb-pl-field">
@@ -172,7 +179,7 @@ export function Planner({ file, onChange, openData }: Props) {
             </div>
           )}
           {plan ? (
-            <FlowGraph key={plans.indexOf(plan)} plan={plan} per={file.per} transport={transport} choice={choice} fill onNodeClick={onNodeClick} onEdgeClick={onEdgeClick} />
+            <FlowGraph key={plans.indexOf(plan)} plan={plan} per={file.per} transport={transport} choice={choice} direction={file.direction} fill onNodeClick={onNodeClick} onEdgeClick={onEdgeClick} />
           ) : (
             <div className="rb-pl-empty">
               {problems[0] ?? 'Add an output to start.'}
@@ -219,6 +226,16 @@ export function Planner({ file, onChange, openData }: Props) {
             {busy.length} connection{busy.length === 1 ? ' needs' : 's need'} more than one lane
           </span>
         )}
+        {plan &&
+          neededEnvs(
+            plan.recipes.map((r) => r.recipe),
+            book.environments,
+          ).map(({ name, row }) => (
+            <span key={name} className="rb-pl-env" title="One dispersing machine covers a zone; place the machines that need it inside.">
+              Needs <b>{name}</b>
+              {row ? `: ${row.source || 'a dispersing unit'} burning ${row.gas || '?'}, ${fmt(row.rate)}/min each` : ' (not in Data → Environments)'}
+            </span>
+          ))}
         {untyped.length > 0 && (
           <span className="rb-pl-busy" title={untyped.join('\n')}>
             ⚠ {untyped.length} item{untyped.length === 1 ? ' has' : 's have'} no transport{' '}

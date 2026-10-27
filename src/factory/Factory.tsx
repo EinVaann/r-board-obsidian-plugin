@@ -99,13 +99,13 @@ function useFactoryBook(file: string | undefined, sourcePath: string): Book | nu
     if (!file) return;
     const f = app.metadataCache.getFirstLinkpathDest(file, sourcePath) ?? app.vault.getAbstractFileByPath(file);
     if (!(f instanceof TFile)) {
-      setBook({ recipes: [], errors: [`No .factory file "${file}".`] });
+      setBook({ recipes: [], environments: [], errors: [`No .factory file "${file}".`] });
       return;
     }
     let live = true;
     const load = async (): Promise<void> => {
       const r = parseFactoryDoc(await app.vault.read(f));
-      if (live) setBook(r.ok ? bookFromData(r.doc.data) : { recipes: [], errors: [`${f.basename}: ${r.error}`] });
+      if (live) setBook(r.ok ? bookFromData(r.doc.data) : { recipes: [], environments: [], errors: [`${f.basename}: ${r.error}`] });
     };
     void load();
     const ref = app.vault.on('modify', (m) => {
@@ -209,7 +209,7 @@ export function Factory({ spec, sourcePath }: { spec: FactorySpec; sourcePath: s
       )}
 
       {!book && <div className="rb-factory-empty">Loading recipes…</div>}
-      {plan && <FlowGraph plan={plan} per={spec.per} transport={book?.transport} choice={choice} height={spec.height} />}
+      {plan && <FlowGraph plan={plan} per={spec.per} transport={book?.transport} choice={choice} direction={spec.direction} height={spec.height} />}
       {plan && <Summary plan={plan} per={per} />}
 
       {problems.length > 0 && (

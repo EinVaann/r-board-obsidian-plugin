@@ -38,7 +38,15 @@ export interface FactoryGraph {
 
 const TINY = 1e-7;
 
-export function buildGraph(plan: Plan, _per: Per): FactoryGraph {
+export interface GraphOptions {
+  /**
+   * One input node per consumer ("Clean Water → Crucible" sits by the
+   * crucible) instead of one shared node wired across the whole graph.
+   */
+  splitInputs?: boolean;
+}
+
+export function buildGraph(plan: Plan, _per: Per, opts: GraphOptions = {}): FactoryGraph {
   const nodes = new Map<string, GNode>();
   const add = (n: Omit<GNode, 'col' | 'row'>): void => void (nodes.has(n.id) || nodes.set(n.id, { ...n, col: 0, row: 0 }));
   const names = new Map<string, string>();
@@ -87,8 +95,9 @@ export function buildGraph(plan: Plan, _per: Per): FactoryGraph {
     }
   }
 
-  const list = [...nodes.values()];
-  const edgeList = [...edges.values()];
+  let list = [...nodes.values()];
+  let edgeList = [...edges.values()];
+  if (opts.splitInputs) [list, edgeList] = splitInputs(list, edgeList);
   layout(list, edgeList);
   const perCol = new Map<number, number>();
   for (const n of list) perCol.set(n.col, (perCol.get(n.col) ?? 0) + 1);
@@ -146,4 +155,23 @@ function layout(nodes: GNode[], edges: GEdge[]): void {
       scored.forEach(([, n], i) => (n.row = i));
     }
   }
+}
+
+/** Give every consumer of a raw input its own copy of the input node. */
+function splitInputs(nodes: GNode[], edges: GEdge[]): [GNode[], GEdge[]] {
+  const raw = new Map(nodes.filter((n) => n.kind === 'raw').map((n) => [n.id, n]));
+  const out: GNode[] = nodes.filter((n) => n.kind !== 'raw');
+  const outEdges: GEdge[] = [];
+  for (const e of edges) {
+    const src = raw.get(e.source);
+    if (!src) {
+      outEdges.push(e);
+      continue;
+    }
+    const id = `${e.source}@${e.target}`;
+    const qty = e.items.reduce((t, a) => t + a.qty, 0);
+    out.unshift({ ...src, id, amount: { item: src.amount!.item, qty }, col: 0, row: 0 });
+    outEdges.push({ ...e, source: id });
+  }
+  return [out, outEdges];
 }

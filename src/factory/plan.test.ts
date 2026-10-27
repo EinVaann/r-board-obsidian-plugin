@@ -34,7 +34,7 @@ describe('.factory file', () => {
   it('reads an empty file as one empty plan, and reports bad JSON', () => {
     const empty = parseFactoryDoc('');
     expect(empty.ok && empty.doc.plans.map((p) => p.name)).toEqual(['Plan 1']);
-    expect(empty.ok && empty.doc.data).toEqual({ recipes: [], items: [], transport: [] });
+    expect(empty.ok && empty.doc.data).toEqual({ recipes: [], items: [], transport: [], environments: [], machines: [] });
     expect(parseFactoryDoc('{ nope').ok).toBe(false);
   });
 

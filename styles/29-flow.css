@@ -128,3 +128,16 @@
 .rb-pl-busy { color: var(--color-orange); }
 .rb-fg-busy { color: var(--text-faint); font-variant-numeric: tabular-nums; }
 .rb-fg-busy.is-partial { color: var(--text-muted); }
+.rb-fg-env {
+  margin-left: 6px;
+  padding: 0 5px;
+  border-radius: 6px;
+  font-size: 10px;
+  font-weight: 600;
+  vertical-align: 1px;
+  color: #1a1a1a;
+  background: #32c0ff;
+}
+.rb-pl-env b { color: var(--text-normal); }
+/* A label in the box ELK reserved for it: same size, text centred. */
+.rb-fg-label[style*="min-height"] { box-sizing: border-box; display: flex; flex-direction: column; justify-content: center; text-align: center; padding: 1px 4px; }

@@ -17,6 +17,31 @@ export interface RecipeRow {
   inputs: Amount[];
   /** The first output is the main product. */
   outputs: Amount[];
+  /** An environment the machine must stand in (an Environments row name); empty: none. */
+  env?: string;
+}
+
+/**
+ * An environment some recipes need: a zone kept up by a dispersing machine
+ * that burns `rate` of `gas` per minute, whatever it covers.
+ */
+export interface EnvRow {
+  id: string;
+  name: string;
+  /** The building that makes the zone (e.g. "Gas Dispersing Unit"). */
+  source: string;
+  gas: string;
+  /** Gas per minute, per dispersing machine. */
+  rate: number;
+}
+
+/** A machine that burns fuel while it works (e.g. a transmuter burning 6 Xiranite a minute). */
+export interface MachineRow {
+  id: string;
+  name: string;
+  fuel: string;
+  /** Fuel per minute, per machine at full speed. */
+  rate: number;
 }
 
 export interface ItemRow {
@@ -38,6 +63,8 @@ export interface FactoryData {
   /** Item settings. The full item list also includes every item a recipe names (see `itemList`). */
   items: ItemRow[];
   transport: TierRow[];
+  environments: EnvRow[];
+  machines: MachineRow[];
 }
 
 export type DataTab = keyof FactoryData;
@@ -45,10 +72,12 @@ export const DATA_TABS: { key: DataTab; label: string }[] = [
   { key: 'recipes', label: 'Recipes' },
   { key: 'items', label: 'Items' },
   { key: 'transport', label: 'Transport' },
+  { key: 'machines', label: 'Machines' },
+  { key: 'environments', label: 'Environments' },
 ];
 
 export function newData(): FactoryData {
-  return { recipes: [], items: [], transport: [] };
+  return { recipes: [], items: [], transport: [], environments: [], machines: [] };
 }
 
 // ---------------------------------------------------------------- reading / writing
@@ -86,7 +115,7 @@ export function parseData(raw: unknown): FactoryData {
   } else {
     data.recipes = arr(o.recipes)
       .map(rec)
-      .map((r) => ({ id: str(r.id) || id('r'), name: str(r.name), machine: str(r.machine), time: num(r.time), inputs: amounts(r.inputs), outputs: amounts(r.outputs) }));
+      .map((r) => ({ id: str(r.id) || id('r'), name: str(r.name), machine: str(r.machine), time: num(r.time), inputs: amounts(r.inputs), outputs: amounts(r.outputs), ...(str(r.env) ? { env: str(r.env) } : {}) }));
   }
 
   if (isTable(o.items)) {
@@ -109,6 +138,16 @@ export function parseData(raw: unknown): FactoryData {
       .map((t) => ({ id: str(t.id) || id('t'), name: str(t.name), type: str(t.type) || 'Belt', rate: num(t.rate) }));
   }
 
+  data.environments = arr(o.environments)
+    .map(rec)
+    .filter((e) => str(e.name))
+    .map((e) => ({ id: str(e.id) || id('e'), name: str(e.name), source: str(e.source), gas: str(e.gas), rate: num(e.rate) }));
+
+  data.machines = arr(o.machines)
+    .map(rec)
+    .filter((m) => str(m.name))
+    .map((m) => ({ id: str(m.id) || id('m'), name: str(m.name), fuel: str(m.fuel), rate: num(m.rate) }));
+
   // Item names from old Items tables were keys; give them the spelling the recipes use.
   const spelling = new Map(itemList(data).map((i) => [itemKey(i.name), i.name]));
   data.items = data.items.map((i) => ({ ...i, name: spelling.get(itemKey(i.name)) ?? i.name }));
@@ -118,9 +157,11 @@ export function parseData(raw: unknown): FactoryData {
 /** The data as stored in the file. */
 export function dataJson(d: FactoryData): unknown {
   return {
-    recipes: d.recipes.map((r) => ({ id: r.id, name: r.name, machine: r.machine, time: r.time, inputs: r.inputs, outputs: r.outputs })),
+    recipes: d.recipes.map((r) => ({ id: r.id, name: r.name, machine: r.machine, time: r.time, inputs: r.inputs, outputs: r.outputs, ...(r.env ? { env: r.env } : {}) })),
     items: d.items.filter((i) => i.transport).map((i) => ({ name: i.name, transport: i.transport })),
     transport: d.transport.map((t) => ({ id: t.id, name: t.name, type: t.type, rate: t.rate })),
+    environments: d.environments.map((e) => ({ id: e.id, name: e.name, source: e.source, gas: e.gas, rate: e.rate })),
+    machines: d.machines.map((m) => ({ id: m.id, name: m.name, fuel: m.fuel, rate: m.rate })),
   };
 }
 
@@ -165,6 +206,7 @@ export const machineNames = (d: FactoryData): string[] => [...new Set(d.recipes.
 
 export interface Book {
   recipes: FactoryRecipe[];
+  environments: EnvRow[];
   transport?: TransportBook;
   errors: string[];
   /** Items that have no transport type (only when transport tiers exist). */
@@ -176,22 +218,28 @@ export function bookFromData(d: FactoryData): Book {
   const recipes: FactoryRecipe[] = [];
   for (const r of d.recipes) {
     const outputs = r.outputs.filter((a) => a.item.trim() && a.qty > 0);
-    if (!outputs.length) continue; // a row still being filled in
-    const label = r.name || outputs[0].item;
+    const inputs = r.inputs.filter((a) => a.item.trim() && a.qty > 0);
+    // No outputs, but inputs and a machine: a treatment recipe that removes them (sewage → nothing).
+    if (!outputs.length && !(inputs.length && r.machine.trim())) continue; // a row still being filled in
+    const label = r.name || (outputs.length ? outputs[0].item : `Treat ${inputs.map((a) => a.item).join(' + ')}`);
     if (!(r.time > 0)) {
       errors.push(`Recipe "${label}" needs a time.`);
       continue;
     }
-    recipes.push({ name: label, machine: r.machine || 'Machine', time: r.time, inputs: r.inputs.filter((a) => a.item.trim() && a.qty > 0), outputs });
+    // Fuel burns per minute of work: fold it into each craft (rate × seconds ÷ 60).
+    const fuel = d.machines.find((m) => m.fuel.trim() && m.rate > 0 && itemKey(m.name) === itemKey(r.machine));
+    if (fuel) inputs.push({ item: fuel.fuel.trim(), qty: (fuel.rate * r.time) / 60 });
+    recipes.push({ name: label, machine: r.machine || 'Machine', time: r.time, inputs, outputs, ...(r.env ? { env: r.env } : {}) });
   }
   const tiers = d.transport.filter((t) => t.name && t.rate > 0);
-  if (!tiers.length) return { recipes, errors };
+  const environments = d.environments;
+  if (!tiers.length) return { recipes, environments, errors };
   const types = new Map<string, string>();
   for (const i of d.items) if (i.transport) types.set(itemKey(i.name), i.transport);
   const unassigned = itemList(d)
     .filter((i) => i.made + i.used > 0 && !i.transport)
     .map((i) => i.name);
-  return { recipes, errors, transport: { tiers, types }, unassigned };
+  return { recipes, environments, errors, transport: { tiers, types }, unassigned };
 }
 
 // ---------------------------------------------------------------- edits (pure)
@@ -220,4 +268,18 @@ export function newRecipe(d: FactoryData): RecipeRow {
 export function newTier(d: FactoryData, type: string, name?: string, rate = 60): TierRow {
   const n = d.transport.filter((t) => itemKey(t.type) === itemKey(type)).length + 1;
   return { id: newId('t', d.transport.map((t) => t.id)), name: name ?? `${type} Mk${n}`, type, rate };
+}
+
+export function newEnv(d: FactoryData): EnvRow {
+  return { id: newId('e', d.environments.map((e) => e.id)), name: '', source: 'Gas Dispersing Unit', gas: '', rate: 6 };
+}
+
+/** Environments a plan's recipes need, with the gas each one's dispersers burn. */
+export function neededEnvs(recipes: { env?: string }[], envs: EnvRow[]): { name: string; row?: EnvRow }[] {
+  const names = [...new Set(recipes.map((r) => r.env).filter((e): e is string => !!e))];
+  return names.map((name) => ({ name, row: envs.find((e) => itemKey(e.name) === itemKey(name)) }));
+}
+
+export function newMachine(d: FactoryData): MachineRow {
+  return { id: newId('m', d.machines.map((m) => m.id)), name: '', fuel: '', rate: 6 };
 }

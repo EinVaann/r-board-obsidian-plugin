@@ -8,6 +8,7 @@ import { itemKey, PER_SECONDS, type Per } from './parse';
 import type { FactoryRequest, InputRule, Target } from './solve';
 import { dataJson, newData, parseData, type DataTab, type FactoryData } from './book';
 import { itemType, type TransportBook } from './transport';
+import type { Direction } from './FlowGraph';
 
 export const FACTORY_EXTENSION = 'factory';
 
@@ -21,6 +22,8 @@ export type Priority = 'output' | 'input' | 'both';
 export interface PlanSpec {
   name: string;
   priority: Priority;
+  /** Graph flow: top to bottom (default) or left to right. */
+  direction: Direction;
   per: Per;
   outputs: Target[];
   inputs: InputRule[];
@@ -46,7 +49,7 @@ export interface FactoryDoc {
 export type FactoryFile = PlanSpec & { data: FactoryData };
 
 export function newPlan(name = 'Plan 1'): PlanSpec {
-  return { name, priority: 'output', per: 'min', outputs: [], inputs: [], recipes: {}, useUp: [], transport: {}, edges: {} };
+  return { name, priority: 'output', direction: 'down', per: 'min', outputs: [], inputs: [], recipes: {}, useUp: [], transport: {}, edges: {} };
 }
 
 export function newFactoryFile(data: FactoryData = newData()): FactoryFile {
@@ -83,6 +86,7 @@ function parsePlan(o: Record<string, unknown>, fallbackName: string): PlanSpec {
   return {
     name: str(o.name).trim() || fallbackName,
     priority: o.priority === 'input' || o.priority === 'both' ? o.priority : 'output',
+    direction: o.direction === 'right' ? 'right' : 'down',
     per: per in PER_SECONDS ? (per as Per) : 'min',
     outputs: arr(o.outputs)
       .map(rec)
@@ -132,7 +136,7 @@ export function parseFactoryDoc(text: string): { ok: true; doc: FactoryDoc; lega
 }
 
 function planJson(p: PlanSpec): Record<string, unknown> {
-  const out: Record<string, unknown> = { name: p.name, priority: p.priority, per: p.per, outputs: p.outputs, inputs: p.inputs, recipes: p.recipes, useUp: p.useUp };
+  const out: Record<string, unknown> = { name: p.name, priority: p.priority, direction: p.direction, per: p.per, outputs: p.outputs, inputs: p.inputs, recipes: p.recipes, useUp: p.useUp };
   if (Object.keys(p.transport).length) out.transport = p.transport;
   if (Object.keys(p.edges).length) out.edges = p.edges;
   return out;

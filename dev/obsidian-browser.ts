@@ -183,6 +183,13 @@ export class TFile {
     return this.path.split('.').pop()!;
   }
 }
+/** Keyboard scope (Quick Add hotkeys): a no-op in the harness. */
+export class Scope {
+  register(): object {
+    return {};
+  }
+  unregister(): void {}
+}
 export class TFolder {}
 export class ItemView {}
 export class TextFileView {}
