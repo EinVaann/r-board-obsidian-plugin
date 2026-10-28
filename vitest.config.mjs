@@ -5,4 +5,6 @@ export default defineConfig({
   // The real `obsidian` package ships types only; tests use a small runtime mock.
   resolve: { alias: { obsidian: fileURLToPath(new URL("./src/test/obsidian-mock.ts", import.meta.url)) } },
   esbuild: { jsx: "automatic" },
+  // e2e/ holds Playwright specs (`npm run e2e`), not vitest tests.
+  test: { include: ["src/**/*.test.{ts,tsx}"] },
 });

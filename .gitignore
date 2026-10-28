@@ -6,3 +6,5 @@ styles.css
 .DS_Store
 data.json
 dev/out/
+e2e/.results/
+e2e/.report/

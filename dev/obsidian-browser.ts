@@ -35,6 +35,7 @@ export const Platform = { isMobile: mobile, isPhone: mobile, isDesktop: !mobile 
 
 export class Notice {
   constructor(message: string) {
+    (window as unknown as { __log?: string[] }).__log?.push(`[Notice] ${message}`);
     console.info('[Notice]', message);
   }
 }
@@ -118,6 +119,10 @@ export class Menu {
       el.appendChild(row);
     }
     document.body.appendChild(el);
+    // Keep the menu on screen, as Obsidian does.
+    const r = el.getBoundingClientRect();
+    if (r.bottom > innerHeight) el.style.top = `${Math.max(0, innerHeight - r.height - 4)}px`;
+    if (r.right > innerWidth) el.style.left = `${Math.max(0, innerWidth - r.width - 4)}px`;
     setTimeout(() =>
       document.addEventListener(
         'pointerdown',
@@ -153,6 +158,18 @@ export class Modal {
   }
   onOpen(): void | Promise<void> {}
   onClose(): void {}
+}
+
+export class FuzzySuggestModal<T> extends Modal {
+  setPlaceholder(_p: string): void {}
+  getItems(): T[] {
+    return [];
+  }
+}
+/** Not provided: the plugin falls back to plain typing when this is missing. */
+export const AbstractInputSuggest = undefined;
+export class Scope {
+  register(): void {}
 }
 
 export class Component {

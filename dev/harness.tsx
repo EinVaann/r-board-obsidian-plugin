@@ -18,8 +18,18 @@ declare global {
     __store: BoardStore;
     __saved: string;
     __notes: Record<string, Record<string, unknown>>;
+    /** Set by e2e tests (before load) to replace the sample data. */
+    __fixture?: { table?: string; board?: unknown; notes?: Record<string, Record<string, unknown>> };
+    /** Console-style log of actions the fake Obsidian received (open note, notices…). */
+    __log: string[];
   }
 }
+
+window.__log = [];
+const log = (msg: string): void => {
+  window.__log.push(msg);
+  console.info(msg);
+};
 
 // An in-memory "vault" of game notes for the board harness.
 const NOTES: Record<string, Record<string, unknown>> = {
@@ -30,6 +40,10 @@ const NOTES: Record<string, Record<string, unknown>> = {
   'Games/Stardew Valley.md': { tags: ['backlog'], status: 'on-hold', score: 7, genre: ['farming'] },
   'Games/Disco Elysium.md': { tags: ['backlog'], status: 'to-play', genre: ['rpg'] },
 };
+if (window.__fixture?.notes) {
+  for (const k of Object.keys(NOTES)) delete NOTES[k];
+  Object.assign(NOTES, window.__fixture.notes);
+}
 window.__notes = NOTES;
 
 const BACKLOG = {
@@ -82,10 +96,10 @@ function fakeApp(onNotesChanged: () => void): App {
       },
     },
     workspace: {
-      openLinkText: (t: string) => console.info('[open link]', t),
+      openLinkText: (t: string) => log(`[open link] ${t}`),
       on: () => null,
       offref: () => undefined,
-      getLeaf: () => ({ openFile: (f: TFile) => console.info('[open]', f.path) }),
+      getLeaf: () => ({ openFile: (f: TFile) => log(`[open] ${f.path}`) }),
     },
   } as unknown as App;
 }
@@ -107,7 +121,7 @@ async function embedMain(): Promise<void> {
       getAbstractFileByPath: (p: string) => (p === file.path ? file : null),
     },
     metadataCache: { getFirstLinkpathDest: (p: string) => (p === file.path ? file : null), on: () => ({}) },
-    workspace: { on: () => ({}), offref: () => undefined, getLeaf: () => ({ openFile: (f: TFile) => console.info('[open]', f.path) }) },
+    workspace: { on: () => ({}), offref: () => undefined, getLeaf: () => ({ openFile: (f: TFile) => log(`[open] ${f.path}`) }) },
   } as unknown as App;
   const root = document.getElementById('root')!;
   root.style.cssText = 'height:auto;display:block;max-width:760px;margin:0 auto;padding:16px';
@@ -137,12 +151,13 @@ async function main(): Promise<void> {
   });
   window.__store = store;
 
+  const fixture = window.__fixture;
   if (kind === 'board') {
-    const r = parseDatabaseConfig(JSON.stringify(BACKLOG));
+    const r = parseDatabaseConfig(JSON.stringify(fixture?.board ?? BACKLOG));
     if (!r.ok) throw new Error(r.error);
     store.getState().loadConfig(r.config, null);
   } else {
-    const r = parseTableFile(await (await fetch('./sample.table')).text());
+    const r = parseTableFile(fixture?.table ?? (await (await fetch('./sample.table')).text()));
     if (!r.ok) throw new Error(r.error);
     store.getState().loadRows(r.table.rows);
     store.getState().loadConfig(r.table.config, null);
@@ -154,10 +169,10 @@ async function main(): Promise<void> {
     boardFile: new TFile(kind === 'board' ? 'Backlog.board' : 'Expenses.table') as unknown as BoardContextValue['boardFile'],
     scrollRef: createRef<HTMLDivElement>(),
     actions: {
-      editFile: (f) => console.info('[edit note]', f.path),
-      openNote: (item) => console.info('[open note]', item.id),
+      editFile: (f) => log(`[edit note] ${f.path}`),
+      openNote: (item) => log(`[open note] ${item.id}`),
       editItem: (item) => {
-        if (item.file) return console.info('[edit note]', item.id);
+        if (item.file) return log(`[edit note] ${item.id}`);
         openRecordEditor(app, ctx, item.id, {
           remove: () => store.getState().updateRows((rows) => deleteRows(rows, [item.id])),
           duplicate: () => store.getState().updateRows((rows) => void duplicateRow(rows, item.id)),
@@ -180,7 +195,7 @@ async function main(): Promise<void> {
       openFilter: (i) => openFilterModal(app, ctx, i),
       createNewNote: (values) => {
         if (kind === 'table') ctx.actions.addRow(values);
-        else console.info('[new note]', values);
+        else log(`[new note] ${JSON.stringify(values)}`);
       },
       openSetup: () => undefined,
       reportItems: () => undefined,
