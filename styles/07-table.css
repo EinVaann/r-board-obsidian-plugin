@@ -136,8 +136,10 @@ body .rb-table-wrap.rb-grid::-webkit-scrollbar-thumb:active { background-color: 
   text-transform: uppercase;
   letter-spacing: 0.05em;
   color: var(--text-muted);
-  overflow: hidden;
-  text-overflow: ellipsis;
+  /* "Paid · Checked" doesn't fit a narrow column: wrap rather than cut it off. */
+  white-space: normal;
+  overflow-wrap: anywhere;
+  line-height: 1.25;
 }
 .rb-summary-value {
   display: block;

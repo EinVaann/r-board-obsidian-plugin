@@ -800,8 +800,10 @@ body .rb-table-wrap.rb-grid::-webkit-scrollbar-thumb:active { background-color: 
   text-transform: uppercase;
   letter-spacing: 0.05em;
   color: var(--text-muted);
-  overflow: hidden;
-  text-overflow: ellipsis;
+  /* "Paid · Checked" doesn't fit a narrow column: wrap rather than cut it off. */
+  white-space: normal;
+  overflow-wrap: anywhere;
+  line-height: 1.25;
 }
 .rb-summary-value {
   display: block;
@@ -1294,6 +1296,7 @@ body:not(.is-phone) .modal.rb-settings-modal {
   background: transparent;
   color: var(--text-muted);
   font-size: 12px;
+  white-space: nowrap;
 }
 .rb-wizard .rb-segment:hover { background: var(--background-modifier-hover); color: var(--text-normal); }
 .rb-wizard .rb-segment[data-state='on'] {

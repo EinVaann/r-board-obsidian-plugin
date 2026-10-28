@@ -1,6 +1,7 @@
 import { memo, type ReactNode } from 'react';
 import type { BoardItem, PropertyConfig } from '../types';
 import { useBoardContext } from '../board/context';
+import { propertyLabel } from '../config';
 import { fieldNode, type FieldEnv } from './fields';
 import { NoteExcerpt } from './NoteExcerpt';
 
@@ -70,7 +71,11 @@ export const Card = memo(function Card({ item, properties, showContent, classNam
         <TitleLink item={item} />
         {bodyProperties(properties).map((prop) => {
           const node = fieldNode(env, item, prop);
-          return node ? <div key={prop.name} className="rb-field">{node}</div> : null;
+          return node ? (
+            <div key={prop.name} className="rb-field" title={propertyLabel(prop)}>
+              {node}
+            </div>
+          ) : null;
         })}
         {showContent && item.file && <NoteExcerpt file={item.file} mtime={item.file.stat.mtime} />}
         {footer}

@@ -17,7 +17,7 @@ import { CSS } from '@dnd-kit/utilities';
 import type { BoardItem, DatabaseConfig, DateBucket, PropertyConfig, ViewConfig } from '../types';
 import { RELATIVE_KEYS, cellForGroup, cellsForGroup, collapseKey, groupItems, groupValueOf, type ItemGroup } from '../data/group';
 import { Card } from '../components/Card';
-import { GroupLabel, ViewMore, usePaged } from '../components/layout';
+import { GroupLabel, NEUTRAL_GROUP_COLOR, ViewMore, usePaged } from '../components/layout';
 import { useDragSensors } from '../components/dnd';
 import { useBoard, useBoardContext } from '../board/context';
 import { Icon } from '../react/Icon';
@@ -333,7 +333,7 @@ function TopScrollbar({ size, lanes, children }: { size: string; lanes: boolean;
 
 
 /** Columns without a color are shaded in this neutral tone. */
-const NEUTRAL = 'var(--text-faint)';
+const NEUTRAL = NEUTRAL_GROUP_COLOR;
 
 /** A column's color, read by the kanban CSS (blended into the theme there). */
 const columnColor = (color: string | undefined): CSSProperties => ({ '--gc': color ?? NEUTRAL }) as CSSProperties;

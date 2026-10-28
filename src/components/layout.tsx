@@ -5,6 +5,9 @@ import { cellsForGroup, collapseKey, groupItems, type ItemGroup } from '../data/
 import { useBoard, useBoardContext } from '../board/context';
 import { Icon } from '../react/Icon';
 
+/** Pill color for a group without one (Uncategorized, uncolored values), as on kanban columns. */
+export const NEUTRAL_GROUP_COLOR = 'var(--text-faint)';
+
 /** A group label styled as a colored pill when the group has a color. */
 export function GroupLabel({ label, color, className }: { label: string; color?: string; className: string }) {
   return (
@@ -60,7 +63,7 @@ export function Sections({
           <div key={group.key ?? '\u0000none'} className="rb-section">
             <div className="rb-section-header" onClick={() => toggle(viewIndex, collapseKey(group.key))}>
               <Icon name={isCollapsed ? 'chevron-right' : 'chevron-down'} className="rb-section-caret" />
-              <GroupLabel label={group.label} color={group.color} className="rb-section-title" />
+              <GroupLabel label={group.label} color={group.color ?? NEUTRAL_GROUP_COLOR} className="rb-section-title" />
               <span className="rb-section-count">{group.items.length}</span>
               <button className="rb-icon-btn rb-section-add" aria-label="New item in this group" title="New item in this group" onClick={add}>
                 <Icon name="plus" />
