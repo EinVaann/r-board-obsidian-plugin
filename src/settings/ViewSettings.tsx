@@ -23,11 +23,12 @@ import { useBoard, useBoardContext } from '../board/context';
 import { Icon } from '../react/Icon';
 import { PROPERTY_TYPE_ICON } from './PropertyEditor';
 import { DragHandle, Segmented, Select, SettingRow, SettingsTabs, SortableList, TextInput, Toggle, type Option } from './controls';
+import { ExportSettings } from './ExportSettings';
 
 type ViewRecipe = (draft: ViewConfig) => void;
 
 /**
- * View settings modal content: General, Display, and (kanban) Columns. Edits
+ * View settings modal content: General, Display, (kanban) Columns and Export. Edits
  * the view at `viewIndex` live; `onDelete` removes it (and closes the modal).
  */
 export function ViewSettings({ viewIndex, onDelete }: { viewIndex: number; onDelete: () => void }) {
@@ -44,6 +45,7 @@ export function ViewSettings({ viewIndex, onDelete }: { viewIndex: number; onDel
   ];
   if (view.type === 'kanban') tabs.push({ id: 'columns', label: 'Columns', icon: 'columns-3', content: <Columns view={view} edit={edit} /> });
   if (view.type === 'chart') tabs.splice(1, 0, { id: 'chart', label: 'Chart', icon: 'bar-chart-3', content: <ChartSettings config={config} view={view} edit={edit} /> });
+  tabs.push({ id: 'export', label: 'Export', icon: 'download', content: <ExportSettings config={config} view={view} /> });
   return <SettingsTabs tabs={tabs} initial={view.type === 'chart' ? 'chart' : undefined} />;
 }
 

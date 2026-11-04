@@ -1443,6 +1443,21 @@ body:not(.is-phone) .modal.rb-settings-modal {
 .rb-wizard .rb-col-add-btn { display: inline-flex; align-items: center; gap: 6px; }
 .rb-col-add-btn svg { width: 14px; height: 14px; }
 
+/* Export tab: a read-only preview of what will be copied or saved. */
+.rb-export-preview {
+  margin: 8px 4px 0;
+  padding: 10px 12px;
+  max-height: 320px;
+  overflow: auto;
+  border: 1px solid var(--background-modifier-border);
+  border-radius: 6px;
+  background: var(--background-secondary);
+  font-family: var(--font-monospace);
+  font-size: 12px;
+  white-space: pre;
+  user-select: text;
+}
+
 /* ===================== Custom buttons ===================== */
 /* Replaces Obsidian's default button chrome inside our forms (wizard, settings
    modals, and the settings sidebar — all carry the .rb-wizard class). */

@@ -449,7 +449,7 @@ describe('settings', () => {
       </BoardContext.Provider>,
     );
     const tabs = [...el.querySelectorAll('.rb-settings-tab')].map((t) => t.textContent);
-    expect(tabs).toEqual(['General', 'Display', 'Columns']);
+    expect(tabs).toEqual(['General', 'Display', 'Columns', 'Export']);
 
     // Rename through the Name input.
     const name = el.querySelector<HTMLInputElement>('.setting-item input[type="text"]')!;
@@ -472,6 +472,10 @@ describe('settings', () => {
     await act(async () => mousedown(el.querySelectorAll('.rb-settings-tab')[2]));
     expect(count(el, '.rb-col-config-row')).toBe(2);
     expect(count(el, '.rb-switch')).toBe(2);
+
+    // Export tab: a preview of the view's items.
+    await act(async () => mousedown(el.querySelectorAll('.rb-settings-tab')[3]));
+    expect(el.querySelector('.rb-export-preview')?.textContent).toMatch(/^Title,/);
   });
 
   it('board settings: general + property editor (expand, edit, add)', async () => {
