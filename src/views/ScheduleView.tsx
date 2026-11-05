@@ -1,5 +1,5 @@
-import { useMemo, useState, type MouseEvent as ReactMouseEvent, type ReactNode } from 'react';
-import { Menu } from 'obsidian';
+import { useMemo, useRef, useState, type MouseEvent as ReactMouseEvent, type ReactNode } from 'react';
+import { Menu, Platform } from 'obsidian';
 import { DndContext, DragOverlay, closestCenter, pointerWithin, useDraggable, useDroppable, type CollisionDetection, type DragEndEvent } from '@dnd-kit/core';
 import type { BoardItem, DatabaseConfig, ScheduleConfig, ViewConfig } from '../types';
 import { propertyLabel } from '../config';
@@ -8,11 +8,12 @@ import { resolveImageSrc } from '../render/values';
 import { useBoard, useBoardContext } from '../board/context';
 import { TitleLink } from '../components/Card';
 import { useDragSensors } from '../components/dnd';
+import { useElementWidth } from '../components/layout';
 import { Icon } from '../react/Icon';
 import { defaultScheduleConfig, engineSettings, guessLogColumns, guessSchedule } from '../schedule/config';
 import { localDate } from '../schedule/dates';
 import { forecast } from '../schedule/engine';
-import { formatHours, formatRange } from '../schedule/format';
+import { formatHours, formatRange, formatShortRange } from '../schedule/format';
 import { toScheduleItems, toSessions } from '../schedule/inputs';
 import { nextCandidates } from '../schedule/next';
 import { movedPins, placePin, replan, setNotBefore, unpin } from '../schedule/pins';
@@ -23,6 +24,11 @@ import { useLinkedTable } from '../schedule/useLinkedTable';
 import { openDatePrompt, openLogSession, openNextPick, openPickAny, type Candidate, type GameOption } from './ScheduleModals';
 
 const LANE_NAMES = 'ABCDEF';
+/** Below this width the schedule shows one lane at a time and shorter entries. */
+const COMPACT_WIDTH = 620;
+/** Touch screens: no drag (it fights scrolling and the long-press menu); the menu moves items instead. */
+const canDrag = (): boolean => !Platform.isMobile;
+const NO_SENSORS: never[] = [];
 
 /** The slot under the pointer; the nearest one when the pointer is between slots (or for the keyboard). */
 const collision: CollisionDetection = (args) => {
@@ -191,14 +197,32 @@ export function ScheduleView({ config, view, all, viewIndex }: { config: Databas
       menu.addItem((i) => i.setTitle('Finish').setIcon('check-circle').onClick(() => void end(id, n, 'finished')));
       menu.addItem((i) => i.setTitle('Drop').setIcon('x-circle').onClick(() => void end(id, n, 'dropped')));
       if (sc.statuses.paused.length) menu.addItem((i) => i.setTitle('Put on hold').setIcon('pause-circle').onClick(() => void end(id, n, 'paused')));
+      if (entry.reasons.length) menu.addItem((i) => i.setTitle(`Why here: ${entry.reasons.join(' · ')}`).setIcon('info').setDisabled(true));
     } else {
+      if (entry.reasons.length) {
+        menu.addItem((i) => i.setTitle(`Ranked lower: ${entry.reasons.join(' · ')}`).setIcon('info').setDisabled(true));
+        menu.addSeparator();
+      }
       const laneBusy = result.lanes[n].some((x) => x.current);
+      const move = (lane: number, to: number): void => editSchedule((s) => void (s.pins = placePin(s.pins, id, lane, to)));
+      const queuedIn = (lane: number): number => result.lanes[lane].filter((x) => !x.current).length;
       menu.addItem((i) => i.setTitle(laneBusy ? 'Start now (as a side game)' : 'Start now').setIcon('play').onClick(() => void start(id, n)));
-      if (position > 0) menu.addItem((i) => i.setTitle('Move up').setIcon('arrow-up').onClick(() => editSchedule((s) => void (s.pins = placePin(s.pins, id, n, position - 1)))));
-      menu.addItem((i) => i.setTitle('Move down').setIcon('arrow-down').onClick(() => editSchedule((s) => void (s.pins = placePin(s.pins, id, n, position + 1)))));
-      for (let other = 0; other < result.lanes.length; other++) {
-        if (other === n) continue;
-        menu.addItem((i) => i.setTitle(`Move to lane ${laneName(other)}`).setIcon('arrow-right-left').onClick(() => editSchedule((s) => void (s.pins = placePin(s.pins, id, other, 0)))));
+      if (position > 0) menu.addItem((i) => i.setTitle('Move up').setIcon('arrow-up').onClick(() => move(n, position - 1)));
+      if (position < queuedIn(n) - 1) menu.addItem((i) => i.setTitle('Move down').setIcon('arrow-down').onClick(() => move(n, position + 1)));
+      // "Move to #2" (this lane) and "Move to lane B, #1…" (other lanes); positions are 1-based like the labels.
+      for (let lane = 0; lane < result.lanes.length; lane++) {
+        const count = queuedIn(lane) + (lane === n ? 0 : 1);
+        if (lane === n && count < 2) continue;
+        menu.addItem((i) => {
+          i.setTitle(lane === n ? 'Move to position' : `Move to lane ${laneName(lane)}`).setIcon(lane === n ? 'list-ordered' : 'arrow-right-left');
+          // setSubmenu() exists at runtime (Obsidian 1.4+) but isn't in the bundled types.
+          const sub = (i as unknown as { setSubmenu: () => Menu }).setSubmenu();
+          for (let to = 0; to < count; to++) {
+            if (lane === n && to === position) continue;
+            const after = result.lanes[lane].filter((x) => !x.current)[lane === n && to > position ? to : to - 1];
+            sub.addItem((si) => si.setTitle(`#${to + 1}${to === 0 ? ' (next)' : after ? ` · after ${titleOf(after.item)}` : ''}`).onClick(() => move(lane, to)));
+          }
+        });
       }
       if (!entry.pinned) menu.addItem((i) => i.setTitle('Pin here').setIcon('pin').onClick(() => editSchedule((s) => void (s.pins = placePin(s.pins, id, n, position)))));
       else menu.addItem((i) => i.setTitle('Unpin').setIcon('pin-off').onClick(() => editSchedule((s) => void (s.pins = unpin(s.pins, id)))));
@@ -239,8 +263,47 @@ export function ScheduleView({ config, view, all, viewIndex }: { config: Databas
 
   const freeLanes = result.lanes.map((l, n) => (l.some((e) => e.current) ? -1 : n)).filter((n) => n >= 0);
 
+  // Narrow (phones, side panes): one lane at a time behind tabs, single-line entries, no drag.
+  const rootRef = useRef<HTMLDivElement>(null);
+  const width = useElementWidth(rootRef);
+  const compact = Platform.isPhone || (width > 0 && width < COMPACT_WIDTH);
+  const drag = canDrag() && !compact;
+  const [shownLane, setShownLane] = useState(0);
+  const laneShown = Math.min(shownLane, result.lanes.length - 1);
+
+  // Collapsed sections are saved with the view, like collapsed groups elsewhere.
+  const collapsed = useMemo(() => new Set(view.collapsed ?? []), [view.collapsed]);
+  const toggleSection = (id: string): void =>
+    updateView(viewIndex, (v) => {
+      const next = new Set(v.collapsed ?? []);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      v.collapsed = next.size ? [...next] : undefined;
+    });
+
+  /** Right-click / long-press menu of a live or side game. */
+  const chipMenu = (ev: ReactMouseEvent, id: string, side: boolean): void => {
+    ev.preventDefault();
+    const item = itemOf(id);
+    const menu = new Menu();
+    if (side) {
+      for (const n of freeLanes) {
+        menu.addItem((i) => i.setTitle(`Move into lane ${laneName(n)}`).setIcon('arrow-right-left').onClick(() => editSchedule((s) => void (s.assign = { ...s.assign, [id]: n }))));
+      }
+    }
+    if (log.status === 'ok') menu.addItem((i) => i.setTitle('Log play time…').setIcon('timer').onClick(() => openLog(id)));
+    if (sc.statuses.paused.length) menu.addItem((i) => i.setTitle('Put on hold').setIcon('pause-circle').onClick(() => void end(id, -1, 'paused')));
+    menu.addItem((i) => i.setTitle('Finish').setIcon('check-circle').onClick(() => void end(id, -1, 'finished')));
+    menu.addItem((i) => i.setTitle('Drop').setIcon('x-circle').onClick(() => void end(id, -1, 'dropped')));
+    if (item) {
+      menu.addSeparator();
+      menu.addItem((i) => i.setTitle('Open note').setIcon('file-text').onClick(() => actions.editItem(item)));
+    }
+    menu.showAtMouseEvent(ev.nativeEvent);
+  };
+
   return (
-    <div className="rb-schedule">
+    <div ref={rootRef} className={compact ? 'rb-schedule is-compact' : 'rb-schedule'}>
       {(missing.length > 0 || log.status !== 'ok') && (
         <div className="rb-schedule-notice">
           <Icon name="info" />
@@ -253,52 +316,70 @@ export function ScheduleView({ config, view, all, viewIndex }: { config: Databas
         </div>
       )}
 
-      <WeekPanel result={result} itemOf={itemOf} unresolved={unresolved} onLog={log.status === 'ok' ? () => openLog() : undefined} />
+      <WeekPanel result={result} itemOf={itemOf} unresolved={unresolved} compact={compact} onLog={log.status === 'ok' ? () => openLog() : undefined} />
 
       {result.live.length > 0 && (
-        <section className="rb-schedule-live">
-          <h4>
-            <Icon name="radio" /> Live
-          </h4>
+        <Section id="live" title="Live" icon="radio" count={result.live.length} className="rb-schedule-live" collapsed={collapsed} onToggle={toggleSection}>
           <div className="rb-schedule-live-items">
-            {result.live.map((l) => {
-              const item = itemOf(l.item);
-              const liveMenu = (ev: ReactMouseEvent): void => {
-                ev.preventDefault();
-                const menu = new Menu();
-                if (log.status === 'ok') menu.addItem((i) => i.setTitle('Log play time…').setIcon('timer').onClick(() => openLog(l.item)));
-                if (sc.statuses.paused.length) menu.addItem((i) => i.setTitle('Put on hold').setIcon('pause-circle').onClick(() => void end(l.item, -1, 'paused')));
-                menu.addItem((i) => i.setTitle('Finish').setIcon('check-circle').onClick(() => void end(l.item, -1, 'finished')));
-                menu.addItem((i) => i.setTitle('Drop').setIcon('x-circle').onClick(() => void end(l.item, -1, 'dropped')));
-                if (item) {
-                  menu.addSeparator();
-                  menu.addItem((i) => i.setTitle('Open note').setIcon('file-text').onClick(() => actions.editItem(item)));
-                }
-                menu.showAtMouseEvent(ev.nativeEvent);
-              };
+            {result.live.map((l) => (
+              <span key={l.item} className="rb-schedule-chip" onContextMenu={(ev) => chipMenu(ev, l.item, false)} title="Right-click for options">
+                {itemOf(l.item) ? <TitleLink item={itemOf(l.item)!} /> : l.item}
+                <span className="rb-schedule-muted">~{formatHours(l.weekly)}/wk</span>
+                {log.status === 'ok' && !compact && <IconButton icon="timer" label={`Log time for ${titleOf(l.item)}`} onClick={() => openLog(l.item)} />}
+              </span>
+            ))}
+          </div>
+        </Section>
+      )}
+
+      <Section
+        id="lanes"
+        title="Lanes"
+        icon="columns-2"
+        className="rb-schedule-main"
+        collapsed={collapsed}
+        onToggle={toggleSection}
+        hint={
+          movedPins(sc.pins)
+            ? `${movedPins(sc.pins)} placed by hand${sc.pins.some((p) => p.notBefore) ? ' · not-before dates are kept' : ''}`
+            : drag
+              ? 'Drag or right-click games to change the order'
+              : 'Long-press a game to move it'
+        }
+        tools={
+          <button className="rb-schedule-replan-btn" disabled={!movedPins(sc.pins)} onClick={() => editSchedule((s) => void (s.pins = replan(s.pins)))}>
+            <Icon name="refresh-cw" /> Re-plan all
+          </button>
+        }
+      >
+      <DndContext sensors={drag ? sensors : NO_SENSORS} collisionDetection={collision} onDragStart={(e) => setDragging(String(e.active.id))} onDragEnd={onDragEnd} onDragCancel={() => setDragging(null)}>
+        {compact && result.lanes.length > 1 && (
+          <div className="rb-schedule-lane-tabs" role="tablist">
+            {result.lanes.map((lane, n) => {
+              const cur = lane.find((e) => e.current);
               return (
-                <span key={l.item} className="rb-schedule-chip" onContextMenu={liveMenu} title="Right-click for options">
-                  {item ? <TitleLink item={item} /> : l.item}
-                  <span className="rb-schedule-muted">~{formatHours(l.weekly)}/wk</span>
-                  {log.status === 'ok' && <IconButton icon="timer" label={`Log time for ${titleOf(l.item)}`} onClick={() => openLog(l.item)} />}
-                </span>
+                <button key={n} role="tab" aria-selected={n === laneShown} className={n === laneShown ? 'is-active' : ''} onClick={() => setShownLane(n)}>
+                  <span className="rb-schedule-lane-tab-name">Lane {laneName(n)}</span>
+                  <span className="rb-schedule-lane-tab-now">{cur ? titleOf(cur.item) : 'free'}</span>
+                </button>
               );
             })}
           </div>
-        </section>
-      )}
-
-      <DndContext sensors={sensors} collisionDetection={collision} onDragStart={(e) => setDragging(String(e.active.id))} onDragEnd={onDragEnd} onDragCancel={() => setDragging(null)}>
-        <div className="rb-schedule-lanes" style={{ gridTemplateColumns: `repeat(${result.lanes.length}, minmax(0, 1fr))` }}>
+        )}
+        <div className="rb-schedule-lanes" style={{ gridTemplateColumns: compact ? '1fr' : `repeat(${result.lanes.length}, minmax(0, 1fr))` }}>
           {result.lanes.map((lane, n) => {
             const queued = lane.filter((e) => !e.current);
+            if (compact && n !== laneShown) return null;
             return (
               <section key={n} className="rb-schedule-lane" data-lane={n}>
                 <div className="rb-schedule-lane-head">
                   <h4>Lane {laneName(n)}</h4>
-                  {movedPins(sc.pins, n) > 0 && (
-                    <IconButton icon="refresh-cw" label={`Re-plan lane ${laneName(n)}`} onClick={() => editSchedule((s) => void (s.pins = replan(s.pins, n)))} />
-                  )}
+                  <IconButton
+                    icon="refresh-cw"
+                    label={movedPins(sc.pins, n) ? `Re-plan lane ${laneName(n)}` : `Lane ${laneName(n)} is in its automatic order`}
+                    disabled={!movedPins(sc.pins, n)}
+                    onClick={() => editSchedule((s) => void (s.pins = replan(s.pins, n)))}
+                  />
                   <IconButton icon="list-plus" label={`Insert a game into lane ${laneName(n)}`} onClick={() => insert(n, queued.length)} />
                 </div>
                 {freeLanes.includes(n) && (
@@ -315,12 +396,14 @@ export function ScheduleView({ config, view, all, viewIndex }: { config: Databas
                       item={itemOf(e.item)}
                       cover={coverOf(itemOf(e.item))}
                       year={year}
+                      compact={compact}
+                      index={e.current ? undefined : position + 1}
                       onMenu={(ev) => entryMenu(ev, e, n, position)}
                       actions={
                         e.current ? (
                           <>
                             {log.status === 'ok' && <IconButton icon="timer" label={`Log time for ${titleOf(e.item)}`} onClick={() => openLog(e.item)} />}
-                            <IconButton icon="check-circle" label={`Finish ${titleOf(e.item)}`} onClick={() => void end(e.item, n, 'finished')} />
+                            {!compact && <IconButton icon="check-circle" label={`Finish ${titleOf(e.item)}`} onClick={() => void end(e.item, n, 'finished')} />}
                           </>
                         ) : null
                       }
@@ -329,63 +412,32 @@ export function ScheduleView({ config, view, all, viewIndex }: { config: Databas
                   return e.current ? (
                     <div key={e.item}>{body}</div>
                   ) : (
-                    <DraggableEntry key={e.item} id={e.item} lane={n} position={position}>
+                    <DraggableEntry key={e.item} id={e.item} lane={n} position={position} enabled={drag}>
                       {body}
                     </DraggableEntry>
                   );
                 })}
-                {queued.length > 0 && <DropSlot lane={n} position={queued.length} />}
+                {queued.length > 0 && drag && <DropSlot lane={n} position={queued.length} />}
               </section>
             );
           })}
         </div>
         <DragOverlay>{dragging ? <div className="rb-schedule-entry rb-schedule-drag">{titleOf(dragging)}</div> : null}</DragOverlay>
       </DndContext>
+      </Section>
 
       {result.overflow.length > 0 && (
-        <section className="rb-schedule-side">
-          <h4>Also playing</h4>
+        <Section id="side" title="Also playing" icon="gamepad-2" count={result.overflow.length} className="rb-schedule-side" collapsed={collapsed} onToggle={toggleSection}>
           <div className="rb-schedule-live-items">
-            {result.overflow.map((id) => {
-              const item = itemOf(id);
-              const sideMenu = (ev: ReactMouseEvent): void => {
-                ev.preventDefault();
-                const menu = new Menu();
-                for (const n of freeLanes) {
-                  menu.addItem((i) => i.setTitle(`Move into lane ${laneName(n)}`).setIcon('arrow-right-left').onClick(() => editSchedule((s) => void (s.assign = { ...s.assign, [id]: n }))));
-                }
-                if (log.status === 'ok') menu.addItem((i) => i.setTitle('Log play time…').setIcon('timer').onClick(() => openLog(id)));
-                if (sc.statuses.paused.length) menu.addItem((i) => i.setTitle('Put on hold').setIcon('pause-circle').onClick(() => void end(id, -1, 'paused')));
-                menu.addItem((i) => i.setTitle('Finish').setIcon('check-circle').onClick(() => void end(id, -1, 'finished')));
-                menu.addItem((i) => i.setTitle('Drop').setIcon('x-circle').onClick(() => void end(id, -1, 'dropped')));
-                if (item) {
-                  menu.addSeparator();
-                  menu.addItem((i) => i.setTitle('Open note').setIcon('file-text').onClick(() => actions.editItem(item)));
-                }
-                menu.showAtMouseEvent(ev.nativeEvent);
-              };
-              return (
-                <span key={id} className="rb-schedule-chip" onContextMenu={sideMenu} title="Right-click for options">
-                  {item ? <TitleLink item={item} /> : id}
-                  {log.status === 'ok' && <IconButton icon="timer" label={`Log time for ${titleOf(id)}`} onClick={() => openLog(id)} />}
-                  <IconButton icon="check-circle" label={`Finish ${titleOf(id)}`} onClick={() => void end(id, -1, 'finished')} />
-                </span>
-              );
-            })}
+            {result.overflow.map((id) => (
+              <span key={id} className="rb-schedule-chip" onContextMenu={(ev) => chipMenu(ev, id, true)} title="Right-click for options">
+                {itemOf(id) ? <TitleLink item={itemOf(id)!} /> : id}
+                {log.status === 'ok' && !compact && <IconButton icon="timer" label={`Log time for ${titleOf(id)}`} onClick={() => openLog(id)} />}
+                {!compact && <IconButton icon="check-circle" label={`Finish ${titleOf(id)}`} onClick={() => void end(id, -1, 'finished')} />}
+              </span>
+            ))}
           </div>
-        </section>
-      )}
-
-      {movedPins(sc.pins) > 0 && (
-        <div className="rb-schedule-replan">
-          <span className="rb-schedule-muted">
-            {movedPins(sc.pins)} game{movedPins(sc.pins) === 1 ? '' : 's'} placed by hand
-            {sc.pins.some((p) => p.notBefore) && ' · "not before" dates are kept'}
-          </span>
-          <button onClick={() => editSchedule((s) => void (s.pins = replan(s.pins)))}>
-            <Icon name="refresh-cw" /> Re-plan all lanes
-          </button>
-        </div>
+        </Section>
       )}
 
       <footer className="rb-schedule-footer">
@@ -415,12 +467,13 @@ function propertyLabelOf(config: DatabaseConfig, name: string): string {
   return p ? propertyLabel(p).toLowerCase() : name;
 }
 
-function IconButton({ icon, label, onClick }: { icon: string; label: string; onClick: (e: ReactMouseEvent) => void }) {
+function IconButton({ icon, label, onClick, disabled }: { icon: string; label: string; onClick: (e: ReactMouseEvent) => void; disabled?: boolean }) {
   return (
     <button
       className="clickable-icon rb-schedule-icon-btn"
       aria-label={label}
       title={label}
+      disabled={disabled}
       onPointerDown={(e) => e.stopPropagation()}
       onClick={(e) => {
         e.stopPropagation();
@@ -432,16 +485,70 @@ function IconButton({ icon, label, onClick }: { icon: string; label: string; onC
   );
 }
 
-function DraggableEntry({ id, lane, position, children }: { id: string; lane: number; position: number; children: ReactNode }) {
-  const drag = useDraggable({ id, data: { lane, position } });
-  const drop = useDroppable({ id: `slot:${id}`, data: { lane, position } });
+/** A collapsible block with a header (title, count, hint, tools); the open state is saved with the view. */
+function Section({
+  id,
+  title,
+  icon,
+  count,
+  hint,
+  tools,
+  className,
+  collapsed,
+  onToggle,
+  children,
+}: {
+  id: string;
+  title: string;
+  icon: string;
+  count?: number;
+  hint?: string;
+  tools?: ReactNode;
+  className?: string;
+  collapsed: Set<string>;
+  onToggle: (id: string) => void;
+  children: ReactNode;
+}) {
+  const closed = collapsed.has(id);
+  const toggle = (): void => onToggle(id);
+  return (
+    <section className={['rb-schedule-section', className, closed ? 'is-collapsed' : ''].filter(Boolean).join(' ')} data-section={id} data-icon={icon}>
+      {/* The whole row toggles; the tools on the right don't. */}
+      <div className="rb-schedule-section-head" onClick={toggle}>
+        <div
+          className="rb-schedule-section-toggle"
+          role="button"
+          tabIndex={0}
+          aria-expanded={!closed}
+          aria-label={title}
+          onKeyDown={(e) => (e.key === 'Enter' || e.key === ' ') && (e.preventDefault(), toggle())}
+        >
+          <Icon name="chevron-right" className="rb-schedule-section-caret" />
+          <span className="rb-schedule-section-title">{title}</span>
+          {count !== undefined && <span className="rb-schedule-section-count">{count}</span>}
+        </div>
+        {hint && !closed && <span className="rb-schedule-section-hint">{hint}</span>}
+        {tools && !closed && (
+          <div className="rb-schedule-section-tools" onClick={(e) => e.stopPropagation()}>
+            {tools}
+          </div>
+        )}
+      </div>
+      {!closed && <div className="rb-schedule-section-body">{children}</div>}
+    </section>
+  );
+}
+
+function DraggableEntry({ id, lane, position, enabled, children }: { id: string; lane: number; position: number; enabled: boolean; children: ReactNode }) {
+  const drag = useDraggable({ id, data: { lane, position }, disabled: !enabled });
+  const drop = useDroppable({ id: `slot:${id}`, data: { lane, position }, disabled: !enabled });
   return (
     <div
       ref={(el) => {
         drag.setNodeRef(el);
         drop.setNodeRef(el);
       }}
-      className={['rb-schedule-draggable', drag.isDragging ? 'is-dragging' : '', drop.isOver && !drag.isDragging ? 'is-over' : ''].filter(Boolean).join(' ')}
+      className={['rb-schedule-draggable', enabled ? 'can-drag' : '', drag.isDragging ? 'is-dragging' : '', drop.isOver && !drag.isDragging ? 'is-over' : ''].filter(Boolean).join(' ')}
       {...drag.attributes}
       {...drag.listeners}
     >
@@ -455,7 +562,19 @@ function DropSlot({ lane, position }: { lane: number; position: number }) {
   return <div ref={drop.setNodeRef} className={drop.isOver ? 'rb-schedule-slot is-over' : 'rb-schedule-slot'} />;
 }
 
-function WeekPanel({ result, itemOf, unresolved, onLog }: { result: Forecast; itemOf: (id: string) => BoardItem | undefined; unresolved: number; onLog?: () => void }) {
+function WeekPanel({
+  result,
+  itemOf,
+  unresolved,
+  compact,
+  onLog,
+}: {
+  result: Forecast;
+  itemOf: (id: string) => BoardItem | undefined;
+  unresolved: number;
+  compact: boolean;
+  onLog?: () => void;
+}) {
   const { week, pace } = result;
   const logged = week.logged.lane + week.logged.live + week.logged.detour + week.logged.trial;
   const share = Math.min(100, week.budget ? (logged / week.budget) * 100 : 0);
@@ -475,11 +594,13 @@ function WeekPanel({ result, itemOf, unresolved, onLog }: { result: Forecast; it
       <div className="rb-schedule-bar" role="progressbar" aria-valuenow={Math.round(share)} aria-valuemin={0} aria-valuemax={100}>
         <div style={{ width: `${share}%` }} />
       </div>
-      <div className="rb-schedule-week-types rb-schedule-muted">
-        Lanes {formatHours(week.logged.lane)} · Live {formatHours(week.logged.live)} · Other {formatHours(week.logged.detour + week.logged.trial)}
-        {' · '}lane pace ~{formatHours(pace.lane)}/wk
-      </div>
-      {week.suggested.length > 0 && (
+      {!compact && (
+        <div className="rb-schedule-week-types rb-schedule-muted">
+          Lanes {formatHours(week.logged.lane)} · Live {formatHours(week.logged.live)} · Other {formatHours(week.logged.detour + week.logged.trial)}
+          {' · '}lane pace ~{formatHours(pace.lane)}/wk
+        </div>
+      )}
+      {!compact && week.suggested.length > 0 && (
         <ul className="rb-schedule-split">
           {week.suggested.map((s) => {
             const item = itemOf(s.item);
@@ -506,6 +627,8 @@ function Entry({
   item,
   cover,
   year,
+  compact,
+  index,
   onMenu,
   actions,
 }: {
@@ -513,13 +636,44 @@ function Entry({
   item: BoardItem | undefined;
   cover: string | null;
   year: number;
+  compact: boolean;
+  /** Queue number (1 = next); absent for the running item. */
+  index?: number;
   onMenu: (e: ReactMouseEvent) => void;
   actions: ReactNode;
 }) {
   const cls = ['rb-schedule-entry', e.current ? 'is-current' : '', e.paused ? 'is-paused' : ''].filter(Boolean).join(' ');
+  const badge = (
+    <span className={index === undefined ? 'rb-schedule-index is-now' : 'rb-schedule-index'} aria-label={index === undefined ? 'Playing now' : `Number ${index} in this lane`}>
+      {index === undefined ? <Icon name="play" /> : index}
+    </span>
+  );
+  if (compact) {
+    // One title line, one detail line: hours and the done range in short form.
+    const done = formatShortRange(e.end, year);
+    return (
+      <div className={cls} data-item={e.item} onContextMenu={(ev) => (ev.preventDefault(), onMenu(ev))}>
+        {badge}
+        {cover ? <img className="rb-schedule-cover" src={cover} alt="" loading="lazy" draggable={false} /> : <div className="rb-schedule-cover rb-schedule-cover-empty" />}
+        <div className="rb-schedule-entry-body">
+          <div className="rb-schedule-entry-title">
+            {item ? <TitleLink item={item} /> : e.item}
+            {e.pinned && <Icon name="pin" className="rb-schedule-flag" />}
+          </div>
+          <div className="rb-schedule-muted rb-schedule-entry-line">
+            {e.current ? `${formatHours(e.remaining)} left · done ${done}` : `${formatHours(e.remaining)} · done ${done}`}
+            {e.paused && ' · paused?'}
+            {e.penalty > 0 && <span className="rb-schedule-reasons" title={e.reasons.join(' · ')}> · ⚠</span>}
+          </div>
+        </div>
+        {actions && <div className="rb-schedule-entry-actions">{actions}</div>}
+      </div>
+    );
+  }
   return (
     // Right-click (or a long-press on touch screens, which fires contextmenu too) opens the menu.
     <div className={cls} data-item={e.item} title={e.current ? 'Right-click for options' : 'Right-click for options · drag to move'} onContextMenu={(ev) => (ev.preventDefault(), onMenu(ev))}>
+      {badge}
       {cover ? <img className="rb-schedule-cover" src={cover} alt="" loading="lazy" draggable={false} /> : <div className="rb-schedule-cover rb-schedule-cover-empty" />}
       <div className="rb-schedule-entry-body">
         <div className="rb-schedule-entry-title">

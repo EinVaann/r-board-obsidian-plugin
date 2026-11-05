@@ -111,6 +111,8 @@ A database is a single `.board` file (JSON). Opening it shows the board pane wit
 
 - Notes are matched via Obsidian's native metadata cache — any note whose tags include `sourceTag` (frontmatter `tags` or inline `#tags`).
 - Notes named `_template` are excluded from every database.
+- **Auto-dates** (Board settings → Dates): "when Status becomes Playing, set Start date to today". Works however the property changes (board, table or the note itself) and never overwrites a date already set.
+- Links in `.table` cells follow note renames.
 
 ## Views
 
@@ -119,10 +121,30 @@ A database is a single `.board` file (JSON). Opening it shows the board pane wit
 - **Table** — a spreadsheet grid: one row per item, a column per visible property. Click / shift-click / drag to select cells, arrows and Tab to move, type or tap a selected cell to edit, copy and paste as TSV, Delete to clear. Click a header to sort, drag to reorder, drag its edge to resize; right-click a row for its menu.
 - **Chart** — bar, line, area, pie, donut or scatter over the view's filtered items (`chart` settings: categories, date grouping, series split, values and how they combine). Click a bar or slice to list its items.
 - **Recipe** — one card per note showing its title, properties, and full interactive [recipe block](#recipes). The card isn't click-to-open (so the portions stepper stays usable); the title link opens the note.
+- **Schedule** — a forecast of a backlog worked through in lanes (two by default), built from logged time. See [Schedule](#schedule).
 
 Shared across views: a search bar, "View More" pagination, sort & filter (typed operators: *is any of*, *is before*, *is checked*, …), and grouping — dates can group relative to today (Older … Today, Tomorrow … Later) or by week / month / quarter / year, collapsed groups are saved with the view, and a group's **＋** adds an item already in it. **Clicking an item opens its note** in every view (Ctrl/Cmd-click opens in a new tab); clicking a cover image opens it fullscreen instead. The active view is remembered per database.
 
 **Split view** — right-click a view tab → *Show beside* to show another view to its right or below (optionally filtered by the first); drag the divider to resize, × to close.
+
+## Schedule
+
+A guide, not a timetable: it forecasts when you'll get to each item of a backlog (games, books, courses…) from the time you actually log, and shows dates as ranges (`Dec 18–28`).
+
+**Setup** (View settings → Schedule; most of it is guessed from property names):
+- **Session log** — a `.table` with one row per session: a link to the note, hours and a date (and optionally a type: `lane`, `live`, `detour` or `trial`). Only logged hours move the forecast.
+- **Properties** — estimated hours, score (higher goes first), *vary by* (e.g. genre) with optional **similar groups** (`JRPG, Visual novel`), status, a *live* checkbox, start and end dates.
+- **Statuses** — which values mean waiting, playing, finished, dropped and on hold.
+- **Pace** — lanes, what counts as long (40 h), week start, starting guesses. Your log replaces the weekly guess a quarter per full week. *Unlogged live hours* (e.g. gacha dailies) always count.
+- **Penalties** — subtracted from the score when picking what's next: shares a value with the running item in the other lane (3), with the item just before in this lane (2), a second long item at once (4); similar-group matches count half. Nothing is ever blocked.
+
+**Using it:**
+- **This week** — logged vs. expected hours, and how the rest could split. **Log time** adds a row to the log table.
+- **Live** — playing items with the live checkbox, beside the lanes, with their weekly hours (they come off the lane pace).
+- **Lanes** — what runs now (Log time, Finish; right-click for Drop and Put on hold), then what's queued, each with start and done ranges. Finishing or dropping asks **what's next**: the suggestion, two alternatives with their reasons, 🎲 Random, or any item.
+- **Steer** — drag a queued item to reorder it or move it to another lane, or right-click it: Start now, Move up / down / to lane, Pin, *Not before…* (a release date), Insert before, Log a trial. Hand-placed items show a 📌; **Re-plan** (per lane, or all lanes) goes back to the automatic order. More playing items than lanes show as *Also playing*.
+
+Pair it with [auto-dates](#data-source) (Board settings → Dates) so start and end dates fill themselves as statuses change.
 
 ## Tables
 

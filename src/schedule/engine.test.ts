@@ -144,9 +144,19 @@ describe('forecast', () => {
     for (const d of ['2026-10-06', '2026-10-13', '2026-10-20', '2026-10-27']) {
       sessions.push({ item: 'A', date: d, hours: 10 }, { item: 'G', date: d, hours: 4 }, { item: 'H', date: d, hours: 2 });
     }
+    // Logged: 10 lane + 4 live + 2 other a week, on top of the 4 h unlogged daily baseline.
     const f = forecast(items, sessions, S(), TODAY);
-    expect(f.pace).toMatchObject({ weekly: 16, live: 4, other: 2, lane: 10, history: 4 });
-    expect(f.live).toEqual([{ item: 'G', weekly: 4 }]);
+    expect(f.pace).toMatchObject({ weekly: 20, live: 8, other: 2, lane: 10, history: 4 });
+    expect(f.live).toEqual([{ item: 'G', weekly: 8 }]);
+  });
+
+  it('keeps the live baseline when gacha dailies are never logged', () => {
+    const items = [item('A', { state: 'active', duration: 100, start: '2026-10-01' }), item('G1', { state: 'live' }), item('G2', { state: 'live' })];
+    const sessions = ['2026-10-06', '2026-10-13', '2026-10-20', '2026-10-27'].map((d) => ({ item: 'A', date: d, hours: 12 }));
+    const f = forecast(items, sessions, S({ estimates: { weekly: 19, live: 3 } }), TODAY);
+    // Lane time is all that was logged; the 3 h of dailies don't take from it.
+    expect(f.pace).toMatchObject({ weekly: 15, live: 3, lane: 12 });
+    expect(f.live.map((l) => l.weekly)).toEqual([1.5, 1.5]);
   });
 
   it('infers types: trial when written, detour before an item started', () => {

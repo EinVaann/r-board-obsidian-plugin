@@ -49,7 +49,7 @@ const ICONS: Record<string, string> = {
   'maximize-2': '⤢', copy: '⎘', 'grip-vertical': '⋮', list: '☰',
   // Schedule view
   timer: '⏱', 'check-circle': '✓', 'x-circle': '✕', 'pause-circle': '⏸', play: '▶', 'list-plus': '⊕', pin: '📌', 'pin-off': '⊘',
-  'calendar-range': '▦', 'calendar-clock': '⏲', 'arrow-right-left': '⇄', radio: '◎', flag: '⚑', info: 'ⓘ', 'refresh-cw': '↻',
+  'calendar-range': '▦', 'calendar-clock': '⏲', 'arrow-right-left': '⇄', radio: '◎', flag: '⚑', info: 'ⓘ', 'refresh-cw': '↻', 'gamepad-2': '🎮', 'columns-2': '▥', 'list-ordered': '№',
 };
 
 export function setIcon(el: HTMLElement, name: string): void {

@@ -14,7 +14,9 @@ const column = (page: Page, title: string): Locator =>
 
 /** Drag in small steps; the target's box is re-read before letting go (the pane may auto-scroll). */
 async function drag(page: Page, from: Locator, to: Locator): Promise<void> {
-  await to.scrollIntoViewIfNeeded();
+  // Both ends must be on screen for the mouse to reach them.
+  await page.setViewportSize({ width: 1280, height: 1400 });
+  await from.scrollIntoViewIfNeeded();
   const a = (await from.boundingBox())!;
   await page.mouse.move(a.x + a.width / 2, a.y + a.height / 2);
   await page.mouse.down();
@@ -168,12 +170,46 @@ test.describe('schedule view', () => {
 
     await laneA.locator('.rb-schedule-draggable').nth(1).locator('.rb-schedule-entry').click({ button: 'right' });
     await menu(page, 'Move to lane B');
+    await menu(page, '#1 (next)');
     const laneB = page.locator('.rb-schedule-lane').nth(1);
     await expect(laneB.locator('.rb-schedule-draggable').first()).toContainText(title);
 
     await laneB.locator('.rb-schedule-draggable').first().locator('.rb-schedule-entry').click({ button: 'right' });
     await menu(page, 'Unpin');
     await expect(page.locator('.rb-schedule-flag')).toHaveCount(0);
+  });
+
+  test('queued games are numbered; "Move to position" puts one at a number', async ({ page }) => {
+    const laneA = page.locator('.rb-schedule-lane').nth(0);
+    await expect(laneA.locator('.rb-schedule-index').first()).toHaveClass(/is-now/);
+    await expect(laneA.locator('.rb-schedule-draggable .rb-schedule-index').nth(0)).toHaveText('1');
+    await expect(laneA.locator('.rb-schedule-draggable .rb-schedule-index').nth(4)).toHaveText('5');
+    const fifth = laneA.locator('.rb-schedule-draggable').nth(4);
+    const title = (await fifth.locator('.rb-title').textContent())!;
+    await fifth.locator('.rb-schedule-entry').click({ button: 'right' });
+    await menu(page, 'Move to position');
+    await menu(page, /^#2 · after/);
+    await expect(laneA.locator('.rb-schedule-draggable').nth(1)).toContainText(title);
+    await expect(laneA.locator('.rb-schedule-draggable').nth(1).locator('.rb-schedule-index')).toHaveText('2');
+  });
+
+  test('Live, Also playing and Lanes collapse, and stay collapsed with the view', async ({ page }) => {
+    const heads = page.locator('.rb-schedule-section-toggle');
+    await expect(heads).toHaveText([/Live\s*3/, /Lanes/, /Also playing\s*1/]);
+    await page.getByRole('button', { name: 'Live', exact: true }).click();
+    await expect(page.locator('.rb-schedule-live .rb-schedule-chip')).toHaveCount(0);
+    await expect(page.getByRole('button', { name: 'Live', exact: true })).toHaveAttribute('aria-expanded', 'false');
+    // Clicking anywhere on the heading row toggles, keyboard too.
+    await page.locator('[data-section="lanes"] .rb-schedule-section-head').click({ position: { x: 400, y: 10 } });
+    await expect(page.locator('.rb-schedule-lane')).toHaveCount(0);
+    await expect(page.getByRole('button', { name: 'Re-plan all' })).toHaveCount(0);
+    expect((await page.evaluate(() => window.__store.getState().config!.views[0].collapsed))!.sort()).toEqual(['lanes', 'live']);
+    await page.getByRole('button', { name: 'Lanes', exact: true }).focus();
+    await page.keyboard.press('Enter');
+    await expect(page.locator('.rb-schedule-lane')).toHaveCount(2);
+    // Re-plan all in the heading doesn't toggle the section.
+    await page.getByRole('button', { name: 'Re-plan all' }).click({ force: true });
+    await expect(page.locator('.rb-schedule-lane')).toHaveCount(2);
   });
 
   test('dragging a queued game to another lane pins it there', async ({ page }) => {
@@ -210,7 +246,7 @@ test.describe('schedule view', () => {
   test('Re-plan undoes manual moves in one lane or all, keeping not-before holds', async ({ page }) => {
     const order = (n: number) => page.locator('.rb-schedule-lane').nth(n).locator('.rb-schedule-draggable .rb-title').allTextContents();
     const before = [await order(0), await order(1)];
-    await expect(page.getByRole('button', { name: /Re-plan/ })).toHaveCount(0);
+    await expect(page.getByRole('button', { name: 'Re-plan all' })).toBeDisabled();
     const set = (pins: unknown[]) =>
       page.evaluate((p) => {
         const s = window.__store.getState();
@@ -227,16 +263,16 @@ test.describe('schedule view', () => {
     // Lane A goes back to automatic; lane B keeps its pins (so lane A may still differ from before).
     await page.getByRole('button', { name: 'Re-plan lane A' }).click();
     await expect(page.locator('.rb-schedule-lane').nth(0).locator('.rb-schedule-flag')).toHaveCount(0);
-    await expect(page.getByRole('button', { name: 'Re-plan lane A' })).toHaveCount(0);
+    await expect(page.getByRole('button', { name: 'Lane A is in its automatic order' })).toBeDisabled();
     expect((await order(1))[0]).toBe(before[1][3]);
 
-    await page.getByRole('button', { name: 'Re-plan all lanes' }).click();
+    await page.getByRole('button', { name: 'Re-plan all' }).click();
     // With only the not-before hold left, lane A is back to its automatic order.
     await expect.poll(async () => (await order(0)).slice(0, 3)).toEqual(before[0].slice(0, 3));
     const pins = await page.evaluate(() => window.__store.getState().config!.views[0].schedule!.pins);
     expect(pins).toEqual([{ item: id(before[1][5]), lane: 1, position: 1, notBefore: '2027-09-01' }]);
-    // A not-before hold alone isn't "moved by hand", so the buttons go away.
-    await expect(page.getByRole('button', { name: /Re-plan/ })).toHaveCount(0);
+    // A not-before hold alone isn't "moved by hand", so the buttons are off again.
+    await expect(page.getByRole('button', { name: 'Re-plan all' })).toBeDisabled();
   });
 
   test('live and side games have a right-click menu too', async ({ page }) => {
@@ -250,9 +286,23 @@ test.describe('schedule view', () => {
     await expect(page.locator('.dev-menu .menu-item')).toContainText(['Log play time…', 'Put on hold', 'Finish', 'Drop', 'Open note']);
   });
 
-  test('stacks the lanes on a phone', async ({ page }) => {
-    await open(page, { kind: 'schedule', mobile: true });
-    const [a, b] = await page.locator('.rb-schedule-lane').evaluateAll((els) => els.map((e) => e.getBoundingClientRect().top));
-    expect(b).toBeGreaterThan(a);
+  test('a narrow pane shows one lane at a time behind tabs', async ({ page }) => {
+    await page.setViewportSize({ width: 480, height: 900 });
+    await expect(page.locator('.rb-schedule')).toHaveClass(/is-compact/);
+    const tabs = page.getByRole('tab');
+    await expect(tabs).toHaveCount(2);
+    await expect(tabs.nth(0)).toContainText('Lane A');
+    await expect(page.locator('.rb-schedule-lane')).toHaveCount(1);
+    await expect(page.locator('.rb-schedule-entry.is-current')).toHaveCount(1);
+    await tabs.nth(1).click();
+    await expect(tabs.nth(1)).toHaveAttribute('aria-selected', 'true');
+    await expect(page.locator('.rb-schedule-lane')).toHaveAttribute('data-lane', '1');
+    // Entries are one line each: title, then hours and done range.
+    const entry = page.locator('.rb-schedule-draggable .rb-schedule-entry').first();
+    await expect(entry.locator('.rb-schedule-entry-line')).toContainText(/h · done /);
+    expect(await page.evaluate(() => document.documentElement.scrollWidth - innerWidth)).toBeLessThanOrEqual(1);
+    // Wide again: both lanes side by side.
+    await page.setViewportSize({ width: 1280, height: 800 });
+    await expect(page.locator('.rb-schedule-lane')).toHaveCount(2);
   });
 });

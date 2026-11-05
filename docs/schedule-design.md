@@ -109,7 +109,9 @@ Obsidian or React imports, so it is unit-tested directly.
 3. **Remaining** = duration − lane hours logged. Past the estimate: +10% of
    the estimate, marked "past estimate", with no warning.
 4. **Pace** (averages over the last `paceWeeks` full weeks, blended with
-   `estimates` while history is short):
+   `estimates.weekly` while history is short; each full week moves a quarter
+   of the weight to the log). `estimates.live` is unlogged daily time on live
+   items: always counted, logged live time comes on top.
    lane pace = weekly − live − detour/trial.
 5. **Simulate.** Advance to whichever lane frees first; fill it from pins,
    else `pick()`; repeat until the pool is empty. A lane's share of lane pace:
@@ -128,11 +130,16 @@ with average weekly hours per item, and an overall finish range.
 
 ## View (`src/views/ScheduleView.tsx`)
 
-- **Week panel**: logged vs. budget by type, suggested split, Log session.
-- **Live band**: running live items and their average weekly hours.
-- **Lane timeline**: bars with cover and title, labelled with a date range
-  (`Dec 18–28`). Drag to reorder (pins); click for Start / Finish / Drop /
-  Unpin / Open note; "Insert here" between bars.
+- **Week panel**: logged vs. budget by type, suggested split, Log time.
+- **Live band**: running live items and their average weekly hours;
+  right-click to log, hold, finish or drop.
+- **Lane timeline**: entries with cover, title and date ranges (`Dec 18–28`).
+  Queued entries: drag to reorder or move lanes (pins), right-click for Start
+  now / Move / Pin / Unpin / Not before / Insert before / Log a trial. Running
+  entries: Log time and Finish buttons, right-click for Drop / Put on hold.
+  Running items keep their lane (`assign`); side games are `-1`.
+- **Re-plan**: per lane and for all lanes, drops hand-placed pins (not-before
+  holds stay).
 - **Next-pick modal** when a lane frees: the next item, two alternatives,
   Random (among the least penalised items), or any item.
 - Embeddable in notes with an ```` ```rboard ```` block like other views.

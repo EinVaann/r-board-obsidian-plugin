@@ -107,7 +107,8 @@ function inferType(s: Session, byId: Map<string, ScheduleItem>, laneIds: Set<str
 
 /**
  * Average weekly hours over the last `paceWeeks` full weeks that have history,
- * blended with the estimates while history is shorter than that.
+ * blended with the estimates while history is shorter than that. The live
+ * estimate is unlogged daily time: always counted, logged live time comes on top.
  */
 function computePace(sessions: (Session & { type: SessionType })[], settings: ScheduleSettings, todayDay: number): Pace {
   const thisWeek = weekStart(todayDay, settings.weekStart);
@@ -122,8 +123,9 @@ function computePace(sessions: (Session & { type: SessionType })[], settings: Sc
   }
   const w = settings.paceWeeks > 0 ? history / settings.paceWeeks : 0;
   const avg = (h: number): number => (history ? h / history : 0);
-  const weekly = w * avg(sums.lane + sums.live + sums.detour + sums.trial) + (1 - w) * settings.estimates.weekly;
-  const live = w * avg(sums.live) + (1 - w) * settings.estimates.live;
+  const base = settings.estimates.live;
+  const weekly = w * (avg(sums.lane + sums.live + sums.detour + sums.trial) + base) + (1 - w) * settings.estimates.weekly;
+  const live = base + w * avg(sums.live);
   const other = w * avg(sums.detour + sums.trial);
   const lane = Math.max(MIN_LANE_PACE, weekly - live - other);
   return { weekly: round1(weekly), live: round1(live), other: round1(other), lane: round1(lane), history };
@@ -365,7 +367,7 @@ function weekSummary(
   return { start: fromDay(start), logged, budget: pace.weekly, suggested: need.map((n) => ({ item: n.item, hours: round1(n.hours) })) };
 }
 
-/** Average weekly hours per live item over the pace window, blended with an even split of the live estimate. */
+/** Weekly hours per live item: an even share of the unlogged baseline, plus its logged average (weighted by history). */
 function liveRates(
   items: ScheduleItem[],
   sessions: (Session & { type: SessionType })[],
@@ -385,6 +387,6 @@ function liveRates(
   const w = settings.paceWeeks > 0 ? pace.history / settings.paceWeeks : 0;
   const share = settings.estimates.live / live.length;
   return live
-    .map((i) => ({ item: i.id, weekly: round1(w * (pace.history ? (sums.get(i.id) ?? 0) / pace.history : 0) + (1 - w) * share) }))
+    .map((i) => ({ item: i.id, weekly: round1(share + w * (pace.history ? (sums.get(i.id) ?? 0) / pace.history : 0)) }))
     .sort((a, b) => b.weekly - a.weekly);
 }

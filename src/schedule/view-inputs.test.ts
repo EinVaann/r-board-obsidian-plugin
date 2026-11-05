@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import type { BoardItem, DatabaseConfig } from '../types';
 import { parseDatabaseConfig, serializeDatabase, makeDefaultView } from '../config';
 import { defaultScheduleConfig, guessLogColumns, guessSchedule, parseSchedule } from './config';
-import { formatRange } from './format';
+import { formatRange, formatShortRange } from './format';
 import { stateOf, toScheduleItems, toSessions } from './inputs';
 
 const sc = { ...defaultScheduleConfig(), status: 'status', live: 'live', duration: 'hours', score: 'score', vary: 'genre', startDate: 'start' };
@@ -83,5 +83,11 @@ describe('schedule format', () => {
     expect(formatRange({ early: '2026-12-28', late: '2027-01-04' }, 2026)).toBe('Dec 28, 2026 – Jan 4, 2027');
     expect(formatRange({ early: '2027-02-02', late: '2027-03-01' }, 2026)).toBe('Feb 2 – Mar 1, 2027');
     expect(formatRange({ early: '2026-11-13', late: '2026-11-13' }, 2026)).toBe('Nov 13');
+  });
+
+  it('writes short ranges for narrow screens', () => {
+    expect(formatShortRange({ early: '2026-12-18', late: '2026-12-28' }, 2026)).toBe('Dec 18–28');
+    expect(formatShortRange({ early: '2027-02-02', late: '2027-03-01' }, 2026)).toBe('Feb 2–Mar 1 ’27');
+    expect(formatShortRange({ early: '2026-12-21', late: '2027-01-04' }, 2026)).toBe('Dec ’26–Jan ’27');
   });
 });

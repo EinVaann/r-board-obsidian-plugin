@@ -45,3 +45,35 @@ test.describe('phone layout', () => {
     await expect(page.locator('.rb-sheet-handle')).toBeVisible();
   });
 });
+
+test.describe('schedule on a phone', () => {
+  test.beforeEach(({ page }) => open(page, { kind: 'schedule', mobile: true }));
+
+  test('lane tabs, no sideways scroll, tap-size buttons', async ({ page }) => {
+    await expect(page.getByRole('tab')).toHaveCount(2);
+    await expect(page.locator('.rb-schedule-lane')).toHaveCount(1);
+    expect(await page.evaluate(() => document.documentElement.scrollWidth - innerWidth)).toBeLessThanOrEqual(1);
+    const btn = (await page.locator('.rb-schedule-entry.is-current').getByRole('button').first().boundingBox())!;
+    expect(btn.width).toBeGreaterThanOrEqual(36);
+  });
+
+  test('long-press a playing game to finish it', async ({ page }) => {
+    await page.locator('.rb-schedule-entry.is-current').dispatchEvent('contextmenu');
+    await expect(page.locator('.dev-menu .menu-item', { hasText: /^Finish$/ })).toBeVisible();
+  });
+
+  test('long-press menu moves a game (drag is off)', async ({ page }) => {
+    await expect(page.locator('.rb-schedule-draggable.can-drag')).toHaveCount(0);
+    const laneA = page.locator('.rb-schedule-lane').nth(0);
+    const title = (await laneA.locator('.rb-schedule-draggable').nth(2).locator('.rb-title').textContent())!;
+    await laneA.locator('.rb-schedule-draggable').nth(2).locator('.rb-schedule-entry').dispatchEvent('contextmenu');
+    await page.locator('.dev-menu .menu-item', { hasText: 'Move up' }).click();
+    await expect(laneA.locator('.rb-schedule-draggable').nth(1)).toContainText(title);
+  });
+
+  test('Log time opens as a bottom sheet', async ({ page }) => {
+    await page.getByRole('button', { name: 'Log time', exact: false }).first().click();
+    await expect(page.locator('.rb-sheet')).toBeVisible();
+    await expect(page.getByLabel('Hours')).toBeVisible();
+  });
+});

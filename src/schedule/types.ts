@@ -52,7 +52,7 @@ export interface ScheduleSettings {
   /** Items longer than this (hours) count as long; one long item at a time. */
   longOver: number;
   weekStart: 'mon' | 'sun';
-  /** Weekly hours assumed until there is log history. */
+  /** `weekly`: all play time assumed until there is log history; `live`: unlogged live time, always counted. */
   estimates: { weekly: number; live: number };
   /** How many full past weeks pace is averaged over. */
   paceWeeks: number;

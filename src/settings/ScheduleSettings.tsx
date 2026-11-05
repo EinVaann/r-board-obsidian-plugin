@@ -151,10 +151,10 @@ export function ScheduleSettings({ config, view, edit }: { config: DatabaseConfi
           onChange={(weekStart) => set({ weekStart })}
         />
       </SettingRow>
-      <SettingRow name="Hours per week" desc="Starting guess, replaced by your log as weeks pass.">
+      <SettingRow name="Hours per week" desc="Starting guess of all play time. Your log takes over a quarter per full week, completely after 4.">
         {numberInput(sc.estimates.weekly, (weekly) => set({ estimates: { ...sc.estimates, weekly } }))}
       </SettingRow>
-      <SettingRow name="Live hours per week" desc="Starting guess for the live band.">
+      <SettingRow name="Unlogged live hours per week" desc="Daily time on live games you don't log (e.g. gacha dailies). Always counted; logged live sessions come on top.">
         {numberInput(sc.estimates.live, (live) => set({ estimates: { ...sc.estimates, live } }))}
       </SettingRow>
       <SettingRow name="Average over (weeks)">
