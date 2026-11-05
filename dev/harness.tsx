@@ -26,6 +26,8 @@ declare global {
     __fixture?: { table?: string; board?: unknown; notes?: Record<string, Record<string, unknown>> };
     /** Console-style log of actions the fake Obsidian received (open note, notices…). */
     __log: string[];
+    /** Non-note files of the fake vault (e.g. the schedule's log table), by path. */
+    __files: Record<string, string>;
   }
 }
 
@@ -126,6 +128,9 @@ const SCHEDULE_BOARD = {
 
 /** Metadata-cache `changed` listeners (the auto-date watcher). */
 const changedHandlers: ((f: TFile) => void)[] = [];
+/** Vault `modify` listeners (views reading another file, like the schedule's log). */
+const modifyHandlers: ((f: TFile) => void)[] = [];
+window.__files = FILES;
 
 function fakeApp(onNotesChanged: () => void): App {
   const files = () => Object.keys(NOTES).map((p) => new TFile(p));
@@ -135,7 +140,13 @@ function fakeApp(onNotesChanged: () => void): App {
       getMarkdownFiles: files,
       getAbstractFileByPath: (p: string) => (p in NOTES || p in FILES ? new TFile(p) : null),
       cachedRead: async (f: TFile) => FILES[f.path] ?? 'Some note body.',
-      on: () => ({}),
+      process: async (f: TFile, fn: (text: string) => string) => {
+        FILES[f.path] = fn(FILES[f.path] ?? '');
+        log(`[write] ${f.path}`);
+        setTimeout(() => modifyHandlers.forEach((h) => h(new TFile(f.path))), 0);
+        return FILES[f.path];
+      },
+      on: (name: string, fn: (f: TFile) => void) => (name === 'modify' && modifyHandlers.push(fn), {}),
       offref: () => undefined,
       getResourcePath: () => '',
       createFolder: async () => undefined,
@@ -151,6 +162,7 @@ function fakeApp(onNotesChanged: () => void): App {
         return hit ? new TFile(hit) : null;
       },
       getFileCache: (f: TFile) => ({ frontmatter: NOTES[f.path] }),
+      fileToLinktext: (f: TFile) => f.path.replace(/\.md$/, ''),
       on: (name: string, fn: (f: TFile) => void) => (name === 'changed' && changedHandlers.push(fn), {}),
     },
     fileManager: {
@@ -167,6 +179,7 @@ function fakeApp(onNotesChanged: () => void): App {
     },
     workspace: {
       openLinkText: (t: string) => log(`[open link] ${t}`),
+      getLeavesOfType: () => [],
       on: () => null,
       offref: () => undefined,
       getLeaf: () => ({ openFile: (f: TFile) => log(`[open] ${f.path}`) }),

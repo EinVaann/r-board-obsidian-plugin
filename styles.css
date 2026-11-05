@@ -2421,3 +2421,97 @@ body:not(.is-phone) .rb-edit-modal {
 .rb-schedule-similar { width: 220px; max-width: 100%; box-sizing: border-box; font-family: inherit; }
 
 .is-phone .rb-schedule-lanes { grid-template-columns: 1fr !important; }
+
+/* Controls */
+.rb-schedule-log { display: inline-flex; align-items: center; gap: 4px; margin-left: auto; }
+.rb-schedule-week-head > span { margin-left: auto; }
+.rb-schedule-week-head .rb-schedule-log { margin-left: 8px; }
+.rb-schedule-lane-head { display: flex; align-items: center; justify-content: space-between; }
+.rb-schedule-lane-head h4 { margin: 0 auto 0 0; }
+.rb-schedule-lane-head { gap: 4px; }
+.rb-schedule-replan { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 6px 12px; }
+.rb-schedule-replan button { display: inline-flex; align-items: center; gap: 6px; }
+.rb-schedule-icon-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: none;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  border-radius: var(--radius-s);
+  color: var(--text-muted);
+  --icon-size: var(--icon-m, 18px);
+}
+.rb-schedule-icon-btn svg { width: var(--icon-size); height: var(--icon-size); }
+.rb-schedule-chip .rb-schedule-icon-btn { width: 24px; height: 24px; --icon-size: var(--icon-s, 16px); }
+.is-mobile .rb-schedule-icon-btn { width: 36px; height: 36px; }
+.rb-schedule-entry { position: relative; }
+.rb-schedule-entry-body { flex: 1; }
+.rb-schedule-entry-actions { display: flex; align-items: flex-start; gap: 4px; opacity: 0.6; transition: opacity 0.1s; }
+.rb-schedule-entry:hover .rb-schedule-entry-actions,
+.is-mobile .rb-schedule-entry-actions { opacity: 1; }
+.rb-schedule-free {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  width: 100%;
+  padding: 10px;
+  border: 1px dashed var(--interactive-accent);
+  border-radius: var(--radius-s);
+  background: transparent;
+  color: var(--text-accent);
+  box-shadow: none;
+}
+
+/* Hover: entries lift slightly; queued ones show they can be grabbed. */
+.rb-schedule-entry { transition: background-color 0.12s, box-shadow 0.12s, transform 0.12s; }
+.rb-schedule-entry:hover { background: var(--background-modifier-hover); }
+.rb-schedule-entry.is-current:hover { background: var(--background-secondary-alt, var(--background-modifier-hover)); }
+.rb-schedule-draggable:hover .rb-schedule-entry { box-shadow: var(--shadow-s); transform: translateY(-1px); }
+.rb-schedule-draggable:hover .rb-schedule-cover { filter: brightness(1.05); }
+.rb-schedule-entry-title .rb-title:hover { color: var(--text-accent); text-decoration: underline; }
+.rb-schedule-chip { transition: background-color 0.12s; }
+.rb-schedule-chip:hover { background: var(--background-modifier-hover); }
+.rb-schedule-icon-btn:hover { color: var(--text-normal); background: var(--background-modifier-hover); }
+.rb-schedule-free { transition: background-color 0.12s; }
+.rb-schedule-free:hover { background: hsla(var(--interactive-accent-hsl), 0.08); }
+.rb-schedule-option { transition: border-color 0.12s, background-color 0.12s; }
+.rb-schedule-option:hover { border-color: var(--interactive-accent); background: var(--background-modifier-hover); }
+.rb-schedule-draggable.is-dragging .rb-schedule-entry,
+.is-mobile .rb-schedule-draggable:hover .rb-schedule-entry { box-shadow: none; transform: none; }
+@media (prefers-reduced-motion: reduce) {
+  .rb-schedule-draggable:hover .rb-schedule-entry { transform: none; }
+}
+
+/* Dragging a queued game */
+.rb-schedule-draggable { cursor: grab; border-top: 2px solid transparent; border-radius: var(--radius-s); touch-action: manipulation; }
+.rb-schedule-draggable.is-dragging { opacity: 0.35; }
+.rb-schedule-draggable.is-over { border-top-color: var(--interactive-accent); }
+.rb-schedule-slot { height: 18px; border-top: 2px solid transparent; }
+.rb-schedule-slot.is-over { border-top-color: var(--interactive-accent); }
+.rb-schedule-drag { padding: 8px 12px; background: var(--background-primary); box-shadow: var(--shadow-s); font-weight: var(--font-semibold); cursor: grabbing; }
+
+/* Modals */
+.rb-schedule-form input[type='number'],
+.rb-schedule-form input[type='date'] { width: 160px; }
+.rb-schedule-form-buttons { display: flex; justify-content: flex-end; flex-wrap: wrap; gap: 8px; margin-top: 14px; }
+.rb-schedule-next,
+.rb-schedule-any { display: flex; flex-direction: column; gap: 6px; }
+.rb-schedule-option {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+  height: auto;
+  padding: 8px 12px;
+  text-align: left;
+  white-space: normal;
+  border: 1px solid var(--background-modifier-border);
+  box-shadow: none;
+}
+.rb-schedule-option.is-best { border-color: var(--interactive-accent); }
+.rb-schedule-option-title { display: flex; align-items: center; gap: 6px; font-weight: var(--font-semibold); }
+.rb-schedule-any input[type='search'] { width: 100%; }
+.rb-schedule-any-list { display: flex; flex-direction: column; gap: 4px; max-height: 50vh; overflow: auto; }

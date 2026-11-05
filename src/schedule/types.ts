@@ -61,6 +61,8 @@ export interface ScheduleSettings {
   /** Subtracted from a candidate's score; nothing is forbidden. */
   penalties: Penalties;
   pins: Pin[];
+  /** Active item id → the lane it runs in (kept when another lane frees up); -1 = a side game, never moved into a lane. */
+  assign?: Record<string, number>;
   /** Days without lane time before an active item is flagged paused. */
   pausedAfterDays: number;
 }

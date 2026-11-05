@@ -36,11 +36,23 @@ export function forecast(items: ScheduleItem[], sessions: Session[], settings: S
   const todayDay = toDay(today) ?? 0;
   const byId = new Map(items.map((i) => [i.id, i]));
 
-  // Active items fill the lanes, earliest started first; the rest are side games.
+  // Active items keep their assigned lane, then fill free lanes earliest started first; the rest are side games.
   const active = items.filter((i) => i.state === 'active').sort((a, b) => (toDay(a.start) ?? Infinity) - (toDay(b.start) ?? Infinity) || byRank(a, b));
-  const inLanes = active.slice(0, settings.lanes);
-  const overflow = active.slice(settings.lanes).map((i) => i.id);
+  const slots: (ScheduleItem | null)[] = Array.from({ length: settings.lanes }, () => null);
+  const unassigned: ScheduleItem[] = [];
+  for (const i of active) {
+    const n = settings.assign?.[i.id];
+    if (n === -1) continue; // kept as a side game
+    if (n !== undefined && n >= 0 && n < settings.lanes && !slots[n]) slots[n] = i;
+    else unassigned.push(i);
+  }
+  for (const i of unassigned) {
+    const n = slots.indexOf(null);
+    if (n >= 0) slots[n] = i;
+  }
+  const inLanes = slots.filter((i): i is ScheduleItem => i !== null);
   const laneIds = new Set(inLanes.map((i) => i.id));
+  const overflow = active.filter((i) => !laneIds.has(i.id)).map((i) => i.id);
 
   const typed = sessions.map((s) => ({ ...s, type: s.type ?? inferType(s, byId, laneIds) }));
   const played = new Map<string, number>();
@@ -67,7 +79,7 @@ export function forecast(items: ScheduleItem[], sessions: Session[], settings: S
     return left > 0 ? { hours: left, over: false } : { hours: Math.max(est * 0.1, 0.5), over: true };
   };
 
-  const lanes = simulate({ items, inLanes, settings, pace, mid, remainingOf, todayDay, factors, firstSession, lastLane });
+  const lanes = simulate({ items, inLanes: slots, settings, pace, mid, remainingOf, todayDay, factors, firstSession, lastLane });
   const week = weekSummary(typed, inLanes, pace, settings, todayDay, remainingOf);
   const live = liveRates(items, typed, pace, settings, todayDay);
   const ends = lanes.flat().map((e) => e.end);
@@ -131,7 +143,8 @@ function computeOverrun(items: ScheduleItem[], played: Map<string, number>): num
 
 interface SimInput {
   items: ScheduleItem[];
-  inLanes: ScheduleItem[];
+  /** The running item per lane (null = free). */
+  inLanes: (ScheduleItem | null)[];
   settings: ScheduleSettings;
   pace: Pace;
   mid: number;

@@ -281,7 +281,8 @@ export interface ScheduleConfig {
   vary?: string;
   similar: string[][];
   status?: string;
-  statuses: { pool: string[]; active: string[]; finished: string[]; dropped: string[] };
+  /** Status values per role; the first of each is the one written. `paused` = on hold (out of the plan). */
+  statuses: { pool: string[]; active: string[]; finished: string[]; dropped: string[]; paused: string[] };
   /** Checkbox: active items with it run outside the lanes. */
   live?: string;
   startDate?: string;
@@ -294,6 +295,8 @@ export interface ScheduleConfig {
   pausedAfterDays: number;
   penalties: Penalties;
   pins: Pin[];
+  /** Note path → the lane a playing item runs in. */
+  assign?: Record<string, number>;
 }
 
 /** Per-column display overrides for a kanban view. */

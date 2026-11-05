@@ -5,7 +5,7 @@ import { DEFAULT_PENALTIES, DEFAULT_SETTINGS, type Penalties, type Pin, type Sch
 export function defaultScheduleConfig(): ScheduleConfig {
   return {
     similar: [],
-    statuses: { pool: ['planned'], active: ['playing'], finished: ['completed'], dropped: ['dropped'] },
+    statuses: { pool: ['planned'], active: ['playing'], finished: ['completed'], dropped: ['dropped'], paused: ['on-hold'] },
     lanes: DEFAULT_SETTINGS.lanes,
     longOver: DEFAULT_SETTINGS.longOver,
     weekStart: DEFAULT_SETTINGS.weekStart,
@@ -39,7 +39,10 @@ export function parseSchedule(raw: unknown): ScheduleConfig {
     if (str(o.notBefore)) pin.notBefore = o.notBefore as string;
     pins.push(pin);
   }
+  const assign: Record<string, number> = {};
+  for (const [k, v] of Object.entries(obj(c.assign))) if (typeof v === 'number' && v >= -1) assign[k] = Math.round(v);
   return {
+    assign: Object.keys(assign).length ? assign : undefined,
     log: str(c.log),
     logItem: str(c.logItem),
     logHours: str(c.logHours),
@@ -50,7 +53,7 @@ export function parseSchedule(raw: unknown): ScheduleConfig {
     vary: str(c.vary),
     similar: Array.isArray(c.similar) ? c.similar.map(strs).filter((g) => g.length > 1) : [],
     status: str(c.status),
-    statuses: { pool: statusList('pool'), active: statusList('active'), finished: statusList('finished'), dropped: statusList('dropped') },
+    statuses: { pool: statusList('pool'), active: statusList('active'), finished: statusList('finished'), dropped: statusList('dropped'), paused: statusList('paused') },
     live: str(c.live),
     startDate: str(c.startDate),
     endDate: str(c.endDate),
@@ -76,6 +79,7 @@ export function engineSettings(c: ScheduleConfig): ScheduleSettings {
     similar: c.similar,
     penalties: c.penalties,
     pins: c.pins,
+    assign: c.assign,
     pausedAfterDays: c.pausedAfterDays,
   };
 }

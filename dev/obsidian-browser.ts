@@ -47,6 +47,9 @@ const ICONS: Record<string, string> = {
   globe: '🌐', link: '🔗', image: '🖼', sigma: 'Σ', 'chevron-up': '▴', 'chevron-down': '▾', 'chevron-right': '›', 'chevron-left': '‹',
   'trash-2': '🗑', trash: '🗑', 'file-plus': '+', 'more-horizontal': '⋯', 'file-text': '📄', eye: '◉', 'eye-off': '◌', pencil: '✎',
   'maximize-2': '⤢', copy: '⎘', 'grip-vertical': '⋮', list: '☰',
+  // Schedule view
+  timer: '⏱', 'check-circle': '✓', 'x-circle': '✕', 'pause-circle': '⏸', play: '▶', 'list-plus': '⊕', pin: '📌', 'pin-off': '⊘',
+  'calendar-range': '▦', 'calendar-clock': '⏲', 'arrow-right-left': '⇄', radio: '◎', flag: '⚑', info: 'ⓘ', 'refresh-cw': '↻',
 };
 
 export function setIcon(el: HTMLElement, name: string): void {
@@ -149,7 +152,10 @@ export class Modal {
   open(): void {
     this.bg.appendChild(this.modalEl);
     document.body.appendChild(this.bg);
-    this.bg.onclick = (e) => e.target === this.bg && this.close();
+    // A block body: an `onclick` returning false would cancel every click inside (no form submits).
+    this.bg.onclick = (e) => {
+      if (e.target === this.bg) this.close();
+    };
     document.addEventListener('keydown', this.onKey);
     void this.onOpen();
   }
