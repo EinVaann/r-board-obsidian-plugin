@@ -1,9 +1,9 @@
 {
   "id": "r-board",
   "name": "R Board",
-  "version": "0.8.0",
+  "version": "0.9.0",
   "minAppVersion": "1.4.0",
-  "description": "Databases over your notes (.board) or rows stored in the file (.table): Kanban, Gallery, Table and Chart views with formulas, filters and grouping.",
+  "description": "Databases over your notes (.board) or rows stored in the file (.table): Kanban, Gallery, Table, Chart and Schedule views with formulas, filters and grouping.",
   "author": "EinVaann",
   "authorUrl": "https://github.com/EinVaann",
   "isDesktopOnly": false
