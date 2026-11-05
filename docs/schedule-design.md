@@ -71,6 +71,7 @@ interface ScheduleConfig {
   weekStart: 'mon' | 'sun';     // 'mon'
   estimates: { weekly: number; live: number }; // until history exists
   paceWeeks: number;            // 4
+  penalties: { running: number; previous: number; long: number; similarFactor: number }; // 3, 2, 4, 0.5
   pins: { item: string; lane: number; position: number; notBefore?: string }[];
 }
 ```
@@ -81,12 +82,19 @@ interface ScheduleConfig {
 property, or when one has a value and the other a value in the same `similar`
 group (e.g. JRPG next to a visual novel).
 
-A candidate for a lane may not conflict with the item running in another lane
-at that time, nor with the item that just ended in this lane. At most one
-item longer than `longOver` runs at a time. Among the rest: highest score,
-then oldest note. If nothing passes, the best item is still chosen and marked
-⚠️ with the reason. Manual pins and inserts are never blocked; a conflict only
-shows the ⚠️.
+Nothing is forbidden. Conflicts are **penalties** subtracted from a candidate's
+score, and the lane takes the best `score − penalty` (ties: higher score, then
+oldest note). Defaults, configurable as `penalties`:
+
+| Conflict | Penalty |
+|---|---|
+| shares a value with the item running in another lane | 3 |
+| shares a value with the item that just ended in this lane | 2 |
+| a similar-group match instead of an exact one | × 0.5 |
+| a second item longer than `longOver` beside a long one | 4 |
+
+Each lane entry carries its penalty and the reasons in words, shown as a hint.
+Pins and inserts are placed as given; their penalty is shown the same way.
 
 ## Engine (`src/schedule/engine.ts`)
 
@@ -115,7 +123,7 @@ Obsidian or React imports, so it is unit-tested directly.
    (keep / on-hold / drop).
 
 Output: this week (logged hours by type, suggested split of what's left), each
-lane's items with start/end ranges and pin / ⚠️ / ⏸ markers, the live band
+lane's items with start/end ranges and pin / penalty / ⏸ markers, the live band
 with average weekly hours per item, and an overall finish range.
 
 ## View (`src/views/ScheduleView.tsx`)
@@ -126,7 +134,7 @@ with average weekly hours per item, and an overall finish range.
   (`Dec 18–28`). Drag to reorder (pins); click for Start / Finish / Drop /
   Unpin / Open note; "Insert here" between bars.
 - **Next-pick modal** when a lane frees: the next item, two alternatives,
-  Random (among items that pass the rules), or any item.
+  Random (among the least penalised items), or any item.
 - Embeddable in notes with an ```` ```rboard ```` block like other views.
 
 ## Build order

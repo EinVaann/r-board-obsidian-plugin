@@ -1,0 +1,346 @@
+[
+ {
+  "id": "13 Sentinels",
+  "title": "13 Sentinels",
+  "status": "planned",
+  "genre": [
+   "Visual novel",
+   "RTS"
+  ],
+  "duration": 33.0,
+  "score": 8.0
+ },
+ {
+  "id": "Ace Attorney Trilogy",
+  "title": "Ace Attorney Trilogy",
+  "status": "planned",
+  "genre": [
+   "Visual novel"
+  ],
+  "duration": 67.0,
+  "score": 8.0
+ },
+ {
+  "id": "Animal Well",
+  "title": "Animal Well",
+  "status": "planned",
+  "genre": [
+   "Metroidbrainia"
+  ],
+  "duration": 14.0,
+  "score": 8.75
+ },
+ {
+  "id": "Arknights Endfield",
+  "title": "Arknights Endfield",
+  "status": "playing",
+  "genre": [
+   "Action RPG",
+   "Factory sim"
+  ],
+  "duration": 52.2,
+  "score": 10.0,
+  "live": true
+ },
+ {
+  "id": "Arknights",
+  "title": "Arknights",
+  "status": "playing",
+  "genre": [
+   "Tower defence"
+  ],
+  "duration": 1047.8,
+  "score": 9.0,
+  "live": true
+ },
+ {
+  "id": "Cataclismo",
+  "title": "Cataclismo",
+  "status": "planned",
+  "genre": [
+   "RTS",
+   "Tower defence"
+  ],
+  "duration": 17.2,
+  "score": 6.5
+ },
+ {
+  "id": "Children of the Sun",
+  "title": "Children of the Sun",
+  "status": "planned",
+  "genre": [
+   "Puzzle",
+   "FPS"
+  ],
+  "duration": 3.5,
+  "score": 8.5
+ },
+ {
+  "id": "Chrono Trigger",
+  "title": "Chrono Trigger",
+  "status": "planned",
+  "genre": [
+   "JRPG"
+  ],
+  "duration": 24.0,
+  "score": 8.0
+ },
+ {
+  "id": "Control",
+  "title": "Control",
+  "status": "planned",
+  "genre": [
+   "Action-adventure",
+   "TPS"
+  ],
+  "duration": 15.0,
+  "score": 5.0
+ },
+ {
+  "id": "Cuphead",
+  "title": "Cuphead",
+  "status": "planned",
+  "genre": [
+   "Run and gun"
+  ],
+  "duration": 10.0,
+  "score": 6.5
+ },
+ {
+  "id": "Dispatch",
+  "title": "Dispatch",
+  "status": "planned",
+  "genre": [
+   "Interactive drama"
+  ],
+  "duration": 8.55,
+  "score": 8.0
+ },
+ {
+  "id": "Ender Magnolia Bloom in the Mist",
+  "title": "Ender Magnolia Bloom in the Mist",
+  "status": "playing",
+  "genre": [
+   "Metroidvania"
+  ],
+  "duration": 20.0,
+  "score": 9.0
+ },
+ {
+  "id": "Ex Astris",
+  "title": "Ex Astris",
+  "status": "playing",
+  "genre": [
+   "JRPG"
+  ],
+  "duration": 18.0,
+  "score": 9.0
+ },
+ {
+  "id": "Fire Emblem Three House",
+  "title": "Fire Emblem Three House",
+  "status": "planned",
+  "genre": [
+   "Tactical RPG"
+  ],
+  "duration": 60.0,
+  "score": 8.0
+ },
+ {
+  "id": "Graveyard Keeper 2",
+  "title": "Graveyard Keeper 2",
+  "status": "planned",
+  "genre": [
+   "Management sim"
+  ],
+  "duration": 38.0,
+  "score": 8.0
+ },
+ {
+  "id": "Gravity Rush",
+  "title": "Gravity Rush",
+  "status": "planned",
+  "genre": [
+   "Action-adventure"
+  ],
+  "duration": 11.0,
+  "score": 8.0
+ },
+ {
+  "id": "Is this Seat Taken",
+  "title": "Is this Seat Taken",
+  "status": "playing",
+  "genre": [
+   "Puzzle",
+   "Cozy"
+  ],
+  "duration": 5.6,
+  "score": 6.0
+ },
+ {
+  "id": "Little Witch in the Woods",
+  "title": "Little Witch in the Woods",
+  "status": "planned",
+  "genre": [
+   "Life sim",
+   "Cozy"
+  ],
+  "duration": 17.0,
+  "score": 8.0
+ },
+ {
+  "id": "Mina the Hollower",
+  "title": "Mina the Hollower",
+  "status": "planned",
+  "genre": [
+   "Action-adventure"
+  ],
+  "duration": 21.5,
+  "score": 8.0
+ },
+ {
+  "id": "Neon White",
+  "title": "Neon White",
+  "status": "planned",
+  "genre": [
+   "FPS",
+   "Platformer"
+  ],
+  "duration": 14.0,
+  "score": 8.0
+ },
+ {
+  "id": "Neva",
+  "title": "Neva",
+  "status": "planned",
+  "genre": [
+   "Action-adventure",
+   "Platformer"
+  ],
+  "duration": 4.0,
+  "score": 7.3
+ },
+ {
+  "id": "Nier Automata",
+  "title": "Nier Automata",
+  "status": "planned",
+  "genre": [
+   "Action RPG",
+   "Hack and slash"
+  ],
+  "duration": 29.0,
+  "score": 9.0
+ },
+ {
+  "id": "Pacific Drive",
+  "title": "Pacific Drive",
+  "status": "planned",
+  "genre": [
+   "Survival",
+   "Roguelike"
+  ],
+  "duration": 26.5,
+  "score": 6.0
+ },
+ {
+  "id": "Papers, Please",
+  "title": "Papers, Please",
+  "status": "planned",
+  "genre": [
+   "Job sim"
+  ],
+  "duration": 5.02,
+  "score": 7.8
+ },
+ {
+  "id": "Persona 3 Reload",
+  "title": "Persona 3 Reload",
+  "status": "planned",
+  "genre": [
+   "JRPG"
+  ],
+  "duration": 64.62,
+  "score": 8.0
+ },
+ {
+  "id": "Planet of Lana 2",
+  "title": "Planet of Lana 2",
+  "status": "planned",
+  "genre": [
+   "Puzzle-platformer"
+  ],
+  "duration": 7.0,
+  "score": 7.8
+ },
+ {
+  "id": "Portal",
+  "title": "Portal",
+  "status": "planned",
+  "genre": [
+   "Puzzle"
+  ],
+  "duration": 4.0,
+  "score": 8.0
+ },
+ {
+  "id": "Reverse 1999",
+  "title": "Reverse 1999",
+  "status": "playing",
+  "genre": [
+   "JRPG"
+  ],
+  "duration": 180.7,
+  "score": 9.0,
+  "live": true
+ },
+ {
+  "id": "Shovel Knight Treasure Trove",
+  "title": "Shovel Knight Treasure Trove",
+  "status": "planned",
+  "genre": [
+   "Platformer"
+  ],
+  "duration": 7.0,
+  "score": 8.5
+ },
+ {
+  "id": "The House in Fata Morgana",
+  "title": "The House in Fata Morgana",
+  "status": "planned",
+  "genre": [
+   "Visual novel"
+  ],
+  "duration": 30.09,
+  "score": 8.3
+ },
+ {
+  "id": "The Witness",
+  "title": "The Witness",
+  "status": "planned",
+  "genre": [
+   "Puzzle"
+  ],
+  "duration": 16.95,
+  "score": 8.0
+ },
+ {
+  "id": "Undertale",
+  "title": "Undertale",
+  "status": "planned",
+  "genre": [
+   "JRPG"
+  ],
+  "duration": 15.5,
+  "score": 9.0
+ },
+ {
+  "id": "Xenoblade Chronicles",
+  "title": "Xenoblade Chronicles",
+  "status": "planned",
+  "genre": [
+   "Action RPG"
+  ],
+  "duration": 56.0,
+  "score": 8.7
+ }
+]
