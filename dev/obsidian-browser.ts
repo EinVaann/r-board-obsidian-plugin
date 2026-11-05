@@ -48,7 +48,7 @@ const ICONS: Record<string, string> = {
   'trash-2': '🗑', trash: '🗑', 'file-plus': '+', 'more-horizontal': '⋯', 'file-text': '📄', eye: '◉', 'eye-off': '◌', pencil: '✎',
   'maximize-2': '⤢', copy: '⎘', 'grip-vertical': '⋮', list: '☰',
   // Schedule view
-  timer: '⏱', 'check-circle': '✓', 'x-circle': '✕', 'pause-circle': '⏸', play: '▶', 'list-plus': '⊕', pin: '📌', 'pin-off': '⊘',
+  timer: '⏱', 'alert-triangle': '⚠', 'check-circle': '✓', 'x-circle': '✕', 'pause-circle': '⏸', play: '▶', 'list-plus': '⊕', pin: '📌', 'pin-off': '⊘',
   'calendar-range': '▦', 'calendar-clock': '⏲', 'arrow-right-left': '⇄', radio: '◎', flag: '⚑', info: 'ⓘ', 'refresh-cw': '↻', 'gamepad-2': '🎮', 'columns-2': '▥', 'list-ordered': '№', gauge: '◔', shuffle: '⤨', 'rotate-ccw': '↺', 'arrow-right': '→',
 };
 

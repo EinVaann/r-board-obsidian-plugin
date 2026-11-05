@@ -65,7 +65,22 @@
   background: var(--background-modifier-hover);
   color: var(--text-muted);
 }
-.rb-schedule-reasons { font-size: var(--font-ui-smaller); color: var(--text-warning); }
+/* Why a game sits lower than it would: a tinted note with an icon, like the quick-add warning. */
+.rb-schedule-reasons {
+  display: flex;
+  align-items: flex-start;
+  gap: 6px;
+  margin-top: 4px;
+  padding: 4px 8px;
+  border-radius: var(--radius-s);
+  background: rgba(var(--color-orange-rgb), 0.12);
+  color: var(--text-normal);
+  font-size: var(--font-ui-smaller);
+}
+.rb-schedule-reasons .rb-icon { display: inline-flex; margin-top: 1px; color: var(--color-orange); flex-shrink: 0; }
+.rb-schedule-reasons svg { width: 13px; height: 13px; }
+.rb-schedule-reasons-flag .rb-icon { display: inline-flex; vertical-align: -2px; color: var(--color-orange); }
+.rb-schedule-reasons-flag svg { width: 12px; height: 12px; }
 
 .rb-schedule-footer { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 6px 12px; }
 .rb-schedule-footer > span:first-child { display: inline-flex; align-items: center; gap: 6px; }
@@ -268,7 +283,9 @@
 .rb-schedule-draggable.is-over { border-top-color: var(--interactive-accent); }
 .rb-schedule-slot { height: 18px; border-top: 2px solid transparent; }
 .rb-schedule-slot.is-over { border-top-color: var(--interactive-accent); }
-.rb-schedule-drag { padding: 8px 12px; background: var(--background-primary); box-shadow: var(--shadow-s); font-weight: var(--font-semibold); cursor: grabbing; }
+/* The entry under the pointer (in the body, outside .rb-schedule); tilt and fade come from .rb-drag-ghost, like kanban cards. */
+.rb-schedule-ghost .rb-schedule-entry { background: var(--background-primary); box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35); transition: none; }
+.rb-schedule-ghost .rb-schedule-entry-actions { display: none; }
 
 /* Modals */
 .rb-schedule-form input[type='number'],
@@ -292,3 +309,5 @@
 .rb-schedule-option-title { display: flex; align-items: center; gap: 6px; font-weight: var(--font-semibold); }
 .rb-schedule-any input[type='search'] { width: 100%; }
 .rb-schedule-any-list { display: flex; flex-direction: column; gap: 4px; max-height: 50vh; overflow: auto; }
+/* Move prompt: one row per place, its number in the entry badge. */
+.rb-schedule-option.rb-schedule-move-slot { flex-direction: row; align-items: center; gap: 10px; }

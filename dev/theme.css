@@ -11,6 +11,9 @@
   --text-faint: #999;
   --text-accent: #7c3aed;
   --text-error: #d00;
+  --color-orange: #ec7500;
+  --color-orange-rgb: 236, 117, 0;
+  --text-warning: var(--color-orange);
   --text-on-accent: #fff;
   --interactive-accent: #7c3aed;
   --interactive-accent-hover: #6d28d9;

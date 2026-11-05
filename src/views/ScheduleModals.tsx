@@ -206,6 +206,50 @@ function PickAny({ options, onPick }: { options: GameOption[]; onPick: (id: stri
   );
 }
 
+/** A lane in the move prompt: where the game can go, as 0-based queue positions. */
+export interface MoveLane {
+  name: string;
+  /** Shown under the lane name in the tabs (e.g. "5 queued"). */
+  detail: string;
+  slots: { to: number; label: string }[];
+}
+
+/** Pick a lane (tabs) and a numbered place in its queue. */
+export function openMovePrompt(app: App, opts: { title: string; lanes: MoveLane[]; lane: number; onPick: (lane: number, to: number) => void }): void {
+  new ReactModal(app, (modal) => <MovePrompt lanes={opts.lanes} initial={opts.lane} onPick={(lane, to) => (modal.close(), opts.onPick(lane, to))} />, {
+    title: opts.title,
+    cls: 'rb-schedule-modal',
+  }).open();
+}
+
+function MovePrompt({ lanes, initial, onPick }: { lanes: MoveLane[]; initial: number; onPick: (lane: number, to: number) => void }) {
+  const [lane, setLane] = useState(initial);
+  const slots = lanes[lane]?.slots ?? [];
+  return (
+    <div className="rb-schedule-any">
+      {lanes.length > 1 && (
+        <div className="rb-schedule-lane-tabs" role="tablist">
+          {lanes.map((l, n) => (
+            <button key={n} role="tab" aria-selected={n === lane} className={n === lane ? 'is-active' : ''} onClick={() => setLane(n)}>
+              <span className="rb-schedule-lane-tab-name">Lane {l.name}</span>
+              <span className="rb-schedule-lane-tab-now">{l.detail}</span>
+            </button>
+          ))}
+        </div>
+      )}
+      <div className="rb-schedule-any-list">
+        {slots.length === 0 && <div className="rb-schedule-muted">It's the only game queued here.</div>}
+        {slots.map((s) => (
+          <button key={s.to} className="rb-schedule-option rb-schedule-move-slot" onClick={() => onPick(lane, s.to)}>
+            <span className="rb-schedule-index">{s.to + 1}</span>
+            <span>{s.label}</span>
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 /** Ask for a date; `null` clears it. */
 export function openDatePrompt(app: App, opts: { title: string; desc: string; initial?: string; onSave: (date: string | null) => void }): void {
   new ReactModal(app, (modal) => <DatePrompt {...opts} onDone={() => modal.close()} />, { title: opts.title, cls: 'rb-schedule-modal' }).open();

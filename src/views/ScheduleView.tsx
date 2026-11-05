@@ -1,4 +1,5 @@
 import { useMemo, useRef, useState, type MouseEvent as ReactMouseEvent, type ReactNode } from 'react';
+import { createPortal } from 'react-dom';
 import { Menu, Platform } from 'obsidian';
 import { DndContext, DragOverlay, closestCenter, pointerWithin, useDraggable, useDroppable, type CollisionDetection, type DragEndEvent } from '@dnd-kit/core';
 import type { BoardItem, DatabaseConfig, ScheduleConfig, ViewConfig } from '../types';
@@ -21,7 +22,7 @@ import { randomCandidate } from '../schedule/rules';
 import { logSession, setRole, type Role } from '../schedule/actions';
 import type { Forecast, LaneEntry, ScheduleItem, Session, Suggestion } from '../schedule/types';
 import { useLinkedTable } from '../schedule/useLinkedTable';
-import { openDatePrompt, openLogSession, openNextPick, openPickAny, type Candidate, type GameOption } from './ScheduleModals';
+import { openDatePrompt, openLogSession, openMovePrompt, openNextPick, openPickAny, type Candidate, type GameOption, type MoveLane } from './ScheduleModals';
 
 const LANE_NAMES = 'ABCDEF';
 /** Below this width the schedule shows one lane at a time and shorter entries. */
@@ -209,20 +210,28 @@ export function ScheduleView({ config, view, all, viewIndex }: { config: Databas
       menu.addItem((i) => i.setTitle(laneBusy ? 'Start now (as a side game)' : 'Start now').setIcon('play').onClick(() => void start(id, n)));
       if (position > 0) menu.addItem((i) => i.setTitle('Move up').setIcon('arrow-up').onClick(() => move(n, position - 1)));
       if (position < queuedIn(n) - 1) menu.addItem((i) => i.setTitle('Move down').setIcon('arrow-down').onClick(() => move(n, position + 1)));
-      // "Move to #2" (this lane) and "Move to lane B, #1…" (other lanes); positions are 1-based like the labels.
+      // Every place the game can go, per lane: its own place is left out; elsewhere it adds one slot.
+      const moveLanes: MoveLane[] = result.lanes.map((l, lane) => {
+        const queued = l.filter((x) => !x.current);
+        const count = queued.length + (lane === n ? 0 : 1);
+        const slots: MoveLane['slots'] = [];
+        for (let to = 0; to < count; to++) {
+          if (lane === n && to === position) continue;
+          const after = queued[lane === n && to > position ? to : to - 1];
+          slots.push({ to, label: to === 0 ? 'Next' : after ? `After ${titleOf(after.item)}` : 'Last' });
+        }
+        return { name: laneName(lane), detail: `${queued.length} queued`, slots };
+      });
+      const openMove = (lane: number): void =>
+        openMovePrompt(app, { title: `Move ${titleOf(id)}`, lanes: moveLanes, lane, onPick: (to, at) => move(to, at) });
       for (let lane = 0; lane < result.lanes.length; lane++) {
-        const count = queuedIn(lane) + (lane === n ? 0 : 1);
-        if (lane === n && count < 2) continue;
-        menu.addItem((i) => {
-          i.setTitle(lane === n ? 'Move to position' : `Move to lane ${laneName(lane)}`).setIcon(lane === n ? 'list-ordered' : 'arrow-right-left');
-          // setSubmenu() exists at runtime (Obsidian 1.4+) but isn't in the bundled types.
-          const sub = (i as unknown as { setSubmenu: () => Menu }).setSubmenu();
-          for (let to = 0; to < count; to++) {
-            if (lane === n && to === position) continue;
-            const after = result.lanes[lane].filter((x) => !x.current)[lane === n && to > position ? to : to - 1];
-            sub.addItem((si) => si.setTitle(`#${to + 1}${to === 0 ? ' (next)' : after ? ` · after ${titleOf(after.item)}` : ''}`).onClick(() => move(lane, to)));
-          }
-        });
+        if (lane === n && moveLanes[n].slots.length === 0) continue;
+        menu.addItem((i) =>
+          i
+            .setTitle(lane === n ? 'Move to position…' : `Move to lane ${laneName(lane)}…`)
+            .setIcon(lane === n ? 'list-ordered' : 'arrow-right-left')
+            .onClick(() => openMove(lane)),
+        );
       }
       if (!entry.pinned) menu.addItem((i) => i.setTitle('Pin here').setIcon('pin').onClick(() => editSchedule((s) => void (s.pins = placePin(s.pins, id, n, position)))));
       else menu.addItem((i) => i.setTitle('Unpin').setIcon('pin-off').onClick(() => editSchedule((s) => void (s.pins = unpin(s.pins, id)))));
@@ -422,7 +431,16 @@ export function ScheduleView({ config, view, all, viewIndex }: { config: Databas
             );
           })}
         </div>
-        <DragOverlay>{dragging ? <div className="rb-schedule-entry rb-schedule-drag">{titleOf(dragging)}</div> : null}</DragOverlay>
+        <DragPreview>
+          {(() => {
+            const lane = dragging ? result.lanes.find((l) => l.some((e) => e.item === dragging)) : undefined;
+            const e = lane?.find((x) => x.item === dragging);
+            if (!lane || !e) return null;
+            const item = itemOf(e.item);
+            const index = lane.filter((x) => !x.current).indexOf(e) + 1;
+            return <Entry entry={e} item={item} cover={coverOf(item)} year={year} compact={false} index={index} onMenu={() => undefined} actions={null} />;
+          })()}
+        </DragPreview>
       </DndContext>
       </Section>
 
@@ -536,6 +554,21 @@ function Section({
       </div>
       {!closed && <div className="rb-schedule-section-body">{children}</div>}
     </section>
+  );
+}
+
+/**
+ * The entry following the pointer while dragging, styled like the kanban's
+ * card ghost. Portaled out of the scroll area: inside it, the fixed-position
+ * overlay is placed against the pane rather than the window and lands off to
+ * the side of the pointer.
+ */
+function DragPreview({ children }: { children: ReactNode }) {
+  const { scrollRef } = useBoardContext();
+  const doc = scrollRef.current?.ownerDocument ?? document;
+  return createPortal(
+    <DragOverlay dropAnimation={null}>{children ? <div className="rb-drag-ghost rb-schedule-ghost">{children}</div> : null}</DragOverlay>,
+    doc.body,
   );
 }
 
@@ -663,7 +696,12 @@ function Entry({
           <div className="rb-schedule-muted rb-schedule-entry-line">
             {e.current ? `${formatHours(e.remaining)} left · done ${done}` : `${formatHours(e.remaining)} · done ${done}`}
             {e.paused && ' · paused?'}
-            {e.penalty > 0 && <span className="rb-schedule-reasons" title={e.reasons.join(' · ')}> · ⚠</span>}
+            {e.penalty > 0 && (
+              <span className="rb-schedule-reasons-flag" title={e.reasons.join(' · ')}>
+                {' · '}
+                <Icon name="alert-triangle" />
+              </span>
+            )}
           </div>
         </div>
         {actions && <div className="rb-schedule-entry-actions">{actions}</div>}
@@ -688,7 +726,8 @@ function Entry({
         <div className="rb-schedule-entry-end">Done {formatRange(e.end, year)}</div>
         {e.penalty > 0 && (
           <div className="rb-schedule-reasons" title={`Ranked ${e.penalty} lower`}>
-            {e.reasons.join(' · ')}
+            <Icon name="alert-triangle" />
+            <span>{e.reasons.join(' · ')}</span>
           </div>
         )}
       </div>

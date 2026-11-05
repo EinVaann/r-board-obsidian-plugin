@@ -194,8 +194,8 @@ test.describe('schedule view', () => {
     await expect(laneA.locator('.rb-schedule-draggable').nth(1).locator('.rb-schedule-flag')).toHaveCount(1);
 
     await laneA.locator('.rb-schedule-draggable').nth(1).locator('.rb-schedule-entry').click({ button: 'right' });
-    await menu(page, 'Move to lane B');
-    await menu(page, '#1 (next)');
+    await menu(page, 'Move to lane B…');
+    await page.locator('.rb-schedule-move-slot', { hasText: 'Next' }).click();
     const laneB = page.locator('.rb-schedule-lane').nth(1);
     await expect(laneB.locator('.rb-schedule-draggable').first()).toContainText(title);
 
@@ -212,8 +212,11 @@ test.describe('schedule view', () => {
     const fifth = laneA.locator('.rb-schedule-draggable').nth(4);
     const title = (await fifth.locator('.rb-title').textContent())!;
     await fifth.locator('.rb-schedule-entry').click({ button: 'right' });
-    await menu(page, 'Move to position');
-    await menu(page, /^#2 · after/);
+    await menu(page, 'Move to position…');
+    const modal = page.locator('.rb-schedule-modal');
+    await expect(modal.getByRole('tab', { name: /Lane A/ })).toHaveAttribute('aria-selected', 'true');
+    await modal.locator('.rb-schedule-move-slot', { has: page.locator('.rb-schedule-index', { hasText: /^2$/ }) }).click();
+    await expect(modal).toHaveCount(0);
     await expect(laneA.locator('.rb-schedule-draggable').nth(1)).toContainText(title);
     await expect(laneA.locator('.rb-schedule-draggable').nth(1).locator('.rb-schedule-index')).toHaveText('2');
   });
@@ -246,6 +249,26 @@ test.describe('schedule view', () => {
     await expect(laneB.locator('.rb-schedule-draggable').first()).toContainText(title);
     const pins = await page.evaluate(() => window.__store.getState().config!.views[0].schedule!.pins);
     expect(pins).toEqual([{ item: `Backlog Items/${title}.md`, lane: 1, position: 0 }]);
+  });
+
+  test('the drag preview follows the pointer', async ({ page }) => {
+    await page.setViewportSize({ width: 1280, height: 1400 });
+    const from = page.locator('.rb-schedule-lane').nth(1).locator('.rb-schedule-draggable').nth(2);
+    const a = (await from.boundingBox())!;
+    const [x, y] = [a.x + 60, a.y + a.height / 2];
+    await page.mouse.move(x, y);
+    await page.mouse.down();
+    await page.mouse.move(x + 10, y + 10, { steps: 3 });
+    await page.mouse.move(x - 300, y + 120, { steps: 12 });
+    const preview = page.locator('.rb-schedule-ghost');
+    await expect(preview.locator('.rb-title')).toHaveText((await from.locator('.rb-title').textContent())!);
+    // Out of the scroll area (fixed there means fixed to the pane), and grabbed where it was picked up.
+    expect(await preview.evaluate((el) => !el.closest('.rb-schedule'))).toBe(true);
+    // dnd-kit's overlay box; the ghost inside it is tilted, which widens its own box.
+    const b = (await preview.locator('..').boundingBox())!;
+    expect(Math.abs(b.x - (a.x - 300))).toBeLessThan(2);
+    expect(Math.abs(b.y - (a.y + 120))).toBeLessThan(2);
+    await page.mouse.up();
   });
 
   test('Insert puts any game into a lane, adding it to the plan', async ({ page }) => {
