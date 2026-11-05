@@ -18,12 +18,14 @@ import type {
   ViewType,
 } from '../types';
 import { defaultChartConfig, NO_SORT_KEY, propertyLabel, TITLE_SORT_KEY } from '../config';
+import { defaultScheduleConfig } from '../schedule/config';
 import { countFilterRules } from '../data/filter';
 import { useBoard, useBoardContext } from '../board/context';
 import { Icon } from '../react/Icon';
 import { PROPERTY_TYPE_ICON } from './PropertyEditor';
 import { DragHandle, Segmented, Select, SettingRow, SettingsTabs, SortableList, TextInput, Toggle, type Option } from './controls';
 import { ExportSettings } from './ExportSettings';
+import { ScheduleSettings } from './ScheduleSettings';
 
 type ViewRecipe = (draft: ViewConfig) => void;
 
@@ -45,8 +47,9 @@ export function ViewSettings({ viewIndex, onDelete }: { viewIndex: number; onDel
   ];
   if (view.type === 'kanban') tabs.push({ id: 'columns', label: 'Columns', icon: 'columns-3', content: <Columns view={view} edit={edit} /> });
   if (view.type === 'chart') tabs.splice(1, 0, { id: 'chart', label: 'Chart', icon: 'bar-chart-3', content: <ChartSettings config={config} view={view} edit={edit} /> });
-  tabs.push({ id: 'export', label: 'Export', icon: 'download', content: <ExportSettings config={config} view={view} /> });
-  return <SettingsTabs tabs={tabs} initial={view.type === 'chart' ? 'chart' : undefined} />;
+  if (view.type === 'schedule') tabs.splice(1, 1, { id: 'schedule', label: 'Schedule', icon: 'calendar-range', content: <ScheduleSettings config={config} view={view} edit={edit} /> });
+  else tabs.push({ id: 'export', label: 'Export', icon: 'download', content: <ExportSettings config={config} view={view} /> });
+  return <SettingsTabs tabs={tabs} initial={view.type === 'chart' ? 'chart' : view.type === 'schedule' ? 'schedule' : undefined} />;
 }
 
 interface TabProps {
@@ -81,17 +84,19 @@ function General({ config, view, viewIndex, edit, onDelete }: TabProps & { viewI
             { value: 'table', label: 'Table' },
             { value: 'recipe', label: 'Recipe' },
             { value: 'chart', label: 'Chart' },
+            ...(config.kind === 'table' ? [] : [{ value: 'schedule' as const, label: 'Schedule' }]),
           ]}
           onChange={(v) =>
             edit((d) => {
               d.type = v;
               if (v === 'chart' && !d.chart) d.chart = defaultChartConfig();
+              if (v === 'schedule' && !d.schedule) d.schedule = defaultScheduleConfig();
             })
           }
         />
       </SettingRow>
-      {/* Charts aggregate everything that passes the filter: no paging, sort or sections. */}
-      {view.type !== 'chart' && (
+      {/* Charts and schedules use everything that passes the filter: no paging, sort or sections. */}
+      {view.type !== 'chart' && view.type !== 'schedule' && (
       <>
       <SettingRow
         name={view.type === 'table' && view.paging === 'pages' ? 'Page size' : 'Load limit'}

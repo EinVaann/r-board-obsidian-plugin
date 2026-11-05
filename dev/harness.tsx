@@ -12,6 +12,10 @@ import { setProperty } from '../src/data/properties';
 import { openBoardSettings, openFilterModal, openViewSettings } from '../src/settings/modals';
 import { openRecordEditor } from '../src/table/RecordEditor';
 import { DatabaseEmbed, parseEmbed } from '../src/embed/Embed';
+import SCHEDULE_FIXTURE from '../src/schedule/fixture.json';
+import { AutoDateWatcher } from '../src/data/AutoDateWatcher';
+
+const BOARD_PATH = 'Backlog.board';
 
 declare global {
   interface Window {
@@ -46,6 +50,40 @@ if (window.__fixture?.notes) {
 }
 window.__notes = NOTES;
 
+/** ?schedule: the real backlog snapshot as notes, plus a session log table. */
+const SCHEDULE = new URLSearchParams(location.search).has('schedule');
+const LOG_PATH = 'Backlog timelog.table';
+const FILES: Record<string, string> = {};
+if (SCHEDULE) {
+  for (const k of Object.keys(NOTES)) delete NOTES[k];
+  for (const r of SCHEDULE_FIXTURE as { id: string; status: string; genre: string[]; duration: number | null; score: number | null; live?: boolean }[]) {
+    NOTES[`Backlog Items/${r.id}.md`] = { tags: ['backlog'], status: r.status, score: r.score, genre: r.genre, 'play-hours': r.duration, 'live-service': r.live === true };
+  }
+  NOTES['Backlog Items/Hades.md'] = { tags: ['backlog'], status: 'completed', score: 9, genre: ['Roguelike'], 'play-hours': 22 };
+  const row = (id: string, game: string, h: number, d: string) => ({ id, cells: { notes: [`[[Backlog Items/${game}|${game}]]`], hours: h, date: d } });
+  FILES[LOG_PATH] = JSON.stringify({
+    version: 1,
+    kind: 'table',
+    name: 'Backlog timelog',
+    titleProperty: 'notes',
+    properties: [
+      { name: 'notes', type: 'links', label: 'Game' },
+      { name: 'hours', type: 'number', label: 'Timeplay' },
+      { name: 'date', type: 'date', label: 'Timestamp' },
+    ],
+    views: [{ name: 'Table', type: 'table' }],
+    rows: [
+      row('r1', 'Ender Magnolia Bloom in the Mist', 4, '2026-10-20'),
+      row('r2', 'Arknights', 3, '2026-10-21'),
+      row('r3', 'Ender Magnolia Bloom in the Mist', 6, '2026-10-27'),
+      row('r4', 'Ex Astris', 5, '2026-10-29'),
+      row('r5', 'Reverse 1999', 2, '2026-10-30'),
+      row('r6', 'Ex Astris', 3, '2026-11-03'),
+      row('r7', 'Ender Magnolia Bloom in the Mist', 2, '2026-11-04'),
+    ],
+  });
+}
+
 const BACKLOG = {
   name: 'Backlog',
   sourceTag: 'backlog',
@@ -68,14 +106,37 @@ const BACKLOG = {
   defaultView: 'Lanes',
 };
 
+const SCHEDULE_BOARD = {
+  name: 'Backlog',
+  sourceTag: 'backlog',
+  properties: [
+    { name: 'status', type: 'select', options: ['to-play', 'planned', 'playing', 'completed', 'dropped', 'on-hold'].map((value) => ({ value })) },
+    { name: 'score', type: 'number', render: 'stars', max: 10 },
+    { name: 'genre', type: 'multi', render: 'pills' },
+    { name: 'play-hours', type: 'number' },
+    { name: 'live-service', type: 'checkbox' },
+    { name: 'start-date', type: 'date' },
+    { name: 'end-date', type: 'date' },
+  ],
+  views: [
+    { name: 'Schedule', type: 'schedule', schedule: { log: LOG_PATH, similar: [['JRPG', 'Visual novel']] } },
+    { name: 'Board', type: 'kanban', group: 'status', cardSize: 'small' },
+  ],
+};
+
+/** Metadata-cache `changed` listeners (the auto-date watcher). */
+const changedHandlers: ((f: TFile) => void)[] = [];
+
 function fakeApp(onNotesChanged: () => void): App {
   const files = () => Object.keys(NOTES).map((p) => new TFile(p));
   return {
     vault: {
-      getFiles: files,
+      getFiles: () => [...files(), ...Object.keys(FILES).map((p) => new TFile(p))],
       getMarkdownFiles: files,
-      getAbstractFileByPath: (p: string) => (p in NOTES ? new TFile(p) : null),
-      cachedRead: async () => 'Some note body.',
+      getAbstractFileByPath: (p: string) => (p in NOTES || p in FILES ? new TFile(p) : null),
+      cachedRead: async (f: TFile) => FILES[f.path] ?? 'Some note body.',
+      on: () => ({}),
+      offref: () => undefined,
       getResourcePath: () => '',
       createFolder: async () => undefined,
       create: async (p: string) => {
@@ -84,15 +145,24 @@ function fakeApp(onNotesChanged: () => void): App {
       },
     },
     metadataCache: {
-      getFirstLinkpathDest: () => null,
+      getFirstLinkpathDest: (link: string) => {
+        if (!SCHEDULE) return null;
+        const hit = Object.keys(NOTES).find((p) => p === `${link}.md` || p.endsWith(`/${link}.md`));
+        return hit ? new TFile(hit) : null;
+      },
       getFileCache: (f: TFile) => ({ frontmatter: NOTES[f.path] }),
+      on: (name: string, fn: (f: TFile) => void) => (name === 'changed' && changedHandlers.push(fn), {}),
     },
     fileManager: {
       processFrontMatter: async (f: TFile, fn: (fm: Record<string, unknown>) => void) => {
         const next = { ...NOTES[f.path] };
         fn(next);
         NOTES[f.path] = next;
-        setTimeout(onNotesChanged, 50);
+        // Like Obsidian: the metadata cache reports the change a moment later.
+        setTimeout(() => {
+          changedHandlers.forEach((h) => h(new TFile(f.path)));
+          onNotesChanged();
+        }, 50);
       },
     },
     workspace: {
@@ -135,14 +205,19 @@ async function embedMain(): Promise<void> {
 async function main(): Promise<void> {
   const params = new URLSearchParams(location.search);
   if (params.has('embed')) return embedMain();
-  const kind = params.get('kind') === 'board' ? 'board' : 'table';
+  const kind = params.get('kind') === 'board' || SCHEDULE ? 'board' : 'table';
   if (params.has('mobile')) document.body.classList.add('is-mobile', 'is-phone');
 
   let store!: BoardStore;
   const app = fakeApp(() => store.getState().bumpVault());
+  const watcher = new AutoDateWatcher(app, () => Object.keys(FILES).map((p) => new TFile(p)));
   store = createBoardStore({
     saveConfig: (config) => {
       window.__saved = kind === 'table' ? serializeTableFile({ config, rows: store.getState().rows }) : serializeDatabase(config);
+      if (kind === 'board') {
+        FILES[BOARD_PATH] = window.__saved;
+        void watcher.boardChanged(new TFile(BOARD_PATH));
+      }
     },
     saveRows: (rows) => {
       window.__saved = serializeTableFile({ config: store.getState().config!, rows });
@@ -153,9 +228,13 @@ async function main(): Promise<void> {
 
   const fixture = window.__fixture;
   if (kind === 'board') {
-    const r = parseDatabaseConfig(JSON.stringify(fixture?.board ?? BACKLOG));
+    const r = parseDatabaseConfig(JSON.stringify(fixture?.board ?? (SCHEDULE ? SCHEDULE_BOARD : BACKLOG)));
     if (!r.ok) throw new Error(r.error);
     store.getState().loadConfig(r.config, null);
+    // The real auto-date watcher, fed by the fake metadata cache (as main.tsx wires it).
+    FILES[BOARD_PATH] = serializeDatabase(r.config);
+    await watcher.scan();
+    changedHandlers.push((f) => void watcher.noteChanged(f));
   } else {
     const r = parseTableFile(fixture?.table ?? (await (await fetch('./sample.table')).text()));
     if (!r.ok) throw new Error(r.error);
@@ -166,7 +245,7 @@ async function main(): Promise<void> {
   const ctx: BoardContextValue = {
     app,
     store,
-    boardFile: new TFile(kind === 'board' ? 'Backlog.board' : 'Expenses.table') as unknown as BoardContextValue['boardFile'],
+    boardFile: new TFile(kind === 'board' ? BOARD_PATH : 'Expenses.table') as unknown as BoardContextValue['boardFile'],
     scrollRef: createRef<HTMLDivElement>(),
     actions: {
       editFile: (f) => log(`[edit note] ${f.path}`),

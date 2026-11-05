@@ -1,7 +1,8 @@
 import type { TFile } from 'obsidian';
+import type { Penalties, Pin } from './schedule/types';
 
 /** The layouts a view can be displayed as. */
-export type ViewType = 'gallery' | 'kanban' | 'table' | 'recipe' | 'chart';
+export type ViewType = 'gallery' | 'kanban' | 'table' | 'recipe' | 'chart' | 'schedule';
 
 /** Where records come from: tagged notes (`.board`) or rows stored in the file (`.table`). */
 export type DatabaseKind = 'board' | 'table';
@@ -215,6 +216,8 @@ export interface ViewConfig {
   calculations?: Record<string, Calculation>;
   /** Chart settings (chart views). */
   chart?: ChartConfig;
+  /** Schedule settings (schedule views). */
+  schedule?: ScheduleConfig;
   /** Show another view beside or below this one (split view). */
   companion?: Companion;
 }
@@ -257,6 +260,40 @@ export interface ChartConfig {
   showLabels: boolean;
   /** Series name → color override. */
   colors: Record<string, string>;
+}
+
+/**
+ * A schedule view's settings. Property references are property names; log
+ * columns left unset fall back to the log table's first matching column.
+ */
+export interface ScheduleConfig {
+  /** Path of the `.table` file that logs sessions. */
+  log?: string;
+  logItem?: string;
+  logHours?: string;
+  logDate?: string;
+  /** Optional column: lane / live / detour / trial. */
+  logType?: string;
+  /** Estimated hours. */
+  duration?: string;
+  score?: string;
+  /** Values that should vary between neighbours (e.g. genre). */
+  vary?: string;
+  similar: string[][];
+  status?: string;
+  statuses: { pool: string[]; active: string[]; finished: string[]; dropped: string[] };
+  /** Checkbox: active items with it run outside the lanes. */
+  live?: string;
+  startDate?: string;
+  endDate?: string;
+  lanes: number;
+  longOver: number;
+  weekStart: 'mon' | 'sun';
+  estimates: { weekly: number; live: number };
+  paceWeeks: number;
+  pausedAfterDays: number;
+  penalties: Penalties;
+  pins: Pin[];
 }
 
 /** Per-column display overrides for a kanban view. */

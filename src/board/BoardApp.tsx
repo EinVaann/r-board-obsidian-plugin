@@ -13,6 +13,7 @@ import { KanbanView } from '../views/KanbanView';
 import { TableView } from '../views/TableView';
 import { RecipeView } from '../views/RecipeView';
 import { ChartView } from '../chart/ChartView';
+import { ScheduleView } from '../views/ScheduleView';
 
 /** At most this many view tabs; the rest go in the "more" dropdown. */
 const MAX_VIEW_TABS = 3;
@@ -28,6 +29,7 @@ export const TYPE_ICON: Record<ViewType, string> = {
   table: 'table',
   recipe: 'utensils',
   chart: 'bar-chart-3',
+  schedule: 'calendar-range',
 };
 
 /** The whole board pane: setup prompt, or toolbar + the active view. */
@@ -200,8 +202,8 @@ function useViewMenus() {
 
   const createView = (e: ReactMouseEvent): void => {
     const menu = new Menu();
-    // Recipe views read note bodies, so tables don't offer them.
-    const types: ViewType[] = store.getState().config?.kind === 'table' ? ['table', 'gallery', 'kanban', 'chart'] : ['gallery', 'kanban', 'table', 'recipe', 'chart'];
+    // Recipe and schedule views read notes, so tables don't offer them.
+    const types: ViewType[] = store.getState().config?.kind === 'table' ? ['table', 'gallery', 'kanban', 'chart'] : ['gallery', 'kanban', 'table', 'recipe', 'chart', 'schedule'];
     types.forEach((type) => {
       menu.addItem((item) =>
         item
@@ -398,7 +400,7 @@ function Toolbar({ config, view }: { config: DatabaseConfig; view: ViewConfig | 
       {/* Row 2: search, sort / filter chips. */}
       <div className="rb-controls-row">
         <input className="rb-search" type="search" placeholder="Search…" value={search} onChange={(e) => setSearch(e.target.value)} />
-        {view && view.type !== 'chart' && <SortChip config={config} view={view} viewIndex={viewIndex} />}
+        {view && view.type !== 'chart' && view.type !== 'schedule' && <SortChip config={config} view={view} viewIndex={viewIndex} />}
         {view && (
           <Chip icon="filter" label="Filter" badge={filters || undefined} active={filters > 0} onClick={() => actions.openFilter(viewIndex)} />
         )}
@@ -545,6 +547,9 @@ export function Body({
   const { all, properties, sort } = viewed;
   const items = useMemo(() => (restrictTo ? viewed.items.filter((i) => restrictTo.has(i.id)) : viewed.items), [viewed.items, restrictTo]);
   const viewIndex = config.views.indexOf(view);
+
+  // The schedule needs every item (ended ones too), not just the searched ones.
+  if (view.type === 'schedule' && all.length > 0) return <ScheduleView config={config} view={view} all={all} viewIndex={viewIndex} />;
 
   // An empty kanban still shows its columns so cards can be added to them.
   if (items.length === 0 && !(all.length === 0 && view.type === 'kanban')) {

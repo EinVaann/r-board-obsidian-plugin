@@ -23,10 +23,11 @@ import type {
   ViewConfig,
   ViewType,
 } from './types';
+import { defaultScheduleConfig, parseSchedule } from './schedule/config';
 
 const PROPERTY_TYPES = new Set(['image', 'text', 'multi', 'number', 'checkbox', 'links', 'select', 'date', 'url', 'formula']);
 const NUMBER_STYLES = new Set(['plain', 'currency', 'percent', 'compact']);
-const VIEW_TYPES = new Set(['gallery', 'kanban', 'table', 'recipe', 'chart']);
+const VIEW_TYPES = new Set(['gallery', 'kanban', 'table', 'recipe', 'chart', 'schedule']);
 const CARD_SIZES = new Set<CardSize>(['small', 'medium', 'large']);
 const LIMITS = new Set<LoadLimit>([10, 50, 100, 'none']);
 const FILTER_OPS = new Set<FilterOp>([
@@ -223,6 +224,7 @@ function parseView(raw: unknown, index: number): ViewConfig | null {
     summary: v.summary === true ? true : undefined,
     calculations: parseCalculations(v.calculations),
     chart: type === 'chart' ? parseChart(v.chart) : undefined,
+    schedule: type === 'schedule' ? parseSchedule(v.schedule) : undefined,
     companion: parseCompanion(v.companion),
   };
 }
@@ -378,6 +380,7 @@ export function serializeViews(views: ViewConfig[]): Record<string, unknown>[] {
     if (v.summary) view.summary = true;
     if (v.calculations && Object.keys(v.calculations).length) view.calculations = v.calculations;
     if (v.type === 'chart' && v.chart) view.chart = v.chart;
+    if (v.type === 'schedule' && v.schedule) view.schedule = v.schedule;
     if (v.companion) view.companion = v.companion;
     return view;
   });
@@ -386,7 +389,7 @@ export function serializeViews(views: ViewConfig[]): Record<string, unknown>[] {
 /** A fresh view of the given type, with a name unique among `existing`. */
 export function makeDefaultView(type: ViewType, existing: ViewConfig[]): ViewConfig {
   const baseName =
-    type === 'gallery' ? 'Gallery' : type === 'kanban' ? 'Board' : type === 'recipe' ? 'Recipes' : type === 'chart' ? 'Chart' : 'Table';
+    type === 'gallery' ? 'Gallery' : type === 'kanban' ? 'Board' : type === 'recipe' ? 'Recipes' : type === 'chart' ? 'Chart' : type === 'schedule' ? 'Schedule' : 'Table';
   let name = baseName;
   let n = 2;
   while (existing.some((v) => v.name === name)) name = `${baseName} ${n++}`;
@@ -399,6 +402,8 @@ export function makeDefaultView(type: ViewType, existing: ViewConfig[]): ViewCon
     view.cardSize = 'medium';
   } else if (type === 'chart') {
     view.chart = defaultChartConfig();
+  } else if (type === 'schedule') {
+    view.schedule = defaultScheduleConfig();
   }
   return view;
 }

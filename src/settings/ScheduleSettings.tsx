@@ -14,7 +14,6 @@ const STATUS_ROWS: { key: keyof Statuses; name: string; desc: string }[] = [
   { key: 'active', name: 'Playing', desc: 'Running now. With the live checkbox: the live band instead.' },
   { key: 'finished', name: 'Finished', desc: 'Teaches how far estimates overrun.' },
   { key: 'dropped', name: 'Dropped', desc: 'Ended without finishing.' },
-  { key: 'paused', name: 'On hold', desc: 'Out of the plan for now; "Put on hold" writes this.' },
 ];
 
 /** View settings → Schedule: where sessions are logged, which properties mean what, pace and penalties. */
@@ -40,13 +39,7 @@ export function ScheduleSettings({ config, view, edit }: { config: DatabaseConfi
   const statusProp = props.find((p) => p.name === sc.status);
   const statusValues = statusProp?.options?.map((o) => o.value) ?? [];
   const toggleStatus = (key: keyof Statuses, value: string): void => {
-    const next: Statuses = {
-      pool: [...sc.statuses.pool],
-      active: [...sc.statuses.active],
-      finished: [...sc.statuses.finished],
-      dropped: [...sc.statuses.dropped],
-      paused: [...sc.statuses.paused],
-    };
+    const next: Statuses = { pool: [...sc.statuses.pool], active: [...sc.statuses.active], finished: [...sc.statuses.finished], dropped: [...sc.statuses.dropped] };
     const on = next[key].includes(value);
     for (const k of Object.keys(next) as (keyof Statuses)[]) next[k] = next[k].filter((v) => v !== value);
     if (!on) next[key].push(value);
@@ -151,10 +144,10 @@ export function ScheduleSettings({ config, view, edit }: { config: DatabaseConfi
           onChange={(weekStart) => set({ weekStart })}
         />
       </SettingRow>
-      <SettingRow name="Hours per week" desc="Starting guess of all play time. Your log takes over a quarter per full week, completely after 4.">
+      <SettingRow name="Hours per week" desc="Starting guess, replaced by your log as weeks pass.">
         {numberInput(sc.estimates.weekly, (weekly) => set({ estimates: { ...sc.estimates, weekly } }))}
       </SettingRow>
-      <SettingRow name="Unlogged live hours per week" desc="Daily time on live games you don't log (e.g. gacha dailies). Always counted; logged live sessions come on top.">
+      <SettingRow name="Live hours per week" desc="Starting guess for the live band.">
         {numberInput(sc.estimates.live, (live) => set({ estimates: { ...sc.estimates, live } }))}
       </SettingRow>
       <SettingRow name="Average over (weeks)">

@@ -257,7 +257,7 @@ test.describe('board / table settings', () => {
     await page.locator('.rb-settings-tab').nth(1).click();
     await page.locator('.rb-prop-name').nth(2).fill('Cost');
     await page.keyboard.press('Escape');
-    await page.locator('.dev-modal-bg').click({ position: { x: 5, y: 5 } });
+    await expect(page.locator('.dev-modal-bg')).toHaveCount(0);
     // Total = Price * Qty → still 6 for Apples, whether or not the formula was rewritten.
     await expect(page.locator('[data-pos="0:4"]')).toHaveText('6');
   });

@@ -150,12 +150,19 @@ export class Modal {
     this.bg.appendChild(this.modalEl);
     document.body.appendChild(this.bg);
     this.bg.onclick = (e) => e.target === this.bg && this.close();
+    document.addEventListener('keydown', this.onKey);
     void this.onOpen();
   }
   close(): void {
+    document.removeEventListener('keydown', this.onKey);
     this.onClose();
     this.bg.remove();
   }
+  /** Like Obsidian: Escape closes the top modal (unless something handled it first). */
+  private onKey = (e: KeyboardEvent): void => {
+    if (e.key !== 'Escape' || e.defaultPrevented || document.querySelectorAll('.dev-modal-bg').item(document.querySelectorAll('.dev-modal-bg').length - 1) !== this.bg) return;
+    this.close();
+  };
   onOpen(): void | Promise<void> {}
   onClose(): void {}
 }

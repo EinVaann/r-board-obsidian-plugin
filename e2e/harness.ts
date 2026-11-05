@@ -10,7 +10,7 @@ export interface Fixture {
 }
 
 /** Open the harness with the given data; fails the test on any page error. */
-export async function open(page: Page, opts: { kind?: 'table' | 'board' | 'embed'; fixture?: Fixture; mobile?: boolean } = {}): Promise<void> {
+export async function open(page: Page, opts: { kind?: 'table' | 'board' | 'embed' | 'schedule'; fixture?: Fixture; mobile?: boolean } = {}): Promise<void> {
   const errors: string[] = [];
   page.on('pageerror', (e) => errors.push(e.message));
   (page as Page & { __errors?: string[] }).__errors = errors;
@@ -18,6 +18,7 @@ export async function open(page: Page, opts: { kind?: 'table' | 'board' | 'embed
   const q = new URLSearchParams();
   if (opts.kind === 'board') q.set('kind', 'board');
   if (opts.kind === 'embed') q.set('embed', '');
+  if (opts.kind === 'schedule') q.set('schedule', '');
   if (opts.mobile) q.set('mobile', '');
   await page.goto(`/index.html?${q}`);
   await expect(page.locator(opts.kind === 'embed' ? '#root > div' : '.rb-toolbar').first()).toBeVisible();

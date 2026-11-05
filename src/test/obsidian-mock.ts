@@ -135,6 +135,39 @@ export class TextFileView extends Component {}
 export class WorkspaceLeaf {}
 export class WorkspaceSplit {}
 
+export class FuzzySuggestModal<T> extends Modal {
+  declare _item?: T;
+}
+export class AbstractInputSuggest<T> {
+  declare _item?: T;
+}
+export class Scope {
+  register(): void {}
+}
+
+/** Enough of Plugin to run `onload()`: registrations are recorded, not wired to a UI. */
+export class Plugin extends Component {
+  commands: { id: string }[] = [];
+  constructor(public app: unknown, public manifest: unknown = {}) {
+    super();
+  }
+  async loadData(): Promise<unknown> {
+    return null;
+  }
+  async saveData(): Promise<void> {}
+  registerEvent(): void {}
+  registerView(): void {}
+  registerExtensions(): void {}
+  registerMarkdownCodeBlockProcessor(): void {}
+  addRibbonIcon(): void {}
+  addCommand(c: { id: string }): void {
+    this.commands.push(c);
+  }
+  removeCommand(id: string): void {
+    this.commands = this.commands.filter((c) => c.id !== id);
+  }
+}
+
 export const Platform = { isMobile: false, isPhone: false };
 export function debounce<T extends (...a: never[]) => void>(fn: T): T {
   return fn;
