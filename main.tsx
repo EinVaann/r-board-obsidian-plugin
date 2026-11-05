@@ -10,6 +10,8 @@ import { Recipe } from './src/recipe/Recipe';
 import { ReactRenderChild } from './src/react/mount';
 import { DatabaseEmbed, parseEmbed } from './src/embed/Embed';
 import { QuickAddCommands } from './src/quickadd/QuickAdd';
+import { AutoDateWatcher } from './src/data/AutoDateWatcher';
+import { relinkTables } from './src/table/append';
 
 interface RBoardData {
   /** Active view name chosen per database, keyed by the `.board` file path. */
@@ -20,15 +22,40 @@ export default class RBoardPlugin extends Plugin {
   private data: RBoardData = {};
   /** One "Quick add to …" command per database that has quick add set up. */
   readonly quickAdds = new QuickAddCommands(this);
+  /** Fills date properties when a board's watched property changes. */
+  readonly autoDates = new AutoDateWatcher(this.app, () => this.listBoardFiles());
 
   async onload(): Promise<void> {
     this.data = ((await this.loadData()) as RBoardData) ?? {};
 
-    this.app.workspace.onLayoutReady(() => void this.quickAdds.scan());
+    this.app.workspace.onLayoutReady(() => {
+      void this.quickAdds.scan();
+      void this.autoDates.scan();
+      // Registered after the scan: notes seen from now on are compared against it.
+      this.registerEvent(this.app.metadataCache.on('changed', (file) => void this.autoDates.noteChanged(file)));
+      // `create` also fires for every file while the vault loads; only later ones matter.
+      this.registerEvent(this.app.vault.on('create', (file) => {
+        if (file instanceof TFile && file.extension === BOARD_EXTENSION) void this.autoDates.boardChanged(file);
+      }));
+    });
     this.registerEvent(this.app.vault.on('rename', (file, oldPath) => {
-      if (file instanceof TFile) void this.quickAdds.rename(oldPath, file);
+      if (!(file instanceof TFile)) return;
+      void this.quickAdds.rename(oldPath, file);
+      this.autoDates.renamed(oldPath, file);
+      // Obsidian updates links in Markdown only; table cells are ours to fix.
+      if (file.extension === 'md') {
+        const tables = this.listBoardFiles().filter((f) => f.extension === TABLE_EXTENSION);
+        void relinkTables(this.app, tables, oldPath, file);
+      }
     }));
-    this.registerEvent(this.app.vault.on('delete', (file) => this.quickAdds.deleted(file.path)));
+    this.registerEvent(this.app.vault.on('delete', (file) => {
+      this.quickAdds.deleted(file.path);
+      this.autoDates.boardDeleted(file.path);
+      this.autoDates.noteDeleted(file.path);
+    }));
+    this.registerEvent(this.app.vault.on('modify', (file) => {
+      if (file instanceof TFile && file.extension === BOARD_EXTENSION) void this.autoDates.boardChanged(file);
+    }));
 
     this.registerView(BOARD_VIEW_TYPE, (leaf) => new BoardView(leaf, this));
     this.registerView(HOME_VIEW_TYPE, (leaf) => new BoardHomeView(leaf, this));

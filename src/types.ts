@@ -286,6 +286,17 @@ export interface DatabaseConfig {
   titleProperty?: string;
   /** Quick add: a command (and optional hotkey) that adds a record from a small form. */
   quickAdd?: QuickAddConfig;
+  /** Boards: fill a date property when a property changes to one of some values. */
+  autoDates?: AutoDateRule[];
+}
+
+/** "When `property` becomes one of `values`, set the empty date property `date` to today." */
+export interface AutoDateRule {
+  property: string;
+  values: string[];
+  date: string;
+  /** Write the time of day too. */
+  includeTime?: boolean;
 }
 
 /** A database's quick-add command. */

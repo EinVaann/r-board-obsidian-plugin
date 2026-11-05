@@ -3,8 +3,9 @@ import { propertyLabel } from '../config';
 import { PropertyEditor } from './PropertyEditor';
 import { Select, SettingRow, SettingsTabs, TextInput } from './controls';
 import { QuickAddSettings } from './QuickAddSettings';
+import { AutoDateSettings } from './AutoDateSettings';
 
-/** Board settings modal content: General (name, tag, folder — or a table's title column), Properties and Quick add. */
+/** Board settings modal content: General (name, tag, folder — or a table's title column), Properties, Quick add and (boards) Dates. */
 export function BoardSettings() {
   const config = useBoard((s) => s.config);
   const updateConfig = useBoard((s) => s.updateConfig);
@@ -70,6 +71,7 @@ export function BoardSettings() {
         { id: 'general', label: 'General', icon: 'settings', content: general },
         { id: 'properties', label: table ? 'Columns' : 'Properties', icon: 'list', content: properties },
         { id: 'quick-add', label: 'Quick add', icon: 'zap', content: <QuickAddSettings /> },
+        ...(table ? [] : [{ id: 'dates', label: 'Dates', icon: 'calendar', content: <AutoDateSettings /> }]),
       ]}
     />
   );

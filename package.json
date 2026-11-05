@@ -9,7 +9,7 @@
     "build:css": "node build-css.mjs",
     "test": "vitest run",
     "e2e": "playwright test",
-    "deploy": "node esbuild.config.mjs production && cp main.js manifest.json styles.css \"/Users/anhv/Documents/Vault/.obsidian/plugins/r-board/\""
+    "deploy": "node esbuild.config.mjs production && cp main.js manifest.json styles.css \"../test/Test Plugin/.obsidian/plugins/r-board/\""
   },
   "dependencies": {
     "@dnd-kit/core": "^6.3.1",

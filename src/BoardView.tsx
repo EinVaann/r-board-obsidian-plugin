@@ -1,7 +1,7 @@
 import { createRef } from 'react';
 import { Notice, TFile, TextFileView, WorkspaceLeaf, debounce } from 'obsidian';
 import type RBoardPlugin from '../main';
-import type { BoardItem, DatabaseConfig } from './types';
+import type { BoardItem, DatabaseConfig, TableRow } from './types';
 import { parseDatabaseConfig, serializeDatabase } from './config';
 import { tagsForFile } from './data/query';
 import { setProperty } from './data/properties';
@@ -167,6 +167,11 @@ export class BoardView extends TextFileView {
   /** Tables: append a row through the store, so this pane's next save keeps it. */
   appendRow(cells: Record<string, unknown>): void {
     this.store.getState().updateRows((rows) => void addRow(rows, cells));
+  }
+
+  /** Tables: edit the rows through the store (saved, and shown live). */
+  updateRows(recipe: (draft: TableRow[]) => void): void {
+    this.store.getState().updateRows(recipe);
   }
 
   clear(): void {

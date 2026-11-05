@@ -1,5 +1,6 @@
 import type {
   Aggregate,
+  AutoDateRule,
   Calculation,
   CardSize,
   ChartConfig,
@@ -276,8 +277,25 @@ export function parseDatabaseConfig(raw: string): ParseResult {
         typeof obj.newNoteFolder === 'string' && obj.newNoteFolder.trim() !== ''
           ? obj.newNoteFolder.trim()
           : undefined,
+      autoDates: parseAutoDates(obj.autoDates),
     },
   };
+}
+
+/** Auto-date rules; incomplete ones are dropped. */
+export function parseAutoDates(raw: unknown): AutoDateRule[] | undefined {
+  if (!Array.isArray(raw)) return undefined;
+  const out: AutoDateRule[] = [];
+  for (const r of raw) {
+    if (typeof r !== 'object' || r === null) continue;
+    const o = r as Record<string, unknown>;
+    if (typeof o.property !== 'string' || !o.property || typeof o.date !== 'string' || !o.date) continue;
+    const values = Array.isArray(o.values) ? o.values.filter((v): v is string => typeof v === 'string' && v !== '') : [];
+    const rule: AutoDateRule = { property: o.property, values, date: o.date };
+    if (o.includeTime === true) rule.includeTime = true;
+    out.push(rule);
+  }
+  return out.length ? out : undefined;
 }
 
 /** The parts shared by `.board` and `.table` files: name, properties, views. */
@@ -333,6 +351,7 @@ export function serializeDatabase(config: DatabaseConfig): string {
   if (config.defaultView) out.defaultView = config.defaultView;
   if (config.newNoteFolder) out.newNoteFolder = config.newNoteFolder;
   if (config.quickAdd) out.quickAdd = config.quickAdd;
+  if (config.autoDates?.length) out.autoDates = config.autoDates;
   return JSON.stringify(out, null, 2);
 }
 

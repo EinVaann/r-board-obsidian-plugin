@@ -3,8 +3,8 @@ import { Notice, TFile, type App } from 'obsidian';
 import type RBoardPlugin from '../../main';
 import type { DatabaseConfig, PropertyConfig } from '../types';
 import { parseDatabaseConfig, propertyLabel, serializeDatabase } from '../config';
-import { parseTableFile, serializeTableFile } from '../table/format';
-import { addRow } from '../table/rows';
+import { parseTableFile } from '../table/format';
+import { appendTableRow, openBoardView } from '../table/append';
 import { createNoteFor } from '../data/notes';
 import { queryItems } from '../data/query';
 import { toStored, type StoredValue } from '../data/properties';
@@ -13,7 +13,7 @@ import { FormField } from './FormField';
 import { ReactModal } from '../react/mount';
 import { Icon } from '../react/Icon';
 import { PROPERTY_TYPE_ICON } from '../settings/PropertyEditor';
-import { BOARD_VIEW_TYPE, BoardView, TABLE_EXTENSION } from '../BoardView';
+import { TABLE_EXTENSION } from '../BoardView';
 import { quickAddCommand, quickAddCommandId } from './ids';
 import { addOptions } from './options';
 
@@ -95,18 +95,10 @@ function readConfig(file: TFile, text: string): DatabaseConfig | null {
   return r.ok ? r.config : null;
 }
 
-/** The pane showing `file`, if one is open. */
-function openView(app: App, file: TFile): BoardView | null {
-  for (const leaf of app.workspace.getLeavesOfType(BOARD_VIEW_TYPE)) {
-    if (leaf.view instanceof BoardView && leaf.view.file?.path === file.path) return leaf.view;
-  }
-  return null;
-}
-
 /** Open the quick-add form for a database file. */
 export async function openQuickAdd(app: App, file: TFile): Promise<void> {
   const text = await app.vault.read(file);
-  const config = openView(app, file)?.currentConfig() ?? readConfig(file, text);
+  const config = openBoardView(app, file)?.currentConfig() ?? readConfig(file, text);
   if (!config?.quickAdd) {
     new Notice(`R Board: quick add is not set up for ${file.basename}.`);
     return;
@@ -154,31 +146,14 @@ async function addRecord(
   created: Record<string, string[]>,
 ): Promise<void> {
   const label = config.name?.trim() || file.basename;
-  const view = openView(app, file);
-  const newOptions = Object.keys(created).length > 0;
-  if (view && newOptions) view.updateConfig((c) => addOptions(c, created));
   if (config.kind === 'table') {
-    if (view) view.appendRow(values);
-    else {
-      let error = '';
-      await app.vault.process(file, (text) => {
-        const r = parseTableFile(text);
-        if (!r.ok) {
-          error = r.error;
-          return text;
-        }
-        addOptions(r.table.config, created);
-        addRow(r.table.rows, values);
-        return serializeTableFile(r.table);
-      });
-      if (error) {
-        new Notice(`R Board: could not add to ${label} — ${error}`);
-        return;
-      }
-    }
-    new Notice(`Added ${title ? `"${title}" ` : 'a row '}to ${label}`);
+    const error = await appendTableRow(app, file, values, created);
+    new Notice(error ? `R Board: could not add to ${label} — ${error}` : `Added ${title ? `"${title}" ` : 'a row '}to ${label}`);
     return;
   }
+  const view = openBoardView(app, file);
+  const newOptions = Object.keys(created).length > 0;
+  if (view && newOptions) view.updateConfig((c) => addOptions(c, created));
   if (!view && newOptions) {
     await app.vault.process(file, (text) => {
       const r = parseDatabaseConfig(text);

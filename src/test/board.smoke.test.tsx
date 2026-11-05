@@ -497,6 +497,34 @@ describe('settings', () => {
     expect(count(el, '.rb-prop-name.rb-invalid')).toBe(1);
   });
 
+  it('board settings → Dates: add a rule, pick values, remove it', async () => {
+    const config: DatabaseConfig = {
+      ...GAMES,
+      properties: [
+        { name: 'status', type: 'select', options: [{ value: 'planned' }, { value: 'playing' }, { value: 'completed' }] },
+        { name: 'start-date', type: 'date' },
+      ],
+    };
+    const { ctx, store } = makeContext(config);
+    const el = await render(
+      <BoardContext.Provider value={ctx}>
+        <BoardSettings />
+      </BoardContext.Provider>,
+    );
+    const tabs = [...el.querySelectorAll('.rb-settings-tab')];
+    expect(tabs.map((t) => t.textContent)).toEqual(['General', 'Properties', 'Quick add', 'Dates']);
+    await act(async () => mousedown(tabs[3]));
+    const addButton = [...el.querySelectorAll('button')].find((b) => b.textContent?.includes('Add rule'))!;
+    await act(async () => addButton.click());
+    expect(store.getState().config!.autoDates).toEqual([{ property: 'status', values: [], date: 'start-date' }]);
+
+    await act(async () => [...el.querySelectorAll<HTMLButtonElement>('.rb-auto-date-value')].find((b) => b.textContent === 'playing')!.click());
+    expect(store.getState().config!.autoDates![0].values).toEqual(['playing']);
+
+    await act(async () => el.querySelector<HTMLButtonElement>('[aria-label="Remove rule"]')!.click());
+    expect(store.getState().config!.autoDates).toBeUndefined();
+  });
+
   it('filter builder: renders nested groups and saves edits', async () => {
     let saved: unknown = 'unset';
     const el = await render(
