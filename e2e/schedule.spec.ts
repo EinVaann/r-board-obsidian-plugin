@@ -110,12 +110,37 @@ test.describe('schedule view', () => {
   test('changing lanes in settings redraws the forecast', async ({ page }) => {
     await page.getByLabel('View settings').click();
     await expect(page.getByRole('tab', { name: 'Schedule' })).toHaveAttribute('aria-selected', 'true');
-    const lanes = page.locator('.setting-item', { hasText: /^Lanes/ }).locator('input');
-    await lanes.fill('3');
+    await page.getByRole('spinbutton', { name: 'Lanes' }).fill('3');
     await page.keyboard.press('Escape');
     await expect(page.locator('.rb-schedule-lane')).toHaveCount(3);
     // The third playing game joins the lanes instead of the side list.
     await expect(page.locator('.rb-schedule-side')).toHaveCount(0);
+  });
+
+  test('settings: each status gets a role from one dropdown', async ({ page }) => {
+    await page.getByLabel('View settings').click();
+    const row = (label: string) => page.locator('.rb-sched-status', { has: page.locator('.rb-sched-status-pill', { hasText: new RegExp(`^${label}$`) }) });
+    await expect(page.locator('.rb-sched-status')).toHaveCount(6);
+    await expect(row('planned').locator('select')).toHaveValue('pool');
+    await expect(row('to-play').locator('select')).toHaveValue('');
+    // to-play joins the waiting games: the forecast schedules it too.
+    await row('to-play').locator('select').selectOption('pool');
+    const statuses = await page.evaluate(() => window.__store.getState().config!.views[0].schedule!.statuses);
+    expect(statuses.pool).toEqual(['planned', 'to-play']);
+    // Taking away the only Playing status shows a warning.
+    await row('playing').locator('select').selectOption('');
+    await expect(page.locator('.rb-sched-error')).toContainText('Playing');
+  });
+
+  test('settings: similar groups are chips you add and remove', async ({ page }) => {
+    await page.getByLabel('View settings').click();
+    await expect(page.locator('.rb-sched-similar-group')).toHaveText([/^JRPG ≈ Visual novel/]);
+    await page.getByLabel('New similar group').fill('Roguelike, Deckbuilder');
+    await page.keyboard.press('Enter');
+    await expect(page.locator('.rb-sched-similar-group')).toHaveCount(2);
+    await page.getByRole('button', { name: 'Remove JRPG, Visual novel' }).click();
+    const similar = await page.evaluate(() => window.__store.getState().config!.views[0].schedule!.similar);
+    expect(similar).toEqual([['Roguelike', 'Deckbuilder']]);
   });
 
   test('a pinned game that clashes is placed anyway, with the reason shown', async ({ page }) => {
