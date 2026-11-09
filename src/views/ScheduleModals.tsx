@@ -62,7 +62,7 @@ function LogSessionForm({
   const valid = !!item && hours.trim() !== '' && Number.isFinite(h) && h > 0 && /^\d{4}-\d{2}-\d{2}$/.test(date);
   const submit = (): void => {
     if (!valid) return;
-    onSubmit({ item, hours: Math.round(h * 100) / 100, date, ...(withType && type ? { type } : {}) });
+    onSubmit({ item, hours: Math.round(h * 100) / 100 || h, date, ...(withType && type ? { type } : {}) });
     onDone();
   };
   return (
@@ -84,7 +84,7 @@ function LogSessionForm({
         />
       </SettingRow>
       <SettingRow name="Hours">
-        <input type="number" min="0" step="0.1" autoFocus aria-label="Hours" value={hours} onChange={(e) => setHours(e.target.value)} />
+        <input type="number" min="0" step="any" autoFocus aria-label="Hours" value={hours} onChange={(e) => setHours(e.target.value)} />
       </SettingRow>
       <SettingRow name="Date">
         <input type="date" aria-label="Date" value={date} onChange={(e) => setDate(e.target.value)} />
@@ -208,6 +208,9 @@ function PickAny({ options, onPick }: { options: GameOption[]; onPick: (id: stri
     </div>
   );
 }
+
+/** Section index for a side section that doesn't exist yet; choosing it creates one. */
+export const NEW_SIDE = -2;
 
 /** A section in the Move modal. */
 export interface MoveSection {

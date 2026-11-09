@@ -107,6 +107,25 @@ export function defaultSections(config: DatabaseConfig, c: Pick<ScheduleConfig, 
   return out;
 }
 
+/**
+ * A side section to add when there is none: the lanes conditions plus a ticked
+ * "casual" checkbox (made when missing), placed just above the lanes section.
+ */
+export function addSideSection(config: DatabaseConfig, sections: ScheduleSection[]): { sections: ScheduleSection[]; index: number; property: PropertyConfig | null } | null {
+  const lanes = sections.findIndex((s) => s.kind === 'lanes');
+  if (lanes < 0 || sections.some((s) => s.kind === 'side')) return null;
+  const used = new Set(sections.flatMap((s) => s.conditions.map((c) => c.property)));
+  const existing = config.properties.find((p) => p.type === 'checkbox' && !used.has(p.name) && /casual|side/i.test(`${p.name} ${p.label ?? ''}`));
+  const taken = new Set(config.properties.map((p) => p.name));
+  const name = existing?.name ?? (taken.has('casual') ? 'casual-play' : 'casual');
+  const side: ScheduleSection = { name: kindName('side'), kind: 'side', conditions: [...sections[lanes].conditions, { property: name, op: 'checked' }] };
+  return {
+    sections: [...sections.slice(0, lanes), side, ...sections.slice(lanes)],
+    index: lanes,
+    property: existing ? null : { name, label: 'Casual', type: 'checkbox' },
+  };
+}
+
 /** Problems with a section list, in words; empty when it's usable. */
 export function sectionProblems(config: DatabaseConfig, sections: ScheduleSection[]): string[] {
   const out: string[] = [];

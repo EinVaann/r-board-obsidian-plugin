@@ -19,7 +19,7 @@ import { nextCandidates } from '../schedule/next';
 import { movedPins, placePin, placeQueued, replan, togglePin, unpin } from '../schedule/pins';
 import { randomCandidate } from '../schedule/rules';
 import { logSession, moveToSection } from '../schedule/actions';
-import { matchSection, moveWrites, sectionProblems } from '../schedule/sections';
+import { addSideSection, matchSection, moveWrites, sectionProblems } from '../schedule/sections';
 import type { Forecast, LaneEntry, ScheduleItem, Session, Suggestion } from '../schedule/types';
 import { useLinkedTable } from '../schedule/useLinkedTable';
 import {
@@ -33,6 +33,7 @@ import {
   type MoveFrom,
   type MoveLane,
   type MoveSection,
+  NEW_SIDE,
 } from './ScheduleModals';
 
 const LANE_NAMES = 'ABCDEF';
@@ -53,6 +54,7 @@ const laneName = (n: number): string => LANE_NAMES[n] ?? String(n + 1);
 export function ScheduleView({ config, view, all, viewIndex }: { config: DatabaseConfig; view: ViewConfig; all: BoardItem[]; viewIndex: number }) {
   const { app, actions } = useBoardContext();
   const updateView = useBoard((s) => s.updateView);
+  const updateConfig = useBoard((s) => s.updateConfig);
   const sc: ScheduleConfig = useMemo(() => guessSchedule(config, view.schedule ?? defaultScheduleConfig()), [config, view.schedule]);
   const log = useLinkedTable(app, sc.log);
   // No filter: sections decide what the schedule shows.
@@ -123,7 +125,22 @@ export function ScheduleView({ config, view, all, viewIndex }: { config: Databas
    */
   const move = async (id: string, c: MoveChoice): Promise<void> => {
     const item = itemOf(id);
-    if (!item || c.section < 0) return;
+    if (!item) return;
+    if (c.section === NEW_SIDE) {
+      const added = addSideSection(config, sections);
+      if (!added) return;
+      const { property } = added;
+      const withProp = property ? { ...config, properties: [...config.properties, property] } : config;
+      if (!(await moveToSection(withProp, added.sections, item, added.index, actions.setValue))) return;
+      if (property) updateConfig((d) => void d.properties.push(property));
+      editSchedule((s) => {
+        s.sections = added.sections;
+        s.pins = unpin(s.pins, id);
+        if (s.assign) delete s.assign[id];
+      });
+      return;
+    }
+    if (c.section < 0) return;
     if (c.section !== sectionOf(id) && !(await moveToSection(config, sections, item, c.section, actions.setValue))) return;
     const kind = sections[c.section].kind;
     // Placing into a busy lane would bump its game; the item waits for a free lane instead.
@@ -222,6 +239,9 @@ export function ScheduleView({ config, view, all, viewIndex }: { config: Databas
     }));
     // Skip duplicate lanes / queue sections: only the first is used.
     const usable = moveSections.filter((s) => !((s.kind === 'lanes' && s.index !== lanesSection) || (s.kind === 'queue' && s.index !== queueSection)));
+    // No side section yet: offer one anyway; picking it adds the section (and a "casual" checkbox).
+    const newSide = addSideSection(config, sections);
+    if (newSide) usable.splice(usable.findIndex((s) => s.kind === 'lanes'), 0, { index: NEW_SIDE, name: newSide.sections[newSide.index].name, kind: 'side' });
     const lanes: MoveLane[] = result.lanes.map((l, n) => {
       const cur = l.find((x) => x.current);
       return {
@@ -233,7 +253,7 @@ export function ScheduleView({ config, view, all, viewIndex }: { config: Databas
     });
     /** What a move into a section writes, in words ("status → planned, casual off"). */
     const describe = (index: number): string => {
-      const writes = moveWrites(item.values, sections, index) ?? {};
+      const writes = (index === NEW_SIDE && newSide ? moveWrites(item.values, newSide.sections, newSide.index) : moveWrites(item.values, sections, index)) ?? {};
       return Object.entries(writes)
         .map(([name, v]) => {
           const label = config.properties.find((p) => p.name === name);

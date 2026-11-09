@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { DatabaseConfig, ScheduleSection } from '../types';
-import { defaultSections, matchSection, moveWrites, sectionProblems } from './sections';
+import { addSideSection, defaultSections, matchSection, moveWrites, sectionProblems } from './sections';
 
 const BOARD = {
   sourceTag: 'b',
@@ -91,5 +91,23 @@ describe('problems', () => {
   it('rejects properties that are not select or checkbox', () => {
     const s: ScheduleSection[] = [{ name: 'X', kind: 'hidden', conditions: [{ property: 'genre', op: 'is', value: 'JRPG' }] }];
     expect(sectionProblems(BOARD, s).some((x) => /only select and checkbox/.test(x))).toBe(true);
+  });
+});
+
+describe('adding a side section', () => {
+  const noCasual = { ...BOARD, properties: BOARD.properties.filter((p) => p.name !== 'casual') } as DatabaseConfig;
+  const base = defaultSections(noCasual, {});
+
+  it('goes above the lanes with a new casual checkbox, and a playing game moves there', () => {
+    const added = addSideSection(noCasual, base)!;
+    expect(added.property).toEqual({ name: 'casual', label: 'Casual', type: 'checkbox' });
+    expect(added.sections.map((s) => s.kind)).toEqual(['live', 'side', 'lanes', 'queue', 'hidden', 'finished', 'dropped']);
+    expect(moveWrites({ status: 'playing' }, added.sections, added.index)).toEqual({ casual: true });
+    expect(moveWrites({ status: 'planned' }, added.sections, added.index)).toEqual({ status: 'playing', casual: true });
+  });
+
+  it('reuses an unused casual checkbox and is skipped when a side section exists', () => {
+    expect(addSideSection(BOARD, SECTIONS)).toBeNull();
+    expect(addSideSection(BOARD, SECTIONS.filter((s) => s.kind !== 'side'))!.property).toBeNull();
   });
 });
