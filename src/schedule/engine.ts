@@ -36,13 +36,12 @@ export function forecast(items: ScheduleItem[], sessions: Session[], settings: S
   const todayDay = toDay(today) ?? 0;
   const byId = new Map(items.map((i) => [i.id, i]));
 
-  // Active items keep their assigned lane, then fill free lanes earliest started first; the rest are side games.
+  // Active items keep their assigned lane, then fill free lanes earliest started first; the rest overflow.
   const active = items.filter((i) => i.state === 'active').sort((a, b) => (toDay(a.start) ?? Infinity) - (toDay(b.start) ?? Infinity) || byRank(a, b));
   const slots: (ScheduleItem | null)[] = Array.from({ length: settings.lanes }, () => null);
   const unassigned: ScheduleItem[] = [];
   for (const i of active) {
     const n = settings.assign?.[i.id];
-    if (n === -1) continue; // kept as a side game
     if (n !== undefined && n >= 0 && n < settings.lanes && !slots[n]) slots[n] = i;
     else unassigned.push(i);
   }
@@ -87,7 +86,8 @@ export function forecast(items: ScheduleItem[], sessions: Session[], settings: S
     ? { early: ends.map((r) => r.early).sort().at(-1)!, late: ends.map((r) => r.late).sort().at(-1)! }
     : null;
 
-  return { today, pace, overrun, week, lanes, live, overflow, finish };
+  const side = items.filter((i) => i.state === 'side').map((i) => i.id);
+  return { today, pace, overrun, week, lanes, live, overflow, side, finish };
 }
 
 /** A session's type when the log doesn't say: live items → live, lane items within their run → lane, else detour. */
@@ -178,9 +178,17 @@ function simulate(input: SimInput): LaneEntry[][] {
   const byId = new Map(items.map((i) => [i.id, i]));
   const pinsByLane = new Map<number, typeof settings.pins>();
   const pinned = new Set<string>();
+  /** Items the schedule places itself, but not before a day. */
+  const holds = new Map<string, number>();
   for (const p of settings.pins) {
     const item = byId.get(p.item);
-    if (!item || item.state !== 'pool' || p.lane < 0 || p.lane >= settings.lanes) continue;
+    if (!item || item.state !== 'pool') continue;
+    if (p.lane < 0) {
+      const d = toDay(p.notBefore);
+      if (d !== null) holds.set(p.item, d);
+      continue;
+    }
+    if (p.lane >= settings.lanes) continue;
     pinned.add(p.item);
     pinsByLane.set(p.lane, [...(pinsByLane.get(p.lane) ?? []), p].sort((a, b) => a.position - b.position));
   }
@@ -226,7 +234,7 @@ function simulate(input: SimInput): LaneEntry[][] {
     const running = lanes.filter((l, i) => i !== n && l.current).map((l) => l.current!);
     const pins = (pinsByLane.get(n) ?? []).filter((p) => !used.has(p.item));
     const due = pins.find((p) => p.position <= lane.started && (toDay(p.notBefore) ?? -Infinity) <= day);
-    const remainingPool = pool.filter((i) => !used.has(i.id));
+    const remainingPool = pool.filter((i) => !used.has(i.id) && (holds.get(i.id) ?? -Infinity) <= day);
     let next: ScheduleItem | null = null;
     let fit = { total: 0, reasons: [] as string[] };
     let pin: (typeof pins)[number] | undefined;
@@ -261,7 +269,7 @@ function simulate(input: SimInput): LaneEntry[][] {
       reasons: fit.reasons,
       t0: t,
       t1: -1,
-      notBefore: toDay(pin?.notBefore) ?? undefined,
+      notBefore: toDay(pin?.notBefore) ?? holds.get(next.id),
     });
     return true;
   };
@@ -277,6 +285,11 @@ function simulate(input: SimInput): LaneEntry[][] {
         const at = (d - todayDay) / mid;
         if (at > t && (best === null || at < best)) best = at;
       }
+    }
+    for (const [id, d] of holds) {
+      if (used.has(id)) continue;
+      const at = (d - todayDay) / mid;
+      if (at > t && (best === null || at < best)) best = at;
     }
     return best;
   };

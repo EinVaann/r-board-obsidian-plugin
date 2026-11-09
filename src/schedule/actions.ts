@@ -1,32 +1,31 @@
 import { Notice, TFile, type App } from 'obsidian';
-import type { BoardItem, DatabaseConfig, PropertyConfig, ScheduleConfig } from '../types';
+import type { BoardItem, DatabaseConfig, PropertyConfig, ScheduleSection } from '../types';
 import type { StoredValue } from '../data/properties';
 import { appendTableRow } from '../table/append';
 import type { LogColumns } from './inputs';
+import { moveWrites } from './sections';
 import type { SessionType } from './types';
 
-export type Role = keyof ScheduleConfig['statuses'];
-
-/** The status value written for a role (its first listed value). */
-export function statusFor(c: ScheduleConfig, role: Role): string | null {
-  return c.statuses[role][0] ?? null;
-}
-
-/** Set an item's status to a role's value through the board, so auto-dates fire. Returns false when it couldn't. */
-export async function setRole(
+/**
+ * Write what puts `item` in section `target`, through the board so auto-dates
+ * fire. Returns false when nothing could be written.
+ */
+export async function moveToSection(
   config: DatabaseConfig,
-  c: ScheduleConfig,
+  sections: ScheduleSection[],
   item: BoardItem,
-  role: Role,
+  target: number,
   setValue: (item: BoardItem, prop: PropertyConfig, value: StoredValue) => Promise<void>,
 ): Promise<boolean> {
-  const prop = config.properties.find((p) => p.name === c.status);
-  const value = statusFor(c, role);
-  if (!prop || !value) {
-    new Notice(`R Board: choose a status value for "${role}" in the Schedule settings.`);
+  const writes = moveWrites(item.values, sections, target);
+  if (!writes) {
+    new Notice(`R Board: can't move ${item.title} into "${sections[target]?.name ?? '?'}"; check the sections in the Schedule settings.`);
     return false;
   }
-  await setValue(item, prop, value);
+  for (const [name, value] of Object.entries(writes)) {
+    const prop = config.properties.find((p) => p.name === name);
+    if (prop) await setValue(item, prop, value);
+  }
   return true;
 }
 

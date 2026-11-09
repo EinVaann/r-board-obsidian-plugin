@@ -3,7 +3,7 @@ import type { ScheduleItem, ScheduleSettings } from './types';
 import { DEFAULT_SETTINGS } from './types';
 import { forecast } from './engine';
 import { nextCandidates } from './next';
-import { livePins, movedPins, placePin, replan, setNotBefore, unpin } from './pins';
+import { livePins, movedPins, placePin, placeQueued, replan, setNotBefore, togglePin, unpin } from './pins';
 
 const TODAY = '2026-11-05';
 const S = (o: Partial<ScheduleSettings> = {}): ScheduleSettings => ({ ...DEFAULT_SETTINGS, ...o });
@@ -34,6 +34,22 @@ describe('pins', () => {
     expect(movedPins(pins)).toBe(2);
   });
 
+  it('places a queued item from the Move modal: a slot pins it, no lane leaves it to the schedule', () => {
+    const pins = [{ item: 'a', lane: 0, position: 0 }];
+    expect(placeQueued(pins, 'x', 0, 0, null)).toEqual([{ item: 'a', lane: 0, position: 1 }, { item: 'x', lane: 0, position: 0 }]);
+    expect(placeQueued([{ item: 'x', lane: 0, position: 0, notBefore: '2027-01-01' }], 'x', 1, 2, null)).toEqual([{ item: 'x', lane: 1, position: 2 }]);
+    expect(placeQueued([{ item: 'x', lane: 0, position: 0 }], 'x', null, null, '2027-01-01')).toEqual([{ item: 'x', lane: -1, position: -1, notBefore: '2027-01-01' }]);
+    expect(placeQueued([{ item: 'x', lane: 0, position: 0 }], 'x', null, null, null)).toEqual([]);
+  });
+
+  it('double-click toggles a pin where the item is, keeping its not-before date', () => {
+    expect(togglePin([], 'x', 1, 3)).toEqual([{ item: 'x', lane: 1, position: 3 }]);
+    expect(togglePin([{ item: 'x', lane: 1, position: 3 }], 'x', 1, 3)).toEqual([]);
+    const held = togglePin([{ item: 'x', lane: 1, position: 3, notBefore: '2027-01-01' }], 'x', 1, 3);
+    expect(held).toEqual([{ item: 'x', lane: -1, position: -1, notBefore: '2027-01-01' }]);
+    expect(togglePin(held, 'x', 0, 2)).toEqual([{ item: 'x', lane: 0, position: 2, notBefore: '2027-01-01' }]);
+  });
+
   it('unpins and drops pins of items no longer waiting', () => {
     const pins = [{ item: 'a', lane: 0, position: 0 }, { item: 'b', lane: 0, position: 1 }];
     expect(unpin(pins, 'a')).toEqual([{ item: 'b', lane: 0, position: 1 }]);
@@ -55,11 +71,20 @@ describe('lane assignment', () => {
     expect(f.lanes[0][0]).toMatchObject({ item: 'next', current: false });
   });
 
-  it('a side game (-1) stays out of a lane that frees up', () => {
-    const items = [item('a', { state: 'active' }), item('side', { state: 'active' }), item('next', { score: 9 })];
-    const f = forecast(items, [], S({ assign: { a: 0, side: -1 } }), TODAY);
-    expect(f.overflow).toEqual(['side']);
+  it('a side game stays out of a lane that frees up', () => {
+    const items = [item('a', { state: 'active' }), item('side', { state: 'side' }), item('next', { score: 9 })];
+    const f = forecast(items, [], S({ assign: { a: 0 } }), TODAY);
+    expect(f.side).toEqual(['side']);
+    expect(f.overflow).toEqual([]);
     expect(f.lanes[1][0]).toMatchObject({ item: 'next', current: false });
+  });
+
+  it('a hold keeps a game the schedule places itself back until its date', () => {
+    const items = [item('a', { state: 'active', duration: 5 }), item('dlc', { score: 9 }), item('other', { score: 5 })];
+    const f = forecast(items, [], S({ lanes: 1, pins: [{ item: 'dlc', lane: -1, position: -1, notBefore: '2027-03-01' }] }), TODAY);
+    expect(f.lanes[0].map((e) => e.item)).toEqual(['a', 'other', 'dlc']);
+    expect(f.lanes[0][2].start.early >= '2027-03-01').toBe(true);
+    expect(f.lanes[0][2].pinned).toBe(false);
   });
 
   it('an assignment past the lane count falls back to a free lane', () => {

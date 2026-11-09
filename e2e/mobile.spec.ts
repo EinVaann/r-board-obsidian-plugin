@@ -57,9 +57,12 @@ test.describe('schedule on a phone', () => {
     expect(btn.width).toBeGreaterThanOrEqual(36);
   });
 
-  test('long-press a playing game to finish it', async ({ page }) => {
+  test('long-press a playing game: Move opens as a bottom sheet, end choices included', async ({ page }) => {
     await page.locator('.rb-schedule-entry.is-current').dispatchEvent('contextmenu');
-    await expect(page.locator('.dev-menu .menu-item', { hasText: /^Finish$/ })).toBeVisible();
+    await page.locator('.dev-menu .menu-item', { hasText: 'Move…' }).click();
+    await expect(page.locator('.rb-sheet')).toBeVisible();
+    await expect(page.locator('.rb-move-dests.is-end .rb-move-dest', { hasText: 'Completed' })).toBeVisible();
+    expect(await page.evaluate(() => document.documentElement.scrollWidth - innerWidth)).toBeLessThanOrEqual(1);
   });
 
   test('long-press menu moves a game (drag is off)', async ({ page }) => {
@@ -67,7 +70,11 @@ test.describe('schedule on a phone', () => {
     const laneA = page.locator('.rb-schedule-lane').nth(0);
     const title = (await laneA.locator('.rb-schedule-draggable').nth(2).locator('.rb-title').textContent())!;
     await laneA.locator('.rb-schedule-draggable').nth(2).locator('.rb-schedule-entry').dispatchEvent('contextmenu');
-    await page.locator('.dev-menu .menu-item', { hasText: 'Move up' }).click();
+    await page.locator('.dev-menu .menu-item', { hasText: 'Move…' }).click();
+    await page.getByLabel('Let the schedule decide').uncheck();
+    const first = (await page.locator('.rb-move-queue .rb-move-row.is-pick:not(.is-top) .rb-move-row-title').first().textContent())!;
+    await page.getByRole('button', { name: `Put it after ${first}` }).click();
+    await page.getByRole('button', { name: 'Move', exact: true }).click();
     await expect(laneA.locator('.rb-schedule-draggable').nth(1)).toContainText(title);
   });
 

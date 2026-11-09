@@ -1,6 +1,7 @@
-import type { BoardItem, ScheduleConfig, TableRow } from '../types';
+import type { BoardItem, ScheduleConfig, SectionKind, TableRow } from '../types';
 import { asArray, asDate, asNumber, parseLink } from '../render/values';
 import { localDate } from './dates';
+import { matchSection } from './sections';
 import type { ItemState, ScheduleItem, Session, SessionType } from './types';
 
 const SESSION_TYPES = new Set<SessionType>(['lane', 'live', 'detour', 'trial']);
@@ -11,15 +12,16 @@ const dateOf = (v: unknown): string | undefined => {
   return d ? localDate(d) : undefined;
 };
 
-/** Which part of the schedule an item belongs to, from its status (and live checkbox). */
-export function stateOf(item: BoardItem, c: ScheduleConfig): { state: ItemState; finished: boolean } {
-  const status = c.status ? asArray(item.values[c.status])[0] ?? '' : '';
-  const s = c.statuses;
-  if (s.active.includes(status)) return { state: c.live && item.values[c.live] === true ? 'live' : 'active', finished: false };
-  if (s.pool.includes(status)) return { state: 'pool', finished: false };
-  if (s.finished.includes(status)) return { state: 'ended', finished: true };
-  if (s.dropped.includes(status)) return { state: 'ended', finished: false };
-  return { state: 'ignored', finished: false };
+const STATE_OF: Record<SectionKind, ItemState> = { lanes: 'active', queue: 'pool', live: 'live', side: 'side', finished: 'ended', dropped: 'ended', hidden: 'ignored' };
+
+/** Which part of the schedule an item belongs to: the first section it matches (`section` is -1 for none). */
+export function stateOf(item: BoardItem, c: ScheduleConfig): { state: ItemState; finished: boolean; section: number } {
+  const sections = c.sections ?? [];
+  const section = matchSection(item.values, sections);
+  const kind = sections[section]?.kind;
+  // Only the first lanes / queue section counts.
+  const first = kind === 'lanes' || kind === 'queue' ? sections.findIndex((s) => s.kind === kind) === section : true;
+  return { state: kind && first ? STATE_OF[kind] : 'ignored', finished: kind === 'finished', section };
 }
 
 /** Board items as engine items; `id` stays the item id (the note path). */

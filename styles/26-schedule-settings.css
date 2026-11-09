@@ -28,23 +28,51 @@
 .rb-sched-number input { flex: 1; min-width: 0; width: 100%; text-align: right; font-variant-numeric: tabular-nums; }
 .rb-sched-unit { flex: none; margin-left: 6px; color: var(--text-muted); font-size: var(--font-ui-smaller); }
 
-/* Statuses: one row per value — pill → role — hint */
-.rb-sched-status-list {
-  display: flex;
-  flex-direction: column;
-  border: 1px solid var(--background-modifier-border);
-  border-radius: var(--radius-s);
-  overflow: hidden;
-}
-.rb-sched-status {
-  display: grid;
-  grid-template-columns: minmax(110px, 160px) 16px minmax(130px, 170px) 1fr;
+/* Sections: an ordered list, each with name, kind and conditions. */
+.rb-sched-sections { display: flex; flex-direction: column; border: 1px solid var(--background-modifier-border); border-radius: var(--radius-s); overflow: hidden; }
+.rb-sched-section { display: flex; flex-direction: column; gap: 6px; padding: 8px 10px; }
+.rb-sched-section + .rb-sched-section { border-top: 1px solid var(--background-modifier-border); }
+.rb-sched-section-head { display: flex; align-items: center; gap: 6px; }
+.rb-sched-section-head input[type='text'] { flex: 1; min-width: 0; font-weight: var(--font-medium); }
+.rb-sched-section-head .clickable-icon { padding: 4px; color: var(--text-faint); }
+.rb-sched-section-head .clickable-icon:hover { color: var(--text-normal); }
+.rb-sched-section-head .clickable-icon:disabled { opacity: 0.3; pointer-events: none; }
+.rb-sched-section-head svg { width: 15px; height: 15px; }
+.rb-sched-section-n {
+  flex: none;
+  display: inline-flex;
   align-items: center;
-  gap: 10px;
-  padding: 6px 10px;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  border-radius: 999px;
+  background: var(--background-modifier-hover);
+  color: var(--text-muted);
+  font-size: var(--font-ui-smaller);
+  font-variant-numeric: tabular-nums;
 }
-.rb-sched-status + .rb-sched-status { border-top: 1px solid var(--background-modifier-border); }
-.rb-sched-status:hover { background: var(--background-modifier-hover); }
+.rb-sched-conditions { display: flex; flex-direction: column; gap: 4px; padding-left: 26px; }
+.rb-sched-condition { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
+.rb-sched-condition .clickable-icon { padding: 2px; color: var(--text-faint); }
+.rb-sched-condition .clickable-icon:hover { color: var(--text-error); }
+.rb-sched-condition svg { width: 13px; height: 13px; }
+.rb-sched-condition-join { min-width: 34px; color: var(--text-faint); font-size: var(--font-ui-smaller); }
+.rb-sched-values { display: inline-flex; flex-wrap: wrap; align-items: center; gap: 4px; }
+.rb-sched-values .rb-sched-condition-join { min-width: 0; margin-right: 2px; }
+.rb-sched-values .rb-sched-status-pill { height: auto; cursor: pointer; opacity: 0.5; box-shadow: inset 0 0 0 1px var(--background-modifier-border); background: transparent; }
+.rb-sched-values .rb-sched-status-pill.is-on {
+  opacity: 1;
+  background: color-mix(in srgb, var(--pill) 22%, transparent);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--pill) 45%, transparent);
+}
+.rb-sched-add-condition,
+.rb-sched-section-tools button:not(.rb-sched-reset) { align-self: flex-start; display: inline-flex; align-items: center; gap: 4px; font-size: var(--font-ui-smaller); }
+.rb-sched-add-condition { background: transparent; box-shadow: none; color: var(--text-muted); padding: 2px 6px; height: auto; }
+.rb-sched-add-condition:hover { color: var(--text-normal); background: var(--background-modifier-hover); }
+.rb-sched-add-condition svg,
+.rb-sched-section-tools svg { width: 13px; height: 13px; }
+.rb-sched-section-tools { display: flex; flex-wrap: wrap; gap: 8px; }
+
 .rb-sched-status-pill {
   justify-self: start;
   max-width: 100%;
@@ -58,12 +86,6 @@
   color: var(--text-normal);
   box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--pill) 45%, transparent);
 }
-.rb-sched-status-arrow { color: var(--text-faint); }
-.rb-sched-status-arrow svg { width: 14px; height: 14px; }
-.rb-sched-status-role { width: 100%; }
-.rb-sched-status-hint { color: var(--text-faint); font-size: var(--font-ui-smaller); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.rb-sched-status.is-off .rb-sched-status-pill { opacity: 0.55; }
-.rb-sched-status.is-off .rb-sched-status-role { color: var(--text-muted); }
 
 /* Similar groups as chips */
 .rb-sched-similar { display: flex; flex-direction: column; gap: 8px; padding-top: 4px; border-top: 1px solid var(--background-modifier-border); }
@@ -92,15 +114,10 @@
 .rb-sched-error { padding: 6px 10px; border-radius: var(--radius-s); background: color-mix(in srgb, var(--text-error) 10%, transparent); color: var(--text-error); font-size: var(--font-ui-small); }
 .rb-sched-hint { color: var(--text-muted); font-size: var(--font-ui-small); }
 
-/* Phones / narrow: statuses stack, hints wrap under the role. */
+/* Phones / narrow: conditions lose their indent. */
 @container (max-width: 520px) {
-  .rb-sched-status { grid-template-columns: 1fr auto; }
-  .rb-sched-status-arrow { display: none; }
-  .rb-sched-status-hint { grid-column: 1 / -1; white-space: normal; }
+  .rb-sched-conditions { padding-left: 0; }
 }
 .is-phone .rb-sched-card { padding: 12px; }
 .is-phone .rb-sched-grid { grid-template-columns: 1fr 1fr; gap: 10px 12px; }
-.is-phone .rb-sched-status { grid-template-columns: 1fr minmax(120px, auto); }
-.is-phone .rb-sched-status-arrow { display: none; }
-.is-phone .rb-sched-status-hint { grid-column: 1 / -1; white-space: normal; margin-top: -4px; }
 .rb-sched-settings { container-type: inline-size; }

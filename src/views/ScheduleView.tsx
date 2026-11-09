@@ -4,7 +4,6 @@ import { Menu, Platform } from 'obsidian';
 import { DndContext, DragOverlay, closestCenter, pointerWithin, useDraggable, useDroppable, type CollisionDetection, type DragEndEvent } from '@dnd-kit/core';
 import type { BoardItem, DatabaseConfig, ScheduleConfig, ViewConfig } from '../types';
 import { propertyLabel } from '../config';
-import { applyFilter } from '../data/filter';
 import { resolveImageSrc } from '../render/values';
 import { useBoard, useBoardContext } from '../board/context';
 import { TitleLink } from '../components/Card';
@@ -17,12 +16,24 @@ import { forecast } from '../schedule/engine';
 import { formatHours, formatRange, formatShortRange } from '../schedule/format';
 import { toScheduleItems, toSessions } from '../schedule/inputs';
 import { nextCandidates } from '../schedule/next';
-import { movedPins, placePin, replan, setNotBefore, unpin } from '../schedule/pins';
+import { movedPins, placePin, placeQueued, replan, togglePin, unpin } from '../schedule/pins';
 import { randomCandidate } from '../schedule/rules';
-import { logSession, setRole, type Role } from '../schedule/actions';
+import { logSession, moveToSection } from '../schedule/actions';
+import { matchSection, moveWrites, sectionProblems } from '../schedule/sections';
 import type { Forecast, LaneEntry, ScheduleItem, Session, Suggestion } from '../schedule/types';
 import { useLinkedTable } from '../schedule/useLinkedTable';
-import { openDatePrompt, openLogSession, openMovePrompt, openNextPick, openPickAny, type Candidate, type GameOption, type MoveLane } from './ScheduleModals';
+import {
+  openLogSession,
+  openMoveModal,
+  openNextPick,
+  openPickAny,
+  type Candidate,
+  type GameOption,
+  type MoveChoice,
+  type MoveFrom,
+  type MoveLane,
+  type MoveSection,
+} from './ScheduleModals';
 
 const LANE_NAMES = 'ABCDEF';
 /** Below this width the schedule shows one lane at a time and shorter entries. */
@@ -44,7 +55,8 @@ export function ScheduleView({ config, view, all, viewIndex }: { config: Databas
   const updateView = useBoard((s) => s.updateView);
   const sc: ScheduleConfig = useMemo(() => guessSchedule(config, view.schedule ?? defaultScheduleConfig()), [config, view.schedule]);
   const log = useLinkedTable(app, sc.log);
-  const items = useMemo(() => applyFilter(all, view.filter, config.properties), [all, view.filter, config.properties]);
+  // No filter: sections decide what the schedule shows.
+  const items = all;
   const byId = useMemo(() => new Map(items.map((i) => [i.id, i])), [items]);
   const scheduleItems = useMemo(() => toScheduleItems(items, sc), [items, sc]);
   const stateOf = useMemo(() => new Map(scheduleItems.map((i) => [i.id, i])), [scheduleItems]);
@@ -64,7 +76,9 @@ export function ScheduleView({ config, view, all, viewIndex }: { config: Databas
 
   const year = Number(today.slice(0, 4));
   const cover = config.properties.find((p) => p.type === 'image');
-  const missing = [!sc.status && 'status', !sc.duration && 'duration'].filter(Boolean) as string[];
+  const sections = sc.sections ?? [];
+  const problems = useMemo(() => sectionProblems(config, sections), [config, sections]);
+  const missing = [!sc.duration && 'duration'].filter(Boolean) as string[];
   const unresolved = sessions.filter((s) => !s.item).length;
   const itemOf = (id: string): BoardItem | undefined => byId.get(id);
   const titleOf = (id: string): string => itemOf(id)?.title ?? id;
@@ -72,14 +86,13 @@ export function ScheduleView({ config, view, all, viewIndex }: { config: Databas
 
   // --- Writing back --------------------------------------------------------
 
-  /** Which lane each running item is in now; side games are -1, so they stay out of freed lanes. */
+  /** Which lane each running item is in now, so a change elsewhere doesn't reshuffle them. */
   const currentAssign = (): Record<string, number> => {
     const out: Record<string, number> = {};
     result.lanes.forEach((l, n) => {
       const cur = l.find((e) => e.current);
       if (cur) out[cur.item] = n;
     });
-    for (const id of result.overflow) out[id] = -1;
     return out;
   };
 
@@ -92,30 +105,42 @@ export function ScheduleView({ config, view, all, viewIndex }: { config: Databas
       if (v.schedule.assign && !Object.keys(v.schedule.assign).length) v.schedule.assign = undefined;
     });
 
-  const role = async (id: string, r: Role): Promise<boolean> => {
-    const item = itemOf(id);
-    return item ? setRole(config, sc, item, r, actions.setValue) : false;
-  };
-
   const hoursDetail = (id: string): string | undefined => {
     const d = stateOf.get(id)?.duration;
     return d ? formatHours(d) : undefined;
   };
 
+  const lanesSection = sections.findIndex((s) => s.kind === 'lanes');
+  const queueSection = sections.findIndex((s) => s.kind === 'queue');
+  const sectionOf = (id: string): number => {
+    const item = itemOf(id);
+    return item ? matchSection(item.values, sections) : -1;
+  };
+
   /**
-   * Start `id`: it becomes playing in lane `n` when that lane is free (or its
-   * game just ended: `freed`), else beside the lanes as a side game.
+   * Put `id` where a Move choice says: write the properties that select the
+   * section, then place it in the plan (queue pin / hold, or lane number).
    */
-  const start = async (id: string, n: number, freed?: string): Promise<void> => {
-    const pinned = sc.pins.find((p) => p.item === id);
-    if (!(await role(id, 'active'))) return;
-    const busy = result.lanes[n]?.find((e) => e.current && e.item !== freed);
+  const move = async (id: string, c: MoveChoice): Promise<void> => {
+    const item = itemOf(id);
+    if (!item || c.section < 0) return;
+    if (c.section !== sectionOf(id) && !(await moveToSection(config, sections, item, c.section, actions.setValue))) return;
+    const kind = sections[c.section].kind;
+    // Placing into a busy lane would bump its game; the item waits for a free lane instead.
+    const busy = c.lane !== null && result.lanes[c.lane]?.some((e) => e.current && e.item !== id);
     editSchedule((s) => {
-      s.pins = unpin(s.pins, id).map((p) => (pinned && p.lane === pinned.lane && p.position > pinned.position ? { ...p, position: p.position - 1 } : p));
-      if (freed && s.assign) delete s.assign[freed];
-      s.assign = { ...s.assign, [id]: busy ? -1 : n };
+      const old = s.pins.find((p) => p.item === id && p.lane >= 0);
+      if (kind === 'queue') s.pins = placeQueued(s.pins, id, c.lane, c.position, c.notBefore);
+      else s.pins = unpin(s.pins, id).map((p) => (old && p.lane === old.lane && p.position > old.position ? { ...p, position: p.position - 1 } : p));
+      const assign = { ...s.assign };
+      delete assign[id];
+      if (kind === 'lanes' && c.lane !== null && !busy) assign[id] = c.lane;
+      s.assign = assign;
     });
   };
+
+  /** Start `id` in lane `n` (from the next-pick prompt). */
+  const start = (id: string, n: number): Promise<void> => move(id, { section: lanesSection, lane: n, position: null, notBefore: null });
 
   const pickAnyOptions = (accept: (i: ScheduleItem) => boolean): GameOption[] =>
     scheduleItems
@@ -137,21 +162,14 @@ export function ScheduleView({ config, view, all, viewIndex }: { config: Databas
         const r = randomCandidate(ranked);
         return r ? toCandidate(r) : null;
       },
-      onPick: (id) => void start(id, n, previous ?? undefined),
+      onPick: (id) => void start(id, n),
       onChooseAny: () =>
         openPickAny(app, {
           title: `Start in lane ${laneName(n)}`,
-          options: pickAnyOptions((i) => i.state !== 'active' && i.state !== 'live' && i.id !== previous),
-          onPick: (id) => void start(id, n, previous ?? undefined),
+          options: pickAnyOptions((i) => !RUNNING.has(i.state) && i.id !== previous),
+          onPick: (id) => void start(id, n),
         }),
     });
-  };
-
-  /** Finish or drop a running item, then offer the next pick for its lane. */
-  const end = async (id: string, n: number, r: 'finished' | 'dropped' | 'paused'): Promise<void> => {
-    if (!(await role(id, r))) return;
-    editSchedule((s) => void (s.assign && delete s.assign[id]));
-    if (n >= 0) askNext(n, id);
   };
 
   const openLog = (initial?: string): void => {
@@ -159,8 +177,8 @@ export function ScheduleView({ config, view, all, viewIndex }: { config: Databas
       actions.openViewSettings(viewIndex);
       return;
     }
-    const playing = scheduleItems.filter((i) => i.state === 'active' || i.state === 'live');
-    const rest = scheduleItems.filter((i) => i.state !== 'active' && i.state !== 'live').sort((a, b) => a.title.localeCompare(b.title));
+    const playing = scheduleItems.filter((i) => RUNNING.has(i.state));
+    const rest = scheduleItems.filter((i) => !RUNNING.has(i.state)).sort((a, b) => a.title.localeCompare(b.title));
     const games: GameOption[] = [...playing, ...rest].map((i) => ({ id: i.id, title: i.title, detail: stateLabel(i) }));
     openLogSession(app, {
       games,
@@ -169,7 +187,7 @@ export function ScheduleView({ config, view, all, viewIndex }: { config: Databas
       withType: !!cols.logType,
       typeFor: (id) => {
         const s = stateOf.get(id)?.state;
-        return s === 'live' ? 'live' : s === 'active' ? 'lane' : s === 'pool' || s === 'ignored' ? 'trial' : '';
+        return s === 'live' ? 'live' : s === 'active' ? 'lane' : s === 'side' ? 'detour' : s === 'pool' || s === 'ignored' ? 'trial' : '';
       },
       onSubmit: (s) => {
         const file = itemOf(s.item)?.file;
@@ -178,80 +196,74 @@ export function ScheduleView({ config, view, all, viewIndex }: { config: Databas
     });
   };
 
-  /** Insert a game into lane `n` at queue position `position`. */
-  const insert = (n: number, position: number): void =>
-    openPickAny(app, {
-      title: `Insert into lane ${laneName(n)}`,
-      options: pickAnyOptions((i) => i.state !== 'active' && i.state !== 'live' && !result.lanes.some((l) => l.some((e) => e.item === i.id && e.pinned))),
-      onPick: async (id) => {
-        if (stateOf.get(id)?.state !== 'pool' && !(await role(id, 'pool'))) return;
-        editSchedule((s) => void (s.pins = placePin(s.pins, id, n, position)));
-      },
-    });
-
-  const entryMenu = (e: ReactMouseEvent, entry: LaneEntry, n: number, position: number): void => {
-    const menu = new Menu();
-    const id = entry.item;
-    const item = itemOf(id);
-    if (entry.current) {
-      menu.addItem((i) => i.setTitle('Log play time…').setIcon('timer').onClick(() => openLog(id)));
-      menu.addItem((i) => i.setTitle('Finish').setIcon('check-circle').onClick(() => void end(id, n, 'finished')));
-      menu.addItem((i) => i.setTitle('Drop').setIcon('x-circle').onClick(() => void end(id, n, 'dropped')));
-      if (sc.statuses.paused.length) menu.addItem((i) => i.setTitle('Put on hold').setIcon('pause-circle').onClick(() => void end(id, n, 'paused')));
-      if (entry.reasons.length) menu.addItem((i) => i.setTitle(`Why here: ${entry.reasons.join(' · ')}`).setIcon('info').setDisabled(true));
-    } else {
-      if (entry.reasons.length) {
-        menu.addItem((i) => i.setTitle(`Ranked lower: ${entry.reasons.join(' · ')}`).setIcon('info').setDisabled(true));
-        menu.addSeparator();
-      }
-      const laneBusy = result.lanes[n].some((x) => x.current);
-      const move = (lane: number, to: number): void => editSchedule((s) => void (s.pins = placePin(s.pins, id, lane, to)));
-      const queuedIn = (lane: number): number => result.lanes[lane].filter((x) => !x.current).length;
-      menu.addItem((i) => i.setTitle(laneBusy ? 'Start now (as a side game)' : 'Start now').setIcon('play').onClick(() => void start(id, n)));
-      if (position > 0) menu.addItem((i) => i.setTitle('Move up').setIcon('arrow-up').onClick(() => move(n, position - 1)));
-      if (position < queuedIn(n) - 1) menu.addItem((i) => i.setTitle('Move down').setIcon('arrow-down').onClick(() => move(n, position + 1)));
-      // Every place the game can go, per lane: its own place is left out; elsewhere it adds one slot.
-      const moveLanes: MoveLane[] = result.lanes.map((l, lane) => {
-        const queued = l.filter((x) => !x.current);
-        const count = queued.length + (lane === n ? 0 : 1);
-        const slots: MoveLane['slots'] = [];
-        for (let to = 0; to < count; to++) {
-          if (lane === n && to === position) continue;
-          const after = queued[lane === n && to > position ? to : to - 1];
-          slots.push({ to, label: to === 0 ? 'Next' : after ? `After ${titleOf(after.item)}` : 'Last' });
-        }
-        return { name: laneName(lane), detail: `${queued.length} queued`, slots };
-      });
-      const openMove = (lane: number): void =>
-        openMovePrompt(app, { title: `Move ${titleOf(id)}`, lanes: moveLanes, lane, onPick: (to, at) => move(to, at) });
-      for (let lane = 0; lane < result.lanes.length; lane++) {
-        if (lane === n && moveLanes[n].slots.length === 0) continue;
-        menu.addItem((i) =>
-          i
-            .setTitle(lane === n ? 'Move to position…' : `Move to lane ${laneName(lane)}…`)
-            .setIcon(lane === n ? 'list-ordered' : 'arrow-right-left')
-            .onClick(() => openMove(lane)),
-        );
-      }
-      if (!entry.pinned) menu.addItem((i) => i.setTitle('Pin here').setIcon('pin').onClick(() => editSchedule((s) => void (s.pins = placePin(s.pins, id, n, position)))));
-      else menu.addItem((i) => i.setTitle('Unpin').setIcon('pin-off').onClick(() => editSchedule((s) => void (s.pins = unpin(s.pins, id)))));
-      const pin = sc.pins.find((p) => p.item === id);
-      menu.addItem((i) =>
-        i.setTitle(pin?.notBefore ? `Not before ${pin.notBefore}…` : 'Not before…').setIcon('calendar-clock').onClick(() =>
-          openDatePrompt(app, {
-            title: `Don't start ${titleOf(id)} before`,
-            desc: 'For a release date or a DLC: the game waits until then.',
-            initial: pin?.notBefore,
-            onSave: (date) => editSchedule((s) => void (s.pins = setNotBefore(s.pins, id, n, position, date))),
-          }),
-        ),
-      );
-      menu.addItem((i) => i.setTitle('Insert a game before this…').setIcon('list-plus').onClick(() => insert(n, position)));
-      menu.addItem((i) => i.setTitle('Log a trial…').setIcon('timer').onClick(() => openLog(id)));
+  /** Where `id` is in the plan now: its section, and for lane / queue items the lane and queue position. */
+  const whereIs = (id: string): MoveFrom => {
+    const section = sectionOf(id);
+    const pin = sc.pins.find((p) => p.item === id);
+    for (const [n, lane] of result.lanes.entries()) {
+      const e = lane.find((x) => x.item === id);
+      if (!e) continue;
+      if (e.current) return { section, lane: n };
+      return { section, lane: n, position: lane.filter((x) => !x.current).indexOf(e), pinned: e.pinned, notBefore: pin?.notBefore };
     }
-    menu.addSeparator();
-    if (item) menu.addItem((i) => i.setTitle('Open note').setIcon('file-text').onClick(() => actions.editItem(item)));
-    menu.showAtMouseEvent(e.nativeEvent);
+    return { section, notBefore: pin?.notBefore };
+  };
+
+  /** The Move modal for `id`: section, then lane and place, then not-before; or an End section. */
+  const openMove = (id: string): void => {
+    const item = itemOf(id);
+    if (!item) return;
+    const from = whereIs(id);
+    const moveSections: MoveSection[] = sections.map((s, index) => ({
+      index,
+      name: s.name,
+      kind: s.kind,
+      blocked: index === from.section || moveWrites(item.values, sections, index) ? undefined : 'A section above would still catch it',
+    }));
+    // Skip duplicate lanes / queue sections: only the first is used.
+    const usable = moveSections.filter((s) => !((s.kind === 'lanes' && s.index !== lanesSection) || (s.kind === 'queue' && s.index !== queueSection)));
+    const lanes: MoveLane[] = result.lanes.map((l, n) => {
+      const cur = l.find((x) => x.current);
+      return {
+        name: laneName(n),
+        running: cur ? titleOf(cur.item) : null,
+        mine: cur?.item === id,
+        queue: l.filter((x) => !x.current && x.item !== id).map((x) => titleOf(x.item)),
+      };
+    });
+    /** What a move into a section writes, in words ("status → planned, casual off"). */
+    const describe = (index: number): string => {
+      const writes = moveWrites(item.values, sections, index) ?? {};
+      return Object.entries(writes)
+        .map(([name, v]) => {
+          const label = config.properties.find((p) => p.name === name);
+          const n = label ? propertyLabel(label) : name;
+          return typeof v === 'boolean' ? `${n} ${v ? 'on' : 'off'}` : `${n} → ${v}`;
+        })
+        .join(', ');
+    };
+    openMoveModal(app, { title: `Move ${item.title}`, itemTitle: item.title, sections: usable, lanes, from, describe, onMove: (c) => void move(id, c) });
+  };
+
+  /** Right-click / long-press: the same short menu for every item. */
+  const itemMenu = (ev: ReactMouseEvent, id: string): void => {
+    ev.preventDefault();
+    const item = itemOf(id);
+    const menu = new Menu();
+    menu.addItem((i) => i.setTitle('Move…').setIcon('arrow-right-left').onClick(() => openMove(id)));
+    if (log.status === 'ok') menu.addItem((i) => i.setTitle('Log play time…').setIcon('timer').onClick(() => openLog(id)));
+    if (item) {
+      menu.addSeparator();
+      menu.addItem((i) => i.setTitle('Open note').setIcon('file-text').onClick(() => actions.editItem(item)));
+    }
+    menu.showAtMouseEvent(ev.nativeEvent);
+  };
+
+  /** Double-click a queued entry: pin it where it is, or unpin it. */
+  const onEntryDoubleClick = (ev: ReactMouseEvent, entry: LaneEntry, n: number, position: number): void => {
+    if (entry.current || (ev.target as HTMLElement).closest('a, button')) return;
+    ev.preventDefault();
+    editSchedule((s) => void (s.pins = togglePin(s.pins, entry.item, n, position)));
   };
 
   // --- Drag a queued game to another place (it becomes a pin there) ---------
@@ -290,34 +302,27 @@ export function ScheduleView({ config, view, all, viewIndex }: { config: Databas
       v.collapsed = next.size ? [...next] : undefined;
     });
 
-  /** Right-click / long-press menu of a live or side game. */
-  const chipMenu = (ev: ReactMouseEvent, id: string, side: boolean): void => {
-    ev.preventDefault();
-    const item = itemOf(id);
-    const menu = new Menu();
-    if (side) {
-      for (const n of freeLanes) {
-        menu.addItem((i) => i.setTitle(`Move into lane ${laneName(n)}`).setIcon('arrow-right-left').onClick(() => editSchedule((s) => void (s.assign = { ...s.assign, [id]: n }))));
-      }
-    }
-    if (log.status === 'ok') menu.addItem((i) => i.setTitle('Log play time…').setIcon('timer').onClick(() => openLog(id)));
-    if (sc.statuses.paused.length) menu.addItem((i) => i.setTitle('Put on hold').setIcon('pause-circle').onClick(() => void end(id, -1, 'paused')));
-    menu.addItem((i) => i.setTitle('Finish').setIcon('check-circle').onClick(() => void end(id, -1, 'finished')));
-    menu.addItem((i) => i.setTitle('Drop').setIcon('x-circle').onClick(() => void end(id, -1, 'dropped')));
-    if (item) {
-      menu.addSeparator();
-      menu.addItem((i) => i.setTitle('Open note').setIcon('file-text').onClick(() => actions.editItem(item)));
-    }
-    menu.showAtMouseEvent(ev.nativeEvent);
-  };
+  // Live and side cards, live first, each in section order.
+  const liveWeekly = new Map(result.live.map((l) => [l.item, l.weekly]));
+  const cards = [
+    ...result.live.map((l) => ({ id: l.item, kind: 'live' as const })),
+    ...result.side.map((id) => ({ id, kind: 'side' as const })),
+  ].sort((a, b) => (a.kind === b.kind ? sectionOf(a.id) - sectionOf(b.id) : a.kind === 'live' ? -1 : 1));
+  const sideCount = result.side.length;
+  const groupTitle = [result.live.length && `${result.live.length} live`, sideCount && `${sideCount} ${sections.find((s) => s.kind === 'side')?.name.toLowerCase() ?? 'side'}`]
+    .filter(Boolean)
+    .join(' · ');
 
   return (
     <div ref={rootRef} className={compact ? 'rb-schedule is-compact' : 'rb-schedule'}>
-      {(missing.length > 0 || log.status !== 'ok') && (
+      {(missing.length > 0 || problems.length > 0 || log.status !== 'ok') && (
         <div className="rb-schedule-notice">
           <Icon name="info" />
           <div>
             {missing.length > 0 && <div>Choose the {missing.join(' and ')} property in the view's Schedule settings.</div>}
+            {problems.map((p) => (
+              <div key={p}>{p}</div>
+            ))}
             {log.status === 'none' && <div>No session log yet: dates use your starting estimates. Pick a log table in the Schedule settings.</div>}
             {log.status === 'error' && <div>{log.error}</div>}
           </div>
@@ -327,16 +332,38 @@ export function ScheduleView({ config, view, all, viewIndex }: { config: Databas
 
       <WeekPanel result={result} itemOf={itemOf} unresolved={unresolved} compact={compact} onLog={log.status === 'ok' ? () => openLog() : undefined} />
 
-      {result.live.length > 0 && (
-        <Section id="live" title="Live" icon="radio" count={result.live.length} className="rb-schedule-live" collapsed={collapsed} onToggle={toggleSection}>
-          <div className="rb-schedule-live-items">
-            {result.live.map((l) => (
-              <span key={l.item} className="rb-schedule-chip" onContextMenu={(ev) => chipMenu(ev, l.item, false)} title="Right-click for options">
-                {itemOf(l.item) ? <TitleLink item={itemOf(l.item)!} /> : l.item}
-                <span className="rb-schedule-muted">~{formatHours(l.weekly)}/wk</span>
-                {log.status === 'ok' && !compact && <IconButton icon="timer" label={`Log time for ${titleOf(l.item)}`} onClick={() => openLog(l.item)} />}
-              </span>
-            ))}
+      {cards.length > 0 && (
+        <Section id="live-side" title="Live & side" icon="radio" hint={groupTitle} className="rb-schedule-live-side" collapsed={collapsed} onToggle={toggleSection}>
+          <div className="rb-schedule-cards">
+            {cards.map((c) => {
+              const item = itemOf(c.id);
+              const section = sections[sectionOf(c.id)];
+              const weekly = liveWeekly.get(c.id);
+              const hours = hoursDetail(c.id);
+              return (
+                <div
+                  key={c.id}
+                  className={`rb-schedule-card is-${c.kind}`}
+                  data-item={c.id}
+                  title="Right-click for options"
+                  onContextMenu={(ev) => itemMenu(ev, c.id)}
+                >
+                  {coverOf(item) ? <img className="rb-schedule-cover" src={coverOf(item)!} alt="" loading="lazy" draggable={false} /> : <div className="rb-schedule-cover rb-schedule-cover-empty" />}
+                  <div className="rb-schedule-entry-body">
+                    <div className="rb-schedule-entry-title">{item ? <TitleLink item={item} /> : c.id}</div>
+                    <div className="rb-schedule-muted">
+                      {c.kind === 'live' && weekly !== undefined ? `~${formatHours(weekly)}/wk` : (hours ?? '')}
+                    </div>
+                    <span className="rb-schedule-tag rb-schedule-kind">{section?.name ?? (c.kind === 'live' ? 'Live' : 'Side')}</span>
+                  </div>
+                  {log.status === 'ok' && (
+                    <div className="rb-schedule-entry-actions">
+                      <IconButton icon="timer" label={`Log time for ${titleOf(c.id)}`} onClick={() => openLog(c.id)} />
+                    </div>
+                  )}
+                </div>
+              );
+            })}
           </div>
         </Section>
       )}
@@ -375,6 +402,18 @@ export function ScheduleView({ config, view, all, viewIndex }: { config: Databas
             })}
           </div>
         )}
+        {result.overflow.length > 0 && (
+          <div className="rb-schedule-overflow">
+            <span className="rb-schedule-muted">
+              {result.overflow.length + result.lanes.filter((l) => l.some((e) => e.current)).length} playing, {result.lanes.length} lanes · waiting for a lane:
+            </span>
+            {result.overflow.map((id) => (
+              <span key={id} className="rb-schedule-chip" data-item={id} onContextMenu={(ev) => itemMenu(ev, id)} title="Right-click for options">
+                {itemOf(id) ? <TitleLink item={itemOf(id)!} /> : id}
+              </span>
+            ))}
+          </div>
+        )}
         <div className="rb-schedule-lanes" style={{ gridTemplateColumns: compact ? '1fr' : `repeat(${result.lanes.length}, minmax(0, 1fr))` }}>
           {result.lanes.map((lane, n) => {
             const queued = lane.filter((e) => !e.current);
@@ -389,7 +428,6 @@ export function ScheduleView({ config, view, all, viewIndex }: { config: Databas
                     disabled={!movedPins(sc.pins, n)}
                     onClick={() => editSchedule((s) => void (s.pins = replan(s.pins, n)))}
                   />
-                  <IconButton icon="list-plus" label={`Insert a game into lane ${laneName(n)}`} onClick={() => insert(n, queued.length)} />
                 </div>
                 {freeLanes.includes(n) && (
                   <button className="rb-schedule-free" onClick={() => askNext(n, null)}>
@@ -407,14 +445,10 @@ export function ScheduleView({ config, view, all, viewIndex }: { config: Databas
                       year={year}
                       compact={compact}
                       index={e.current ? undefined : position + 1}
-                      onMenu={(ev) => entryMenu(ev, e, n, position)}
+                      onMenu={(ev) => itemMenu(ev, e.item)}
+                      onDoubleClick={(ev) => onEntryDoubleClick(ev, e, n, position)}
                       actions={
-                        e.current ? (
-                          <>
-                            {log.status === 'ok' && <IconButton icon="timer" label={`Log time for ${titleOf(e.item)}`} onClick={() => openLog(e.item)} />}
-                            {!compact && <IconButton icon="check-circle" label={`Finish ${titleOf(e.item)}`} onClick={() => void end(e.item, n, 'finished')} />}
-                          </>
-                        ) : null
+                        e.current && log.status === 'ok' ? <IconButton icon="timer" label={`Log time for ${titleOf(e.item)}`} onClick={() => openLog(e.item)} /> : null
                       }
                     />
                   );
@@ -444,19 +478,7 @@ export function ScheduleView({ config, view, all, viewIndex }: { config: Databas
       </DndContext>
       </Section>
 
-      {result.overflow.length > 0 && (
-        <Section id="side" title="Also playing" icon="gamepad-2" count={result.overflow.length} className="rb-schedule-side" collapsed={collapsed} onToggle={toggleSection}>
-          <div className="rb-schedule-live-items">
-            {result.overflow.map((id) => (
-              <span key={id} className="rb-schedule-chip" onContextMenu={(ev) => chipMenu(ev, id, true)} title="Right-click for options">
-                {itemOf(id) ? <TitleLink item={itemOf(id)!} /> : id}
-                {log.status === 'ok' && !compact && <IconButton icon="timer" label={`Log time for ${titleOf(id)}`} onClick={() => openLog(id)} />}
-                {!compact && <IconButton icon="check-circle" label={`Finish ${titleOf(id)}`} onClick={() => void end(id, -1, 'finished')} />}
-              </span>
-            ))}
-          </div>
-        </Section>
-      )}
+
 
       <footer className="rb-schedule-footer">
         {result.finish ? (
@@ -476,8 +498,11 @@ export function ScheduleView({ config, view, all, viewIndex }: { config: Databas
   );
 }
 
+/** States that are running now (in a lane, live or on the side). */
+const RUNNING = new Set<ScheduleItem['state']>(['active', 'live', 'side']);
+
 function stateLabel(i: ScheduleItem): string {
-  return i.state === 'active' ? 'playing' : i.state === 'live' ? 'live' : i.state === 'pool' ? 'planned' : i.state === 'ended' ? 'ended' : '';
+  return i.state === 'active' ? 'playing' : i.state === 'live' ? 'live' : i.state === 'side' ? 'side' : i.state === 'pool' ? 'planned' : i.state === 'ended' ? 'ended' : '';
 }
 
 function propertyLabelOf(config: DatabaseConfig, name: string): string {
@@ -663,6 +688,7 @@ function Entry({
   compact,
   index,
   onMenu,
+  onDoubleClick,
   actions,
 }: {
   entry: LaneEntry;
@@ -673,6 +699,7 @@ function Entry({
   /** Queue number (1 = next); absent for the running item. */
   index?: number;
   onMenu: (e: ReactMouseEvent) => void;
+  onDoubleClick?: (e: ReactMouseEvent) => void;
   actions: ReactNode;
 }) {
   const cls = ['rb-schedule-entry', e.current ? 'is-current' : '', e.paused ? 'is-paused' : ''].filter(Boolean).join(' ');
@@ -685,7 +712,7 @@ function Entry({
     // One title line, one detail line: hours and the done range in short form.
     const done = formatShortRange(e.end, year);
     return (
-      <div className={cls} data-item={e.item} onContextMenu={(ev) => (ev.preventDefault(), onMenu(ev))}>
+      <div className={cls} data-item={e.item} onContextMenu={(ev) => (ev.preventDefault(), onMenu(ev))} onDoubleClick={onDoubleClick}>
         {badge}
         {cover ? <img className="rb-schedule-cover" src={cover} alt="" loading="lazy" draggable={false} /> : <div className="rb-schedule-cover rb-schedule-cover-empty" />}
         <div className="rb-schedule-entry-body">
@@ -710,7 +737,13 @@ function Entry({
   }
   return (
     // Right-click (or a long-press on touch screens, which fires contextmenu too) opens the menu.
-    <div className={cls} data-item={e.item} title={e.current ? 'Right-click for options' : 'Right-click for options · drag to move'} onContextMenu={(ev) => (ev.preventDefault(), onMenu(ev))}>
+    <div
+      className={cls}
+      data-item={e.item}
+      title={e.current ? 'Right-click for options' : `Right-click for options · drag to move · double-click to ${e.pinned ? 'unpin' : 'pin'}`}
+      onContextMenu={(ev) => (ev.preventDefault(), onMenu(ev))}
+      onDoubleClick={onDoubleClick}
+    >
       {badge}
       {cover ? <img className="rb-schedule-cover" src={cover} alt="" loading="lazy" draggable={false} /> : <div className="rb-schedule-cover rb-schedule-cover-empty" />}
       <div className="rb-schedule-entry-body">

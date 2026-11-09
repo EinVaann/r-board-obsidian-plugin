@@ -4,8 +4,18 @@ import { parseDatabaseConfig, serializeDatabase, makeDefaultView } from '../conf
 import { defaultScheduleConfig, guessLogColumns, guessSchedule, parseSchedule } from './config';
 import { formatRange, formatShortRange } from './format';
 import { stateOf, toScheduleItems, toSessions } from './inputs';
+import { defaultSections } from './sections';
 
-const sc = { ...defaultScheduleConfig(), status: 'status', live: 'live', duration: 'hours', score: 'score', vary: 'genre', startDate: 'start' };
+const BOARD = {
+  sourceTag: 'b',
+  views: [],
+  properties: [
+    { name: 'status', type: 'select', options: ['planned', 'playing', 'completed', 'dropped', 'on-hold'].map((value) => ({ value })) },
+    { name: 'live', type: 'checkbox' },
+    { name: 'casual', type: 'checkbox' },
+  ],
+} as DatabaseConfig;
+const sc = { ...defaultScheduleConfig(), sections: defaultSections(BOARD, {}), duration: 'hours', score: 'score', vary: 'genre', startDate: 'start' };
 const it_ = (id: string, values: Record<string, unknown>): BoardItem => ({ id, title: id, values, tags: [] });
 
 describe('schedule config', () => {
@@ -16,7 +26,21 @@ describe('schedule config', () => {
     expect(c.penalties).toEqual({ running: 5, previous: 2, long: 4, similarFactor: 1 });
     expect(c.similar).toEqual([['JRPG', 'VN']]);
     expect(c.pins).toEqual([{ item: 'x', lane: 0, position: 0 }]);
-    expect(c.statuses.pool).toEqual(['planned']);
+    expect(c.sections).toBeUndefined();
+  });
+
+  it('reads sections, dropping bad ones, and old side marks from the lanes', () => {
+    const c = parseSchedule({
+      sections: [
+        { name: 'Q', kind: 'queue', conditions: [{ property: 'status', op: 'is', value: 'planned' }, { property: 'genre', op: 'contains', value: 'x' }] },
+        { name: 'Bad', kind: 'nope', conditions: [] },
+      ],
+      assign: { a: 1, b: -1 },
+      pins: [{ item: 'h', lane: -1, notBefore: '2027-01-01' }],
+    });
+    expect(c.sections).toEqual([{ name: 'Q', kind: 'queue', conditions: [{ property: 'status', op: 'is', value: 'planned' }] }]);
+    expect(c.assign).toEqual({ a: 1 });
+    expect(c.pins).toEqual([{ item: 'h', lane: -1, position: -1, notBefore: '2027-01-01' }]);
   });
 
   it('round-trips a schedule view through the .board file', () => {
@@ -40,22 +64,27 @@ describe('schedule config', () => {
         { name: 'end-date', type: 'date' },
       ],
     } as DatabaseConfig;
-    expect(guessSchedule(config, defaultScheduleConfig())).toMatchObject({
-      status: 'status', duration: 'play-hours', score: 'score', vary: 'genre', live: 'live-service', startDate: 'start-date', endDate: 'end-date',
-    });
+    const guessed = guessSchedule(config, defaultScheduleConfig());
+    expect(guessed).toMatchObject({ duration: 'play-hours', score: 'score', vary: 'genre', startDate: 'start-date', endDate: 'end-date' });
+    expect(guessed.sections!.map((s) => s.kind)).toEqual(['live', 'lanes', 'queue', 'hidden', 'finished', 'dropped']);
+    expect(guessed.sections![0].conditions).toEqual([{ property: 'status', op: 'is', value: 'playing' }, { property: 'live-service', op: 'checked' }]);
     expect(guessLogColumns([{ name: 'notes', type: 'links' }, { name: 'h', type: 'number' }, { name: 'd', type: 'date' }], defaultScheduleConfig()))
       .toEqual({ logItem: 'notes', logHours: 'h', logDate: 'd', logType: undefined });
   });
 });
 
 describe('schedule inputs', () => {
-  it('maps statuses and the live checkbox to states', () => {
+  it('maps items to states by the first section they match', () => {
     expect(stateOf(it_('a', { status: 'planned' }), sc).state).toBe('pool');
     expect(stateOf(it_('a', { status: 'playing' }), sc).state).toBe('active');
     expect(stateOf(it_('a', { status: 'playing', live: true }), sc).state).toBe('live');
-    expect(stateOf(it_('a', { status: 'completed' }), sc)).toEqual({ state: 'ended', finished: true });
-    expect(stateOf(it_('a', { status: 'dropped' }), sc)).toEqual({ state: 'ended', finished: false });
+    expect(stateOf(it_('a', { status: 'playing', casual: true }), sc).state).toBe('side');
+    // Live is above Also playing, so both ticked is live.
+    expect(stateOf(it_('a', { status: 'playing', live: true, casual: true }), sc).state).toBe('live');
+    expect(stateOf(it_('a', { status: 'completed' }), sc)).toMatchObject({ state: 'ended', finished: true });
+    expect(stateOf(it_('a', { status: 'dropped' }), sc)).toMatchObject({ state: 'ended', finished: false });
     expect(stateOf(it_('a', { status: 'on-hold' }), sc).state).toBe('ignored');
+    expect(stateOf(it_('a', { status: 'wishlist' }), sc)).toMatchObject({ state: 'ignored', section: -1 });
   });
 
   it('reads items from their values', () => {

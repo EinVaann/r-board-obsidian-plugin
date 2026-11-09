@@ -1,11 +1,11 @@
 /** Inputs and outputs of the schedule engine. Dates are local `YYYY-MM-DD` strings. */
 
 /**
- * pool = waiting to be scheduled (e.g. `planned`); active = running in a lane
- * (`playing`); live = running outside the lanes (`playing` + live service);
- * ended = completed or dropped; ignored = everything else (incl. on-hold).
+ * pool = waiting to be scheduled; active = running in a lane; live = running
+ * outside the lanes (live service); side = running outside the lanes (casual);
+ * ended = completed or dropped; ignored = everything else (incl. on hold).
  */
-export type ItemState = 'pool' | 'active' | 'live' | 'ended' | 'ignored';
+export type ItemState = 'pool' | 'active' | 'live' | 'side' | 'ended' | 'ignored';
 
 /** One record, already read from its note. */
 export interface ScheduleItem {
@@ -38,10 +38,11 @@ export interface Session {
   type?: SessionType;
 }
 
+/** A hand-placed queue item; `lane` -1 is a hold only: placed by the schedule, not before `notBefore`. */
 export interface Pin {
   item: string;
   lane: number;
-  /** Position among the lane's queued items (0 = next). */
+  /** Position among the lane's queued items (0 = next); -1 for a hold. */
   position: number;
   /** Don't start before this date. */
   notBefore?: string;
@@ -61,7 +62,7 @@ export interface ScheduleSettings {
   /** Subtracted from a candidate's score; nothing is forbidden. */
   penalties: Penalties;
   pins: Pin[];
-  /** Active item id → the lane it runs in (kept when another lane frees up); -1 = a side game, never moved into a lane. */
+  /** Active item id → the lane it runs in (kept when another lane frees up). */
   assign?: Record<string, number>;
   /** Days without lane time before an active item is flagged paused. */
   pausedAfterDays: number;
@@ -149,6 +150,8 @@ export interface Forecast {
   live: { item: string; weekly: number }[];
   /** Active items that are not in a lane (more active items than lanes). */
   overflow: string[];
+  /** Side items (casual games), running outside the lanes. */
+  side: string[];
   /** When the last lane empties; null when nothing is planned. */
   finish: Range | null;
 }

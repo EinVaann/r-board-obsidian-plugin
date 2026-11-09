@@ -280,10 +280,11 @@ export interface ScheduleConfig {
   /** Values that should vary between neighbours (e.g. genre). */
   vary?: string;
   similar: string[][];
+  /** Where items show, matched top to bottom; unset = guessed defaults. */
+  sections?: ScheduleSection[];
+  /** Old format, only read to guess the default sections. */
   status?: string;
-  /** Status values per role; the first of each is the one written. `paused` = on hold (out of the plan). */
-  statuses: { pool: string[]; active: string[]; finished: string[]; dropped: string[]; paused: string[] };
-  /** Checkbox: active items with it run outside the lanes. */
+  statuses?: { pool: string[]; active: string[]; finished: string[]; dropped: string[]; paused: string[] };
   live?: string;
   startDate?: string;
   endDate?: string;
@@ -297,6 +298,22 @@ export interface ScheduleConfig {
   pins: Pin[];
   /** Note path → the lane a playing item runs in. */
   assign?: Record<string, number>;
+}
+
+/** What a schedule section does with its items. */
+export type SectionKind = 'lanes' | 'queue' | 'live' | 'side' | 'finished' | 'dropped' | 'hidden';
+
+/** Select (`is` / `anyOf`) or checkbox conditions only, so a move can always write them. */
+export type SectionCondition =
+  | { property: string; op: 'is'; value: string }
+  | { property: string; op: 'anyOf'; value: string[] }
+  | { property: string; op: 'checked' | 'unchecked' };
+
+/** A schedule section: items matching every condition (and no section above) show here. */
+export interface ScheduleSection {
+  name: string;
+  kind: SectionKind;
+  conditions: SectionCondition[];
 }
 
 /** Per-column display overrides for a kanban view. */

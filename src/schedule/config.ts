@@ -1,11 +1,11 @@
 import type { DatabaseConfig, PropertyConfig, ScheduleConfig } from '../types';
 import { DEFAULT_PENALTIES, DEFAULT_SETTINGS, type Penalties, type Pin, type ScheduleSettings } from './types';
+import { defaultSections, parseSections } from './sections';
 
-/** Schedule settings with every field filled in; properties are chosen later. */
+/** Schedule settings with every field filled in; properties and sections are chosen later. */
 export function defaultScheduleConfig(): ScheduleConfig {
   return {
     similar: [],
-    statuses: { pool: ['planned'], active: ['playing'], finished: ['completed'], dropped: ['dropped'], paused: ['on-hold'] },
     lanes: DEFAULT_SETTINGS.lanes,
     longOver: DEFAULT_SETTINGS.longOver,
     weekStart: DEFAULT_SETTINGS.weekStart,
@@ -29,20 +29,23 @@ export function parseSchedule(raw: unknown): ScheduleConfig {
   const st = obj(c.statuses);
   const est = obj(c.estimates);
   const pen = obj(c.penalties);
-  const statusList = (k: keyof ScheduleConfig['statuses']): string[] => (Array.isArray(st[k]) ? strs(st[k]) : d.statuses[k]);
+  const statusList = (k: keyof NonNullable<ScheduleConfig['statuses']>): string[] => strs(st[k]);
   const penalty = (k: keyof Penalties, max = 100): number => num(pen[k], d.penalties[k], 0, max);
   const pins: Pin[] = [];
   for (const p of Array.isArray(c.pins) ? c.pins : []) {
     const o = obj(p);
     if (!str(o.item)) continue;
-    const pin: Pin = { item: o.item as string, lane: Math.round(num(o.lane, 0)), position: Math.round(num(o.position, 0)) };
+    const hold = o.lane === -1 && !!str(o.notBefore);
+    const pin: Pin = hold ? { item: o.item as string, lane: -1, position: -1 } : { item: o.item as string, lane: Math.round(num(o.lane, 0)), position: Math.round(num(o.position, 0)) };
     if (str(o.notBefore)) pin.notBefore = o.notBefore as string;
     pins.push(pin);
   }
   const assign: Record<string, number> = {};
-  for (const [k, v] of Object.entries(obj(c.assign))) if (typeof v === 'number' && v >= -1) assign[k] = Math.round(v);
+  // -1 (an old "side game" mark) is dropped: side games come from a section now.
+  for (const [k, v] of Object.entries(obj(c.assign))) if (typeof v === 'number' && v >= 0) assign[k] = Math.round(v);
   return {
     assign: Object.keys(assign).length ? assign : undefined,
+    sections: parseSections(c.sections),
     log: str(c.log),
     logItem: str(c.logItem),
     logHours: str(c.logHours),
@@ -53,7 +56,9 @@ export function parseSchedule(raw: unknown): ScheduleConfig {
     vary: str(c.vary),
     similar: Array.isArray(c.similar) ? c.similar.map(strs).filter((g) => g.length > 1) : [],
     status: str(c.status),
-    statuses: { pool: statusList('pool'), active: statusList('active'), finished: statusList('finished'), dropped: statusList('dropped'), paused: statusList('paused') },
+    statuses: c.statuses
+      ? { pool: statusList('pool'), active: statusList('active'), finished: statusList('finished'), dropped: statusList('dropped'), paused: statusList('paused') }
+      : undefined,
     live: str(c.live),
     startDate: str(c.startDate),
     endDate: str(c.endDate),
@@ -92,11 +97,10 @@ export function guessSchedule(config: DatabaseConfig, c: ScheduleConfig): Schedu
     return (typed.find((p) => names.test(p.name) || names.test(p.label ?? '')) ?? undefined)?.name;
   };
   const out = { ...c };
-  out.status ??= pick(['select', 'text'], /status/i) ?? props.find((p) => p.type === 'select')?.name;
+  out.sections ??= defaultSections(config, c);
   out.duration ??= pick(['number', 'formula'], /hour|duration|length|hltb|time/i);
   out.score ??= pick(['number', 'formula'], /score|rating|priority/i);
   out.vary ??= pick(['multi', 'select'], /genre|category|type|tag/i);
-  out.live ??= pick(['checkbox'], /live/i);
   out.startDate ??= pick(['date'], /start/i);
   out.endDate ??= pick(['date'], /end|finish|complete/i);
   return out;

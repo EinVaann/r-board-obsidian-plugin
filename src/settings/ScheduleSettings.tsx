@@ -1,24 +1,23 @@
 import { useMemo, useState, type ReactNode } from 'react';
-import type { DatabaseConfig, PropertyConfig, ScheduleConfig, ViewConfig } from '../types';
+import type { DatabaseConfig, PropertyConfig, ScheduleConfig, ScheduleSection, SectionCondition, SectionKind, ViewConfig } from '../types';
 import { propertyLabel } from '../config';
 import { useBoardContext } from '../board/context';
 import { optionFor } from '../render/values';
 import { Icon } from '../react/Icon';
 import { defaultScheduleConfig, guessLogColumns, guessSchedule } from '../schedule/config';
+import { conditionProperties, defaultSections, kindName, sectionProblems } from '../schedule/sections';
 import { DEFAULT_PENALTIES, DEFAULT_SETTINGS } from '../schedule/types';
 import { useLinkedTable } from '../schedule/useLinkedTable';
 import { Segmented, Select, type Option } from './controls';
 
-type Statuses = ScheduleConfig['statuses'];
-type Role = keyof Statuses;
-
-const ROLES: { value: Role | ''; label: string; hint: string }[] = [
-  { value: 'pool', label: 'Waiting', hint: 'scheduled into the lanes' },
-  { value: 'active', label: 'Playing', hint: 'running now (live band with the live checkbox)' },
-  { value: 'finished', label: 'Finished', hint: 'teaches how far estimates overrun' },
-  { value: 'dropped', label: 'Dropped', hint: 'ended without finishing' },
-  { value: 'paused', label: 'On hold', hint: 'out of the plan for now' },
-  { value: '', label: 'Not scheduled', hint: 'left out' },
+const KINDS: { value: SectionKind; hint: string }[] = [
+  { value: 'lanes', hint: 'running now, in a lane' },
+  { value: 'queue', hint: 'waiting, fills the lanes' },
+  { value: 'live', hint: 'running outside the lanes; counts as live time' },
+  { value: 'side', hint: 'running outside the lanes; counts as other time' },
+  { value: 'finished', hint: 'ended; teaches how far estimates overrun' },
+  { value: 'dropped', hint: 'ended without finishing' },
+  { value: 'hidden', hint: 'out of the plan (e.g. on hold)' },
 ];
 
 /** View settings → Schedule: grouped cards for the log, properties, statuses, pace and variety. */
@@ -75,9 +74,6 @@ export function ScheduleSettings({ config, view, edit }: { config: DatabaseConfi
           <Field label="Score" hint="higher goes first">
             <Select value={sc.score ?? ''} options={of(['number', 'formula'])} onChange={(v) => set({ score: v || undefined })} />
           </Field>
-          <Field label="Live checkbox" hint="e.g. gacha games">
-            <Select value={sc.live ?? ''} options={of(['checkbox'])} onChange={(v) => set({ live: v || undefined })} />
-          </Field>
           <Field label="Vary by" hint="e.g. genre">
             <Select value={sc.vary ?? ''} options={of(['multi', 'select', 'text'])} onChange={(v) => set({ vary: v || undefined })} />
           </Field>
@@ -90,7 +86,7 @@ export function ScheduleSettings({ config, view, edit }: { config: DatabaseConfi
         </div>
       </Card>
 
-      <StatusCard config={config} sc={sc} set={set} of={of} />
+      <SectionsCard config={config} sections={sc.sections ?? []} saved={!!raw.sections} onChange={(sections) => set({ sections })} onReset={() => set({ sections: defaultSections(config, raw) })} />
 
       <Card icon="gauge" title="Pace" desc="Starting guesses, replaced by your log: a quarter per full week, completely after 4.">
         <div className="rb-sched-grid">
@@ -217,59 +213,199 @@ function NumberInput({ label, value, unit, min, max, step, onChange }: { label: 
   );
 }
 
-/** One row per status value, each with the role it plays. */
-function StatusCard({
+/**
+ * Sections, matched top to bottom: each has a name, a kind and conditions on
+ * select or checkbox properties (all must hold).
+ */
+function SectionsCard({
   config,
-  sc,
-  set,
-  of,
+  sections,
+  saved,
+  onChange,
+  onReset,
 }: {
   config: DatabaseConfig;
-  sc: ScheduleConfig;
-  set: (patch: Partial<ScheduleConfig>) => void;
-  of: (types: PropertyConfig['type'][]) => Option<string>[];
+  sections: ScheduleSection[];
+  saved: boolean;
+  onChange: (sections: ScheduleSection[]) => void;
+  onReset: () => void;
 }) {
-  const prop = config.properties.find((p) => p.name === sc.status);
-  const values = prop?.options?.map((o) => o.value) ?? [];
-  const roleOf = (v: string): Role | '' => (Object.keys(sc.statuses) as Role[]).find((k) => sc.statuses[k].includes(v)) ?? '';
-  const setRole = (value: string, role: Role | ''): void => {
-    const next = Object.fromEntries((Object.keys(sc.statuses) as Role[]).map((k) => [k, sc.statuses[k].filter((v) => v !== value)])) as Statuses;
-    if (role) next[role] = [...next[role], value];
-    set({ statuses: next });
+  const props = conditionProperties(config);
+  const problems = sectionProblems(config, sections);
+  const update = (i: number, s: ScheduleSection): void => onChange(sections.map((x, j) => (j === i ? s : x)));
+  const swap = (i: number, j: number): void => {
+    const next = [...sections];
+    [next[i], next[j]] = [next[j], next[i]];
+    onChange(next);
   };
-  const missing = (['pool', 'active'] as Role[]).filter((r) => !values.some((v) => roleOf(v) === r));
-  const roleOptions: Option<string>[] = ROLES.map((r) => ({ value: r.value, label: r.label }));
+  const add = (): void => {
+    const first = props[0];
+    onChange([...sections, { name: 'New section', kind: 'hidden', conditions: first ? [firstCondition(first)] : [] }]);
+  };
 
   return (
-    <Card icon="tags" title="Statuses" desc="What each status means for the schedule. Finish, Drop and Put on hold write the first status of that kind.">
-      <Field label="Status property">
-        <Select value={sc.status ?? ''} options={of(['select', 'text'])} onChange={(v) => set({ status: v || undefined })} />
-      </Field>
-      {prop && values.length === 0 && <div className="rb-sched-hint">This property has no listed values. Add them in Board settings → Properties.</div>}
-      {prop && values.length > 0 && (
-        <div className="rb-sched-status-list">
-          {values.map((v) => {
-            const o = optionFor(prop, v);
-            const role = roleOf(v);
-            return (
-              <div key={v} className={role ? 'rb-sched-status' : 'rb-sched-status is-off'}>
-                <span className="rb-sched-status-pill" style={{ ['--pill' as string]: o.color }}>
-                  {o.label}
-                </span>
-                <Icon name="arrow-right" className="rb-sched-status-arrow" />
-                <Select className="dropdown rb-sched-status-role" value={role} options={roleOptions} onChange={(r) => setRole(v, r as Role | '')} />
-                <span className="rb-sched-status-hint">{ROLES.find((r) => r.value === role)?.hint}</span>
-              </div>
-            );
-          })}
-        </div>
-      )}
-      {prop && missing.length > 0 && (
+    <Card
+      icon="layers"
+      title="Sections"
+      desc="Where each note shows, checked top to bottom: the first section whose conditions all hold wins. Moving a game writes its target's conditions."
+    >
+      {props.length === 0 && <div className="rb-sched-hint">Sections use select and checkbox properties. Add one in Board settings → Properties.</div>}
+      <div className="rb-sched-sections">
+        {sections.map((s, i) => (
+          <SectionRow
+            key={i}
+            config={config}
+            section={s}
+            index={i}
+            last={i === sections.length - 1}
+            onChange={(next) => update(i, next)}
+            onUp={() => swap(i, i - 1)}
+            onDown={() => swap(i, i + 1)}
+            onRemove={() => onChange(sections.filter((_, j) => j !== i))}
+          />
+        ))}
+      </div>
+      {problems.length > 0 && (
         <div className="rb-sched-error">
-          No status is set to {missing.map((r) => ROLES.find((x) => x.value === r)!.label).join(' or ')} yet — the schedule needs one.
+          {problems.map((p) => (
+            <div key={p}>{p}</div>
+          ))}
         </div>
       )}
+      <div className="rb-sched-section-tools">
+        <button onClick={add} disabled={props.length === 0}>
+          <Icon name="plus" /> Add section
+        </button>
+        {saved && (
+          <button className="rb-sched-reset" onClick={onReset}>
+            <Icon name="rotate-ccw" /> Reset to the guessed sections
+          </button>
+        )}
+      </div>
     </Card>
+  );
+}
+
+const firstCondition = (p: PropertyConfig): SectionCondition =>
+  p.type === 'checkbox' ? { property: p.name, op: 'checked' } : { property: p.name, op: 'is', value: p.options?.[0]?.value ?? '' };
+
+function SectionRow({
+  config,
+  section: s,
+  index,
+  last,
+  onChange,
+  onUp,
+  onDown,
+  onRemove,
+}: {
+  config: DatabaseConfig;
+  section: ScheduleSection;
+  index: number;
+  last: boolean;
+  onChange: (s: ScheduleSection) => void;
+  onUp: () => void;
+  onDown: () => void;
+  onRemove: () => void;
+}) {
+  const props = conditionProperties(config);
+  const setCond = (j: number, c: SectionCondition): void => onChange({ ...s, conditions: s.conditions.map((x, k) => (k === j ? c : x)) });
+  const kindOptions: Option<SectionKind>[] = KINDS.map((k) => ({ value: k.value, label: kindName(k.value) }));
+  return (
+    <div className="rb-sched-section" data-kind={s.kind}>
+      <div className="rb-sched-section-head">
+        <span className="rb-sched-section-n">{index + 1}</span>
+        <input type="text" aria-label="Section name" value={s.name} onChange={(e) => onChange({ ...s, name: e.target.value })} />
+        <Select<SectionKind> className="dropdown" value={s.kind} options={kindOptions} onChange={(kind) => onChange({ ...s, kind })} />
+        <button className="clickable-icon" aria-label={`Move ${s.name} up`} disabled={index === 0} onClick={onUp}>
+          <Icon name="arrow-up" />
+        </button>
+        <button className="clickable-icon" aria-label={`Move ${s.name} down`} disabled={last} onClick={onDown}>
+          <Icon name="arrow-down" />
+        </button>
+        <button className="clickable-icon" aria-label={`Remove ${s.name}`} onClick={onRemove}>
+          <Icon name="trash-2" />
+        </button>
+      </div>
+      <div className="rb-sched-field-hint">{KINDS.find((k) => k.value === s.kind)?.hint}</div>
+      <div className="rb-sched-conditions">
+        {s.conditions.map((c, j) => {
+          const p = config.properties.find((x) => x.name === c.property);
+          return (
+            <div key={j} className="rb-sched-condition">
+              <span className="rb-sched-condition-join">{j === 0 ? 'When' : 'and'}</span>
+              <Select
+                className="dropdown"
+                value={c.property}
+                options={[...(p ? [] : [{ value: c.property, label: `${c.property} (missing)` }]), ...props.map((x) => ({ value: x.name, label: propertyLabel(x) }))]}
+                onChange={(name) => {
+                  const next = props.find((x) => x.name === name);
+                  if (next) setCond(j, firstCondition(next));
+                }}
+              />
+              {p?.type === 'checkbox' ? (
+                <Select<'checked' | 'unchecked'>
+                  className="dropdown"
+                  value={c.op === 'unchecked' ? 'unchecked' : 'checked'}
+                  options={[
+                    { value: 'checked', label: 'is checked' },
+                    { value: 'unchecked', label: 'is unchecked' },
+                  ]}
+                  onChange={(op) => setCond(j, { property: c.property, op })}
+                />
+              ) : (
+                <ValuePicker prop={p} condition={c} onChange={(next) => setCond(j, next)} />
+              )}
+              <button className="clickable-icon" aria-label="Remove condition" onClick={() => onChange({ ...s, conditions: s.conditions.filter((_, k) => k !== j) })}>
+                <Icon name="x" />
+              </button>
+            </div>
+          );
+        })}
+        <button
+          className="rb-sched-add-condition"
+          disabled={props.length === 0}
+          onClick={() => {
+            const unused = props.find((x) => !s.conditions.some((c) => c.property === x.name)) ?? props[0];
+            if (unused) onChange({ ...s, conditions: [...s.conditions, firstCondition(unused)] });
+          }}
+        >
+          <Icon name="plus" /> Condition
+        </button>
+      </div>
+    </div>
+  );
+}
+
+/** Select values as toggleable pills: one picked is "is", several is "is any of". */
+function ValuePicker({ prop, condition: c, onChange }: { prop: PropertyConfig | undefined; condition: SectionCondition; onChange: (c: SectionCondition) => void }) {
+  const picked = c.op === 'is' ? [c.value] : c.op === 'anyOf' ? c.value : [];
+  const options = prop?.options ?? [];
+  const toggle = (v: string): void => {
+    const next = picked.includes(v) ? picked.filter((x) => x !== v) : [...picked, v];
+    if (next.length === 0) return;
+    onChange(next.length === 1 ? { property: c.property, op: 'is', value: next[0] } : { property: c.property, op: 'anyOf', value: next });
+  };
+  if (!options.length) return <span className="rb-sched-hint">No listed values</span>;
+  return (
+    <span className="rb-sched-values">
+      <span className="rb-sched-condition-join">{picked.length > 1 ? 'is any of' : 'is'}</span>
+      {options.map((o) => {
+        const opt = optionFor(prop!, o.value);
+        const on = picked.includes(o.value);
+        return (
+          <button
+            key={o.value}
+            className={on ? 'rb-sched-status-pill is-on' : 'rb-sched-status-pill'}
+            style={{ ['--pill' as string]: opt.color }}
+            aria-pressed={on}
+            onClick={() => toggle(o.value)}
+          >
+            {opt.label}
+          </button>
+        );
+      })}
+    </span>
   );
 }
 

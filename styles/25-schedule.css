@@ -28,7 +28,30 @@
 .rb-schedule-split { margin: 8px 0 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 4px; }
 .rb-schedule-split li { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; font-size: var(--font-ui-small); }
 
-.rb-schedule-live-items { display: flex; flex-wrap: wrap; gap: 6px; }
+/* Live & side: one wrapping grid of cards, told apart by a muted tint. */
+.rb-schedule-cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 8px; }
+.rb-schedule-card {
+  --tint: var(--color-blue-rgb);
+  display: flex;
+  gap: 10px;
+  min-width: 0;
+  padding: 6px;
+  border-radius: var(--radius-s);
+  border-left: 3px solid rgba(var(--tint), 0.55);
+  background: rgba(var(--tint), 0.06);
+  transition: background-color 0.12s;
+}
+.rb-schedule-card.is-side { --tint: var(--color-green-rgb); }
+.rb-schedule-card:hover { background: rgba(var(--tint), 0.12); }
+.rb-schedule-card .rb-schedule-entry-body { flex: 1; }
+.rb-schedule-card:hover .rb-schedule-entry-actions { opacity: 1; }
+.rb-schedule-card .rb-schedule-entry-title .rb-title { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.rb-schedule-card .rb-schedule-entry-title { flex-wrap: nowrap; min-width: 0; }
+.rb-schedule-card .rb-schedule-kind { align-self: flex-start; margin-top: 2px; background: rgba(var(--tint), 0.14); color: var(--text-muted); }
+
+/* More playing games than lanes: a line above the lanes. */
+.rb-schedule-overflow { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin-bottom: 10px; }
+
 .rb-schedule-chip {
   display: inline-flex;
   align-items: baseline;
@@ -158,16 +181,9 @@
 .rb-schedule.is-compact .rb-schedule-main .rb-schedule-lane { border: none; padding: 4px 0 0; background: transparent; }
 .rb-schedule.is-compact .rb-schedule-section-hint { display: none; }
 .rb-schedule.is-compact .rb-schedule-index { width: 20px; height: 20px; }
-.rb-schedule.is-compact .rb-schedule-live-items {
-  flex-wrap: nowrap;
-  overflow-x: auto;
-  scrollbar-width: none;
-  margin: 0 -10px;
-  padding: 0 10px;
-}
-.rb-schedule.is-compact .rb-schedule-live-items::-webkit-scrollbar { display: none; }
-.rb-schedule.is-compact .rb-schedule-chip { flex: none; white-space: nowrap; padding: 4px 10px; }
-.rb-schedule.is-compact .rb-schedule-chip .rb-title { font-weight: var(--font-medium); }
+.rb-schedule.is-compact .rb-schedule-cards { grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 6px; }
+.rb-schedule.is-compact .rb-schedule-card .rb-schedule-cover { width: 30px; height: 40px; }
+.rb-schedule.is-compact .rb-schedule-chip { white-space: nowrap; padding: 4px 10px; }
 .rb-schedule.is-compact .rb-schedule-week-head { flex-wrap: wrap; }
 .rb-schedule.is-compact .rb-schedule-bar { margin: 6px 0 0; }
 
@@ -309,5 +325,148 @@
 .rb-schedule-option-title { display: flex; align-items: center; gap: 6px; font-weight: var(--font-semibold); }
 .rb-schedule-any input[type='search'] { width: 100%; }
 .rb-schedule-any-list { display: flex; flex-direction: column; gap: 4px; max-height: 50vh; overflow: auto; }
-/* Move prompt: one row per place, its number in the entry badge. */
-.rb-schedule-option.rb-schedule-move-slot { flex-direction: row; align-items: center; gap: 10px; }
+/* Move modal: destination cards, then lane, position and date for lanes / queue. */
+.rb-schedule-move { width: min(560px, 92vw); }
+.rb-move { display: flex; flex-direction: column; gap: 16px; }
+.rb-move-dests { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 8px; }
+.rb-move-dests.is-end { grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); }
+.rb-move-dest {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  height: auto;
+  padding: 10px 12px;
+  border-radius: var(--radius-m);
+  background: var(--background-primary);
+  box-shadow: inset 0 0 0 1px var(--background-modifier-border);
+  text-align: left;
+  white-space: normal;
+  transition: box-shadow 0.12s, background-color 0.12s;
+}
+.rb-move-dest:hover { background: var(--background-modifier-hover); }
+.rb-move-dest.is-active { box-shadow: inset 0 0 0 2px var(--interactive-accent); background: hsla(var(--interactive-accent-hsl), 0.06); }
+.rb-move-dest:focus { outline: none; }
+.rb-move-dest:focus-visible { outline: 2px solid hsla(var(--interactive-accent-hsl), 0.5); outline-offset: 2px; }
+.rb-move-dest.is-now:not(.is-active) { box-shadow: inset 0 0 0 1px var(--background-modifier-border-hover, var(--background-modifier-border)); background: var(--background-secondary); }
+.rb-move-dest:disabled { opacity: 0.45; pointer-events: none; }
+.rb-move-dest-icon { flex: none; display: inline-flex; margin-top: 1px; color: var(--text-muted); }
+.rb-move-dest-icon svg { width: 18px; height: 18px; }
+.rb-move-dest.is-live .rb-move-dest-icon { color: rgb(var(--color-blue-rgb)); }
+.rb-move-dest.is-side .rb-move-dest-icon { color: rgb(var(--color-green-rgb)); }
+.rb-move-dest.is-active .rb-move-dest-icon { color: var(--interactive-accent); }
+.rb-move-dest-text { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.rb-move-dest-name { display: flex; align-items: center; gap: 6px; font-weight: var(--font-semibold); }
+.rb-move-dest-hint { color: var(--text-muted); font-size: var(--font-ui-smaller); line-height: 1.35; }
+.rb-move-dests.is-end .rb-move-dest { padding: 8px 12px; }
+
+.rb-move-divider { display: flex; align-items: center; gap: 10px; margin: -4px 0 -6px; color: var(--text-faint); font-size: var(--font-ui-smaller); }
+.rb-move-divider::before,
+.rb-move-divider::after { content: ''; flex: 1; border-top: 1px solid var(--background-modifier-border); }
+
+.rb-move-step { display: flex; flex-direction: column; gap: 8px; padding-top: 14px; border-top: 1px solid var(--background-modifier-border); }
+.rb-move-label { font-size: var(--font-ui-smaller); font-weight: var(--font-semibold); color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.03em; }
+.rb-move-label-row { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.rb-move-auto { display: inline-flex; align-items: center; gap: 6px; color: var(--text-muted); font-size: var(--font-ui-small); cursor: pointer; }
+.rb-move-note { color: var(--text-muted); font-size: var(--font-ui-smaller); }
+
+.rb-move-lanes { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 6px; padding: 3px; border-radius: var(--radius-m); background: var(--background-secondary); }
+.rb-move-lane { display: flex; flex-direction: column; align-items: flex-start; gap: 1px; min-width: 0; height: auto; padding: 6px 10px; border-radius: var(--radius-s); background: transparent; box-shadow: none; text-align: left; }
+.rb-move-lane:hover { background: var(--background-modifier-hover); }
+.rb-move-lane.is-active { background: var(--background-primary); box-shadow: var(--shadow-s); }
+.rb-move-lane-name { font-weight: var(--font-semibold); }
+.rb-move-lane-now { max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--text-muted); font-size: var(--font-ui-smaller); }
+
+.rb-move-dests-wrap { display: flex; flex-direction: column; gap: 16px; }
+.rb-move-queue-wrap { display: flex; flex-direction: column; gap: 2px; }
+.rb-move-queue {
+  display: flex;
+  flex-direction: column;
+  max-height: 280px;
+  overflow-y: auto;
+  padding: 2px 4px;
+  border: 1px solid var(--background-modifier-border);
+  border-radius: var(--radius-s);
+}
+/* A gap between two queued games: a thin hit area that shows a drop line on hover. */
+.rb-move-gap {
+  position: relative;
+  display: flex;
+  align-items: center;
+  height: 10px;
+  margin: -1px 0;
+  padding: 0;
+  border: none;
+  background: transparent;
+  box-shadow: none;
+  cursor: pointer;
+}
+.rb-move-gap-line { flex: 1; height: 2px; border-radius: 1px; background: transparent; transition: background-color 0.1s; }
+.rb-move-gap-label {
+  position: absolute;
+  right: 4px;
+  display: none;
+  align-items: center;
+  gap: 4px;
+  padding: 0 6px;
+  border-radius: 999px;
+  background: var(--interactive-accent);
+  color: var(--text-on-accent);
+  font-size: var(--font-ui-smaller);
+  line-height: 16px;
+}
+.rb-move-gap-label svg { width: 12px; height: 12px; }
+.rb-move-gap:hover .rb-move-gap-line,
+.rb-move-gap:focus-visible .rb-move-gap-line { background: var(--interactive-accent); }
+.rb-move-gap:hover .rb-move-gap-label,
+.rb-move-gap:focus-visible .rb-move-gap-label { display: inline-flex; }
+.rb-move-row-tag { flex: none; color: var(--text-faint); font-size: var(--font-ui-smaller); font-weight: normal; }
+/* Each game is a full-width target: click to add the moved game after it. */
+button.rb-move-row.is-pick {
+  width: 100%;
+  height: auto;
+  border: none;
+  background: transparent;
+  box-shadow: none;
+  text-align: left;
+  font: inherit;
+  cursor: pointer;
+}
+button.rb-move-row.is-pick:hover { background: var(--background-modifier-hover); color: var(--text-normal); }
+button.rb-move-row.is-pick:disabled { cursor: default; }
+button.rb-move-row.is-pick:disabled:hover { background: transparent; color: var(--text-muted); }
+.rb-move-row-action { flex: none; visibility: hidden; color: var(--text-accent); font-size: var(--font-ui-smaller); }
+button.rb-move-row.is-pick:hover:not(:disabled) .rb-move-row-action,
+button.rb-move-row.is-pick:focus-visible .rb-move-row-action,
+.is-mobile button.rb-move-row.is-pick:not(:disabled) .rb-move-row-action { visibility: visible; }
+.rb-move-row.is-top .rb-schedule-index { background: transparent; color: var(--text-faint); }
+.rb-move-row.is-top .rb-move-row-title { color: var(--text-faint); font-style: italic; }
+.rb-move-row.is-me .rb-move-row-tag { color: var(--text-accent); }
+.rb-move-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  height: auto;
+  min-height: 30px;
+  padding: 2px 8px;
+  border-radius: var(--radius-s);
+  color: var(--text-muted);
+}
+.rb-move-row-title { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.rb-move-row.is-running { color: var(--text-faint); }
+.rb-move-row.is-me { color: var(--text-normal); font-weight: var(--font-semibold); background: hsla(var(--interactive-accent-hsl), 0.1); box-shadow: inset 0 0 0 1px var(--interactive-accent); outline-offset: 2px; }
+.rb-move-row.is-me .rb-schedule-index { background: var(--interactive-accent); color: var(--text-on-accent); }
+
+.rb-move-link,
+.rb-move-lane,
+.rb-move-dest { border: none; }
+.rb-move-row svg { width: 14px; height: 14px; }
+
+.rb-move-date { display: flex; align-items: center; gap: 10px; }
+.rb-move-date input[type='date'] { width: 170px; }
+.rb-move-link { display: inline-flex; align-items: center; gap: 6px; height: auto; padding: 2px 4px; background: transparent; box-shadow: none; color: var(--text-accent); font-size: var(--font-ui-small); }
+.rb-move-link:hover { text-decoration: underline; background: transparent; }
+.rb-move-link svg { width: 14px; height: 14px; }
+.rb-move-add-date { align-self: flex-start; }
+
+.rb-move-footer { display: flex; align-items: center; gap: 8px; padding-top: 14px; border-top: 1px solid var(--background-modifier-border); }
+.rb-move-summary { flex: 1; min-width: 0; color: var(--text-muted); font-size: var(--font-ui-smaller); }

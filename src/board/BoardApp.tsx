@@ -397,14 +397,16 @@ function Toolbar({ config, view }: { config: DatabaseConfig; view: ViewConfig | 
         </div>
       </div>
 
-      {/* Row 2: search, sort / filter chips. */}
-      <div className="rb-controls-row">
-        <input className="rb-search" type="search" placeholder="Search…" value={search} onChange={(e) => setSearch(e.target.value)} />
-        {view && view.type !== 'chart' && view.type !== 'schedule' && <SortChip config={config} view={view} viewIndex={viewIndex} />}
-        {view && (
-          <Chip icon="filter" label="Filter" badge={filters || undefined} active={filters > 0} onClick={() => actions.openFilter(viewIndex)} />
-        )}
-      </div>
+      {/* Row 2: search, sort / filter chips. The schedule plans every item, so it has none. */}
+      {view?.type !== 'schedule' && (
+        <div className="rb-controls-row">
+          <input className="rb-search" type="search" placeholder="Search…" value={search} onChange={(e) => setSearch(e.target.value)} />
+          {view && view.type !== 'chart' && <SortChip config={config} view={view} viewIndex={viewIndex} />}
+          {view && (
+            <Chip icon="filter" label="Filter" badge={filters || undefined} active={filters > 0} onClick={() => actions.openFilter(viewIndex)} />
+          )}
+        </div>
+      )}
     </div>
   );
 }

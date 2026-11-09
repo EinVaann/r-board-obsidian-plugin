@@ -62,6 +62,7 @@ if (SCHEDULE) {
     NOTES[`Backlog Items/${r.id}.md`] = { tags: ['backlog'], status: r.status, score: r.score, genre: r.genre, 'play-hours': r.duration, 'live-service': r.live === true };
   }
   NOTES['Backlog Items/Hades.md'] = { tags: ['backlog'], status: 'completed', score: 9, genre: ['Roguelike'], 'play-hours': 22 };
+  NOTES['Backlog Items/Is this Seat Taken.md'].casual = true;
   const row = (id: string, game: string, h: number, d: string) => ({ id, cells: { notes: [`[[Backlog Items/${game}|${game}]]`], hours: h, date: d } });
   FILES[LOG_PATH] = JSON.stringify({
     version: 1,
@@ -117,6 +118,7 @@ const SCHEDULE_BOARD = {
     { name: 'genre', type: 'multi', render: 'pills' },
     { name: 'play-hours', type: 'number' },
     { name: 'live-service', type: 'checkbox' },
+    { name: 'casual', type: 'checkbox' },
     { name: 'start-date', type: 'date' },
     { name: 'end-date', type: 'date' },
   ],

@@ -81,17 +81,45 @@ test.describe('auto-dates (real watcher, fake metadata cache)', () => {
 test.describe('schedule view', () => {
   test.beforeEach(({ page }) => open(page, { kind: 'schedule' }));
 
-  test('shows the week, the live band and both lanes from the log', async ({ page }) => {
+  test('shows the week, the live & side cards above both lanes', async ({ page }) => {
     await expect(page.locator('.rb-schedule-week h4')).toHaveText('This week');
-    await expect(page.locator('.rb-schedule-live .rb-schedule-chip')).toHaveCount(3);
-    await expect(page.locator('.rb-schedule-live')).toContainText('Arknights');
+    await expect(page.locator('.rb-schedule-card.is-live')).toHaveCount(3);
+    await expect(page.locator('.rb-schedule-card.is-side')).toHaveText([/Is this Seat Taken.*Also playing/]);
+    // Live cards come first, then side cards.
+    await expect(page.locator('.rb-schedule-card').last()).toHaveClass(/is-side/);
+    // The group sits above the lanes.
+    await expect(page.locator('.rb-schedule-section-toggle')).toHaveText([/Live & side/, /Lanes/]);
     const lanes = page.locator('.rb-schedule-lane');
     await expect(lanes).toHaveCount(2);
-    // The playing games run first, each in its own lane.
     const current = await page.locator('.rb-schedule-entry.is-current .rb-title').allTextContents();
     expect(current.sort()).toEqual(['Ender Magnolia Bloom in the Mist', 'Ex Astris']);
-    await expect(page.locator('.rb-schedule-side')).toContainText('Is this Seat Taken');
+    await expect(page.locator('.rb-schedule-overflow')).toHaveCount(0);
+    // No search or filter: sections decide what shows.
+    await expect(page.locator('.rb-search')).toHaveCount(0);
+    await expect(page.locator('.rb-controls-row')).toHaveCount(0);
+    // Live and side cards keep a Log time button.
+    await expect(page.getByRole('button', { name: 'Log time for Reverse 1999' })).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Log time for Is this Seat Taken' })).toBeVisible();
     await expect(page.locator('.rb-schedule-footer')).toContainText('All planned done around');
+  });
+
+  test('the schedule follows note properties changed elsewhere', async ({ page }) => {
+    const set = (path: string, values: Record<string, unknown>) =>
+      page.evaluate(
+        ([p, v]) => {
+          Object.assign(window.__notes[p as string], v);
+          window.__store.getState().bumpVault();
+        },
+        [path, values] as const,
+      );
+    // Is this Seat Taken back to planned: it leaves the cards and joins the queue.
+    await set('Backlog Items/Is this Seat Taken.md', { status: 'planned' });
+    await expect(page.locator('.rb-schedule-card.is-side')).toHaveCount(0);
+    await expect(page.locator('.rb-schedule-lane .rb-schedule-draggable', { hasText: 'Is this Seat Taken' })).toHaveCount(1);
+    // Ex Astris on hold: its lane frees up.
+    await set('Backlog Items/Ex Astris.md', { status: 'on-hold' });
+    await expect(page.locator('.rb-schedule-entry.is-current', { hasText: 'Ex Astris' })).toHaveCount(0);
+    await expect(page.locator('.rb-schedule-free')).toHaveCount(1);
   });
 
   test('every planned game is scheduled exactly once', async ({ page }) => {
@@ -113,23 +141,25 @@ test.describe('schedule view', () => {
     await page.getByRole('spinbutton', { name: 'Lanes' }).fill('3');
     await page.keyboard.press('Escape');
     await expect(page.locator('.rb-schedule-lane')).toHaveCount(3);
-    // The third playing game joins the lanes instead of the side list.
-    await expect(page.locator('.rb-schedule-side')).toHaveCount(0);
+    // The casual game stays a card: lanes are for non-casual games.
+    await expect(page.locator('.rb-schedule-card.is-side')).toHaveCount(1);
   });
 
-  test('settings: each status gets a role from one dropdown', async ({ page }) => {
+  test('settings: sections are guessed, and editing one saves them all', async ({ page }) => {
     await page.getByLabel('View settings').click();
-    const row = (label: string) => page.locator('.rb-sched-status', { has: page.locator('.rb-sched-status-pill', { hasText: new RegExp(`^${label}$`) }) });
-    await expect(page.locator('.rb-sched-status')).toHaveCount(6);
-    await expect(row('planned').locator('select')).toHaveValue('pool');
-    await expect(row('to-play').locator('select')).toHaveValue('');
-    // to-play joins the waiting games: the forecast schedules it too.
-    await row('to-play').locator('select').selectOption('pool');
-    const statuses = await page.evaluate(() => window.__store.getState().config!.views[0].schedule!.statuses);
-    expect(statuses.pool).toEqual(['planned', 'to-play']);
-    // Taking away the only Playing status shows a warning.
-    await row('playing').locator('select').selectOption('');
-    await expect(page.locator('.rb-sched-error')).toContainText('Playing');
+    const rows = page.locator('.rb-sched-section');
+    const names = await rows.locator('input[aria-label="Section name"]').evaluateAll((els) => els.map((e) => (e as HTMLInputElement).value));
+    expect(names).toEqual(['Live', 'Also playing', 'Lanes', 'Queue', 'On hold', 'Completed', 'Dropped']);
+    // to-play joins the queue: "is" becomes "is any of".
+    const queue = rows.nth(3);
+    await queue.getByRole('button', { name: 'to-play' }).click();
+    const sections = await page.evaluate(() => window.__store.getState().config!.views[0].schedule!.sections!);
+    expect(sections[3].conditions).toEqual([{ property: 'status', op: 'anyOf', value: ['planned', 'to-play'] }]);
+    // Removing the Lanes section shows a warning.
+    await page.getByRole('button', { name: 'Remove Lanes' }).click();
+    await expect(page.locator('.rb-sched-error')).toContainText('Add a Lanes section');
+    await page.getByRole('button', { name: 'Reset to the guessed sections' }).click();
+    await expect(rows).toHaveCount(7);
   });
 
   test('settings: similar groups are chips you add and remove', async ({ page }) => {
@@ -167,71 +197,153 @@ test.describe('schedule view', () => {
     expect(rows.at(-1)!.cells).toMatchObject({ notes: ['[[Backlog Items/Ex Astris|Ex Astris]]'], hours: 4 });
   });
 
-  test('Finish marks the game completed and offers what is next for its lane', async ({ page }) => {
+  test('the right-click menu is the same short one everywhere', async ({ page }) => {
+    const items = [
+      page.locator('.rb-schedule-entry.is-current').first(),
+      page.locator('.rb-schedule-draggable .rb-schedule-entry').first(),
+      page.locator('.rb-schedule-card.is-live').first(),
+      page.locator('.rb-schedule-card.is-side').first(),
+    ];
+    for (const el of items) {
+      await el.click({ button: 'right' });
+      await expect(page.locator('.dev-menu .menu-item')).toHaveText(['Move…', 'Log play time…', 'Open note']);
+      await page.keyboard.press('Escape');
+    }
+  });
+
+  test('Move → Completed finishes a running game; its lane offers what is next', async ({ page }) => {
     const index = await page.locator('.rb-schedule-lane').evaluateAll((els) => els.findIndex((e) => e.querySelector('.is-current')?.textContent?.includes('Ex Astris')));
     const lane = page.locator('.rb-schedule-lane').nth(index);
-    await page.getByRole('button', { name: 'Finish Ex Astris' }).click();
+    await page.locator('.rb-schedule-entry.is-current', { hasText: 'Ex Astris' }).click({ button: 'right' });
+    await menu(page, 'Move…');
+    const modal = page.locator('.rb-schedule-move');
+    // Shown sections first, the current one picked; the end sections below, each saying what it writes.
+    await expect(modal.locator('.rb-move-dests').first().locator('.rb-move-dest-name')).toHaveText([/^Live/, /^Also playing/, /^Lanes\s*now/, /^Queue/]);
+    await expect(modal.getByRole('radio', { name: /^Lanes/ })).toHaveAttribute('aria-checked', 'true');
+    await expect(modal.locator('.rb-move-dests.is-end .rb-move-dest-name')).toHaveText(['On hold', 'Completed', 'Dropped']);
+    await expect(modal.locator('.rb-move-dest', { hasText: 'Completed' })).toContainText('status → completed');
+    // Picking an end only selects it; Move applies it.
+    await modal.locator('.rb-move-dest', { hasText: 'Completed' }).click();
+    await expect(modal.getByRole('radio', { name: /Completed/ })).toHaveAttribute('aria-checked', 'true');
+    await expect(modal.locator('.rb-move-summary')).toHaveText('status → completed');
+    expect((await notes(page))['Backlog Items/Ex Astris.md'].status).toBe('playing');
+    await modal.getByRole('button', { name: 'Move', exact: true }).click();
     await expect.poll(async () => (await notes(page))['Backlog Items/Ex Astris.md'].status).toBe('completed');
-    const modal = page.locator('.rb-schedule-modal');
-    await expect(modal).toContainText("What's next in lane");
-    const options = modal.locator('.rb-schedule-option');
+    // The freed lane shows its bar; picking from it starts a game there.
+    await lane.locator('.rb-schedule-free').click();
+    const next = page.locator('.rb-schedule-modal');
+    await expect(next).toContainText("What's next in lane");
+    const options = next.locator('.rb-schedule-option');
     await expect(options.first()).toContainText('suggested');
     const pick = (await options.nth(1).locator('.rb-schedule-option-title').textContent())!.trim();
     await options.nth(1).click();
     await expect.poll(async () => (await notes(page))[`Backlog Items/${pick}.md`].status).toBe('playing');
-    // The picked game runs in the lane Ex Astris left; the side game stays a side game.
     await expect(lane.locator('.rb-schedule-entry.is-current')).toContainText(pick);
-    await expect(page.locator('.rb-schedule-side')).toContainText('Is this Seat Taken');
+    await expect(page.locator('.rb-schedule-card.is-side')).toContainText('Is this Seat Taken');
   });
 
-  test('right-click moves, pins and unpins a queued game', async ({ page }) => {
-    const laneA = page.locator('.rb-schedule-lane').nth(0);
-    const third = laneA.locator('.rb-schedule-draggable').nth(2);
-    const title = (await third.locator('.rb-title').textContent())!;
-    await third.locator('.rb-schedule-entry').click({ button: 'right' });
-    await menu(page, 'Move up');
-    await expect(laneA.locator('.rb-schedule-draggable').nth(1)).toContainText(title);
-    await expect(laneA.locator('.rb-schedule-draggable').nth(1).locator('.rb-schedule-flag')).toHaveCount(1);
+  test('Move: also playing → a lane unticks casual; a lane game → also playing ticks it', async ({ page }) => {
+    // Free a lane first, so the side game can take it.
+    await page.evaluate(() => {
+      window.__notes['Backlog Items/Ex Astris.md'].status = 'on-hold';
+      window.__store.getState().bumpVault();
+    });
+    await expect(page.locator('.rb-schedule-free')).toHaveCount(1);
+    await page.locator('.rb-schedule-card.is-side').click({ button: 'right' });
+    await menu(page, 'Move…');
+    const modal = page.locator('.rb-schedule-move');
+    await expect(modal.getByRole('radio', { name: /^Lanes/ })).toContainText('casual off');
+    await modal.getByRole('radio', { name: /^Lanes/ }).click();
+    // A free lane is picked already, and the footer says what will happen.
+    await expect(modal.getByRole('radiogroup', { name: 'Lane' }).getByRole('radio', { checked: true })).toContainText('free');
+    await expect(modal.locator('.rb-move-summary')).toContainText('casual off');
+    await modal.getByRole('button', { name: 'Move', exact: true }).click();
+    await expect.poll(async () => (await notes(page))['Backlog Items/Is this Seat Taken.md']).toMatchObject({ status: 'playing', casual: false });
+    await expect(page.locator('.rb-schedule-entry.is-current', { hasText: 'Is this Seat Taken' })).toHaveCount(1);
 
-    await laneA.locator('.rb-schedule-draggable').nth(1).locator('.rb-schedule-entry').click({ button: 'right' });
-    await menu(page, 'Move to lane B…');
-    await page.locator('.rb-schedule-move-slot', { hasText: 'Next' }).click();
+    await page.locator('.rb-schedule-entry.is-current', { hasText: 'Ender Magnolia' }).click({ button: 'right' });
+    await menu(page, 'Move…');
+    await modal.getByRole('radio', { name: /^Also playing/ }).click();
+    await modal.getByRole('button', { name: 'Move', exact: true }).click();
+    await expect.poll(async () => (await notes(page))['Backlog Items/Ender Magnolia Bloom in the Mist.md'].casual).toBe(true);
+    await expect(page.locator('.rb-schedule-card.is-side', { hasText: 'Ender Magnolia' })).toHaveCount(1);
+  });
+
+  test('Move: one modal places a queued game, pins it and sets not-before', async ({ page }) => {
+    const laneA = page.locator('.rb-schedule-lane').nth(0);
     const laneB = page.locator('.rb-schedule-lane').nth(1);
-    await expect(laneB.locator('.rb-schedule-draggable').first()).toContainText(title);
-
-    await laneB.locator('.rb-schedule-draggable').first().locator('.rb-schedule-entry').click({ button: 'right' });
-    await menu(page, 'Unpin');
-    await expect(page.locator('.rb-schedule-flag')).toHaveCount(0);
-  });
-
-  test('queued games are numbered; "Move to position" puts one at a number', async ({ page }) => {
-    const laneA = page.locator('.rb-schedule-lane').nth(0);
     await expect(laneA.locator('.rb-schedule-index').first()).toHaveClass(/is-now/);
     await expect(laneA.locator('.rb-schedule-draggable .rb-schedule-index').nth(0)).toHaveText('1');
-    await expect(laneA.locator('.rb-schedule-draggable .rb-schedule-index').nth(4)).toHaveText('5');
     const fifth = laneA.locator('.rb-schedule-draggable').nth(4);
     const title = (await fifth.locator('.rb-title').textContent())!;
     await fifth.locator('.rb-schedule-entry').click({ button: 'right' });
-    await menu(page, 'Move to position…');
-    const modal = page.locator('.rb-schedule-modal');
-    await expect(modal.getByRole('tab', { name: /Lane A/ })).toHaveAttribute('aria-selected', 'true');
-    await modal.locator('.rb-schedule-move-slot', { has: page.locator('.rb-schedule-index', { hasText: /^2$/ }) }).click();
-    await expect(modal).toHaveCount(0);
-    await expect(laneA.locator('.rb-schedule-draggable').nth(1)).toContainText(title);
-    await expect(laneA.locator('.rb-schedule-draggable').nth(1).locator('.rb-schedule-index')).toHaveText('2');
+    await menu(page, 'Move…');
+    const modal = page.locator('.rb-schedule-move');
+    await expect(modal.getByRole('radio', { name: /^Queue/ })).toHaveAttribute('aria-checked', 'true');
+    await expect(modal.getByRole('radio', { name: /^Lane A/ })).toHaveAttribute('aria-checked', 'true');
+    await expect(modal.getByLabel('Let the schedule decide')).toBeChecked();
+    await expect(modal.getByRole('button', { name: 'Move', exact: true })).toBeDisabled();
+    // Lane B: placing by hand starts at the end of its queue, shown in the whole list.
+    await modal.getByRole('radio', { name: /^Lane B/ }).click();
+    await modal.getByLabel('Let the schedule decide').uncheck();
+    await expect(modal.locator('.rb-move-row.is-me')).toContainText(title);
+    await expect(modal.locator('.rb-move-queue .rb-move-row').last()).toHaveClass(/is-me/);
+    // Clicking a game adds this one right after it; the numbers follow.
+    const second = (await modal.locator('.rb-move-queue .rb-move-row.is-pick:not(.is-top)').nth(1).locator('.rb-move-row-title').textContent())!;
+    await modal.getByRole('button', { name: `Put it after ${second}` }).click();
+    await expect(modal.locator('.rb-move-row.is-me .rb-schedule-index')).toHaveText('3');
+    await expect(modal.getByRole('button', { name: `Put it after ${second}` })).toBeDisabled();
+    // The top row puts it first.
+    await modal.getByRole('button', { name: 'Put it first' }).click();
+    await expect(modal.locator('.rb-move-queue .rb-move-row').first()).toHaveClass(/is-me/);
+    await expect(modal.getByRole('button', { name: 'Put it first' })).toHaveCount(0);
+    await expect(modal.locator('.rb-move-summary')).toHaveText('Lane B, 1st');
+    await modal.getByRole('button', { name: 'Move', exact: true }).click();
+    await expect(laneB.locator('.rb-schedule-draggable').first()).toContainText(title);
+    await expect(laneB.locator('.rb-schedule-draggable').first().locator('.rb-schedule-flag')).toHaveCount(1);
+
+    // Back to the schedule's choice, with a not-before date.
+    await laneB.locator('.rb-schedule-draggable').first().locator('.rb-schedule-entry').click({ button: 'right' });
+    await menu(page, 'Move…');
+    await expect(modal.getByLabel('Let the schedule decide')).not.toBeChecked();
+    await modal.getByRole('radio', { name: /^Any lane/ }).click();
+    await modal.getByRole('button', { name: "Don't start before a date…" }).click();
+    await modal.getByLabel('Not before').fill('2028-06-01');
+    await modal.getByRole('button', { name: 'Move', exact: true }).click();
+    const entry = page.locator('.rb-schedule-entry', { hasText: title });
+    await expect(entry).toContainText(/Starts Jun 1\b.*2028/);
+    await expect(entry.locator('.rb-schedule-flag')).toHaveCount(0);
+    const pins = await page.evaluate(() => window.__store.getState().config!.views[0].schedule!.pins);
+    expect(pins).toEqual([{ item: `Backlog Items/${title}.md`, lane: -1, position: -1, notBefore: '2028-06-01' }]);
   });
 
-  test('Live, Also playing and Lanes collapse, and stay collapsed with the view', async ({ page }) => {
+  test('double-click pins a queued game where it is, and again unpins it', async ({ page }) => {
+    const laneA = page.locator('.rb-schedule-lane').nth(0);
+    const second = laneA.locator('.rb-schedule-draggable').nth(1);
+    const title = (await second.locator('.rb-title').textContent())!;
+    await second.locator('.rb-schedule-entry-end').dblclick();
+    await expect(second.locator('.rb-schedule-flag')).toHaveCount(1);
+    const pins = await page.evaluate(() => window.__store.getState().config!.views[0].schedule!.pins);
+    expect(pins).toEqual([{ item: `Backlog Items/${title}.md`, lane: 0, position: 1 }]);
+    await second.locator('.rb-schedule-entry-end').dblclick();
+    await expect(page.locator('.rb-schedule-flag')).toHaveCount(0);
+    // The running game has nothing to pin.
+    await laneA.locator('.rb-schedule-entry.is-current .rb-schedule-entry-end').dblclick();
+    await expect(page.locator('.rb-schedule-flag')).toHaveCount(0);
+  });
+
+  test('Live & side and Lanes collapse, and stay collapsed with the view', async ({ page }) => {
     const heads = page.locator('.rb-schedule-section-toggle');
-    await expect(heads).toHaveText([/Live\s*3/, /Lanes/, /Also playing\s*1/]);
-    await page.getByRole('button', { name: 'Live', exact: true }).click();
-    await expect(page.locator('.rb-schedule-live .rb-schedule-chip')).toHaveCount(0);
-    await expect(page.getByRole('button', { name: 'Live', exact: true })).toHaveAttribute('aria-expanded', 'false');
+    await expect(heads).toHaveText([/Live & side/, /Lanes/]);
+    await expect(page.locator('[data-section="live-side"] .rb-schedule-section-hint')).toHaveText('3 live · 1 also playing');
+    await page.getByRole('button', { name: 'Live & side', exact: true }).click();
+    await expect(page.locator('.rb-schedule-card')).toHaveCount(0);
+    await expect(page.getByRole('button', { name: 'Live & side', exact: true })).toHaveAttribute('aria-expanded', 'false');
     // Clicking anywhere on the heading row toggles, keyboard too.
     await page.locator('[data-section="lanes"] .rb-schedule-section-head').click({ position: { x: 400, y: 10 } });
     await expect(page.locator('.rb-schedule-lane')).toHaveCount(0);
     await expect(page.getByRole('button', { name: 'Re-plan all' })).toHaveCount(0);
-    expect((await page.evaluate(() => window.__store.getState().config!.views[0].collapsed))!.sort()).toEqual(['lanes', 'live']);
+    expect((await page.evaluate(() => window.__store.getState().config!.views[0].collapsed))!.sort()).toEqual(['lanes', 'live-side']);
     await page.getByRole('button', { name: 'Lanes', exact: true }).focus();
     await page.keyboard.press('Enter');
     await expect(page.locator('.rb-schedule-lane')).toHaveCount(2);
@@ -271,26 +383,6 @@ test.describe('schedule view', () => {
     await page.mouse.up();
   });
 
-  test('Insert puts any game into a lane, adding it to the plan', async ({ page }) => {
-    await page.getByRole('button', { name: 'Insert a game into lane A' }).click();
-    const modal = page.locator('.rb-schedule-modal');
-    await modal.getByLabel('Search games').fill('Hades');
-    await modal.locator('.rb-schedule-option', { hasText: 'Hades' }).click();
-    await expect.poll(async () => (await notes(page))['Backlog Items/Hades.md'].status).toBe('planned');
-    await expect(page.locator('.rb-schedule-lane').nth(0).locator('.rb-schedule-draggable').last()).toContainText('Hades');
-  });
-
-  test('Not before holds a game back until a date', async ({ page }) => {
-    const laneA = page.locator('.rb-schedule-lane').nth(0);
-    const first = laneA.locator('.rb-schedule-draggable').first();
-    const title = (await first.locator('.rb-title').textContent())!;
-    await first.locator('.rb-schedule-entry').click({ button: 'right' });
-    await menu(page, 'Not before…');
-    await page.locator('.rb-schedule-modal').getByLabel('Date').fill('2028-06-01');
-    await page.getByRole('button', { name: 'Save' }).click();
-    await expect(page.locator('.rb-schedule-entry', { hasText: title })).toContainText(/Starts Jun 1\b.*2028/);
-  });
-
   test('Re-plan undoes manual moves in one lane or all, keeping not-before holds', async ({ page }) => {
     const order = (n: number) => page.locator('.rb-schedule-lane').nth(n).locator('.rb-schedule-draggable .rb-title').allTextContents();
     const before = [await order(0), await order(1)];
@@ -323,15 +415,14 @@ test.describe('schedule view', () => {
     await expect(page.getByRole('button', { name: 'Re-plan all' })).toBeDisabled();
   });
 
-  test('live and side games have a right-click menu too', async ({ page }) => {
-    await page.locator('.rb-schedule-live .rb-schedule-chip', { hasText: 'Reverse 1999' }).click({ button: 'right' });
-    await expect(page.locator('.dev-menu .menu-item')).toHaveText(['Log play time…', 'Put on hold', 'Finish', 'Drop', 'Open note']);
-    await menu(page, 'Put on hold');
+  test('a live card goes on hold', async ({ page }) => {
+    await page.locator('.rb-schedule-card.is-live', { hasText: 'Reverse 1999' }).click({ button: 'right' });
+    await menu(page, 'Move…');
+    const modal = page.locator('.rb-schedule-move');
+    await modal.locator('.rb-move-dest', { hasText: 'On hold' }).click();
+    await modal.getByRole('button', { name: 'Move', exact: true }).click();
     await expect.poll(async () => (await notes(page))['Backlog Items/Reverse 1999.md'].status).toBe('on-hold');
-    await expect(page.locator('.rb-schedule-live')).not.toContainText('Reverse 1999');
-
-    await page.locator('.rb-schedule-side .rb-schedule-chip').click({ button: 'right' });
-    await expect(page.locator('.dev-menu .menu-item')).toContainText(['Log play time…', 'Put on hold', 'Finish', 'Drop', 'Open note']);
+    await expect(page.locator('.rb-schedule-card', { hasText: 'Reverse 1999' })).toHaveCount(0);
   });
 
   test('a narrow pane shows one lane at a time behind tabs', async ({ page }) => {

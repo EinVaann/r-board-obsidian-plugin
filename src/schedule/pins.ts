@@ -26,11 +26,38 @@ export function setNotBefore(pins: Pin[], item: string, lane: number, position: 
 }
 
 /**
+ * Where a queued item goes, as chosen in the Move modal: a lane and position
+ * pins it there; no lane leaves it to the schedule (with a not-before date,
+ * as a hold). Other pins in the target lane shift like `placePin`.
+ */
+export function placeQueued(pins: Pin[], item: string, lane: number | null, position: number | null, notBefore: string | null): Pin[] {
+  if (lane === null || position === null) {
+    const rest = unpin(pins, item);
+    return notBefore ? [...rest, { item, lane: -1, position: -1, notBefore }] : rest;
+  }
+  const placed = placePin(pins, item, lane, position);
+  return placed.map((p) => {
+    if (p.item !== item) return p;
+    const { notBefore: _, ...bare } = p;
+    return notBefore ? { ...bare, notBefore } : bare;
+  });
+}
+
+/** Toggle a queued item's pin at the place it's shown (double-click); a not-before date stays. */
+export function togglePin(pins: Pin[], item: string, lane: number, position: number): Pin[] {
+  const old = pins.find((p) => p.item === item);
+  if (old && old.lane >= 0) return old.notBefore ? [...unpin(pins, item), { item, lane: -1, position: -1, notBefore: old.notBefore }] : unpin(pins, item);
+  const pin: Pin = { item, lane, position };
+  if (old?.notBefore) pin.notBefore = old.notBefore;
+  return [...unpin(pins, item), pin];
+}
+
+/**
  * Undo manual ordering in `lane` (or every lane when undefined): pins there
  * are dropped, except not-before holds, which are kept at their place.
  */
 export function replan(pins: Pin[], lane?: number): Pin[] {
-  return pins.filter((p) => (lane !== undefined && p.lane !== lane) || !!p.notBefore);
+  return pins.filter((p) => p.lane < 0 || (lane !== undefined && p.lane !== lane) || !!p.notBefore);
 }
 
 /** Pins that `replan` would drop. */
