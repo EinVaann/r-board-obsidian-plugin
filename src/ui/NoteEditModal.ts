@@ -30,7 +30,7 @@ export class NoteEditModal extends Modal {
 
   async onOpen(): Promise<void> {
     const { contentEl, modalEl } = this;
-    modalEl.addClass('rb-edit-modal');
+    modalEl.addClass('rb-edit-modal', 'rb-modal');
     this.fmAtOpen = this.frontmatterSnapshot();
 
     // Header: note title + a button to open the note in the workspace.

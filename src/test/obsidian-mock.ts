@@ -15,6 +15,9 @@ proto.addClass = function (this: HTMLElement, ...c: string[]) {
 proto.removeClass = function (this: HTMLElement, ...c: string[]) {
   this.classList.remove(...c);
 };
+proto.hasClass = function (this: HTMLElement, c: string) {
+  return this.classList.contains(c);
+};
 proto.toggleClass = function (this: HTMLElement, c: string, on: boolean) {
   this.classList.toggle(c, on);
 };
@@ -160,12 +163,24 @@ export class Plugin extends Component {
   registerExtensions(): void {}
   registerMarkdownCodeBlockProcessor(): void {}
   addRibbonIcon(): void {}
+  settingTabs: unknown[] = [];
+  addSettingTab(t: unknown): void {
+    this.settingTabs.push(t);
+  }
   addCommand(c: { id: string }): void {
     this.commands.push(c);
   }
   removeCommand(id: string): void {
     this.commands = this.commands.filter((c) => c.id !== id);
   }
+}
+
+export class PluginSettingTab {
+  containerEl = document.createElement('div');
+  constructor(public app: unknown, public plugin: unknown) {}
+}
+export class Setting {
+  constructor(public containerEl: HTMLElement) {}
 }
 
 export const Platform = { isMobile: false, isPhone: false };

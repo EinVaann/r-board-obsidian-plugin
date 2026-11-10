@@ -5,7 +5,7 @@ import { useBoardContext } from '../board/context';
 import { TitleLink, useFieldEnv } from '../components/Card';
 import { fieldNode } from '../components/fields';
 import { asNumber, formatNumber } from '../render/values';
-import { buildChartData, categoryColors, cellKey } from './data';
+import { buildChartData, categoryColors, cellKey, themePalette } from './data';
 import { echarts } from './echarts';
 import { buildOption, readTheme, valueFormat } from './option';
 
@@ -18,6 +18,23 @@ interface Props {
   /** Properties shown in the drill-down list. */
   detailProperties: PropertyConfig[];
   height?: number;
+  /** Shown above the chart, with a line describing what it plots. */
+  title?: string;
+}
+
+const AGG_WORD: Record<string, string> = { sum: 'Sum', avg: 'Average', min: 'Minimum', max: 'Maximum' };
+
+/** "Sum of Hours · by Status · stacked by Owned" — what the chart plots, in words. */
+export function chartSubtitle(chart: ChartConfig, properties: PropertyConfig[]): string {
+  const label = (name: string | null): string => {
+    const p = name ? properties.find((x) => x.name === name) : undefined;
+    return p ? propertyLabel(p) : (name ?? '');
+  };
+  const what = chart.values.length ? `${AGG_WORD[chart.aggregate] ?? 'Count'} of ${chart.values.map(label).join(', ')}` : 'Count';
+  const parts = [what];
+  if (chart.x) parts.push(`by ${label(chart.x)}`);
+  if (chart.splitBy) parts.push(`${chart.stacked ? 'stacked' : 'split'} by ${label(chart.splitBy)}`);
+  return parts.join(' · ');
 }
 
 interface Drill {
@@ -26,7 +43,7 @@ interface Drill {
 }
 
 /** A chart with a click-to-hide legend and click-a-bar-to-list-its-items drill-down. */
-export function ChartView({ chart: config, properties, items, detailProperties, height = 340 }: Props) {
+export function ChartView({ chart: config, properties, items, detailProperties, height = 340, title }: Props) {
   const { app } = useBoardContext();
   const chart = config ?? defaultChartConfig();
   const hostRef = useRef<HTMLDivElement>(null);
@@ -36,9 +53,11 @@ export function ChartView({ chart: config, properties, items, detailProperties, 
   const [themeTick, setThemeTick] = useState(0);
   const clickTimer = useRef<number | null>(null);
 
-  const data = useMemo(() => buildChartData(chart, properties, items), [chart, properties, items]);
+  // The theme can set the default series colors; re-read when it changes.
+  const palette = useMemo(() => themePalette(hostRef.current ?? document.body), [themeTick]);
+  const data = useMemo(() => buildChartData(chart, properties, items, undefined, palette), [chart, properties, items, palette]);
   const pie = chart.type === 'pie' || chart.type === 'donut';
-  const sliceColors = useMemo(() => (pie ? categoryColors(chart, properties, data.categories) : undefined), [pie, chart, properties, data]);
+  const sliceColors = useMemo(() => (pie ? categoryColors(chart, properties, data.categories, palette) : undefined), [pie, chart, properties, data, palette]);
   const format = valueFormat(chart, properties);
   const xType = chart.x ? properties.find((p) => p.name === chart.x)?.type : undefined;
   const legend = pie ? data.categories.map((c, i) => ({ name: c.label, color: sliceColors![i] })) : data.series.map((s) => ({ name: s.name, color: s.color }));
@@ -114,6 +133,12 @@ export function ChartView({ chart: config, properties, items, detailProperties, 
 
   return (
     <div className="rb-chart">
+      {title && (
+        <div className="rb-chart-head">
+          <div className="rb-chart-head-title">{title}</div>
+          <div className="rb-chart-head-sub">{chartSubtitle(chart, properties)}</div>
+        </div>
+      )}
       <div className="rb-chart-canvas" style={{ height }}>
         <div ref={hostRef} className="rb-chart-host" />
         {empty && (

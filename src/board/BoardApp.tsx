@@ -14,6 +14,7 @@ import { TableView } from '../views/TableView';
 import { RecipeView } from '../views/RecipeView';
 import { ChartView } from '../chart/ChartView';
 import { ScheduleView } from '../views/ScheduleView';
+import { showMenu } from '../ui/menu';
 
 /** At most this many view tabs; the rest go in the "more" dropdown. */
 const MAX_VIEW_TABS = 3;
@@ -221,7 +222,7 @@ function useViewMenus() {
           }),
       );
     });
-    menu.showAtMouseEvent(e.nativeEvent);
+    showMenu(menu, e.nativeEvent);
   };
 
   return { createView };
@@ -342,7 +343,7 @@ function Toolbar({ config, view }: { config: DatabaseConfig; view: ViewConfig | 
       }),
     );
     menu.addItem((i) => i.setTitle('Delete view').setIcon('trash').onClick(() => deleteView(name)));
-    menu.showAtMouseEvent(e.nativeEvent);
+    showMenu(menu, e.nativeEvent);
   };
 
   return (
@@ -442,7 +443,7 @@ function MoreViews({
         if (v === view) item.setChecked(true);
       });
     });
-    menu.showAtMouseEvent(e.nativeEvent);
+    showMenu(menu, e.nativeEvent);
   };
 
   return (
@@ -526,7 +527,7 @@ function SortChip({ config, view, viewIndex }: { config: DatabaseConfig; view: V
         });
       });
     }
-    menu.showAtMouseEvent(e.nativeEvent);
+    showMenu(menu, e.nativeEvent);
   };
 
   return <Chip icon="arrow-up-down" label={label} active={active} onClick={open} />;
@@ -562,7 +563,7 @@ export function Body({
     case 'kanban':
       return <KanbanView config={config} view={view} viewIndex={viewIndex} items={items} properties={properties} />;
     case 'chart':
-      return <ChartView chart={view.chart} properties={config.properties} items={items} detailProperties={properties} height={chartHeight} />;
+      return <ChartView chart={view.chart} properties={config.properties} items={items} detailProperties={properties} height={chartHeight} title={chartHeight === undefined ? view.name : undefined} />;
     case 'table':
       return <TableView view={view} viewIndex={viewIndex} items={items} properties={properties} sort={sort} titleLabel={titleLabel(config)} titleProp={titlePropertyOf(config)} />;
     case 'recipe':

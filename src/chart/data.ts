@@ -5,6 +5,13 @@ import { asDate, asNumber, optionFor } from '../render/values';
 /** Series colors when nothing else picks one (readable in light and dark themes). */
 export const PALETTE = ['#4ECDC4', '#FF6B9D', '#FFB347', '#A78BFA', '#34D399', '#FB923C', '#60A5FA', '#F87171', '#FACC15', '#94A3B8'];
 
+/** The palette a theme sets in `--rb-chart-palette` (comma-separated colors), else PALETTE. */
+export function themePalette(el: Element | null): string[] {
+  const raw = el ? getComputedStyle(el).getPropertyValue('--rb-chart-palette').trim() : '';
+  const list = raw.split(',').map((c) => c.trim()).filter(Boolean);
+  return list.length ? list : PALETTE;
+}
+
 export interface Category {
   key: string;
   label: string;
@@ -66,14 +73,14 @@ function numberOf(v: unknown): number | null {
  * Chart pipeline over already filtered items: group by x (with date buckets),
  * split into series, aggregate. Pure, so views and embeds draw the same numbers.
  */
-export function buildChartData(chart: ChartConfig, properties: PropertyConfig[], items: BoardItem[], today = new Date()): ChartData {
+export function buildChartData(chart: ChartConfig, properties: PropertyConfig[], items: BoardItem[], today = new Date(), palette: string[] = PALETTE): ChartData {
   const prop = (name: string | null): PropertyConfig | null => (name ? properties.find((p) => p.name === name) ?? null : null);
   const xProp = prop(chart.x);
   const splitProp = isPie(chart) ? null : prop(chart.splitBy);
   const valueProps = chart.values.map(prop).filter((p): p is PropertyConfig => !!p);
   const itemsAt = new Map<string, string[]>();
 
-  if (chart.type === 'scatter') return buildScatter(chart, items, xProp, splitProp, valueProps, itemsAt);
+  if (chart.type === 'scatter') return buildScatter(chart, items, xProp, splitProp, valueProps, itemsAt, palette);
 
   const multiValue = !splitProp && valueProps.length > 1;
   const catMap = new Map<string, Category>();
@@ -125,7 +132,7 @@ export function buildChartData(chart: ChartConfig, properties: PropertyConfig[],
   const series: Series[] = seriesDefs.map((s, i) => ({
     key: s.key,
     name: s.name,
-    color: chart.colors[s.name] ?? s.colorHint ?? PALETTE[i % PALETTE.length],
+    color: chart.colors[s.name] ?? s.colorHint ?? palette[i % palette.length],
     data: categories.map((c) => {
       const a = acc.get(cellKey(c.key, s.key));
       return a ? aggregate(a.values, a.count, agg) : null;
@@ -149,6 +156,7 @@ function buildScatter(
   splitProp: PropertyConfig | null,
   valueProps: PropertyConfig[],
   itemsAt: Map<string, string[]>,
+  palette: string[],
 ): ChartData {
   const yProp = valueProps[0];
   if (!yProp) return { categories: [], series: [], points: [], itemsAt, itemCount: items.length, problem: 'Pick a value property for the Y axis.' };
@@ -168,7 +176,7 @@ function buildScatter(
   const list = [...groups.entries()];
   return {
     categories: [],
-    series: list.map(([key, g], i) => ({ key, name: g.name, color: chart.colors[g.name] ?? g.color ?? PALETTE[i % PALETTE.length], data: [] })),
+    series: list.map(([key, g], i) => ({ key, name: g.name, color: chart.colors[g.name] ?? g.color ?? palette[i % palette.length], data: [] })),
     points: list.map(([, g]) => g.pts),
     itemsAt,
     itemCount: items.length,
@@ -176,7 +184,7 @@ function buildScatter(
 }
 
 /** Slice colors for pie charts: the x property's option colors where available. */
-export function categoryColors(chart: ChartConfig, properties: PropertyConfig[], cats: Category[]): string[] {
+export function categoryColors(chart: ChartConfig, properties: PropertyConfig[], cats: Category[], palette: string[] = PALETTE): string[] {
   const xProp = chart.x ? properties.find((p) => p.name === chart.x) : undefined;
-  return cats.map((c, i) => chart.colors[c.label] ?? (hasOptions(xProp) ? optionFor(xProp, c.key).color : PALETTE[i % PALETTE.length]));
+  return cats.map((c, i) => chart.colors[c.label] ?? (hasOptions(xProp) ? optionFor(xProp, c.key).color : palette[i % palette.length]));
 }

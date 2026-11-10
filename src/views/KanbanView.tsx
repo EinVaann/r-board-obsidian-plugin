@@ -21,6 +21,7 @@ import { GroupLabel, NEUTRAL_GROUP_COLOR, ViewMore, usePaged } from '../componen
 import { useDragSensors } from '../components/dnd';
 import { useBoard, useBoardContext } from '../board/context';
 import { Icon } from '../react/Icon';
+import { showMenu } from '../ui/menu';
 
 /** Id part for the Uncategorized bucket (its group key is null). */
 const NONE = '\u0000uncategorized';
@@ -469,7 +470,7 @@ const KanbanCard = memo(function KanbanCard({ item, view, properties, getTargets
     }
     menu.addItem((it) => it.setTitle(item.file ? 'Edit note' : 'Expand row').setIcon('pencil').onClick(() => actions.editItem(item)));
     if (item.file) menu.addItem((it) => it.setTitle('Open note').setIcon('file-text').onClick(() => actions.openNote(item, true)));
-    menu.showAtMouseEvent(e.nativeEvent);
+    showMenu(menu, e.nativeEvent);
   };
 
   return (

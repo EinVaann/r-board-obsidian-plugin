@@ -43,6 +43,8 @@ export class ReactModal extends Modal {
     if (this.opts.title) this.titleEl.setText(this.opts.title);
     // addClass() takes one class per argument; a space-separated string throws.
     if (this.opts.cls) this.modalEl.addClass(...this.opts.cls.split(/\s+/).filter(Boolean));
+    // Marks R Board's modals, so the theme styles them and not Obsidian's own.
+    this.modalEl.addClass('rb-modal');
     applySheet(this);
     this.unmount = mountReact(this.app, this.contentEl, this.render(this));
   }

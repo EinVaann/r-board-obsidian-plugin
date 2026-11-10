@@ -51,6 +51,7 @@ function fakeVault(files: Record<string, string>, frontmatter: Record<string, Re
     workspace: {
       onLayoutReady: (fn: () => void) => void (ready = fn),
       getLeavesOfType: () => [],
+      iterateAllLeaves: () => undefined,
       on,
       offref: () => undefined,
     },

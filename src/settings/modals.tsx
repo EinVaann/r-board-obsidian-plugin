@@ -54,6 +54,6 @@ export function openFilterModal(app: App, ctx: BoardContextValue, viewIndex: num
         onSave={(group) => updateView(viewIndex, (v) => void (v.filter = group))}
       />
     ),
-    { title: 'Filters' },
+    { title: 'Filters', cls: 'rb-filter-modal' },
   ).open();
 }

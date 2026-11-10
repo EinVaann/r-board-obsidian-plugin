@@ -12,10 +12,13 @@ import { DatabaseEmbed, parseEmbed } from './src/embed/Embed';
 import { QuickAddCommands } from './src/quickadd/QuickAdd';
 import { AutoDateWatcher } from './src/data/AutoDateWatcher';
 import { relinkTables } from './src/table/append';
+import { RBoardSettingTab, applyTheme, clearTheme, parseTheme, type ThemeSettings } from './src/theme';
 
 interface RBoardData {
   /** Active view name chosen per database, keyed by the `.board` file path. */
   activeViews?: Record<string, string>;
+  /** Plugin-wide look: theme and light / dark. */
+  appearance?: ThemeSettings;
 }
 
 export default class RBoardPlugin extends Plugin {
@@ -27,6 +30,12 @@ export default class RBoardPlugin extends Plugin {
 
   async onload(): Promise<void> {
     this.data = ((await this.loadData()) as RBoardData) ?? {};
+
+    this.applyAppearance();
+    // Obsidian switching light / dark (for "Auto"), and pop-out windows.
+    this.registerEvent(this.app.workspace.on('css-change', () => this.applyAppearance()));
+    this.registerEvent(this.app.workspace.on('window-open', (win) => applyTheme(win.doc, this.appearance)));
+    this.addSettingTab(new RBoardSettingTab(this.app, this, () => this.appearance, (s) => this.setAppearance(s)));
 
     this.app.workspace.onLayoutReady(() => {
       void this.quickAdds.scan();
@@ -123,6 +132,30 @@ export default class RBoardPlugin extends Plugin {
         );
       }),
     );
+  }
+
+  onunload(): void {
+    clearTheme(document);
+  }
+
+  // --- Appearance ------------------------------------------------------------
+
+  get appearance(): ThemeSettings {
+    return parseTheme(this.data.appearance);
+  }
+
+  private applyAppearance(): void {
+    applyTheme(document, this.appearance);
+    this.app.workspace.iterateAllLeaves((leaf) => {
+      const doc = leaf.view.containerEl.ownerDocument;
+      if (doc !== document) applyTheme(doc, this.appearance);
+    });
+  }
+
+  async setAppearance(s: ThemeSettings): Promise<void> {
+    this.data.appearance = s;
+    await this.saveData(this.data);
+    this.applyAppearance();
   }
 
   // --- Active-view persistence ----------------------------------------------

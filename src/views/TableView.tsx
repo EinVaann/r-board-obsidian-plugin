@@ -30,6 +30,7 @@ import { useBoard, useBoardContext } from '../board/context';
 import { useDragSensors } from '../components/dnd';
 import { PROPERTY_TYPE_ICON } from '../settings/PropertyEditor';
 import { Icon } from '../react/Icon';
+import { showMenu } from '../ui/menu';
 
 interface TableProps {
   view: ViewConfig;
@@ -189,7 +190,7 @@ function SummaryRow({
         if (calc === current) i.setChecked(true);
       });
     }
-    m.showAtMouseEvent(e.nativeEvent);
+    showMenu(m, e.nativeEvent);
   };
   return (
     <tr className="rb-summary-row">
@@ -574,7 +575,7 @@ function Grid({
         (i as unknown as { setWarning?: (on: boolean) => void }).setWarning?.(true);
       });
     }
-    m.showAtMouseEvent(e.nativeEvent);
+    showMenu(m, e.nativeEvent);
   };
 
   // ------------------------------------------------------------ header
@@ -742,7 +743,7 @@ function HeaderCell({
       m.addSeparator();
       m.addItem((i) => i.setTitle('Hide in this view').setIcon('eye-off').onClick(onHide));
     }
-    m.showAtMouseEvent(e.nativeEvent);
+    showMenu(m, e.nativeEvent);
   };
 
   const onResizeDown = (e: ReactPointerEvent): void => {
