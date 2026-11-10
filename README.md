@@ -29,6 +29,14 @@ A database is a single `.board` file (JSON). Opening it shows the board pane wit
 - The board toolbar's right side has **Sort**, **Filter**, **View settings** (gear), and **Board settings** buttons. Board settings edit the name/tag/properties; view settings edit everything about the active view.
 - You don't have to hand-edit JSON — everything is editable through these dialogs (the `.board` file is just where it's saved).
 
+## Appearance
+
+**Settings → R Board → Appearance**:
+- **Theme** — *Industrial* (default): soft gray surfaces, glass buttons, yellow only for the selected or running item, its own type and controls; it doesn't inherit your vault's theme, font or accent. *Classic*: follows your Obsidian theme and accent color.
+- **Light or dark** — *Auto* follows Obsidian; *Light* or *Dark* applies to R Board only.
+
+The theme covers boards, tables, embeds and R Board's own dialogs and menus; Obsidian's UI is left alone.
+
 ## Schema
 
 ```json
@@ -133,16 +141,16 @@ A guide, not a timetable: it forecasts when you'll get to each item of a backlog
 
 **Setup** (View settings → Schedule; most of it is guessed from property names):
 - **Session log** — a `.table` with one row per session: a link to the note, hours and a date (and optionally a type: `lane`, `live`, `detour` or `trial`). Only logged hours move the forecast.
-- **Properties** — estimated hours, score (higher goes first), *vary by* (e.g. genre) with optional **similar groups** (`JRPG, Visual novel`), status, a *live* checkbox, start and end dates.
-- **Statuses** — which values mean waiting, playing, finished, dropped and on hold.
+- **Properties** — estimated hours, score (higher goes first), *vary by* (e.g. genre) with optional **similar groups** (`JRPG, Visual novel`), start and end dates.
+- **Sections** — seven fixed sections (Live, Also playing, Lanes, Queue, On hold, Completed, Dropped), checked top to bottom: the first whose conditions all hold wins. Conditions are on select or checkbox properties (e.g. *Status is Playing* and *Live service is checked*); reorder with the arrows; a section with no conditions is off. Moving a game writes its target's conditions.
 - **Pace** — lanes, what counts as long (40 h), week start, starting guesses. Your log replaces the weekly guess a quarter per full week. *Unlogged live hours* (e.g. gacha dailies) always count.
 - **Penalties** — subtracted from the score when picking what's next: shares a value with the running item in the other lane (3), with the item just before in this lane (2), a second long item at once (4); similar-group matches count half. Nothing is ever blocked.
 
 **Using it:**
-- **This week** — logged vs. expected hours, and how the rest could split. **Log time** adds a row to the log table.
-- **Live** — playing items with the live checkbox, beside the lanes, with their weekly hours (they come off the lane pace).
-- **Lanes** — what runs now (Log time, Finish; right-click for Drop and Put on hold), then what's queued, each with start and done ranges. Finishing or dropping asks **what's next**: the suggestion, two alternatives with their reasons, 🎲 Random, or any item.
-- **Steer** — drag a queued item to reorder it or move it to another lane, or right-click it: Start now, Move up / down / to lane, Pin, *Not before…* (a release date), Insert before, Log a trial. Hand-placed items show a 📌; **Re-plan** (per lane, or all lanes) goes back to the automatic order. More playing items than lanes show as *Also playing*.
+- **This week** — logged vs. expected hours, a bar per day, and how the rest could split. **Log time** adds a row to the log table: pick a running game (or *Other…*), hours (1 h / 2 h or any amount), date and type.
+- **Live & side** — cards for live-service and casual games, beside the lanes, with their weekly hours (they come off the lane pace).
+- **Lanes** — what runs now (with the hours left), then what's queued, each with start and done ranges. Finishing or dropping asks **what's next**: the suggestion, two alternatives with their reasons, 🎲 Random, or any item.
+- **Steer** — drag a queued item to reorder it or move it to another lane, or right-click → **Move…**: pick a section, a lane and a place in the queue, and optionally *not before* a date. Double-click a queued item to pin it where it is (📌); **Re-plan** (per lane, or all lanes) goes back to the automatic order.
 
 Pair it with [auto-dates](#data-source) (Board settings → Dates) so start and end dates fill themselves as statuses change.
 
@@ -219,13 +227,15 @@ npm run build    # production build
 npm test         # unit tests + UI smoke tests (vitest)
 ```
 
-The UI is React 19. `src/BoardView.tsx` is the Obsidian side (file, vault events) and mounts `src/board/BoardApp.tsx`; each open board has its own Zustand store (`src/board/store.ts`), and config edits are Immer recipes so unchanged views and cards keep their identity and skip re-rendering. Libraries: dnd-kit (all drag and drop, touch included), TanStack Virtual (gallery and table only render what's on screen), Radix UI primitives (settings tabs, switches, segmented controls, collapsibles), styled with Obsidian's CSS variables.
+The UI is React 19. `src/BoardView.tsx` is the Obsidian side (file, vault events) and mounts `src/board/BoardApp.tsx`; each open board has its own Zustand store (`src/board/store.ts`), and config edits are Immer recipes so unchanged views and cards keep their identity and skip re-rendering. Libraries: dnd-kit (all drag and drop, touch included), TanStack Virtual (gallery and table only render what's on screen), Radix UI primitives (settings tabs, switches, segmented controls, collapsibles), styled through the design tokens below.
 
-`node dev/build-harness.mjs` bundles the real UI with a fake `obsidian` into `dev/out/` for a browser (`?kind=board` for a notes board, `?embed` for embeds, `?mobile` for phone layout).
+`node dev/build-harness.mjs` bundles the real UI with a fake `obsidian` into `dev/out/` for a browser (`?kind=board` for a notes board, `?embed` for embeds, `?mobile` for phone layout, `?showcase` for every view type on one board; `&mode=dark` / `&theme=classic` pick the appearance).
 
 `npm run dev` bundles React's development build (slower, with extra checks); judge performance with `npm run build`.
 
-CSS lives as numbered partials under `styles/` and is concatenated into `styles.css` by `build-css.mjs`. The recipe token parser/resolver (`src/recipe/token.ts`) is pure and covered by tests; `src/test/board.smoke.test.tsx` renders every view and settings tab against a mock vault (`src/test/obsidian-mock.ts`) under happy-dom.
+CSS lives as numbered partials under `styles/` and is concatenated into `styles.css` by `build-css.mjs`: design tokens (`styles/00-tokens.css`), then UI primitive shapes (`styles/ui/`), then screen layout, then theme modules (`styles/themes/<name>/`).
+
+Controls come from the UI kit in `src/ui/` (Button, Input, Select, MultiSelect, Segmented, Switch, Pill, Card, Field, SettingRow, Tabs, SortableList), with shared types in `src/ui/types.ts`. Every part renders `data-slot` / `data-variant` / `data-size`, and themes style only those attributes, so a theme is a folder of token values and slot rules — no component changes. See `styles/themes/README.md`. The recipe token parser/resolver (`src/recipe/token.ts`) is pure and covered by tests; `src/test/board.smoke.test.tsx` renders every view and settings tab against a mock vault (`src/test/obsidian-mock.ts`) under happy-dom.
 
 ## Out of scope (for now)
 
