@@ -1,4 +1,5 @@
 /** Browser stand-in for `obsidian`, used only by the dev harness. */
+import LUCIDE from 'lucide-static/icon-nodes.json';
 
 const proto = HTMLElement.prototype as unknown as Record<string, unknown>;
 proto.setText = function (this: HTMLElement, t: string) {
@@ -9,6 +10,9 @@ proto.addClass = function (this: HTMLElement, ...c: string[]) {
 };
 proto.removeClass = function (this: HTMLElement, ...c: string[]) {
   this.classList.remove(...c);
+};
+proto.hasClass = function (this: HTMLElement, c: string) {
+  return this.classList.contains(c);
 };
 proto.toggleClass = function (this: HTMLElement, c: string, v: boolean) {
   this.classList.toggle(c, v);
@@ -52,8 +56,32 @@ const ICONS: Record<string, string> = {
   'calendar-range': '▦', 'calendar-clock': '⏲', 'arrow-right-left': '⇄', radio: '◎', flag: '⚑', info: 'ⓘ', 'refresh-cw': '↻', 'gamepad-2': '🎮', 'columns-2': '▥', 'list-ordered': '№', gauge: '◔', shuffle: '⤨', 'rotate-ccw': '↺', 'arrow-right': '→',
 };
 
+// Obsidian still accepts Lucide's older names; map them to the current ones.
+const RENAMED: Record<string, string> = {
+  'bar-chart-3': 'chart-column', 'check-square': 'square-check', 'alert-triangle': 'triangle-exclamation-point',
+  'check-circle': 'circle-check', 'x-circle': 'circle-x', 'pause-circle': 'circle-pause', 'more-horizontal': 'ellipsis',
+  'grip-vertical': 'grip-vertical', 'layout-grid': 'layout-grid',
+};
+type IconNode = [string, Record<string, string>][];
+
+/** Draws the real Lucide SVG, like Obsidian; falls back to the text glyphs above. */
 export function setIcon(el: HTMLElement, name: string): void {
-  el.textContent = ICONS[name] ?? '•';
+  const node = (LUCIDE as Record<string, IconNode>)[RENAMED[name] ?? name];
+  if (!node) {
+    el.textContent = ICONS[name] ?? '•';
+    return;
+  }
+  const NS = 'http://www.w3.org/2000/svg';
+  const svg = document.createElementNS(NS, 'svg');
+  for (const [k, v] of Object.entries({ xmlns: NS, width: '24', height: '24', viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor', 'stroke-width': '2', 'stroke-linecap': 'round', 'stroke-linejoin': 'round' }))
+    svg.setAttribute(k, v);
+  svg.setAttribute('class', `svg-icon lucide-${name}`);
+  for (const [tag, attrs] of node) {
+    const child = document.createElementNS(NS, tag);
+    for (const [k, v] of Object.entries(attrs)) child.setAttribute(k, v);
+    svg.appendChild(child);
+  }
+  el.replaceChildren(svg);
 }
 
 export function debounce<T extends (...a: never[]) => unknown>(fn: T, ms: number): T {
@@ -75,6 +103,8 @@ interface Entry {
 
 export class Menu {
   private items: Entry[] = [];
+  /** Like Obsidian's Menu.dom: the menu element once shown. */
+  dom?: HTMLElement;
   addItem(cb: (item: Record<string, (...a: unknown[]) => unknown>) => void): this {
     const entry: Entry = { title: '' };
     const item: Record<string, (...a: unknown[]) => unknown> = {};
@@ -100,6 +130,7 @@ export class Menu {
   showAtPosition(p: { x: number; y: number }): void {
     document.querySelectorAll('.dev-menu').forEach((m) => m.remove());
     const el = document.createElement('div');
+    this.dom = el;
     el.className = 'dev-menu menu';
     el.style.cssText = `position:fixed;left:${p.x}px;top:${p.y}px;z-index:100;background:#fff;border:1px solid #ccc;border-radius:6px;padding:4px;box-shadow:0 4px 16px rgba(0,0,0,.15);font:13px system-ui;max-height:80vh;overflow:auto`;
     for (const it of this.items) {
@@ -145,8 +176,11 @@ export class Modal {
   private bg = this.containerEl;
   constructor(app: unknown) {
     this.app = app;
-    this.bg.className = 'dev-modal-bg';
+    this.bg.className = 'dev-modal-bg modal-container';
     this.modalEl.className = 'modal dev-modal';
+    // Same class names as Obsidian's modal, so plugin CSS hits the same elements.
+    this.titleEl.className = 'modal-title';
+    this.contentEl.className = 'modal-content';
     this.modalEl.append(this.titleEl, this.contentEl);
   }
   open(): void {
@@ -219,5 +253,7 @@ export class TextFileView {}
 export class WorkspaceLeaf {}
 export class WorkspaceSplit {}
 export class Plugin {}
+export class PluginSettingTab {}
+export class Setting {}
 export const normalizePath = (p: string) => p;
 export const getAllTags = (cache: { frontmatter?: { tags?: string[] } }) => (cache?.frontmatter?.tags ?? []).map((t) => `#${t}`);

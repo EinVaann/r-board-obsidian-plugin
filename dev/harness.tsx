@@ -14,6 +14,7 @@ import { openRecordEditor } from '../src/table/RecordEditor';
 import { DatabaseEmbed, parseEmbed } from '../src/embed/Embed';
 import SCHEDULE_FIXTURE from '../src/schedule/fixture.json';
 import { AutoDateWatcher } from '../src/data/AutoDateWatcher';
+import { applyTheme, parseTheme } from '../src/theme';
 
 const BOARD_PATH = 'Backlog.board';
 
@@ -52,8 +53,12 @@ if (window.__fixture?.notes) {
 }
 window.__notes = NOTES;
 
-/** ?schedule: the real backlog snapshot as notes, plus a session log table. */
-const SCHEDULE = new URLSearchParams(location.search).has('schedule');
+/**
+ * ?schedule: the real backlog snapshot as notes, plus a session log table.
+ * ?showcase: the same notes with every view type on one board (&mode=light|dark).
+ */
+const SHOWCASE = new URLSearchParams(location.search).has('showcase');
+const SCHEDULE = SHOWCASE || new URLSearchParams(location.search).has('schedule');
 const LOG_PATH = 'Backlog timelog.table';
 const FILES: Record<string, string> = {};
 if (SCHEDULE) {
@@ -63,6 +68,25 @@ if (SCHEDULE) {
   }
   NOTES['Backlog Items/Hades.md'] = { tags: ['backlog'], status: 'completed', score: 9, genre: ['Roguelike'], 'play-hours': 22 };
   NOTES['Backlog Items/Is this Seat Taken.md'].casual = true;
+  if (SHOWCASE) {
+    // Every status shows up somewhere, plus owned / released for the other views.
+    const extra: [string, string, number, string[], number, string][] = [
+      ['Celeste', 'completed', 9.5, ['Platformer'], 12, '2018-01-25'],
+      ['Outer Wilds', 'completed', 10, ['Metroidbrainia'], 17, '2019-05-28'],
+      ['Stardew Valley', 'on-hold', 7, ['Life sim', 'Cozy'], 53, '2016-02-26'],
+      ['Disco Elysium', 'dropped', 8, ['Interactive drama'], 25, '2019-10-15'],
+      ['Hollow Knight', 'to-play', 9.5, ['Metroidvania'], 30, '2017-02-24'],
+    ];
+    for (const [t, status, score, genre, h, released] of extra) {
+      NOTES[`Backlog Items/${t}.md`] = { tags: ['backlog'], status, score, genre, 'play-hours': h, released, owned: score >= 9 };
+    }
+    let i = 0;
+    for (const n of Object.values(NOTES)) {
+      n.owned ??= i % 3 !== 0;
+      n.released ??= `20${String(14 + (i % 11)).padStart(2, '0')}-0${(i % 9) + 1}-1${i % 9}`;
+      i++;
+    }
+  }
   const row = (id: string, game: string, h: number, d: string) => ({ id, cells: { notes: [`[[Backlog Items/${game}|${game}]]`], hours: h, date: d } });
   FILES[LOG_PATH] = JSON.stringify({
     version: 1,
@@ -73,6 +97,7 @@ if (SCHEDULE) {
       { name: 'notes', type: 'links', label: 'Game' },
       { name: 'hours', type: 'number', label: 'Timeplay' },
       { name: 'date', type: 'date', label: 'Timestamp' },
+      { name: 'type', type: 'select', label: 'Type', options: ['lane', 'live', 'detour', 'trial'].map((value) => ({ value })) },
     ],
     views: [{ name: 'Table', type: 'table' }],
     rows: [
@@ -125,6 +150,57 @@ const SCHEDULE_BOARD = {
   views: [
     { name: 'Schedule', type: 'schedule', schedule: { log: LOG_PATH, similar: [['JRPG', 'Visual novel']] } },
     { name: 'Board', type: 'kanban', group: 'status', cardSize: 'small' },
+  ],
+};
+
+/** ?showcase: one board with every view type over the real backlog. */
+const STATUS_OPTIONS = [
+  { value: 'to-play', label: 'To Play', color: '#7066ff' },
+  { value: 'planned', label: 'Planned', color: '#4d7bd6' },
+  { value: 'playing', label: 'Playing', color: '#22aa44' },
+  { value: 'completed', label: 'Completed', color: '#d4a400' },
+  { value: 'on-hold', label: 'On Hold', color: '#c26a2a' },
+  { value: 'dropped', label: 'Dropped', color: '#c0263f' },
+];
+const SHOWCASE_BOARD = {
+  name: 'Backlog',
+  sourceTag: 'backlog',
+  newNoteFolder: 'Backlog Items',
+  properties: [
+    { name: 'status', label: 'Status', type: 'select', options: STATUS_OPTIONS },
+    { name: 'score', label: 'Score', type: 'number', render: 'stars', max: 10 },
+    { name: 'genre', label: 'Genre', type: 'multi', render: 'pills' },
+    { name: 'play-hours', label: 'Hours', type: 'number', suffix: ' h' },
+    { name: 'released', label: 'Released', type: 'date', render: 'relative' },
+    { name: 'age', label: 'Age', type: 'formula', formula: 'dateDiff(today(), {Released}, "years")', suffix: ' yrs' },
+    { name: 'owned', label: 'Owned', type: 'checkbox' },
+    { name: 'live-service', label: 'Live service', type: 'checkbox' },
+    { name: 'casual', label: 'Casual', type: 'checkbox' },
+    { name: 'start-date', label: 'Started', type: 'date' },
+    { name: 'end-date', label: 'Ended', type: 'date' },
+  ],
+  views: [
+    { name: 'Schedule', type: 'schedule', schedule: { log: LOG_PATH, logType: 'type', similar: [['JRPG', 'Visual novel']] } },
+    {
+      name: 'Board',
+      type: 'kanban',
+      group: 'status',
+      sort: { property: 'score', dir: 'desc' },
+      cardSize: 'small',
+      properties: ['score', 'genre', 'play-hours'],
+      columns: ['playing', 'planned', 'to-play', 'on-hold'],
+      groupConfig: { 'to-play': { label: 'Up next' }, 'on-hold': { hidden: true } },
+    },
+    { name: 'Lanes', type: 'kanban', group: 'status', subGroup: 'owned', cardSize: 'small', properties: ['score'] },
+    { name: 'Table', type: 'table', limit: 'none', sort: { property: 'score', dir: 'desc' }, summary: true, calculations: { score: 'avg', 'play-hours': 'sum', owned: 'checked' } },
+    { name: 'Gallery', type: 'gallery', limit: 'none', group: 'status', properties: ['score', 'genre'] },
+    { name: 'Hours by status', type: 'chart', limit: 'none', chart: { type: 'bar', x: 'status', values: ['play-hours'], aggregate: 'sum', splitBy: 'owned', stacked: true, sort: 'value-desc', showLegend: true, showLabels: true } },
+    { name: 'Games by status', type: 'chart', limit: 'none', chart: { type: 'donut', x: 'status', values: [], aggregate: 'count', sort: 'value-desc', showLegend: true, showLabels: true } },
+  ],
+  defaultView: 'Schedule',
+  autoDates: [
+    { property: 'status', values: ['playing'], date: 'start-date' },
+    { property: 'status', values: ['completed', 'dropped'], date: 'end-date' },
   ],
 };
 
@@ -222,6 +298,8 @@ async function main(): Promise<void> {
   if (params.has('embed')) return embedMain();
   const kind = params.get('kind') === 'board' || SCHEDULE ? 'board' : 'table';
   if (params.has('mobile')) document.body.classList.add('is-mobile', 'is-phone');
+  // Plugin appearance, as the setting would set it: ?theme=classic, ?mode=dark (default industrial / light).
+  applyTheme(document, parseTheme({ theme: params.get('theme') ?? 'industrial', mode: params.get('mode') ?? 'light' }));
 
   let store!: BoardStore;
   const app = fakeApp(() => store.getState().bumpVault());
@@ -243,7 +321,7 @@ async function main(): Promise<void> {
 
   const fixture = window.__fixture;
   if (kind === 'board') {
-    const r = parseDatabaseConfig(JSON.stringify(fixture?.board ?? (SCHEDULE ? SCHEDULE_BOARD : BACKLOG)));
+    const r = parseDatabaseConfig(JSON.stringify(fixture?.board ?? (SHOWCASE ? SHOWCASE_BOARD : SCHEDULE ? SCHEDULE_BOARD : BACKLOG)));
     if (!r.ok) throw new Error(r.error);
     store.getState().loadConfig(r.config, null);
     // The real auto-date watcher, fed by the fake metadata cache (as main.tsx wires it).

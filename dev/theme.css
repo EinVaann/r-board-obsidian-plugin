@@ -27,6 +27,13 @@
   --shadow-s: 0 2px 8px rgba(0, 0, 0, 0.12);
   --layer-menu: 60;
 }
+/* The page behind the plugin, when the harness runs in dark mode (like Obsidian's dark theme). */
+body.rb-mode-dark {
+  --background-primary: #1e1e1e;
+  --text-normal: #dadada;
+  color-scheme: dark;
+}
+body.rb-mode-dark .dev-menu.menu:not(.rb-menu) { background: #262626 !important; border-color: #3a3a3a !important; color: #dadada; }
 html,
 body {
   margin: 0;
