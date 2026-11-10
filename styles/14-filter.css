@@ -32,25 +32,17 @@ body:not(.is-phone) .modal:has(.rb-filter-builder) { width: min(720px, 92vw); }
 /* Inline selects (custom caret, no native glyph clipping). Obsidian gives
    selects/inputs a fixed height, so set our own and pad only horizontally —
    vertical padding on top of that height pushes the text down and clips it. */
+/* Size, corners, font and caret come from 00-tokens.css (compact, like other list rows). */
 .rb-filter-select,
 .rb-filter-value {
-  height: 34px;
-  padding: 0 10px;
-  border-radius: 7px;
   border: 1px solid var(--background-modifier-border);
-  background-color: var(--background-primary);
+  background-color: var(--background-modifier-form-field);
   color: var(--text-normal);
-  font-size: 13px;
-  line-height: normal;
 }
 .rb-filter-select {
   appearance: none;
   -webkit-appearance: none;
-  padding-right: 28px;
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23999' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
   background-repeat: no-repeat;
-  background-position: right 9px center;
-  background-size: 12px;
   cursor: pointer;
 }
 .rb-filter-conj { flex: 0 0 auto; }
@@ -114,10 +106,14 @@ body:not(.is-phone) .modal:has(.rb-filter-builder) { width: min(720px, 92vw); }
 
 /* Footer "Delete filter". */
 .rb-filter-footer {
+  display: flex;
+  align-items: center;
+  gap: 10px;
   margin-top: 14px;
   padding-top: 12px;
   border-top: 1px solid var(--background-modifier-border);
 }
+.rb-filter-summary { flex: 1; min-width: 0; font-size: var(--font-ui-smaller); color: var(--text-faint); text-align: right; }
 .rb-wizard .rb-filter-delete {
   display: inline-flex;
   align-items: center;

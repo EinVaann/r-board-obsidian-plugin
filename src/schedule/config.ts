@@ -1,6 +1,6 @@
 import type { DatabaseConfig, PropertyConfig, ScheduleConfig } from '../types';
 import { DEFAULT_PENALTIES, DEFAULT_SETTINGS, type Penalties, type Pin, type ScheduleSettings } from './types';
-import { defaultSections, parseSections } from './sections';
+import { defaultSections, fixedSections, parseSections } from './sections';
 
 /** Schedule settings with every field filled in; properties and sections are chosen later. */
 export function defaultScheduleConfig(): ScheduleConfig {
@@ -97,7 +97,7 @@ export function guessSchedule(config: DatabaseConfig, c: ScheduleConfig): Schedu
     return (typed.find((p) => names.test(p.name) || names.test(p.label ?? '')) ?? undefined)?.name;
   };
   const out = { ...c };
-  out.sections ??= defaultSections(config, c);
+  out.sections = fixedSections(out.sections ?? defaultSections(config, c));
   out.duration ??= pick(['number', 'formula'], /hour|duration|length|hltb|time/i);
   out.score ??= pick(['number', 'formula'], /score|rating|priority/i);
   out.vary ??= pick(['multi', 'select'], /genre|category|type|tag/i);

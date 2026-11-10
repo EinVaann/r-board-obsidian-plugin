@@ -5,7 +5,7 @@ import { titleLabel } from '../config';
 import { useBoardContext } from '../board/context';
 import { useViewItems } from '../board/useItems';
 import { EXPORT_EXTENSION, exportItems, type ExportFormat } from '../data/export';
-import { Segmented, SettingRow } from './controls';
+import { Segmented, SettingRow, SettingsCard } from './controls';
 
 const PREVIEW_LINES = 40;
 
@@ -45,8 +45,8 @@ export function ExportSettings({ config, view }: { config: DatabaseConfig; view:
   };
 
   return (
-    <>
-      <SettingRow name="Format" desc={`${items.length} item${items.length === 1 ? '' : 's'} and ${properties.length + 1} columns, as the view shows them now (filter, search and sort).`}>
+    <SettingsCard icon="download" title="Export" desc={`${items.length} item${items.length === 1 ? '' : 's'} and ${properties.length + 1} columns, as the view shows them now (filter, search and sort).`}>
+      <SettingRow name="Format">
         <Segmented<ExportFormat>
           value={format}
           options={[
@@ -57,13 +57,13 @@ export function ExportSettings({ config, view }: { config: DatabaseConfig; view:
           onChange={setFormat}
         />
       </SettingRow>
-      <SettingRow name="Export" desc={`Copy to the clipboard, or save a .${EXPORT_EXTENSION[format]} file next to ${boardFile.name}.`}>
-        <button onClick={() => void copy()}>Copy to clipboard</button>
+      <SettingRow name="Save" desc={`Copy to the clipboard, or save a .${EXPORT_EXTENSION[format]} file next to ${boardFile.name}.`}>
+        <button onClick={() => void copy()}>Copy</button>
         <button className="mod-cta" onClick={() => void save()}>
           Save file
         </button>
       </SettingRow>
       <pre className="rb-export-preview">{preview}</pre>
-    </>
+    </SettingsCard>
   );
 }

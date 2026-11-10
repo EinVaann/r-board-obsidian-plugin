@@ -1,7 +1,7 @@
 import { useBoard } from '../board/context';
 import { propertyLabel } from '../config';
 import { PropertyEditor } from './PropertyEditor';
-import { Select, SettingRow, SettingsTabs, TextInput } from './controls';
+import { Select, SettingRow, SettingsCard, SettingsTabs, TextInput } from './controls';
 import { QuickAddSettings } from './QuickAddSettings';
 import { AutoDateSettings } from './AutoDateSettings';
 
@@ -14,7 +14,7 @@ export function BoardSettings() {
   const table = config.kind === 'table';
 
   const general = (
-    <>
+    <SettingsCard icon="settings" title="Board" desc={table ? 'Name and title column.' : 'Which notes this board shows, and where new ones go.'}>
       <SettingRow name="Name">
         <TextInput value={config.name ?? ''} onChange={(v) => updateConfig((c) => void (c.name = v.trim() || undefined))} />
       </SettingRow>
@@ -48,7 +48,7 @@ export function BoardSettings() {
           </SettingRow>
         </>
       )}
-    </>
+    </SettingsCard>
   );
 
   const properties = (

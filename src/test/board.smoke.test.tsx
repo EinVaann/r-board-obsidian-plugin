@@ -468,10 +468,10 @@ describe('settings', () => {
     await act(async () => el.querySelector<HTMLButtonElement>('.rb-vis-toggle')!.click());
     expect(store.getState().config!.views[2].properties).not.toContain('cover');
 
-    // Columns tab: pinned columns with label inputs and switches.
+    // Columns tab: pinned columns with label inputs and a hide button each.
     await act(async () => mousedown(el.querySelectorAll('.rb-settings-tab')[2]));
     expect(count(el, '.rb-col-config-row')).toBe(2);
-    expect(count(el, '.rb-switch')).toBe(2);
+    expect(count(el, 'button[aria-label="Hide column"]')).toBe(2);
 
     // Export tab: a preview of the view's items.
     await act(async () => mousedown(el.querySelectorAll('.rb-settings-tab')[3]));
@@ -518,7 +518,9 @@ describe('settings', () => {
     await act(async () => addButton.click());
     expect(store.getState().config!.autoDates).toEqual([{ property: 'status', values: [], date: 'start-date' }]);
 
-    await act(async () => [...el.querySelectorAll<HTMLButtonElement>('.rb-auto-date-value')].find((b) => b.textContent === 'playing')!.click());
+    // Values are picked in the dropdown's checklist.
+    await act(async () => el.querySelector<HTMLButtonElement>('[data-slot="multi-select-trigger"]')!.click());
+    await act(async () => [...el.querySelectorAll<HTMLButtonElement>('[data-slot="multi-select-item"]')].find((b) => b.textContent === 'playing')!.click());
     expect(store.getState().config!.autoDates![0].values).toEqual(['playing']);
 
     await act(async () => el.querySelector<HTMLButtonElement>('[aria-label="Remove rule"]')!.click());

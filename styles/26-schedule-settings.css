@@ -1,123 +1,57 @@
 /* ===================== View settings → Schedule ===================== */
-.rb-sched-settings { display: flex; flex-direction: column; gap: 14px; padding: 4px 0 12px; }
+/* Layout only: the cards, fields, buttons, pills and value boxes are UI primitives (styles/ui/). */
+.rb-sched-settings { display: flex; flex-direction: column; gap: 14px; padding: 4px 0 12px; container-type: inline-size; }
+.rb-sched-card > [data-slot='card-content'] { display: flex; flex-direction: column; gap: 12px; margin-top: 12px; }
 
-.rb-sched-card {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-  padding: 14px 16px 16px;
-  border: 1px solid var(--background-modifier-border);
-  border-radius: var(--radius-m);
-  background: var(--background-primary);
-}
-.rb-sched-card > header { display: flex; align-items: flex-start; gap: 10px; }
-.rb-sched-card > header > .rb-icon { flex: none; margin-top: 2px; color: var(--text-accent); }
-.rb-sched-card > header h4 { margin: 0; font-size: var(--font-ui-medium); font-weight: var(--font-semibold); }
-.rb-sched-card > header p { margin: 2px 0 0; color: var(--text-muted); font-size: var(--font-ui-smaller); line-height: 1.4; }
-
-/* Label above control, in a responsive grid. */
+/* Fields in a responsive grid. */
 .rb-sched-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); gap: 12px 16px; }
-.rb-sched-field { display: flex; flex-direction: column; gap: 5px; min-width: 0; }
-.rb-sched-field-label { display: flex; align-items: baseline; flex-wrap: wrap; gap: 0 6px; font-size: var(--font-ui-small); font-weight: var(--font-medium); color: var(--text-normal); }
-.rb-sched-field-hint { font-weight: normal; font-size: var(--font-ui-smaller); color: var(--text-faint); }
-.rb-sched-field-control { display: flex; align-items: center; min-width: 0; }
-.rb-sched-field-control select { width: 100%; max-width: 100%; }
-.rb-sched-card > .rb-sched-field { max-width: 380px; }
+.rb-sched-grid.is-four { grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); }
+.rb-sched-card [data-slot='card-content'] > [data-slot='field'] { max-width: 380px; }
+.is-phone .rb-sched-grid { grid-template-columns: 1fr 1fr; gap: 10px 12px; }
 
-.rb-sched-number { display: inline-flex; align-items: center; width: 100%; }
-.rb-sched-number input { flex: 1; min-width: 0; width: 100%; text-align: right; font-variant-numeric: tabular-nums; }
-.rb-sched-unit { flex: none; margin-left: 6px; color: var(--text-muted); font-size: var(--font-ui-smaller); }
-
-/* Sections: an ordered list, each with name, kind and conditions. */
-.rb-sched-sections { display: flex; flex-direction: column; border: 1px solid var(--background-modifier-border); border-radius: var(--radius-s); overflow: hidden; }
-.rb-sched-section { display: flex; flex-direction: column; gap: 6px; padding: 8px 10px; }
-.rb-sched-section + .rb-sched-section { border-top: 1px solid var(--background-modifier-border); }
-.rb-sched-section-head { display: flex; align-items: center; gap: 6px; }
-.rb-sched-section-head input[type='text'] { flex: 1; min-width: 0; font-weight: var(--font-medium); }
-.rb-sched-section-head .clickable-icon { padding: 4px; color: var(--text-faint); }
-.rb-sched-section-head .clickable-icon:hover { color: var(--text-normal); }
-.rb-sched-section-head .clickable-icon:disabled { opacity: 0.3; pointer-events: none; }
-.rb-sched-section-head svg { width: 15px; height: 15px; }
+/* Sections: the seven, top to bottom, a hairline between them. */
+.rb-sched-sections { display: flex; flex-direction: column; border: 1px solid var(--rb-surface-border); border-radius: var(--rb-surface-radius); }
+.rb-sched-section { display: grid; grid-template-columns: 22px 1fr; gap: 6px 10px; padding: 10px 12px; }
+.rb-sched-section + .rb-sched-section { border-top: 1px solid var(--rb-divider); }
+.rb-sched-section-head { grid-column: 1 / -1; display: grid; grid-template-columns: 22px auto 1fr auto auto; align-items: center; gap: 4px 10px; }
 .rb-sched-section-n {
-  flex: none;
   display: inline-flex;
   align-items: center;
   justify-content: center;
   width: 20px;
   height: 20px;
   border-radius: 999px;
-  background: var(--background-modifier-hover);
+  background: var(--rb-icon-chip-bg);
   color: var(--text-muted);
-  font-size: var(--font-ui-smaller);
+  font-size: var(--rb-font-hint);
   font-variant-numeric: tabular-nums;
 }
-.rb-sched-conditions { display: flex; flex-direction: column; gap: 4px; padding-left: 26px; }
-.rb-sched-condition { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
-.rb-sched-condition .clickable-icon { padding: 2px; color: var(--text-faint); }
-.rb-sched-condition .clickable-icon:hover { color: var(--text-error); }
-.rb-sched-condition svg { width: 13px; height: 13px; }
-.rb-sched-condition-join { min-width: 34px; color: var(--text-faint); font-size: var(--font-ui-smaller); }
-.rb-sched-values { display: inline-flex; flex-wrap: wrap; align-items: center; gap: 4px; }
-.rb-sched-values .rb-sched-condition-join { min-width: 0; margin-right: 2px; }
-.rb-sched-values .rb-sched-status-pill { height: auto; cursor: pointer; opacity: 0.5; box-shadow: inset 0 0 0 1px var(--background-modifier-border); background: transparent; }
-.rb-sched-values .rb-sched-status-pill.is-on {
-  opacity: 1;
-  background: color-mix(in srgb, var(--pill) 22%, transparent);
-  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--pill) 45%, transparent);
-}
-.rb-sched-add-condition,
-.rb-sched-section-tools button:not(.rb-sched-reset) { align-self: flex-start; display: inline-flex; align-items: center; gap: 4px; font-size: var(--font-ui-smaller); }
-.rb-sched-add-condition { background: transparent; box-shadow: none; color: var(--text-muted); padding: 2px 6px; height: auto; }
-.rb-sched-add-condition:hover { color: var(--text-normal); background: var(--background-modifier-hover); }
-.rb-sched-add-condition svg,
-.rb-sched-section-tools svg { width: 13px; height: 13px; }
+.rb-sched-section-name { font-weight: var(--rb-weight-title); }
+.rb-sched-section-off { justify-self: start; padding: 1px 8px; border-radius: 999px; background: var(--rb-icon-chip-bg); color: var(--text-faint); font-size: 11px; }
+.rb-sched-section:not(.is-off) .rb-sched-section-head > [data-slot='icon-button']:first-of-type { grid-column: 4; }
+.rb-sched-section.is-off .rb-sched-section-name { color: var(--text-muted); }
+.rb-sched-section > .rb-sched-field-hint { grid-column: 2; margin-top: -2px; color: var(--text-faint); font-size: var(--rb-font-hint); }
+
+/* Conditions: "When <property> is <value>", one per line. */
+.rb-sched-conditions { grid-column: 2; display: flex; flex-direction: column; gap: 5px; }
+.rb-sched-condition { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 6px; font-size: var(--rb-font-hint); }
+.rb-sched-condition-join { min-width: 36px; color: var(--text-faint); font-size: var(--rb-font-hint); }
+.rb-sched-values { display: inline-flex; flex-wrap: wrap; align-items: center; gap: 4px 6px; }
+.rb-sched-values .rb-sched-condition-join { min-width: 0; }
+.rb-sched-add-condition { align-self: flex-start; }
 .rb-sched-section-tools { display: flex; flex-wrap: wrap; gap: 8px; }
+.rb-sched-reset { align-self: flex-start; }
 
-.rb-sched-status-pill {
-  justify-self: start;
-  max-width: 100%;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  padding: 2px 10px;
-  border-radius: 999px;
-  font-size: var(--font-ui-small);
-  background: color-mix(in srgb, var(--pill) 22%, transparent);
-  color: var(--text-normal);
-  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--pill) 45%, transparent);
-}
-
-/* Similar groups as chips */
-.rb-sched-similar { display: flex; flex-direction: column; gap: 8px; padding-top: 4px; border-top: 1px solid var(--background-modifier-border); }
-.rb-sched-similar > .rb-sched-field-label { padding-top: 8px; }
+/* Similar groups: removable pills, then a box to add one. */
+.rb-sched-similar { display: flex; flex-direction: column; gap: 8px; padding-top: 12px; border-top: 1px solid var(--rb-divider); }
 .rb-sched-similar-list { display: flex; flex-wrap: wrap; gap: 6px; }
-.rb-sched-similar-group {
-  display: inline-flex;
-  align-items: center;
-  gap: 2px;
-  padding: 2px 4px 2px 10px;
-  border-radius: 999px;
-  background: var(--background-secondary);
-  font-size: var(--font-ui-small);
-}
-.rb-sched-similar-group .clickable-icon { padding: 2px; color: var(--text-faint); }
-.rb-sched-similar-group .clickable-icon:hover { color: var(--text-error); }
-.rb-sched-similar-group svg { width: 13px; height: 13px; }
 .rb-sched-similar-add { display: flex; gap: 8px; max-width: 420px; }
-.rb-sched-similar-add input { flex: 1; min-width: 0; }
-.rb-sched-similar-add button { display: inline-flex; align-items: center; gap: 4px; }
+.rb-sched-similar-add > [data-slot='input'] { flex: 1; min-width: 0; }
 
-.rb-sched-reset { align-self: flex-start; display: inline-flex; align-items: center; gap: 6px; font-size: var(--font-ui-smaller); color: var(--text-muted); background: transparent; box-shadow: none; }
-.rb-sched-reset:hover { color: var(--text-normal); background: var(--background-modifier-hover); }
-.rb-sched-reset svg { width: 14px; height: 14px; }
+.rb-sched-error { padding: 6px 10px; border-radius: var(--rb-control-radius-sm); background: color-mix(in srgb, var(--rb-danger-fg) 10%, transparent); color: var(--rb-danger-fg); font-size: var(--rb-control-font-sm); }
+.rb-sched-hint { color: var(--text-muted); font-size: var(--rb-control-font-sm); }
 
-.rb-sched-error { padding: 6px 10px; border-radius: var(--radius-s); background: color-mix(in srgb, var(--text-error) 10%, transparent); color: var(--text-error); font-size: var(--font-ui-small); }
-.rb-sched-hint { color: var(--text-muted); font-size: var(--font-ui-small); }
-
-/* Phones / narrow: conditions lose their indent. */
 @container (max-width: 520px) {
-  .rb-sched-conditions { padding-left: 0; }
+  .rb-sched-section > .rb-sched-field-hint,
+  .rb-sched-conditions { grid-column: 1 / -1; }
 }
-.is-phone .rb-sched-card { padding: 12px; }
-.is-phone .rb-sched-grid { grid-template-columns: 1fr 1fr; gap: 10px 12px; }
-.rb-sched-settings { container-type: inline-size; }

@@ -66,7 +66,9 @@ describe('schedule config', () => {
     } as DatabaseConfig;
     const guessed = guessSchedule(config, defaultScheduleConfig());
     expect(guessed).toMatchObject({ duration: 'play-hours', score: 'score', vary: 'genre', startDate: 'start-date', endDate: 'end-date' });
-    expect(guessed.sections!.map((s) => s.kind)).toEqual(['live', 'lanes', 'queue', 'hidden', 'finished', 'dropped']);
+    // Always all seven; Also playing has no casual checkbox to use, so it's there but off.
+    expect(guessed.sections!.map((s) => s.kind)).toEqual(['live', 'side', 'lanes', 'queue', 'hidden', 'finished', 'dropped']);
+    expect(guessed.sections![1].conditions).toEqual([]);
     expect(guessed.sections![0].conditions).toEqual([{ property: 'status', op: 'is', value: 'playing' }, { property: 'live-service', op: 'checked' }]);
     expect(guessLogColumns([{ name: 'notes', type: 'links' }, { name: 'h', type: 'number' }, { name: 'd', type: 'date' }], defaultScheduleConfig()))
       .toEqual({ logItem: 'notes', logHours: 'h', logDate: 'd', logType: undefined });

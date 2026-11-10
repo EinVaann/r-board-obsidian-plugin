@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { DatabaseConfig, ScheduleSection } from '../types';
-import { addSideSection, defaultSections, matchSection, moveWrites, sectionProblems } from './sections';
+import { addSideSection, defaultSections, fixedSections, matchSection, moveWrites, sectionProblems } from './sections';
 
 const BOARD = {
   sourceTag: 'b',
@@ -73,6 +73,31 @@ describe('move writes', () => {
   });
 });
 
+describe('fixed sections', () => {
+  it('keeps one of each kind, named after it, and adds missing kinds switched off', () => {
+    const s: ScheduleSection[] = [
+      { name: 'Now', kind: 'lanes', conditions: [{ property: 'status', op: 'is', value: 'playing' }] },
+      { name: 'Done', kind: 'finished', conditions: [{ property: 'status', op: 'is', value: 'completed' }] },
+      { name: 'Extra lanes', kind: 'lanes', conditions: [] },
+    ];
+    const out = fixedSections(s);
+    expect(out.map((x) => x.kind)).toEqual(['live', 'side', 'lanes', 'queue', 'hidden', 'finished', 'dropped']);
+    expect(out.map((x) => x.name)).toEqual(['Live', 'Also playing', 'Lanes', 'Queue', 'On hold', 'Completed', 'Dropped']);
+    expect(out[2].conditions).toEqual(s[0].conditions);
+    expect(out.filter((x) => x.conditions.length === 0).map((x) => x.kind)).toEqual(['live', 'side', 'queue', 'hidden', 'dropped']);
+  });
+
+  it('keeps a reordered list in its order', () => {
+    const order = fixedSections(SECTIONS).reverse();
+    expect(fixedSections(order).map((x) => x.kind)).toEqual(order.map((x) => x.kind));
+  });
+
+  it('a section with no conditions takes nothing', () => {
+    const s = fixedSections(SECTIONS.filter((x) => x.kind !== 'live'));
+    expect(matchSection({ status: 'playing', 'live-service': true }, s)).toBe(s.findIndex((x) => x.kind === 'lanes'));
+  });
+});
+
 describe('problems', () => {
   it('is quiet for the defaults', () => {
     expect(sectionProblems(BOARD, SECTIONS)).toEqual([]);
@@ -84,7 +109,7 @@ describe('problems', () => {
       { name: 'Lanes', kind: 'lanes', conditions: [{ property: 'status', op: 'is', value: 'playing' }] },
     ];
     const p = sectionProblems(BOARD, s);
-    expect(p.some((x) => /Queue section/.test(x))).toBe(true);
+    expect(p.some((x) => /Give Queue a condition/.test(x))).toBe(true);
     expect(p.some((x) => /blocked by "All playing"/.test(x))).toBe(true);
   });
 

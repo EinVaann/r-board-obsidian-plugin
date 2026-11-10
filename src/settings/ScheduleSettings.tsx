@@ -3,12 +3,11 @@ import type { DatabaseConfig, PropertyConfig, ScheduleConfig, ScheduleSection, S
 import { propertyLabel } from '../config';
 import { useBoardContext } from '../board/context';
 import { optionFor } from '../render/values';
-import { Icon } from '../react/Icon';
 import { defaultScheduleConfig, guessLogColumns, guessSchedule } from '../schedule/config';
 import { conditionProperties, defaultSections, kindName, sectionProblems } from '../schedule/sections';
 import { DEFAULT_PENALTIES, DEFAULT_SETTINGS } from '../schedule/types';
 import { useLinkedTable } from '../schedule/useLinkedTable';
-import { Segmented, Select, type Option } from './controls';
+import { Button, FieldHint, FieldLabel, IconButton, Input, LabeledField as Field, MultiSelect, NumberInput, Pill, Segmented, Select, SimpleCard, type Option } from '../ui';
 
 const KINDS: { value: SectionKind; hint: string }[] = [
   { value: 'lanes', hint: 'running now, in a lane' },
@@ -91,7 +90,7 @@ export function ScheduleSettings({ config, view, edit }: { config: DatabaseConfi
       <Card icon="gauge" title="Pace" desc="Starting guesses, replaced by your log: a quarter per full week, completely after 4.">
         <div className="rb-sched-grid">
           <Field label="Lanes" hint="side by side">
-            <NumberInput label="Lanes" value={sc.lanes} min={1} max={6} step={1} onChange={(lanes) => set({ lanes: Math.round(lanes) })} />
+            <NumberInput aria-label="Lanes" value={sc.lanes} min={1} max={6} step={1} onChange={(lanes) => set({ lanes: Math.round(lanes) })} />
           </Field>
           <Field label="Week starts">
             <Segmented<'mon' | 'sun'>
@@ -104,34 +103,34 @@ export function ScheduleSettings({ config, view, edit }: { config: DatabaseConfi
             />
           </Field>
           <Field label="Hours per week" hint="all play time">
-            <NumberInput label="Hours per week" value={sc.estimates.weekly} unit="h" min={0} onChange={(weekly) => set({ estimates: { ...sc.estimates, weekly } })} />
+            <NumberInput aria-label="Hours per week" value={sc.estimates.weekly} unit="h" min={0} onChange={(weekly) => set({ estimates: { ...sc.estimates, weekly } })} />
           </Field>
           <Field label="Unlogged live" hint="dailies, always counted">
-            <NumberInput label="Unlogged live hours per week" value={sc.estimates.live} unit="h/wk" min={0} onChange={(live) => set({ estimates: { ...sc.estimates, live } })} />
+            <NumberInput aria-label="Unlogged live hours per week" value={sc.estimates.live} unit="h/wk" min={0} onChange={(live) => set({ estimates: { ...sc.estimates, live } })} />
           </Field>
           <Field label="Long over" hint="one long game at a time">
-            <NumberInput label="Long over" value={sc.longOver} unit="h" min={0} onChange={(longOver) => set({ longOver })} />
+            <NumberInput aria-label="Long over" value={sc.longOver} unit="h" min={0} onChange={(longOver) => set({ longOver })} />
           </Field>
           <Field label="Average over">
-            <NumberInput label="Average over" value={sc.paceWeeks} unit="weeks" min={1} max={52} step={1} onChange={(paceWeeks) => set({ paceWeeks: Math.round(paceWeeks) })} />
+            <NumberInput aria-label="Average over" value={sc.paceWeeks} unit="weeks" min={1} max={52} step={1} onChange={(paceWeeks) => set({ paceWeeks: Math.round(paceWeeks) })} />
           </Field>
         </div>
       </Card>
 
       <Card icon="shuffle" title="Variety" desc="Taken off a game's score when picking what's next. Nothing is ever blocked.">
-        <div className="rb-sched-grid">
+        <div className="rb-sched-grid is-four">
           <Field label="Like the other lane">
-            <NumberInput label="Like the other lane" value={sc.penalties.running} unit="pts" min={0} onChange={(running) => set({ penalties: { ...sc.penalties, running } })} />
+            <NumberInput aria-label="Like the other lane" value={sc.penalties.running} unit="pts" min={0} onChange={(running) => set({ penalties: { ...sc.penalties, running } })} />
           </Field>
           <Field label="Like the one before">
-            <NumberInput label="Like the one before" value={sc.penalties.previous} unit="pts" min={0} onChange={(previous) => set({ penalties: { ...sc.penalties, previous } })} />
+            <NumberInput aria-label="Like the one before" value={sc.penalties.previous} unit="pts" min={0} onChange={(previous) => set({ penalties: { ...sc.penalties, previous } })} />
           </Field>
           <Field label="Second long game">
-            <NumberInput label="Second long game" value={sc.penalties.long} unit="pts" min={0} onChange={(long) => set({ penalties: { ...sc.penalties, long } })} />
+            <NumberInput aria-label="Second long game" value={sc.penalties.long} unit="pts" min={0} onChange={(long) => set({ penalties: { ...sc.penalties, long } })} />
           </Field>
           <Field label="Similar counts">
             <NumberInput
-              label="Similar counts"
+              aria-label="Similar counts"
               value={Math.round(sc.penalties.similarFactor * 100)}
               unit="%"
               min={0}
@@ -142,7 +141,10 @@ export function ScheduleSettings({ config, view, edit }: { config: DatabaseConfi
           </Field>
         </div>
         <SimilarGroups groups={sc.similar} onChange={(similar) => set({ similar })} />
-        <button
+        <Button
+          variant="ghost"
+          size="sm"
+          icon="rotate-ccw"
           className="rb-sched-reset"
           onClick={() =>
             set({
@@ -154,64 +156,25 @@ export function ScheduleSettings({ config, view, edit }: { config: DatabaseConfi
             })
           }
         >
-          <Icon name="rotate-ccw" /> Reset pace and variety to defaults
-        </button>
+          Reset pace and variety to defaults
+        </Button>
       </Card>
     </div>
   );
 }
 
+/** A schedule settings card: the shared card, with the schedule's spacing for its fields. */
 function Card({ icon, title, desc, children }: { icon: string; title: string; desc?: string; children: ReactNode }) {
   return (
-    <section className="rb-sched-card">
-      <header>
-        <Icon name={icon} />
-        <div>
-          <h4>{title}</h4>
-          {desc && <p>{desc}</p>}
-        </div>
-      </header>
+    <SimpleCard icon={icon} title={title} desc={desc} className="rb-sched-card">
       {children}
-    </section>
+    </SimpleCard>
   );
 }
 
-function Field({ label, hint, children }: { label: string; hint?: string; children: ReactNode }) {
-  return (
-    <label className="rb-sched-field">
-      <span className="rb-sched-field-label">
-        {label}
-        {hint && <span className="rb-sched-field-hint">{hint}</span>}
-      </span>
-      <span className="rb-sched-field-control">{children}</span>
-    </label>
-  );
-}
 
-/** A number box with a unit after it; keeps the typed text while it isn't a valid number yet. */
-function NumberInput({ label, value, unit, min, max, step, onChange }: { label: string; value: number; unit?: string; min?: number; max?: number; step?: number; onChange: (n: number) => void }) {
-  const [draft, setDraft] = useState<string | null>(null);
-  return (
-    <span className="rb-sched-number">
-      <input
-        type="number"
-        aria-label={label}
-        value={draft ?? String(value)}
-        min={min}
-        max={max}
-        step={step ?? 'any'}
-        onChange={(e) => {
-          setDraft(e.target.value);
-          const n = Number(e.target.value);
-          if (e.target.value.trim() === '' || !Number.isFinite(n)) return;
-          onChange(Math.min(max ?? Infinity, Math.max(min ?? -Infinity, n)));
-        }}
-        onBlur={() => setDraft(null)}
-      />
-      {unit && <span className="rb-sched-unit">{unit}</span>}
-    </span>
-  );
-}
+
+
 
 /**
  * Sections, matched top to bottom: each has a name, a kind and conditions on
@@ -238,16 +201,12 @@ function SectionsCard({
     [next[i], next[j]] = [next[j], next[i]];
     onChange(next);
   };
-  const add = (): void => {
-    const first = props[0];
-    onChange([...sections, { name: 'New section', kind: 'hidden', conditions: first ? [firstCondition(first)] : [] }]);
-  };
 
   return (
     <Card
       icon="layers"
       title="Sections"
-      desc="Where each note shows, checked top to bottom: the first section whose conditions all hold wins. Moving a game writes its target's conditions."
+      desc="Where each note shows, checked top to bottom: the first section whose conditions all hold wins. A section with no conditions is off. Moving a game writes its target's conditions."
     >
       {props.length === 0 && <div className="rb-sched-hint">Sections use select and checkbox properties. Add one in Board settings → Properties.</div>}
       <div className="rb-sched-sections">
@@ -261,7 +220,6 @@ function SectionsCard({
             onChange={(next) => update(i, next)}
             onUp={() => swap(i, i - 1)}
             onDown={() => swap(i, i + 1)}
-            onRemove={() => onChange(sections.filter((_, j) => j !== i))}
           />
         ))}
       </div>
@@ -272,16 +230,13 @@ function SectionsCard({
           ))}
         </div>
       )}
-      <div className="rb-sched-section-tools">
-        <button onClick={add} disabled={props.length === 0}>
-          <Icon name="plus" /> Add section
-        </button>
-        {saved && (
-          <button className="rb-sched-reset" onClick={onReset}>
-            <Icon name="rotate-ccw" /> Reset to the guessed sections
-          </button>
-        )}
-      </div>
+      {saved && (
+        <div className="rb-sched-section-tools">
+          <Button variant="ghost" size="sm" icon="rotate-ccw" className="rb-sched-reset" onClick={onReset}>
+            Reset to the guessed sections
+          </Button>
+        </div>
+      )}
     </Card>
   );
 }
@@ -297,7 +252,6 @@ function SectionRow({
   onChange,
   onUp,
   onDown,
-  onRemove,
 }: {
   config: DatabaseConfig;
   section: ScheduleSection;
@@ -306,26 +260,18 @@ function SectionRow({
   onChange: (s: ScheduleSection) => void;
   onUp: () => void;
   onDown: () => void;
-  onRemove: () => void;
 }) {
   const props = conditionProperties(config);
   const setCond = (j: number, c: SectionCondition): void => onChange({ ...s, conditions: s.conditions.map((x, k) => (k === j ? c : x)) });
-  const kindOptions: Option<SectionKind>[] = KINDS.map((k) => ({ value: k.value, label: kindName(k.value) }));
+  const off = s.conditions.length === 0;
   return (
-    <div className="rb-sched-section" data-kind={s.kind}>
+    <div className={off ? 'rb-sched-section is-off' : 'rb-sched-section'} data-kind={s.kind}>
       <div className="rb-sched-section-head">
         <span className="rb-sched-section-n">{index + 1}</span>
-        <input type="text" aria-label="Section name" value={s.name} onChange={(e) => onChange({ ...s, name: e.target.value })} />
-        <Select<SectionKind> className="dropdown" value={s.kind} options={kindOptions} onChange={(kind) => onChange({ ...s, kind })} />
-        <button className="clickable-icon" aria-label={`Move ${s.name} up`} disabled={index === 0} onClick={onUp}>
-          <Icon name="arrow-up" />
-        </button>
-        <button className="clickable-icon" aria-label={`Move ${s.name} down`} disabled={last} onClick={onDown}>
-          <Icon name="arrow-down" />
-        </button>
-        <button className="clickable-icon" aria-label={`Remove ${s.name}`} onClick={onRemove}>
-          <Icon name="trash-2" />
-        </button>
+        <span className="rb-sched-section-name">{kindName(s.kind)}</span>
+        {off && <span className="rb-sched-section-off">Off</span>}
+        <IconButton icon="arrow-up" label={`Move ${kindName(s.kind)} up`} disabled={index === 0} onClick={onUp} />
+        <IconButton icon="arrow-down" label={`Move ${kindName(s.kind)} down`} disabled={last} onClick={onDown} />
       </div>
       <div className="rb-sched-field-hint">{KINDS.find((k) => k.value === s.kind)?.hint}</div>
       <div className="rb-sched-conditions">
@@ -335,7 +281,7 @@ function SectionRow({
             <div key={j} className="rb-sched-condition">
               <span className="rb-sched-condition-join">{j === 0 ? 'When' : 'and'}</span>
               <Select
-                className="dropdown"
+                size="sm"
                 value={c.property}
                 options={[...(p ? [] : [{ value: c.property, label: `${c.property} (missing)` }]), ...props.map((x) => ({ value: x.name, label: propertyLabel(x) }))]}
                 onChange={(name) => {
@@ -344,25 +290,29 @@ function SectionRow({
                 }}
               />
               {p?.type === 'checkbox' ? (
-                <Select<'checked' | 'unchecked'>
-                  className="dropdown"
-                  value={c.op === 'unchecked' ? 'unchecked' : 'checked'}
-                  options={[
-                    { value: 'checked', label: 'is checked' },
-                    { value: 'unchecked', label: 'is unchecked' },
-                  ]}
-                  onChange={(op) => setCond(j, { property: c.property, op })}
-                />
+                <span className="rb-sched-values">
+                  <span className="rb-sched-condition-join">is</span>
+                  <Select<'checked' | 'unchecked'>
+                    size="sm"
+                    value={c.op === 'unchecked' ? 'unchecked' : 'checked'}
+                    options={[
+                      { value: 'checked', label: 'checked' },
+                      { value: 'unchecked', label: 'unchecked' },
+                    ]}
+                    onChange={(op) => setCond(j, { property: c.property, op })}
+                  />
+                </span>
               ) : (
                 <ValuePicker prop={p} condition={c} onChange={(next) => setCond(j, next)} />
               )}
-              <button className="clickable-icon" aria-label="Remove condition" onClick={() => onChange({ ...s, conditions: s.conditions.filter((_, k) => k !== j) })}>
-                <Icon name="x" />
-              </button>
+              <IconButton icon="x" label="Remove condition" size="sm" tone="danger" onClick={() => onChange({ ...s, conditions: s.conditions.filter((_, k) => k !== j) })} />
             </div>
           );
         })}
-        <button
+        <Button
+          variant="ghost"
+          size="sm"
+          icon="plus"
           className="rb-sched-add-condition"
           disabled={props.length === 0}
           onClick={() => {
@@ -370,41 +320,29 @@ function SectionRow({
             if (unused) onChange({ ...s, conditions: [...s.conditions, firstCondition(unused)] });
           }}
         >
-          <Icon name="plus" /> Condition
-        </button>
+          Condition
+        </Button>
       </div>
     </div>
   );
 }
 
-/** Select values as toggleable pills: one picked is "is", several is "is any of". */
+/** A condition's values: one picked is "is", several is "is any of". */
 function ValuePicker({ prop, condition: c, onChange }: { prop: PropertyConfig | undefined; condition: SectionCondition; onChange: (c: SectionCondition) => void }) {
   const picked = c.op === 'is' ? [c.value] : c.op === 'anyOf' ? c.value : [];
-  const options = prop?.options ?? [];
-  const toggle = (v: string): void => {
-    const next = picked.includes(v) ? picked.filter((x) => x !== v) : [...picked, v];
-    if (next.length === 0) return;
-    onChange(next.length === 1 ? { property: c.property, op: 'is', value: next[0] } : { property: c.property, op: 'anyOf', value: next });
-  };
-  if (!options.length) return <span className="rb-sched-hint">No listed values</span>;
+  if (!prop?.options?.length) return <span className="rb-sched-hint">No listed values</span>;
+  const options: Option[] = prop.options.map((o) => ({ value: o.value, label: optionFor(prop, o.value).label, color: optionFor(prop, o.value).color }));
   return (
     <span className="rb-sched-values">
       <span className="rb-sched-condition-join">{picked.length > 1 ? 'is any of' : 'is'}</span>
-      {options.map((o) => {
-        const opt = optionFor(prop!, o.value);
-        const on = picked.includes(o.value);
-        return (
-          <button
-            key={o.value}
-            className={on ? 'rb-sched-status-pill is-on' : 'rb-sched-status-pill'}
-            style={{ ['--pill' as string]: opt.color }}
-            aria-pressed={on}
-            onClick={() => toggle(o.value)}
-          >
-            {opt.label}
-          </button>
-        );
-      })}
+      <MultiSelect
+        size="sm"
+        required
+        label={`Values of ${propertyLabel(prop)}`}
+        value={picked}
+        options={options}
+        onChange={(next) => onChange(next.length === 1 ? { property: c.property, op: 'is', value: next[0] } : { property: c.property, op: 'anyOf', value: next })}
+      />
     </span>
   );
 }
@@ -420,34 +358,30 @@ function SimilarGroups({ groups, onChange }: { groups: string[][]; onChange: (gr
   };
   return (
     <div className="rb-sched-similar">
-      <div className="rb-sched-field-label">
+      <FieldLabel>
         Similar values
-        <span className="rb-sched-field-hint">count as alike, at the "Similar counts" share</span>
-      </div>
+        <FieldHint>count as alike, at the "Similar counts" share</FieldHint>
+      </FieldLabel>
       {groups.length > 0 && (
         <div className="rb-sched-similar-list">
           {groups.map((g, i) => (
-            <span key={i} className="rb-sched-similar-group">
+            <Pill key={i} className="rb-sched-similar-group" removeLabel={`Remove ${g.join(', ')}`} onRemove={() => onChange(groups.filter((_, j) => j !== i))}>
               {g.join(' ≈ ')}
-              <button className="clickable-icon" aria-label={`Remove ${g.join(', ')}`} onClick={() => onChange(groups.filter((_, j) => j !== i))}>
-                <Icon name="x" />
-              </button>
-            </span>
+            </Pill>
           ))}
         </div>
       )}
       <div className="rb-sched-similar-add">
-        <input
-          type="text"
+        <Input
           placeholder="JRPG, Visual novel"
           aria-label="New similar group"
           value={draft}
           onChange={(e) => setDraft(e.target.value)}
           onKeyDown={(e) => e.key === 'Enter' && (e.preventDefault(), add())}
         />
-        <button onClick={add} disabled={draft.split(',').filter((s) => s.trim()).length < 2}>
-          <Icon name="plus" /> Add
-        </button>
+        <Button icon="plus" onClick={add} disabled={draft.split(',').filter((s) => s.trim()).length < 2}>
+          Add
+        </Button>
       </div>
     </div>
   );

@@ -21,7 +21,9 @@ export function conditionHolds(values: Record<string, unknown>, c: SectionCondit
   }
 }
 
-export const sectionMatches = (values: Record<string, unknown>, s: ScheduleSection): boolean => s.conditions.every((c) => conditionHolds(values, c));
+/** A section with no conditions is switched off: nothing lands in it. */
+export const sectionMatches = (values: Record<string, unknown>, s: ScheduleSection): boolean =>
+  s.conditions.length > 0 && s.conditions.every((c) => conditionHolds(values, c));
 
 /** The first section an item matches, or -1. */
 export function matchSection(values: Record<string, unknown>, sections: ScheduleSection[]): number {
@@ -107,21 +109,46 @@ export function defaultSections(config: DatabaseConfig, c: Pick<ScheduleConfig, 
   return out;
 }
 
+/** The seven sections, in their default order. A view always has each one exactly once. */
+export const SECTION_KINDS: SectionKind[] = ['live', 'side', 'lanes', 'queue', 'hidden', 'finished', 'dropped'];
+
 /**
- * A side section to add when there is none: the lanes conditions plus a ticked
- * "casual" checkbox (made when missing), placed just above the lanes section.
+ * Exactly one section per kind, named after it: the first of each kind is kept
+ * where it is (later duplicates are dropped), and missing kinds are added with
+ * no conditions (switched off) at their default place.
+ */
+export function fixedSections(sections: ScheduleSection[]): ScheduleSection[] {
+  const out: ScheduleSection[] = [];
+  for (const s of sections) {
+    if (SECTION_KINDS.includes(s.kind) && !out.some((x) => x.kind === s.kind)) out.push({ ...s, name: kindName(s.kind) });
+  }
+  SECTION_KINDS.forEach((kind, order) => {
+    if (out.some((x) => x.kind === kind)) return;
+    // Before the first present kind that comes after it in the default order.
+    const at = out.findIndex((x) => SECTION_KINDS.indexOf(x.kind) > order);
+    out.splice(at < 0 ? out.length : at, 0, { name: kindName(kind), kind, conditions: [] });
+  });
+  return out;
+}
+
+/**
+ * Fill the side section when it has no conditions yet: the lanes conditions
+ * plus a ticked "casual" checkbox (made when missing), just above the lanes.
  */
 export function addSideSection(config: DatabaseConfig, sections: ScheduleSection[]): { sections: ScheduleSection[]; index: number; property: PropertyConfig | null } | null {
   const lanes = sections.findIndex((s) => s.kind === 'lanes');
-  if (lanes < 0 || sections.some((s) => s.kind === 'side')) return null;
+  const current = sections.findIndex((s) => s.kind === 'side');
+  if (lanes < 0 || (current >= 0 && sections[current].conditions.length > 0)) return null;
   const used = new Set(sections.flatMap((s) => s.conditions.map((c) => c.property)));
   const existing = config.properties.find((p) => p.type === 'checkbox' && !used.has(p.name) && /casual|side/i.test(`${p.name} ${p.label ?? ''}`));
   const taken = new Set(config.properties.map((p) => p.name));
   const name = existing?.name ?? (taken.has('casual') ? 'casual-play' : 'casual');
   const side: ScheduleSection = { name: kindName('side'), kind: 'side', conditions: [...sections[lanes].conditions, { property: name, op: 'checked' }] };
+  const rest = sections.filter((s) => s.kind !== 'side');
+  const at = rest.findIndex((s) => s.kind === 'lanes');
   return {
-    sections: [...sections.slice(0, lanes), side, ...sections.slice(lanes)],
-    index: lanes,
+    sections: [...rest.slice(0, at), side, ...rest.slice(at)],
+    index: at,
     property: existing ? null : { name, label: 'Casual', type: 'checkbox' },
   };
 }
@@ -130,19 +157,18 @@ export function addSideSection(config: DatabaseConfig, sections: ScheduleSection
 export function sectionProblems(config: DatabaseConfig, sections: ScheduleSection[]): string[] {
   const out: string[] = [];
   for (const kind of ['lanes', 'queue'] as SectionKind[]) {
-    const n = sections.filter((s) => s.kind === kind).length;
-    if (n === 0) out.push(`Add a ${kindName(kind)} section: the schedule needs one.`);
-    if (n > 1) out.push(`Only one ${kindName(kind)} section is used; the others are ignored.`);
+    const s = sections.find((x) => x.kind === kind);
+    if (!s || s.conditions.length === 0) out.push(`Give ${kindName(kind)} a condition: the schedule needs it.`);
   }
   sections.forEach((s, i) => {
-    if (s.conditions.length === 0) out.push(`"${s.name}" has no conditions, so it takes every item and nothing below it shows.`);
+    if (s.conditions.length === 0) return;
     for (const c of s.conditions) {
       const p = config.properties.find((q) => q.name === c.property);
       if (!p) out.push(`"${s.name}": the property "${c.property}" doesn't exist.`);
       else if ((c.op === 'checked' || c.op === 'unchecked') !== (p.type === 'checkbox')) out.push(`"${s.name}": "${c.property}" can't be used that way.`);
       else if (p.type !== 'checkbox' && p.type !== 'select') out.push(`"${s.name}": only select and checkbox properties can be used.`);
     }
-    const blocker = sections.slice(0, i).find((above) => mayCatch(above, s) && !escapable(above, s));
+    const blocker = sections.slice(0, i).find((above) => above.conditions.length > 0 && mayCatch(above, s) && !escapable(above, s));
     if (blocker) out.push(`Moving into "${s.name}" can be blocked by "${blocker.name}" above it: give "${blocker.name}" a checkbox condition, or move it lower.`);
   });
   return out;

@@ -1,16 +1,12 @@
-/* Board settings → Dates: one block per rule */
-.rb-auto-date {
-  margin: 8px 0;
-  padding: 0 10px;
-  border: 1px solid var(--background-modifier-border);
-  border-radius: var(--radius-m);
-}
-.rb-auto-date .setting-item { border-top: none; padding: 8px 0; }
-.rb-auto-date-values { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 6px; }
-.rb-auto-date-value {
-  padding: 2px 10px;
-  border-radius: 999px;
-  font-size: var(--font-ui-small);
-  box-shadow: none;
-}
-.rb-auto-date-value.is-on { background: var(--interactive-accent); color: var(--text-on-accent); }
+/* Board settings → Dates: each rule reads as a sentence, a hairline between rules. */
+/* Layout only: the controls are UI primitives (styles/ui/). */
+.rb-auto-date-list { display: flex; flex-direction: column; border: 1px solid var(--rb-surface-border); border-radius: var(--rb-surface-radius); }
+.rb-auto-date { display: flex; flex-direction: column; gap: 6px; padding: 10px 12px; }
+.rb-auto-date + .rb-auto-date { border-top: 1px solid var(--rb-divider); }
+.rb-auto-date-line { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 8px; }
+.rb-auto-date-line > [data-slot='select'] { width: auto; min-width: 120px; }
+.rb-auto-date-line > [data-slot='icon-button'] { margin-left: auto; }
+.rb-auto-date-join { min-width: 52px; color: var(--text-faint); font-size: var(--rb-font-hint); }
+.rb-auto-date-join:not(:first-child) { min-width: 0; }
+.rb-auto-date-time { display: inline-flex; align-items: center; gap: 6px; margin-left: auto; color: var(--text-muted); font-size: var(--rb-font-hint); cursor: pointer; }
+.rb-auto-date-none { color: var(--text-faint); font-size: var(--rb-font-hint); }

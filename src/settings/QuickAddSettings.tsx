@@ -5,7 +5,7 @@ import { propertyLabel } from '../config';
 import { newId } from '../table/format';
 import { Icon } from '../react/Icon';
 import { PROPERTY_TYPE_ICON } from './PropertyEditor';
-import { SettingRow, Toggle } from './controls';
+import { SettingRow, SettingsCard, Toggle } from './controls';
 import { quickAddCommandId } from '../quickadd/ids';
 import { canSetHotkeys, hotkeyConflicts, openHotkeySettings, printHotkey, recordHotkey, setHotkey } from '../quickadd/hotkeys';
 
@@ -40,18 +40,17 @@ export function QuickAddSettings() {
 
   return (
     <>
-      <SettingRow
-        name="Quick add"
+      <SettingsCard
+        icon="zap"
+        title="Quick add"
         desc={
           <>
             Adds the command <b>R Board: {name}</b>. Run it from the command palette or its shortcut, from anywhere: a
             small form asks for the {table ? 'row' : 'note'} and adds it without opening the {table ? 'table' : 'board'}.
           </>
         }
-        toggle
+        actions={<Toggle checked={!!q} onChange={enable} label="Quick add" />}
       >
-        <Toggle checked={!!q} onChange={enable} label="Quick add" />
-      </SettingRow>
       {q && (
         <>
           {!table && !config.newNoteFolder && (
@@ -69,14 +68,11 @@ export function QuickAddSettings() {
               />
             </SettingRow>
           )}
-          <div className="setting-item setting-item-heading">
-            <div className="setting-item-info">
-              <div className="setting-item-name">Fields to ask for</div>
-              <div className="setting-item-description">
-                The {table ? 'title column' : 'title'} is always asked first. Formulas are computed, so they aren't listed.
-              </div>
-            </div>
-          </div>
+        </>
+      )}
+      </SettingsCard>
+      {q && (
+        <SettingsCard icon="list" title="Fields to ask for" desc={`The ${table ? 'title column' : 'title'} is always asked first. Formulas are computed, so they aren't listed.`}>
           {candidates.length === 0 && <div className="rb-empty">No other {table ? 'columns' : 'properties'} yet.</div>}
           {candidates.map((p) => (
             <SettingRow
@@ -91,7 +87,7 @@ export function QuickAddSettings() {
               <Toggle checked={q.properties.includes(p.name)} onChange={(on) => toggleField(p.name, on)} label={propertyLabel(p)} />
             </SettingRow>
           ))}
-        </>
+        </SettingsCard>
       )}
     </>
   );

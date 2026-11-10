@@ -11,8 +11,9 @@ import {
   type PropertyConfig,
 } from '../types';
 import { Icon } from '../react/Icon';
-import { LIST_OPS, VALUELESS_OPS, opsForProperty } from '../data/filter';
+import { LIST_OPS, VALUELESS_OPS, countFilterRules, opsForProperty } from '../data/filter';
 import { asArray, optionFor } from '../render/values';
+import { showMenu } from '../ui/menu';
 
 const OP_LABELS: Record<FilterOp, string> = {
   eq: 'Is',
@@ -89,6 +90,14 @@ export function FilterBuilder({
           <Icon name="trash" className="rb-filter-delete-icon" />
           <span>Delete filter</span>
         </button>
+        <span className="rb-filter-summary">
+          {root.conditions.length === 0
+            ? 'Showing everything'
+            : `${countFilterRules(root)} rule${countFilterRules(root) === 1 ? '' : 's'} · ${root.conjunction === 'or' ? 'any' : 'all'} must match`}
+        </span>
+        <button className="mod-cta rb-filter-done" onClick={onClose}>
+          Done
+        </button>
       </div>
     </div>
   );
@@ -115,7 +124,7 @@ function Group({ group, path, properties, change, newRule }: GroupProps) {
         .setIcon('folder-plus')
         .onClick(() => edit((g) => void g.conditions.push({ conjunction: 'and', conditions: [newRule()] }))),
     );
-    menu.showAtMouseEvent(e.nativeEvent);
+    showMenu(menu, e.nativeEvent);
   };
 
   return (
@@ -156,7 +165,7 @@ function Group({ group, path, properties, change, newRule }: GroupProps) {
               onClick={(e) => {
                 const menu = new Menu();
                 menu.addItem((it) => it.setTitle('Delete').setIcon('trash').onClick(remove));
-                menu.showAtMouseEvent(e.nativeEvent);
+                showMenu(menu, e.nativeEvent);
               }}
             >
               <Icon name="more-horizontal" />

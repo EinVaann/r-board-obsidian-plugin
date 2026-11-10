@@ -23,7 +23,8 @@ import { countFilterRules } from '../data/filter';
 import { useBoard, useBoardContext } from '../board/context';
 import { Icon } from '../react/Icon';
 import { PROPERTY_TYPE_ICON } from './PropertyEditor';
-import { DragHandle, Segmented, Select, SettingRow, SettingsTabs, SortableList, TextInput, Toggle, type Option } from './controls';
+import { DragHandle, Field, Segmented, Select, SettingRow, SettingsCard, SettingsTabs, SortableList, TextInput, Toggle, type Option } from './controls';
+import { Button, IconButton, Input } from '../ui';
 import { ExportSettings } from './ExportSettings';
 import { ScheduleSettings } from './ScheduleSettings';
 
@@ -72,6 +73,7 @@ function General({ config, view, viewIndex, edit, onDelete }: TabProps & { viewI
 
   return (
     <>
+      <SettingsCard icon="sliders-horizontal" title="View" desc="Name, type and what shows beside it.">
       <SettingRow name="Name">
         <TextInput value={view.name} onChange={(v) => edit((d) => void (d.name = v))} />
       </SettingRow>
@@ -221,13 +223,14 @@ function General({ config, view, viewIndex, edit, onDelete }: TabProps & { viewI
         </>
       )}
       <SettingRow name="Filters" desc={`${filters} active`}>
-        <button onClick={() => actions.openFilter(viewIndex)}>Edit filters…</button>
+        <Button onClick={() => actions.openFilter(viewIndex)}>Edit filters…</Button>
       </SettingRow>
-      <SettingRow>
-        <button className="mod-warning" onClick={onDelete}>
+      </SettingsCard>
+      <div className="rb-settings-danger">
+        <Button variant="danger" onClick={onDelete}>
           Delete view
-        </button>
-      </SettingRow>
+        </Button>
+      </div>
     </>
   );
 }
@@ -245,49 +248,49 @@ function ChartSettings({ config, view, edit }: TabProps) {
 
   return (
     <>
-      <SettingRow name="Chart type">
-        <Select<ChartType>
-          value={chart.type}
-          options={[
-            { value: 'bar', label: 'Bar' },
-            { value: 'line', label: 'Line' },
-            { value: 'area', label: 'Area' },
-            { value: 'pie', label: 'Pie' },
-            { value: 'donut', label: 'Donut' },
-            { value: 'scatter', label: 'Scatter' },
-          ]}
-          onChange={(type) => set({ type })}
-        />
-      </SettingRow>
-      <SettingRow name={chart.type === 'scatter' ? 'X axis' : pie ? 'Slices' : 'Categories (X axis)'} desc={chart.type === 'scatter' ? 'A number or date property.' : 'One bar / point / slice per value. None: one per item.'}>
-        <Select
-          value={chart.x ?? ''}
-          options={[{ value: '', label: 'None (each item)' }, ...props.map(label)]}
-          onChange={(v) => set({ x: v || null })}
-        />
-      </SettingRow>
-      {xProp && (xProp.type === 'date' || xProp.type === 'formula') && chart.type !== 'scatter' && (
-        <SettingRow name="Group dates by">
-          <Select<DateBucket>
-            value={chart.dateBucket}
+      <SettingsCard icon="bar-chart-3" title="Chart" desc="What kind of chart, and what each bar, point or slice stands for.">
+        <Field label="Type">
+          <Segmented<ChartType>
+            value={chart.type}
             options={[
-              { value: 'none', label: 'Day' },
-              { value: 'week', label: 'Week' },
-              { value: 'month', label: 'Month' },
-              { value: 'quarter', label: 'Quarter' },
-              { value: 'year', label: 'Year' },
-              { value: 'relative', label: 'Relative to today' },
+              { value: 'bar', label: 'Bar' },
+              { value: 'line', label: 'Line' },
+              { value: 'area', label: 'Area' },
+              { value: 'pie', label: 'Pie' },
+              { value: 'donut', label: 'Donut' },
+              { value: 'scatter', label: 'Scatter' },
             ]}
-            onChange={(dateBucket) => set({ dateBucket })}
+            onChange={(type) => set({ type })}
           />
-        </SettingRow>
-      )}
-      {!pie && (
-        <SettingRow name="Split into series by" desc="One colored series per value (option colors are used).">
-          <Select value={chart.splitBy ?? ''} options={[{ value: '', label: 'None' }, ...props.filter((p) => p.name !== chart.x).map(label)]} onChange={(v) => set({ splitBy: v || null })} />
-        </SettingRow>
-      )}
-      <SettingRow name={chart.type === 'scatter' ? 'Y axis' : 'Values'} desc={chart.type === 'scatter' ? 'A number property.' : 'Numbers to add up. None: count items.'}>
+        </Field>
+        <div className="rb-sched-grid">
+          <Field label={chart.type === 'scatter' ? 'X axis' : pie ? 'Slices' : 'Categories'} hint={chart.type === 'scatter' ? 'number or date' : 'none: one per item'}>
+            <Select value={chart.x ?? ''} options={[{ value: '', label: 'None (each item)' }, ...props.map(label)]} onChange={(v) => set({ x: v || null })} />
+          </Field>
+          {xProp && (xProp.type === 'date' || xProp.type === 'formula') && chart.type !== 'scatter' && (
+            <Field label="Group dates by">
+              <Select<DateBucket>
+                value={chart.dateBucket}
+                options={[
+                  { value: 'none', label: 'Day' },
+                  { value: 'week', label: 'Week' },
+                  { value: 'month', label: 'Month' },
+                  { value: 'quarter', label: 'Quarter' },
+                  { value: 'year', label: 'Year' },
+                  { value: 'relative', label: 'Relative to today' },
+                ]}
+                onChange={(dateBucket) => set({ dateBucket })}
+              />
+            </Field>
+          )}
+          {!pie && (
+            <Field label="Split into series by" hint="one color per value">
+              <Select value={chart.splitBy ?? ''} options={[{ value: '', label: 'None' }, ...props.filter((p) => p.name !== chart.x).map(label)]} onChange={(v) => set({ splitBy: v || null })} />
+            </Field>
+          )}
+        </div>
+      </SettingsCard>
+      <SettingsCard icon="sigma" title={chart.type === 'scatter' ? 'Y axis' : 'Values'} desc={chart.type === 'scatter' ? 'A number property.' : 'Numbers to add up. None picked: count items.'}>
         <div className="rb-chart-values">
           {numeric.length === 0 && <span className="rb-wizard-hint">No number properties.</span>}
           {numeric.map((p) => {
@@ -304,51 +307,57 @@ function ChartSettings({ config, view, edit }: TabProps) {
             );
           })}
         </div>
-      </SettingRow>
-      {chart.values.length > 0 && chart.type !== 'scatter' && (
-        <SettingRow name="Combine values with">
-          <Select<Aggregate>
-            value={chart.aggregate}
-            options={[
-              { value: 'sum', label: 'Sum' },
-              { value: 'avg', label: 'Average' },
-              { value: 'min', label: 'Minimum' },
-              { value: 'max', label: 'Maximum' },
-              { value: 'count', label: 'Count items' },
-            ]}
-            onChange={(aggregate) => set({ aggregate })}
-          />
-        </SettingRow>
-      )}
-      {chart.type !== 'scatter' && (
-        <SettingRow name="Order">
-          <Select<ChartConfig['sort']>
-            value={chart.sort}
-            options={[
-              { value: 'x', label: 'By category' },
-              { value: 'value-desc', label: 'Largest first' },
-              { value: 'value-asc', label: 'Smallest first' },
-            ]}
-            onChange={(sort) => set({ sort })}
-          />
-        </SettingRow>
-      )}
-      {!pie && chart.type !== 'scatter' && (
-        <SettingRow name="Stacked" desc="Stack series on top of each other." toggle>
-          <Toggle checked={chart.stacked} onChange={(stacked) => set({ stacked })} label="Stacked" />
-        </SettingRow>
-      )}
-      {bars && (
-        <SettingRow name="Horizontal bars" toggle>
-          <Toggle checked={chart.horizontal} onChange={(horizontal) => set({ horizontal })} label="Horizontal bars" />
-        </SettingRow>
-      )}
-      <SettingRow name="Legend" toggle>
-        <Toggle checked={chart.showLegend} onChange={(showLegend) => set({ showLegend })} label="Legend" />
-      </SettingRow>
-      <SettingRow name="Value labels" toggle>
-        <Toggle checked={chart.showLabels} onChange={(showLabels) => set({ showLabels })} label="Value labels" />
-      </SettingRow>
+        {chart.values.length > 0 && chart.type !== 'scatter' && (
+          <div className="rb-sched-grid rb-chart-agg">
+            <Field label="Combine with">
+              <Select<Aggregate>
+                value={chart.aggregate}
+                options={[
+                  { value: 'sum', label: 'Sum' },
+                  { value: 'avg', label: 'Average' },
+                  { value: 'min', label: 'Minimum' },
+                  { value: 'max', label: 'Maximum' },
+                  { value: 'count', label: 'Count items' },
+                ]}
+                onChange={(aggregate) => set({ aggregate })}
+              />
+            </Field>
+          </div>
+        )}
+      </SettingsCard>
+      <SettingsCard icon="eye" title="Look" desc="Order, stacking and labels.">
+        <div className="rb-sched-grid">
+          {chart.type !== 'scatter' && (
+            <Field label="Order">
+              <Select<ChartConfig['sort']>
+                value={chart.sort}
+                options={[
+                  { value: 'x', label: 'By category' },
+                  { value: 'value-desc', label: 'Largest first' },
+                  { value: 'value-asc', label: 'Smallest first' },
+                ]}
+                onChange={(sort) => set({ sort })}
+              />
+            </Field>
+          )}
+          {!pie && chart.type !== 'scatter' && (
+            <Field label="Stacked" hint="series on top of each other">
+              <Toggle checked={chart.stacked} onChange={(stacked) => set({ stacked })} label="Stacked" />
+            </Field>
+          )}
+          {bars && (
+            <Field label="Horizontal bars">
+              <Toggle checked={chart.horizontal} onChange={(horizontal) => set({ horizontal })} label="Horizontal bars" />
+            </Field>
+          )}
+          <Field label="Legend">
+            <Toggle checked={chart.showLegend} onChange={(showLegend) => set({ showLegend })} label="Legend" />
+          </Field>
+          <Field label="Value labels">
+            <Toggle checked={chart.showLabels} onChange={(showLabels) => set({ showLabels })} label="Value labels" />
+          </Field>
+        </div>
+      </SettingsCard>
     </>
   );
 }
@@ -398,8 +407,7 @@ function Display({ config, view, edit }: TabProps) {
   return (
     <>
       {cards && (
-        <>
-          <h4>Cards</h4>
+        <SettingsCard icon="layout-grid" title="Cards" desc="How each card looks.">
           {view.type === 'gallery' && (
             <SettingRow name="Layout" desc="Masonry flows cards of any height; grid uses fixed tiles.">
               <Segmented<GalleryLayout>
@@ -426,33 +434,32 @@ function Display({ config, view, edit }: TabProps) {
           <SettingRow name="Show note content" desc="Render an excerpt of each note on the card." toggle>
             <Toggle checked={!!view.showContent} onChange={(on) => edit((d) => void (d.showContent = on))} label="Show note content" />
           </SettingRow>
-        </>
+        </SettingsCard>
       )}
 
-      <div className="rb-section-head">
-        <h4>{view.type === 'table' ? 'Columns' : 'Properties'}</h4>
-        <span className="rb-section-count">
-          {visible.size} of {order.length} shown
-        </span>
-        <div className="rb-spacer" />
-        <button className="rb-link-btn" onClick={() => setVisible(order, new Set(order))}>
-          Show all
-        </button>
-        <button className="rb-link-btn" onClick={() => setVisible(order, new Set())}>
-          Hide all
-        </button>
-      </div>
-
+      <SettingsCard
+        icon="list"
+        title={view.type === 'table' ? 'Columns' : 'Properties'}
+        desc={`${visible.size} of ${order.length} shown · drag to reorder. The title is always shown.`}
+        actions={
+          <>
+            <Button variant="ghost" size="sm" onClick={() => setVisible(order, new Set(order))}>
+              Show all
+            </Button>
+            <Button variant="ghost" size="sm" onClick={() => setVisible(order, new Set())}>
+              Hide all
+            </Button>
+          </>
+        }
+      >
       {order.length === 0 ? (
         <div className="rb-wizard-hint">This board has no properties yet — add some in Board settings.</div>
       ) : (
         <>
-          <div className="rb-wizard-hint">Drag to reorder. The title is always shown.</div>
           <SortableList
             ids={order}
             onReorder={(from, to) => setVisible(arrayMove(order, from, to), visible)}
             className="rb-vis-list"
-            rowClassName="rb-vis-row-wrap"
             renderRow={(name, _i, handle) => {
               const prop = config.properties.find((p) => p.name === name)!;
               const on = visible.has(name);
@@ -464,15 +471,14 @@ function Display({ config, view, edit }: TabProps) {
                     <span className="rb-vis-name">{propertyLabel(prop)}</span>
                     <span className="rb-vis-meta">{[prop.type, prop.render].filter(Boolean).join(' · ')}</span>
                   </div>
-                  <button className="rb-icon-btn rb-vis-toggle" aria-label={on ? 'Hide' : 'Show'} onClick={() => toggle(name)}>
-                    <Icon name={on ? 'eye' : 'eye-off'} />
-                  </button>
+                  <IconButton className="rb-vis-toggle" icon={on ? 'eye' : 'eye-off'} label={on ? 'Hide' : 'Show'} onClick={() => toggle(name)} />
                 </div>
               );
             }}
           />
         </>
       )}
+      </SettingsCard>
     </>
   );
 }
@@ -500,54 +506,41 @@ function Columns({ view, edit }: { view: ViewConfig; edit: (recipe: ViewRecipe) 
   };
 
   return (
-    <>
-      <div className="rb-wizard-hint">
-        Pin the order of columns and give them a label, color, or hide them. Values not listed here follow, sorted;
-        Uncategorized is always last.
-      </div>
+    <SettingsCard
+      icon="columns-3"
+      title="Columns"
+      desc="Pin the order of columns and give them a label, color, or hide them. Values not listed follow, sorted; Uncategorized is always last."
+    >
       {!view.group && <div className="rb-wizard-hint">Choose a "Group by" property in General first.</div>}
 
-      <SortableList
-        ids={cols}
-        onReorder={(from, to) => edit((d) => void (d.columns = arrayMove(cols, from, to)))}
-        className="rb-col-config-list"
-        rowClassName="rb-col-config-row"
-        renderRow={(key, i, handle) => {
-          const cfg = view.groupConfig?.[key];
-          return (
-            <>
-              <DragHandle handle={handle} />
-              <div className="rb-col-config-fields">
+      {cols.length > 0 && (
+        <SortableList
+          ids={cols}
+          onReorder={(from, to) => edit((d) => void (d.columns = arrayMove(cols, from, to)))}
+          className="rb-col-config-list"
+          rowClassName="rb-col-config-row"
+          renderRow={(key, i, handle) => {
+            const cfg = view.groupConfig?.[key];
+            return (
+              <div className={cfg?.hidden ? 'rb-col-row is-hidden' : 'rb-col-row'}>
+                <DragHandle handle={handle} />
+                <label className="rb-col-swatch" style={{ ['--c' as string]: cfg?.color ?? 'var(--background-modifier-border-hover)' }} title="Color">
+                  <input type="color" aria-label={`Color of ${key}`} defaultValue={cfg?.color ?? '#888888'} onChange={(e) => setColor(key, e.target.value)} />
+                </label>
+                <TextInput size="sm" className="rb-col-field-input" value={cfg?.label ?? ''} placeholder={key} onChange={(v) => patch(key, { label: v.trim() || undefined })} />
                 <span className="rb-col-key-label">{key}</span>
-                <TextInput className="rb-col-field-input" value={cfg?.label ?? ''} placeholder="Custom label…" onChange={(v) => patch(key, { label: v.trim() || undefined })} />
-                <div className="rb-col-options">
-                  <label className="rb-col-color-wrap">
-                    <span className="rb-col-color-label">Color</span>
-                    <input className="rb-col-color-input" type="color" defaultValue={cfg?.color ?? '#888888'} onChange={(e) => setColor(key, e.target.value)} />
-                    {cfg?.color && (
-                      <button className="rb-icon-btn rb-col-clear-color" aria-label="Clear color" onClick={() => patch(key, { color: undefined })}>
-                        <Icon name="x" />
-                      </button>
-                    )}
-                  </label>
-                  <label className="rb-col-hidden-wrap">
-                    <span className="rb-col-hidden-label">Hidden</span>
-                    <Toggle checked={!!cfg?.hidden} onChange={(on) => patch(key, { hidden: on || undefined })} label="Hide column" />
-                  </label>
-                </div>
+                {cfg?.color && <IconButton icon="rotate-ccw" label="Clear color" size="sm" onClick={() => patch(key, { color: undefined })} />}
+                <IconButton icon={cfg?.hidden ? 'eye-off' : 'eye'} label={cfg?.hidden ? 'Show column' : 'Hide column'} size="sm" onClick={() => patch(key, { hidden: cfg?.hidden ? undefined : true })} />
+                <IconButton icon="trash-2" label="Unpin column" size="sm" tone="danger" onClick={() => edit((d) => void (d.columns = cols.filter((_, j) => j !== i)))} />
               </div>
-              <button className="rb-icon-btn rb-col-remove-btn" aria-label="Unpin column" onClick={() => edit((d) => void (d.columns = cols.filter((_, j) => j !== i)))}>
-                <Icon name="trash-2" />
-              </button>
-            </>
-          );
-        }}
-      />
+            );
+          }}
+        />
+      )}
 
       <div className="rb-col-add-row">
-        <input
+        <Input
           className="rb-col-add-input"
-          type="text"
           placeholder="Column value…"
           value={draft}
           onChange={(e) => setDraft(e.target.value)}
@@ -555,10 +548,10 @@ function Columns({ view, edit }: { view: ViewConfig; edit: (recipe: ViewRecipe) 
             if (e.key === 'Enter') add();
           }}
         />
-        <button className="rb-col-add-btn" onClick={add}>
-          <Icon name="plus" /> Add
-        </button>
+        <Button icon="plus" onClick={add}>
+          Add
+        </Button>
       </div>
-    </>
+    </SettingsCard>
   );
 }
