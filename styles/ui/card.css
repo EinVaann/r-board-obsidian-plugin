@@ -1,0 +1,42 @@
+/* ===== Card and its parts (card.tsx) ===== */
+:where(.rb-root, .rb-home, .rb-embed, .modal.rb-modal) [data-slot='card'][data-variant='raised'] {
+  padding: var(--rb-card-pad);
+  border: 1px solid var(--rb-surface-border);
+  border-radius: var(--rb-surface-radius);
+  background: var(--rb-surface-bg);
+  box-shadow: var(--rb-surface-shadow);
+}
+:where(.rb-root, .rb-home, .rb-embed, .modal.rb-modal) [data-slot='card'][data-variant='sunken'] {
+  padding: var(--rb-card-pad);
+  border-radius: var(--rb-surface-radius);
+  background: var(--rb-surface-sunken);
+}
+:where(.rb-root, .rb-home, .rb-embed, .modal.rb-modal) [data-slot='card'][data-size='sm'] { padding: var(--rb-card-pad-sm); }
+:where(.rb-root, .rb-home, .rb-embed, .modal.rb-modal) [data-slot='card-header'] { display: flex; align-items: flex-start; gap: 12px; }
+:where(.rb-root, .rb-home, .rb-embed, .modal.rb-modal) [data-slot='card-icon'] {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  border-radius: 999px;
+  background: var(--rb-icon-chip-bg);
+  color: var(--text-muted);
+}
+:where(.rb-root, .rb-home, .rb-embed, .modal.rb-modal) [data-slot='card-icon'] svg { width: 15px; height: 15px; }
+:where(.rb-root, .rb-home, .rb-embed, .modal.rb-modal) [data-slot='card-heading'] { flex: 1; min-width: 0; }
+:where(.rb-root, .rb-home, .rb-embed, .modal.rb-modal) [data-slot='card-title'][data-slot] {
+  margin: 0;
+  color: var(--text-normal);
+  font-size: var(--rb-font-title);
+  font-weight: var(--rb-weight-title);
+  letter-spacing: 0;
+  line-height: 1.3;
+  text-transform: none;
+}
+:where(.rb-root, .rb-home, .rb-embed, .modal.rb-modal) [data-slot='card-description'] { margin: 2px 0 0; color: var(--text-faint); font-size: var(--rb-font-hint); line-height: 1.4; }
+:where(.rb-root, .rb-home, .rb-embed, .modal.rb-modal) [data-slot='card-actions'] { display: flex; flex: none; gap: 4px; }
+:where(.rb-root, .rb-home, .rb-embed, .modal.rb-modal) [data-slot='card-content'] { margin-top: 10px; }
+:where(.rb-root, .rb-home, .rb-embed, .modal.rb-modal) [data-slot='card-content'] > [data-slot='setting-row']:first-child { padding-top: 6px; }
+:where(.rb-root, .rb-home, .rb-embed, .modal.rb-modal) [data-slot='card-content'] > [data-slot='setting-row']:last-child { padding-bottom: 2px; }
+:where(.rb-root, .rb-home, .rb-embed, .modal.rb-modal) [data-slot='card-footer'] { display: flex; justify-content: flex-end; gap: 8px; margin-top: 12px; }

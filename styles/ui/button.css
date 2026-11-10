@@ -1,0 +1,91 @@
+/* ===== Button, IconButton (src/ui/primitives/button.tsx) ===== */
+:where(.rb-root, .rb-home, .rb-embed, .modal.rb-modal) [data-slot='button'][data-slot] {
+  box-sizing: border-box;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--rb-control-gap);
+  height: var(--rb-control-h);
+  padding: 0 var(--rb-btn-px);
+  border: 1px solid transparent;
+  border-radius: var(--rb-btn-radius);
+  font: inherit;
+  font-size: var(--rb-control-font);
+  font-weight: var(--rb-weight-label);
+  line-height: 1;
+  white-space: nowrap;
+  cursor: pointer;
+  box-shadow: none;
+  filter: none;
+  transition: background-color 0.12s, border-color 0.12s, color 0.12s, filter 0.12s;
+}
+:where(.rb-root, .rb-home, .rb-embed, .modal.rb-modal) [data-slot='button'][data-size='sm'] {
+  height: var(--rb-control-h-sm);
+  padding: 0 var(--rb-btn-px-sm);
+  border-radius: var(--rb-btn-radius-sm);
+  font-size: var(--rb-control-font-sm);
+}
+:where(.rb-root, .rb-home, .rb-embed, .modal.rb-modal) [data-slot='button'] .rb-icon { display: inline-flex; }
+:where(.rb-root, .rb-home, .rb-embed, .modal.rb-modal) [data-slot='button'] svg { width: var(--rb-icon-size-sm); height: var(--rb-icon-size-sm); }
+:where(.rb-root, .rb-home, .rb-embed, .modal.rb-modal) [data-slot='button']:disabled { opacity: 0.45; cursor: default; }
+
+:where(.rb-root, .rb-home, .rb-embed, .modal.rb-modal) [data-slot='button'][data-variant='primary'] {
+  background: var(--rb-btn-primary-bg);
+  color: var(--rb-btn-primary-fg);
+  border-color: var(--rb-btn-primary-border);
+  box-shadow: var(--rb-btn-primary-shadow);
+  font-weight: var(--rb-weight-title);
+}
+:where(.rb-root, .rb-home, .rb-embed, .modal.rb-modal) [data-slot='button'][data-variant='primary']:hover:not(:disabled) {
+  background: var(--rb-btn-primary-bg);
+  filter: var(--rb-btn-primary-hover-filter);
+}
+:where(.rb-root, .rb-home, .rb-embed, .modal.rb-modal) [data-slot='button'][data-variant='secondary'] {
+  background: var(--rb-btn-secondary-bg);
+  color: var(--rb-btn-secondary-fg);
+  border-color: var(--rb-btn-secondary-border);
+  box-shadow: var(--rb-btn-secondary-shadow);
+}
+:where(.rb-root, .rb-home, .rb-embed, .modal.rb-modal) [data-slot='button'][data-variant='secondary']:hover:not(:disabled) { background: var(--rb-btn-secondary-hover-bg); }
+:where(.rb-root, .rb-home, .rb-embed, .modal.rb-modal) [data-slot='button'][data-variant='ghost'] {
+  padding: 0 var(--rb-btn-px-sm);
+  background: transparent;
+  color: var(--rb-btn-ghost-fg);
+}
+:where(.rb-root, .rb-home, .rb-embed, .modal.rb-modal) [data-slot='button'][data-variant='ghost']:hover:not(:disabled) {
+  background: var(--rb-btn-ghost-hover-bg);
+  color: var(--rb-btn-ghost-hover-fg);
+}
+:where(.rb-root, .rb-home, .rb-embed, .modal.rb-modal) [data-slot='button'][data-variant='danger'] {
+  background: var(--rb-btn-danger-bg);
+  color: var(--rb-btn-danger-fg);
+  border-color: var(--rb-btn-danger-border);
+}
+:where(.rb-root, .rb-home, .rb-embed, .modal.rb-modal) [data-slot='button'][data-variant='danger']:hover:not(:disabled) { background: var(--rb-btn-danger-hover-bg); }
+
+/* Icon button: square, no frame until hovered. */
+:where(.rb-root, .rb-home, .rb-embed, .modal.rb-modal) [data-slot='icon-button'][data-slot] {
+  box-sizing: border-box;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: none;
+  width: var(--rb-control-h-sm);
+  height: var(--rb-control-h-sm);
+  padding: 0;
+  border: none;
+  border-radius: var(--rb-control-radius-sm);
+  background: transparent;
+  box-shadow: none;
+  color: var(--rb-icon-btn-fg);
+  cursor: pointer;
+}
+:where(.rb-root, .rb-home, .rb-embed, .modal.rb-modal) [data-slot='icon-button'][data-size='sm'] { width: var(--rb-icon-btn-sm); height: var(--rb-icon-btn-sm); }
+:where(.rb-root, .rb-home, .rb-embed, .modal.rb-modal) [data-slot='icon-button'] svg { width: var(--rb-icon-size); height: var(--rb-icon-size); }
+:where(.rb-root, .rb-home, .rb-embed, .modal.rb-modal) [data-slot='icon-button'][data-size='sm'] svg { width: var(--rb-icon-size-sm); height: var(--rb-icon-size-sm); }
+:where(.rb-root, .rb-home, .rb-embed, .modal.rb-modal) [data-slot='icon-button']:hover:not(:disabled) {
+  background: var(--rb-icon-btn-hover-bg);
+  color: var(--rb-icon-btn-hover-fg);
+}
+:where(.rb-root, .rb-home, .rb-embed, .modal.rb-modal) [data-slot='icon-button'][data-variant='danger']:hover:not(:disabled) { color: var(--rb-danger-fg); }
+:where(.rb-root, .rb-home, .rb-embed, .modal.rb-modal) [data-slot='icon-button']:disabled { opacity: 0.3; cursor: default; }

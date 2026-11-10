@@ -1,0 +1,52 @@
+/* ===== Pill, Chip (pill.tsx) ===== */
+:where(.rb-root, .rb-home, .rb-embed, .modal.rb-modal) [data-slot='pill'] {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  height: var(--rb-pill-h);
+  padding: 0 var(--rb-pill-px);
+  border-radius: var(--rb-pill-radius);
+  background: color-mix(in srgb, var(--rb-pill-c, var(--rb-pill-default)) 22%, transparent);
+  color: color-mix(in srgb, var(--rb-pill-c, var(--rb-pill-default)) 65%, var(--text-normal));
+  font-size: var(--rb-pill-font);
+  font-weight: var(--rb-weight-label);
+  white-space: nowrap;
+}
+:where(.rb-root, .rb-home, .rb-embed, .modal.rb-modal) [data-slot='pill-remove'][data-slot] {
+  display: inline-grid;
+  place-items: center;
+  width: 16px;
+  height: 16px;
+  margin-right: -4px;
+  padding: 0;
+  border: none;
+  border-radius: 999px;
+  background: transparent;
+  box-shadow: none;
+  color: inherit;
+  opacity: 0.6;
+  cursor: pointer;
+}
+:where(.rb-root, .rb-home, .rb-embed, .modal.rb-modal) [data-slot='pill-remove']:hover { opacity: 1; color: var(--rb-danger-fg); }
+:where(.rb-root, .rb-home, .rb-embed, .modal.rb-modal) [data-slot='pill-remove'] svg { width: 11px; height: 11px; }
+
+:where(.rb-root, .rb-home, .rb-embed, .modal.rb-modal) [data-slot='chip'][data-slot] {
+  display: inline-flex;
+  align-items: center;
+  height: calc(var(--rb-pill-h) + 2px);
+  padding: 0 calc(var(--rb-pill-px) + 1px);
+  border: 1px solid var(--rb-chip-border);
+  border-radius: var(--rb-pill-radius);
+  background: transparent;
+  box-shadow: none;
+  color: var(--rb-chip-fg);
+  font: inherit;
+  font-size: var(--rb-pill-font);
+  cursor: pointer;
+}
+:where(.rb-root, .rb-home, .rb-embed, .modal.rb-modal) [data-slot='chip']:hover { background: transparent; color: var(--text-normal); }
+:where(.rb-root, .rb-home, .rb-embed, .modal.rb-modal) [data-slot='chip'][data-state='on'] {
+  border-color: transparent;
+  background: var(--rb-select-on-bg);
+  color: var(--rb-select-on-fg);
+}

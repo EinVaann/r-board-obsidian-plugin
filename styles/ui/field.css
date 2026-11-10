@@ -1,0 +1,35 @@
+/* ===== Field, SettingRow (field.tsx, setting-row.tsx) ===== */
+/* Vertical field: label above control (field grids in cards). */
+:where(.rb-root, .rb-home, .rb-embed, .modal.rb-modal) [data-slot='field'][data-variant='vertical'] { display: flex; flex-direction: column; gap: 6px; min-width: 0; }
+:where(.rb-root, .rb-home, .rb-embed, .modal.rb-modal) [data-slot='field'][data-variant='horizontal'] { display: flex; align-items: center; gap: 16px; }
+:where(.rb-root, .rb-home, .rb-embed, .modal.rb-modal) [data-slot='field-label'] {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0 6px;
+  color: var(--text-normal);
+  font-size: var(--rb-font-label);
+  font-weight: var(--rb-weight-label);
+}
+:where(.rb-root, .rb-home, .rb-embed, .modal.rb-modal) [data-slot='field-hint'] { color: var(--text-faint); font-size: var(--rb-font-hint); font-weight: 400; }
+:where(.rb-root, .rb-home, .rb-embed, .modal.rb-modal) [data-slot='field-description'] { color: var(--text-faint); font-size: var(--rb-font-hint); }
+:where(.rb-root, .rb-home, .rb-embed, .modal.rb-modal) [data-slot='field-control'] { display: flex; align-items: center; min-width: 0; }
+:where(.rb-root, .rb-home, .rb-embed, .modal.rb-modal) [data-slot='field-control'] > :is([data-slot='select'], [data-slot='input']) { width: 100%; max-width: 100%; }
+:where(.rb-root, .rb-home, .rb-embed, .modal.rb-modal) [data-slot='field-error'] { color: var(--rb-danger-fg); font-size: var(--rb-font-hint); }
+
+/* Setting row: label + description left, control right, a hairline between rows. */
+:where(.rb-root, .rb-home, .rb-embed, .modal.rb-modal) [data-slot='setting-row'][data-slot] {
+  align-items: center;
+  margin: 0;
+  padding: 10px 4px;
+  border: none;
+  border-radius: 0;
+  background: transparent;
+}
+/* Obsidian gives modal setting rows a top border (strong selector): one hairline is ours, below. */
+.modal.rb-modal [data-slot='setting-row'].setting-item:not(.setting-item-heading),
+.rb-root [data-slot='setting-row'].setting-item { border-top: none; }
+:where(.rb-root, .rb-home, .rb-embed, .modal.rb-modal) [data-slot='setting-row']:not(:last-child) { border-bottom: 1px solid var(--rb-divider); }
+:where(.rb-root, .rb-home, .rb-embed, .modal.rb-modal) [data-slot='setting-row-name'] { color: var(--text-normal); font-size: var(--rb-control-font); font-weight: var(--rb-weight-label); }
+:where(.rb-root, .rb-home, .rb-embed, .modal.rb-modal) [data-slot='setting-row-description'] { color: var(--text-faint); font-size: var(--rb-font-hint); }
+:where(.rb-root, .rb-home, .rb-embed, .modal.rb-modal) [data-slot='setting-row-control'] > :is([data-slot='select'], [data-slot='input']) { min-width: 200px; }

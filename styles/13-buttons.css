@@ -1,7 +1,8 @@
 /* ===================== Custom buttons ===================== */
 /* Replaces Obsidian's default button chrome inside our forms (wizard, settings
    modals, and the settings sidebar — all carry the .rb-wizard class). */
-.rb-wizard button {
+/* Kit buttons ([data-slot]) are styled by styles/ui/button.css; these cover the rest. */
+.rb-wizard button:not([data-slot]) {
   padding: 7px 14px;
   border-radius: 8px;
   border: 1px solid var(--background-modifier-border);
@@ -13,25 +14,25 @@
   box-shadow: none;
   transition: background 0.12s ease, border-color 0.12s ease, transform 0.05s ease;
 }
-.rb-wizard button:hover {
+.rb-wizard button:not([data-slot]):hover {
   background: var(--background-modifier-hover);
   border-color: var(--background-modifier-border-hover);
 }
-.rb-wizard button:active { transform: translateY(1px); }
+.rb-wizard button:not([data-slot]):active { transform: translateY(1px); }
 
-.rb-wizard button.mod-cta {
+.rb-wizard button.mod-cta:not([data-slot]) {
   background: var(--interactive-accent);
   border-color: transparent;
   color: var(--text-on-accent);
 }
-.rb-wizard button.mod-cta:hover { background: var(--interactive-accent-hover); }
+.rb-wizard button.mod-cta:not([data-slot]):hover { background: var(--interactive-accent-hover); }
 
-.rb-wizard button.mod-warning {
+.rb-wizard button.mod-warning:not([data-slot]) {
   background: transparent;
   border-color: var(--text-error);
   color: var(--text-error);
 }
-.rb-wizard button.mod-warning:hover {
+.rb-wizard button.mod-warning:not([data-slot]):hover {
   background: var(--text-error);
   border-color: var(--text-error);
   color: var(--text-on-accent);

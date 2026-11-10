@@ -1,0 +1,72 @@
+/* ===================== Industrial: component tokens ===================== */
+/*
+ * How the UI kit looks in this theme, as values only: the same slots as every
+ * theme, different numbers. Base palette (--rbi-*) and Obsidian variable
+ * overrides live in 20-surfaces.css; slot-specific rules in 30-slots.css.
+ */
+body.rb-theme-industrial :is(.rb-root, .rb-home, .rb-embed, .modal.rb-modal, .menu.rb-menu, .rb-drag-ghost) {
+  /* Shape */
+  --rb-btn-radius: 999px;
+  --rb-btn-radius-sm: 999px;
+  --rb-surface-radius: 12px;
+
+  /* Buttons */
+  --rb-btn-primary-bg: var(--rbi-yellow-grad);
+  --rb-btn-primary-fg: var(--rbi-yellow-ink);
+  --rb-btn-primary-border: transparent;
+  --rb-btn-primary-shadow: var(--rbi-yellow-glow);
+  --rb-btn-primary-hover-filter: brightness(0.97);
+  --rb-btn-secondary-bg: var(--rbi-glass);
+  --rb-btn-secondary-fg: var(--text-normal);
+  --rb-btn-secondary-border: var(--rbi-glass-edge);
+  --rb-btn-secondary-shadow: var(--rbi-glass-shadow);
+  --rb-btn-secondary-hover-bg: var(--rbi-glass);
+  --rb-btn-ghost-fg: var(--text-muted);
+  --rb-btn-ghost-hover-fg: var(--text-normal);
+  --rb-btn-ghost-hover-bg: var(--background-modifier-hover);
+  --rb-btn-danger-bg: rgba(209, 31, 63, 0.05);
+  --rb-btn-danger-fg: #C0263F;
+  --rb-btn-danger-border: rgba(209, 31, 63, 0.35);
+  --rb-btn-danger-hover-bg: rgba(209, 31, 63, 0.09);
+
+  /* Selection: graphite, never the vault's accent; yellow is for "this one" only */
+  --rb-select-on-bg: var(--text-normal);
+  --rb-select-on-fg: var(--background-primary);
+  --rb-track-bg: var(--rbi-sunken);
+  --rb-segment-on-bg: var(--rbi-plane-flat);
+  --rb-segment-on-fg: var(--text-normal);
+  --rb-segment-on-shadow: 0 1px 3px rgba(28, 28, 30, 0.12);
+  --rb-switch-off-bg: var(--background-modifier-border-hover);
+  --rb-switch-on-bg: var(--text-normal);
+
+  /* Surfaces */
+  --rb-surface-bg: var(--rbi-plane);
+  --rb-surface-border: var(--background-modifier-border);
+  --rb-surface-shadow: var(--rbi-plane-shadow);
+  --rb-surface-sunken: var(--rbi-sunken);
+  --rb-popover-bg: var(--rbi-plane-flat);
+  --rb-popover-shadow: var(--rbi-pop-shadow);
+
+  /* Tabs: plain text on a hairline, yellow underline for the active one */
+  --rb-tabs-gap: 18px;
+  --rb-tabs-px: 2px;
+  --rb-tabs-indicator: var(--rbi-yellow);
+
+  /* Table totals: a soft yellow band on the white table, clearly not the canvas */
+  --rb-summary-bg: #FFFBE0;
+  --rb-summary-bg-hover: #FFF6B8;
+  --rb-summary-total-bg: #FFF7C2;
+  --rb-summary-border: #E9D24A;
+
+  --rb-danger-fg: #C0263F;
+}
+body.rb-theme-industrial.rb-mode-dark :is(.rb-root, .rb-home, .rb-embed, .modal.rb-modal, .menu.rb-menu, .rb-drag-ghost) {
+  --rb-btn-danger-fg: #FF6B83;
+  --rb-danger-fg: #FF6B83;
+  --rb-switch-thumb-on: #1C1C1E;
+  --rb-segment-on-shadow: none;
+  --rb-summary-bg: rgba(255, 228, 26, 0.07);
+  --rb-summary-bg-hover: rgba(255, 228, 26, 0.13);
+  --rb-summary-total-bg: rgba(255, 228, 26, 0.11);
+  --rb-summary-border: rgba(255, 228, 26, 0.45);
+}

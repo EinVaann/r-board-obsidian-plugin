@@ -1,0 +1,41 @@
+/* ===== Tabs, SortableList (tabs.tsx, sortable-list.tsx) ===== */
+:where(.rb-root, .rb-home, .rb-embed, .modal.rb-modal) [data-slot='tabs-list'] {
+  display: flex;
+  gap: var(--rb-tabs-gap);
+  box-shadow: inset 0 -1px 0 var(--rb-divider);
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+:where(.rb-root, .rb-home, .rb-embed, .modal.rb-modal) [data-slot='tabs-trigger'][data-slot] {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  height: auto;
+  padding: 10px var(--rb-tabs-px);
+  border: none;
+  border-bottom: 2px solid transparent;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+  color: var(--text-faint);
+  font: inherit;
+  font-size: var(--rb-control-font);
+  font-weight: var(--rb-weight-label);
+  white-space: nowrap;
+  cursor: pointer;
+}
+:where(.rb-root, .rb-home, .rb-embed, .modal.rb-modal) [data-slot='tabs-trigger']:hover { background: transparent; color: var(--text-normal); }
+:where(.rb-root, .rb-home, .rb-embed, .modal.rb-modal) [data-slot='tabs-trigger'][data-state='active'] { border-bottom-color: var(--rb-tabs-indicator); color: var(--text-normal); }
+:where(.rb-root, .rb-home, .rb-embed, .modal.rb-modal) [data-slot='tabs-trigger'] svg { width: 15px; height: 15px; }
+
+:where(.rb-root, .rb-home, .rb-embed, .modal.rb-modal) [data-slot='sortable-list'] {
+  display: flex;
+  flex-direction: column;
+  border: 1px solid var(--rb-surface-border);
+  border-radius: var(--rb-surface-radius);
+  overflow: hidden;
+}
+:where(.rb-root, .rb-home, .rb-embed, .modal.rb-modal) [data-slot='sortable-row'] + [data-slot='sortable-row'] { border-top: 1px solid var(--rb-divider); }
+:where(.rb-root, .rb-home, .rb-embed, .modal.rb-modal) [data-slot='sortable-row'][data-state='dragging'] { position: relative; z-index: 2; background: var(--rb-popover-bg); box-shadow: var(--rb-popover-shadow); }
+:where(.rb-root, .rb-home, .rb-embed, .modal.rb-modal) [data-slot='drag-handle'] { display: inline-flex; color: var(--text-faint); cursor: grab; touch-action: none; }
+:where(.rb-root, .rb-home, .rb-embed, .modal.rb-modal) [data-slot='drag-handle'] svg { width: var(--rb-icon-size-sm); height: var(--rb-icon-size-sm); }

@@ -1,0 +1,114 @@
+/* ===================== Design tokens ===================== */
+/*
+ * Layer 1 of the design system. Every size, radius, color and shadow a UI
+ * component uses is a variable here; components (00-ui.css) read only these.
+ * These defaults follow Obsidian (the Classic look). A theme changes the look
+ * by overriding the variables (see 30-theme-industrial.css), not the components.
+ */
+:is(.rb-root, .rb-home, .rb-embed, .modal.rb-modal, .menu.rb-menu, .rb-drag-ghost) {
+  /* --- Size scale: md (default) and sm (dense lists, toolbars inside panels) --- */
+  --rb-control-h: 34px;
+  --rb-control-h-sm: 28px;
+  --rb-control-px: 12px;
+  --rb-control-px-sm: 10px;
+  --rb-control-font: 13px;
+  --rb-control-font-sm: 12.5px;
+  --rb-control-gap: 6px;
+  --rb-btn-px: 16px;
+  --rb-btn-px-sm: 10px;
+  --rb-icon-size: 16px;
+  --rb-icon-size-sm: 14px;
+  --rb-icon-btn-sm: 24px;
+  --rb-card-pad: 14px 16px;
+  --rb-card-pad-sm: 10px 12px;
+  --rb-tabs-gap: 4px;
+  --rb-tabs-px: 12px;
+  --rb-pill-h: 20px;
+  --rb-pill-px: 8px;
+  --rb-pill-font: 11.5px;
+
+  /* --- Shape --- */
+  --rb-control-radius: 10px;
+  --rb-control-radius-sm: 8px;
+  --rb-btn-radius: var(--rb-control-radius);
+  --rb-btn-radius-sm: var(--rb-control-radius-sm);
+  --rb-pill-radius: 999px;
+  --rb-surface-radius: 12px;
+  --rb-surface-pad: 14px 16px;
+
+  /* --- Type --- */
+  --rb-font-title: 13.5px;
+  --rb-font-label: 12px;
+  --rb-font-hint: 11.5px;
+  --rb-weight-label: 500;
+  --rb-weight-title: 600;
+
+  /* --- Fields --- */
+  --rb-field-bg: var(--background-modifier-form-field);
+  --rb-field-border: var(--background-modifier-border);
+  --rb-field-border-hover: var(--background-modifier-border-hover);
+  --rb-field-border-focus: var(--background-modifier-border-focus);
+  --rb-field-fg: var(--text-normal);
+  --rb-caret: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%239C9C95' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
+
+  /* --- Buttons: one set per variant (bg can be a gradient) --- */
+  --rb-btn-primary-bg: var(--interactive-accent);
+  --rb-btn-primary-fg: var(--text-on-accent);
+  --rb-btn-primary-border: transparent;
+  --rb-btn-primary-shadow: none;
+  --rb-btn-primary-hover-filter: brightness(1.05);
+  --rb-btn-secondary-bg: var(--background-primary);
+  --rb-btn-secondary-fg: var(--text-normal);
+  --rb-btn-secondary-border: var(--background-modifier-border);
+  --rb-btn-secondary-shadow: none;
+  --rb-btn-secondary-hover-bg: var(--background-modifier-hover);
+  --rb-btn-ghost-fg: var(--text-muted);
+  --rb-btn-ghost-hover-fg: var(--text-normal);
+  --rb-btn-ghost-hover-bg: var(--background-modifier-hover);
+  --rb-btn-danger-bg: transparent;
+  --rb-btn-danger-fg: var(--text-error);
+  --rb-btn-danger-border: color-mix(in srgb, var(--text-error) 35%, transparent);
+  --rb-btn-danger-hover-bg: color-mix(in srgb, var(--text-error) 8%, transparent);
+  --rb-icon-btn-fg: var(--text-muted);
+  --rb-icon-btn-hover-fg: var(--text-normal);
+  --rb-icon-btn-hover-bg: var(--background-modifier-hover);
+
+  /* --- Selection inside a control (segmented "on", chip "on", switch "on") --- */
+  --rb-select-on-bg: var(--interactive-accent);
+  --rb-select-on-fg: var(--text-on-accent);
+  --rb-track-bg: var(--background-modifier-hover);
+  --rb-track-border: var(--background-modifier-border);
+  --rb-segment-on-bg: var(--background-primary);
+  --rb-segment-on-fg: var(--text-normal);
+  --rb-segment-on-shadow: var(--shadow-s);
+  --rb-switch-off-bg: var(--background-modifier-border-hover);
+  --rb-switch-on-bg: var(--interactive-accent);
+  --rb-switch-thumb: #FFFFFF;
+  --rb-switch-thumb-on: var(--rb-switch-thumb);
+  --rb-tabs-indicator: var(--interactive-accent);
+
+  /* --- Pills and chips --- */
+  --rb-pill-default: var(--text-faint);
+  --rb-chip-border: var(--background-modifier-border);
+  --rb-chip-fg: var(--text-muted);
+
+  /* --- Surfaces: cards, panels, dialogs --- */
+  --rb-surface-bg: var(--background-primary);
+  --rb-surface-border: var(--background-modifier-border);
+  --rb-surface-shadow: none;
+  --rb-surface-sunken: var(--background-secondary);
+  --rb-icon-chip-bg: var(--background-modifier-hover);
+  --rb-divider: var(--background-modifier-border);
+  --rb-popover-bg: var(--background-primary);
+  --rb-popover-border: var(--background-modifier-border);
+  --rb-popover-shadow: var(--shadow-l, 0 8px 24px rgba(0, 0, 0, 0.15));
+
+  /* --- Table summary row (totals) --- */
+  --rb-summary-bg: color-mix(in srgb, var(--interactive-accent) 7%, var(--background-secondary));
+  --rb-summary-bg-hover: color-mix(in srgb, var(--interactive-accent) 13%, var(--background-secondary));
+  --rb-summary-total-bg: color-mix(in srgb, var(--interactive-accent) 12%, var(--background-secondary));
+  --rb-summary-border: color-mix(in srgb, var(--interactive-accent) 35%, var(--background-modifier-border));
+
+  /* --- Status --- */
+  --rb-danger-fg: var(--text-error);
+}

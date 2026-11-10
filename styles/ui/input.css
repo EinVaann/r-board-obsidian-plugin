@@ -1,0 +1,84 @@
+/* ===== Input, NumberInput, Select, MultiSelect trigger (input.tsx, select.tsx) ===== */
+/* Every field-like part shares one box: same height, corners, font and border per size. */
+:where(.rb-root, .rb-home, .rb-embed, .modal.rb-modal) :is([data-slot='input'], [data-slot='select'], [data-slot='multi-select-trigger'])[data-slot] {
+  box-sizing: border-box;
+  height: var(--rb-control-h);
+  padding: 0 var(--rb-control-px);
+  border: 1px solid var(--rb-field-border);
+  border-radius: var(--rb-control-radius);
+  background-color: var(--rb-field-bg);
+  box-shadow: none;
+  color: var(--rb-field-fg);
+  font: inherit;
+  font-size: var(--rb-control-font);
+  font-weight: 400;
+  line-height: normal;
+  filter: none;
+}
+:where(.rb-root, .rb-home, .rb-embed, .modal.rb-modal) :is([data-slot='input'], [data-slot='select'], [data-slot='multi-select-trigger'])[data-size='sm'] {
+  height: var(--rb-control-h-sm);
+  padding: 0 var(--rb-control-px-sm);
+  border-radius: var(--rb-control-radius-sm);
+  font-size: var(--rb-control-font-sm);
+}
+:where(.rb-root, .rb-home, .rb-embed, .modal.rb-modal) :is([data-slot='input'], [data-slot='select'], [data-slot='multi-select-trigger']):hover:not(:disabled) {
+  border-color: var(--rb-field-border-hover);
+  background-color: var(--rb-field-bg);
+}
+:where(.rb-root, .rb-home, .rb-embed, .modal.rb-modal) :is([data-slot='input'], [data-slot='select'], [data-slot='multi-select-trigger']):focus-visible {
+  outline: none;
+  border-color: var(--rb-field-border-focus);
+}
+:where(.rb-root, .rb-home, .rb-embed, .modal.rb-modal) [data-slot='input'][aria-invalid='true'] { border-color: var(--rb-danger-fg); }
+:where(.rb-root, .rb-home, .rb-embed, .modal.rb-modal) [data-slot='input']::placeholder { color: var(--text-faint); }
+
+/* Dropdowns: one caret for native selects and multi-select triggers. */
+:where(.rb-root, .rb-home, .rb-embed, .modal.rb-modal) :is([data-slot='select'], [data-slot='multi-select-trigger'])[data-slot] {
+  appearance: none;
+  -webkit-appearance: none;
+  padding-right: calc(var(--rb-control-px) + 18px);
+  background-image: var(--rb-caret);
+  background-repeat: no-repeat;
+  background-position: right var(--rb-control-px) center;
+  background-size: 12px;
+  cursor: pointer;
+  text-align: left;
+}
+:where(.rb-root, .rb-home, .rb-embed, .modal.rb-modal) :is([data-slot='select'], [data-slot='multi-select-trigger'])[data-size='sm'] {
+  padding-right: calc(var(--rb-control-px-sm) + 16px);
+  background-position: right var(--rb-control-px-sm) center;
+}
+
+/* Older screens still using classes: same box from the same tokens (compact inside list rows). */
+/* Move each to the Input / Select primitive when its screen is next touched. */
+:where(.rb-root, .rb-home, .rb-embed, .modal.rb-modal) :is(.rb-prop-name, .rb-prop-input, .rb-filter-value, .rb-col-add-input, .rb-col-field-input, .rb-prop-select, .rb-filter-select, .rb-auto-date-line select):not([data-slot]) {
+  box-sizing: border-box;
+  height: var(--rb-control-h);
+  padding: 0 var(--rb-control-px);
+  border-radius: var(--rb-control-radius);
+  font-size: var(--rb-control-font);
+  line-height: normal;
+}
+:where(.rb-root, .rb-home, .rb-embed, .modal.rb-modal) :is(.rb-prop-select, .rb-filter-select, .rb-auto-date-line select):not([data-slot]) {
+  appearance: none;
+  -webkit-appearance: none;
+  padding-right: calc(var(--rb-control-px) + 18px);
+  border: 1px solid var(--rb-field-border);
+  background-color: var(--rb-field-bg);
+  background-image: var(--rb-caret);
+  background-repeat: no-repeat;
+  background-position: right var(--rb-control-px) center;
+  background-size: 12px;
+  color: var(--rb-field-fg);
+  cursor: pointer;
+}
+:where(.rb-root, .rb-home, .rb-embed, .modal.rb-modal) :is(.rb-prop-head .rb-prop-name, .rb-prop-head .rb-prop-select, .rb-filter-select, .rb-filter-value, .rb-col-field-input, .rb-auto-date-line select):not([data-slot]) {
+  height: var(--rb-control-h-sm);
+  border-radius: var(--rb-control-radius-sm);
+  font-size: var(--rb-control-font-sm);
+}
+
+/* NumberInput: the box plus a unit after it. */
+:where(.rb-root, .rb-home, .rb-embed, .modal.rb-modal) [data-slot='number-input'] { display: inline-flex; align-items: center; gap: 6px; width: 100%; }
+:where(.rb-root, .rb-home, .rb-embed, .modal.rb-modal) [data-slot='number-input'] > [data-slot='input'] { flex: 1; min-width: 0; width: 100%; text-align: right; font-variant-numeric: tabular-nums; }
+:where(.rb-root, .rb-home, .rb-embed, .modal.rb-modal) [data-slot='number-input-unit'] { flex: none; color: var(--text-muted); font-size: var(--rb-font-hint); }

@@ -50,7 +50,7 @@ if (prod) {
   await context.watch();
   // Rebuild styles.css whenever a partial under styles/ changes.
   const stylesDir = path.join(path.dirname(fileURLToPath(import.meta.url)), "styles");
-  watch(stylesDir, { persistent: true }, () => {
+  watch(stylesDir, { persistent: true, recursive: true }, () => {
     void buildCss().then(() => console.log("styles.css rebuilt")).catch((e) => console.error(e));
   });
 }

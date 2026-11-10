@@ -1,0 +1,41 @@
+/* ===== MultiSelect popup (src/ui/primitives/select.tsx) — the trigger shares the field box in input.css ===== */
+:where(.rb-root, .rb-home, .rb-embed, .modal.rb-modal) [data-slot='multi-select'] { position: relative; display: inline-flex; max-width: 100%; }
+:where(.rb-root, .rb-home, .rb-embed, .modal.rb-modal) [data-slot='multi-select-trigger'] { display: inline-flex; align-items: center; justify-content: flex-start; max-width: 260px; }
+:where(.rb-root, .rb-home, .rb-embed, .modal.rb-modal) [data-slot='multi-select-value'] { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+:where(.rb-root, .rb-home, .rb-embed, .modal.rb-modal) [data-slot='multi-select-content'] {
+  position: absolute;
+  top: calc(100% + 4px);
+  right: 0;
+  z-index: 10;
+  display: flex;
+  flex-direction: column;
+  min-width: 180px;
+  padding: 4px;
+  border: 1px solid var(--rb-popover-border);
+  border-radius: var(--rb-control-radius);
+  background: var(--rb-popover-bg);
+  box-shadow: var(--rb-popover-shadow);
+}
+:where(.rb-root, .rb-home, .rb-embed, .modal.rb-modal) [data-slot='multi-select-content'][data-side='top'] { top: auto; bottom: calc(100% + 4px); }
+:where(.rb-root, .rb-home, .rb-embed, .modal.rb-modal) [data-slot='multi-select-item'][data-slot] {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 8px;
+  height: var(--rb-control-h-sm);
+  padding: 0 8px;
+  border: none;
+  border-radius: calc(var(--rb-control-radius-sm) - 2px);
+  background: transparent;
+  box-shadow: none;
+  color: var(--text-normal);
+  font: inherit;
+  font-size: var(--rb-control-font-sm);
+  text-align: left;
+  cursor: pointer;
+}
+:where(.rb-root, .rb-home, .rb-embed, .modal.rb-modal) [data-slot='multi-select-item']:hover { background: var(--rb-icon-btn-hover-bg); }
+:where(.rb-root, .rb-home, .rb-embed, .modal.rb-modal) [data-slot='multi-select-item']:disabled { opacity: 1; cursor: default; }
+:where(.rb-root, .rb-home, .rb-embed, .modal.rb-modal) [data-slot='multi-select-check'] { display: inline-flex; width: var(--rb-icon-size-sm); }
+:where(.rb-root, .rb-home, .rb-embed, .modal.rb-modal) [data-slot='multi-select-check'] svg { width: var(--rb-icon-size-sm); height: var(--rb-icon-size-sm); }
+:where(.rb-root, .rb-home, .rb-embed, .modal.rb-modal) [data-slot='color-dot'] { flex: none; width: 8px; height: 8px; border-radius: 999px; background: var(--rb-dot, var(--rb-pill-default)); }

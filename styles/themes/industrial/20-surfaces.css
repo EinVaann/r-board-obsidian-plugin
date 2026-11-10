@@ -1,0 +1,728 @@
+/* ===================== Theme: Industrial ===================== */
+/*
+ * Turned on by body.rb-theme-industrial (Plugin settings → Appearance), with
+ * body.rb-mode-light / .rb-mode-dark from the light / dark choice.
+ *
+ * Layer 1: Obsidian's color variables are redefined, but only inside R Board's
+ * own elements (board views, embeds, home, our modals and menus), so every
+ * existing rule picks up the palette and Obsidian's own UI is left alone.
+ * Layer 2 (below): the surfaces — gradient canvas, floating planes, glass
+ * buttons, and yellow kept for "this one" (selection, running, primary).
+ */
+body.rb-theme-industrial {
+  --rbi-yellow: #FFE41A;
+  --rbi-yellow-soft: #FFF6B0;
+  --rbi-yellow-ink: #1C1C1E;
+  --rbi-yellow-grad: linear-gradient(180deg, #FFEE5C 0%, #FFE41A 55%, #F2D600 100%);
+  --rbi-yellow-glow: 0 1px 0 rgba(255, 255, 255, 0.7) inset, 0 4px 12px -2px rgba(230, 200, 0, 0.45);
+  --rbi-head: 'Barlow Semi Condensed', 'Arial Narrow', var(--font-interface);
+}
+body.rb-theme-industrial.rb-mode-light {
+  --rbi-canvas: radial-gradient(1100px 520px at 85% -10%, #FFFFFF 0%, rgba(255, 255, 255, 0) 60%), linear-gradient(180deg, #ECECE8 0%, #E1E1DC 100%);
+  --rbi-plane: linear-gradient(180deg, #FFFFFF 0%, #FAFAF8 100%);
+  --rbi-plane-flat: #FFFFFF;
+  --rbi-plane-shadow: 0 1px 0 rgba(255, 255, 255, 0.9) inset, 0 1px 2px rgba(28, 28, 30, 0.05), 0 8px 24px -8px rgba(28, 28, 30, 0.12);
+  --rbi-glass: linear-gradient(180deg, rgba(255, 255, 255, 0.9) 0%, rgba(255, 255, 255, 0.55) 100%);
+  --rbi-glass-edge: rgba(255, 255, 255, 0.95);
+  --rbi-glass-shadow: 0 1px 0 rgba(255, 255, 255, 0.9) inset, 0 -1px 0 rgba(28, 28, 30, 0.05) inset, 0 2px 6px rgba(28, 28, 30, 0.08), 0 6px 16px -6px rgba(28, 28, 30, 0.14);
+  --rbi-pop-shadow: 0 1px 0 rgba(255, 255, 255, 0.9) inset, 0 30px 70px -20px rgba(28, 28, 30, 0.35), 0 4px 14px rgba(28, 28, 30, 0.08);
+  --rbi-sunken: rgba(28, 28, 30, 0.05);
+  --rbi-ink-grad: linear-gradient(180deg, #3A3A3E 0%, #1C1C1E 100%);
+  --rbi-ink-text: #F5F5F2;
+  --rbi-running: linear-gradient(90deg, #FFF6B0 0%, rgba(255, 246, 176, 0.25) 100%);
+  --rbi-scrim: rgba(225, 225, 220, 0.55);
+}
+body.rb-theme-industrial.rb-mode-dark {
+  --rbi-canvas: radial-gradient(1100px 520px at 85% -10%, #2B2B2F 0%, rgba(43, 43, 47, 0) 60%), linear-gradient(180deg, #19191B 0%, #121214 100%);
+  --rbi-plane: linear-gradient(180deg, rgba(255, 255, 255, 0.055) 0%, rgba(255, 255, 255, 0.03) 100%);
+  --rbi-plane-flat: #232326;
+  --rbi-plane-shadow: 0 1px 0 rgba(255, 255, 255, 0.06) inset, 0 10px 28px -10px rgba(0, 0, 0, 0.6);
+  --rbi-glass: linear-gradient(180deg, rgba(255, 255, 255, 0.12) 0%, rgba(255, 255, 255, 0.05) 100%);
+  --rbi-glass-edge: rgba(255, 255, 255, 0.14);
+  --rbi-glass-shadow: 0 1px 0 rgba(255, 255, 255, 0.1) inset, 0 4px 14px -4px rgba(0, 0, 0, 0.6);
+  --rbi-pop-shadow: 0 1px 0 rgba(255, 255, 255, 0.06) inset, 0 30px 70px -20px rgba(0, 0, 0, 0.8);
+  --rbi-sunken: rgba(0, 0, 0, 0.2);
+  --rbi-ink-grad: linear-gradient(180deg, #F2F2EC 0%, #D9D9D2 100%);
+  --rbi-ink-text: #1C1C1E;
+  --rbi-running: linear-gradient(90deg, rgba(255, 228, 26, 0.14) 0%, rgba(255, 228, 26, 0.02) 100%);
+  --rbi-scrim: rgba(10, 10, 12, 0.6);
+}
+
+/* Where the palette applies: R Board's own elements only. */
+body.rb-theme-industrial.rb-mode-light :is(.rb-root, .rb-home, .rb-embed, .modal.rb-modal, .menu.rb-menu, .rb-drag-ghost) {
+  color-scheme: light;
+  --background-primary: #FFFFFF;
+  --background-primary-alt: #F6F6F2;
+  --background-secondary: #F3F3EF;
+  --background-secondary-alt: #ECECE7;
+  --background-modifier-border: #E3E3DD;
+  --background-modifier-border-hover: #CFCFC7;
+  --background-modifier-border-focus: #9C9C95;
+  --background-modifier-hover: rgba(28, 28, 30, 0.05);
+  --background-modifier-active-hover: rgba(28, 28, 30, 0.08);
+  --background-modifier-form-field: rgba(255, 255, 255, 0.7);
+  --text-normal: #1C1C1E;
+  --text-muted: #6B6B66;
+  --text-faint: #A1A19A;
+  --text-on-accent: #F5F5F2;
+  /* Graphite is the accent; yellow is used on purpose below, not as a default. */
+  --interactive-accent: #1C1C1E;
+  --interactive-accent-hover: #3A3A3E;
+  --interactive-accent-hsl: 240, 3%, 11%;
+  --color-accent-rgb: 28, 28, 30;
+  --text-accent: #1C1C1E;
+  --modal-background: #FFFFFF;
+  --modal-radius: 16px;
+  --radius-s: 8px;
+  --radius-m: 12px;
+  --shadow-s: 0 2px 6px rgba(28, 28, 30, 0.08);
+  /* The rest of Obsidian's light/dark-dependent palette, so nothing leaks from the other mode. */
+  --color-base-00: #FFFFFF; --color-base-05: #FCFCFA; --color-base-10: #F8F8F5; --color-base-20: #F3F3EF;
+  --color-base-25: #ECECE7; --color-base-30: #E3E3DD; --color-base-35: #D8D8D1; --color-base-40: #BDBDB5;
+  --color-base-50: #A1A19A; --color-base-60: #6B6B66; --color-base-70: #55554F; --color-base-100: #1C1C1E;
+  --mono-0: white; --mono-100: black; --mono-rgb-0: 255, 255, 255; --mono-rgb-100: 0, 0, 0;
+  --background-modifier-box-shadow: rgba(28, 28, 30, 0.1);
+  --background-modifier-cover: rgba(225, 225, 220, 0.55);
+  --shadow-xs: 0 1px 3px rgba(28, 28, 30, 0.06);
+  --shadow-l: 0 30px 70px -20px rgba(28, 28, 30, 0.35);
+  --blur-background: #FFFFFF;
+  --raised-mask-background: transparent;
+  --text-selection: rgba(255, 228, 26, 0.35);
+  --highlight-mix-blend-mode: darken;
+  --color-red-rgb: 192, 38, 63; --color-orange-rgb: 194, 106, 42; --color-yellow-rgb: 212, 164, 0; --color-green-rgb: 111, 163, 50;
+  --color-cyan-rgb: 60, 150, 150; --color-blue-rgb: 77, 123, 214; --color-purple-rgb: 112, 102, 255; --color-pink-rgb: 200, 80, 140;
+  --color-red: rgb(var(--color-red-rgb)); --color-orange: rgb(var(--color-orange-rgb)); --color-yellow: rgb(var(--color-yellow-rgb));
+  --color-green: rgb(var(--color-green-rgb)); --color-cyan: rgb(var(--color-cyan-rgb)); --color-blue: rgb(var(--color-blue-rgb));
+  --color-purple: rgb(var(--color-purple-rgb)); --color-pink: rgb(var(--color-pink-rgb));
+}
+body.rb-theme-industrial.rb-mode-dark :is(.rb-root, .rb-home, .rb-embed, .modal.rb-modal, .menu.rb-menu, .rb-drag-ghost) {
+  color-scheme: dark;
+  --background-primary: #1E1E20;
+  --background-primary-alt: #232326;
+  --background-secondary: #18181A;
+  --background-secondary-alt: #222225;
+  --background-modifier-border: #323235;
+  --background-modifier-border-hover: #45454A;
+  --background-modifier-border-focus: #6F6F6A;
+  --background-modifier-hover: rgba(255, 255, 255, 0.06);
+  --background-modifier-active-hover: rgba(255, 255, 255, 0.1);
+  --background-modifier-form-field: rgba(0, 0, 0, 0.2);
+  --text-normal: #E9E9E3;
+  --text-muted: #A3A39D;
+  --text-faint: #6E6E69;
+  --text-on-accent: #1C1C1E;
+  --interactive-accent: #ECECE6;
+  --interactive-accent-hover: #FFFFFF;
+  --interactive-accent-hsl: 60, 9%, 91%;
+  --color-accent-rgb: 236, 236, 230;
+  --text-accent: #ECECE6;
+  --modal-background: #232327;
+  --modal-radius: 16px;
+  --radius-s: 8px;
+  --radius-m: 12px;
+  --shadow-s: 0 2px 8px rgba(0, 0, 0, 0.5);
+  --color-base-00: #1E1E20; --color-base-05: #212123; --color-base-10: #232326; --color-base-20: #28282B;
+  --color-base-25: #2E2E31; --color-base-30: #333336; --color-base-35: #3F3F43; --color-base-40: #55555A;
+  --color-base-50: #6E6E69; --color-base-60: #A3A39D; --color-base-70: #B9B9B2; --color-base-100: #E9E9E3;
+  --mono-0: black; --mono-100: white; --mono-rgb-0: 0, 0, 0; --mono-rgb-100: 255, 255, 255;
+  --background-modifier-box-shadow: rgba(0, 0, 0, 0.3);
+  --background-modifier-cover: rgba(10, 10, 12, 0.6);
+  --shadow-xs: 0 1px 3px rgba(0, 0, 0, 0.3);
+  --shadow-l: 0 30px 70px -20px rgba(0, 0, 0, 0.8);
+  --blur-background: #2C2C30;
+  --raised-mask-background: transparent;
+  --text-selection: rgba(255, 228, 26, 0.25);
+  --highlight-mix-blend-mode: lighten;
+  --color-red-rgb: 255, 107, 131; --color-orange-rgb: 240, 154, 85; --color-yellow-rgb: 233, 205, 98; --color-green-rgb: 163, 208, 101;
+  --color-cyan-rgb: 110, 200, 200; --color-blue-rgb: 126, 163, 240; --color-purple-rgb: 168, 150, 255; --color-pink-rgb: 240, 150, 200;
+  --color-red: rgb(var(--color-red-rgb)); --color-orange: rgb(var(--color-orange-rgb)); --color-yellow: rgb(var(--color-yellow-rgb));
+  --color-green: rgb(var(--color-green-rgb)); --color-cyan: rgb(var(--color-cyan-rgb)); --color-blue: rgb(var(--color-blue-rgb));
+  --color-purple: rgb(var(--color-purple-rgb)); --color-pink: rgb(var(--color-pink-rgb));
+}
+
+/* Industrial owns every Obsidian variable R Board reads (type, sizes, inputs, menus...): */
+/* the vault's theme, fonts and snippets don't reach inside. */
+body.rb-theme-industrial :is(.rb-root, .rb-home, .rb-embed, .modal.rb-modal, .menu.rb-menu, .rb-drag-ghost) {
+  --font-interface: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+  --font-text: var(--font-interface);
+  --font-monospace: ui-monospace, SFMono-Regular, Menlo, monospace;
+  --font-text-size: 14px;
+  --font-preferred-size: 14px;
+  --font-ui-smaller: 11.5px;
+  --font-ui-small: 13px;
+  --font-ui-medium: 14px;
+  --font-ui-large: 18px;
+  --font-smallest: 0.8em; --font-smaller: 0.875em; --font-small: 0.933em;
+  --font-weight: 400; --font-normal: 400; --font-medium: 500; --font-semibold: 600; --font-bold: 700;
+  --bold-weight: 600; --bold-modifier: 200; --bold-color: inherit;
+  --line-height-normal: 1.5; --line-height-tight: 1.3;
+  --h1-font: inherit; --h2-font: inherit; --h3-font: inherit; --h4-font: inherit; --h5-font: inherit; --h6-font: inherit;
+  --h1-color: inherit; --h2-color: inherit; --h3-color: inherit; --h4-color: inherit; --h5-color: inherit; --h6-color: inherit;
+  --h4-size: 14px; --h4-weight: 600; --h4-letter-spacing: 0; --h4-line-height: 1.3; --h4-style: normal; --h4-variant: normal;
+  --size-2-1: 2px; --size-2-2: 4px; --size-2-3: 6px;
+  --size-4-1: 4px; --size-4-2: 8px; --size-4-3: 12px; --size-4-4: 16px; --size-4-5: 20px; --size-4-6: 24px; --size-4-8: 32px;
+  --radius-l: 16px; --radius-xl: 24px;
+  --border-width: 1px;
+  --corner-shape: round;
+  --cursor: pointer;
+  --input-height: 34px; --input-radius: 10px; --input-padding: 6px 12px; --input-font-weight: 400;
+  --input-border-width: 1px; --input-border-width-focus: 2px; --input-placeholder-color: var(--text-faint);
+  --input-corner-shape: round; --input-transition: none;
+  --button-radius: 999px; --button-corner-shape: round; --button-transition: none;
+  --clickable-icon-radius: 8px;
+  --icon-size: 16px; --icon-stroke: 1.75px; --icon-xs: 14px; --icon-s: 16px; --icon-m: 16px; --icon-l: 18px;
+  --icon-color: var(--text-muted); --icon-color-hover: var(--text-normal); --icon-color-active: var(--text-normal); --icon-color-focused: var(--text-normal);
+  --icon-opacity: 1; --icon-opacity-hover: 1; --icon-opacity-active: 1;
+  --checkbox-radius: 5px; --checkbox-size: 16px; --checkbox-color: var(--text-normal); --checkbox-color-hover: var(--text-normal);
+  --checkbox-border-color: var(--background-modifier-border-hover); --checkbox-border-color-hover: var(--text-faint); --checkbox-marker-color: var(--background-primary);
+  --toggle-border-width: 2px; --toggle-width: 38px; --toggle-radius: 999px;
+  --toggle-thumb-color: #FFFFFF; --toggle-thumb-radius: 999px; --toggle-thumb-height: 18px; --toggle-thumb-width: 18px;
+  --toggle-s-border-width: 2px; --toggle-s-width: 34px; --toggle-s-thumb-height: 15px; --toggle-s-thumb-width: 15px;
+  --menu-padding: 5px; --menu-radius: 12px; --menu-background: var(--background-primary);
+  --menu-border-color: var(--background-modifier-border); --menu-border-width: 1px; --menu-shadow: var(--shadow-l); --menu-backdrop-filter: none;
+  --modal-border-width: 1px; --modal-border-color: var(--background-modifier-border); --modal-shadow: var(--shadow-l);
+  --setting-items-background: transparent; --setting-items-radius: 0; --setting-items-border-width: 0;
+  --setting-items-padding-x: 0; --setting-items-padding-y: 0;
+  --setting-item-name-color: var(--text-normal); --setting-item-name-size: 13px; --setting-item-name-weight: 500;
+  --setting-items-divider-width: 1px; --setting-items-divider-color: var(--background-modifier-border);
+  --background-modifier-form-field-hover: var(--background-modifier-form-field);
+  /* Obsidian paints every <button> from these: flat by default, our rules add the surfaces. */
+  --interactive-normal: transparent;
+  --interactive-hover: var(--background-modifier-hover);
+  --input-shadow: none;
+  --input-shadow-hover: none;
+  --dropdown-background: var(--background-modifier-form-field);
+  --dropdown-background-hover: var(--background-modifier-form-field);
+  --hover-filter: none;
+  --background-modifier-error: #C0263F; --background-modifier-error-hover: #C0263F;
+  --background-modifier-warning: #C26A2A; --background-modifier-success: #6FA332;
+  --background-modifier-error-rgb: 192, 38, 63; --background-modifier-success-rgb: 111, 163, 50;
+  --text-error: #C0263F; --text-warning: #C26A2A; --text-success: #4E8A2A;
+  --text-on-accent-inverted: var(--background-primary);
+  --text-accent-hover: var(--text-normal);
+  --link-color: var(--text-normal); --link-color-hover: var(--text-normal);
+  --link-decoration: none; --link-decoration-hover: underline;
+  --link-unresolved-color: var(--text-muted); --link-unresolved-opacity: 0.8; --link-unresolved-decoration-style: dotted;
+  --accent-h: 240; --accent-s: 3%; --accent-l: 11%;
+  --color-accent: var(--interactive-accent); --color-accent-1: var(--interactive-accent); --color-accent-2: var(--interactive-accent-hover);
+  --color-accent-hsl: var(--interactive-accent-hsl);
+  --tag-color: var(--text-muted); --tag-background: var(--background-modifier-hover); --tag-radius: 999px;
+  --scrollbar-bg: transparent; --scrollbar-thumb-bg: rgba(128, 128, 128, 0.3); --scrollbar-active-thumb-bg: rgba(128, 128, 128, 0.5);
+  font-family: var(--font-interface);
+  font-size: var(--font-ui-small);
+  font-weight: 400;
+  line-height: var(--line-height-tight);
+  letter-spacing: normal;
+  font-feature-settings: normal;
+  text-transform: none;
+  -webkit-font-smoothing: antialiased;
+}
+/* Obsidian derives these from the palette on <body>, so they'd keep its colors and fonts. */
+/* Declared again here, they follow Industrial's palette (the note editor, properties, code). */
+body.rb-theme-industrial :is(.rb-root, .rb-home, .rb-embed, .modal.rb-modal, .menu.rb-menu, .rb-drag-ghost) {
+  --caret-color: var(--text-normal);
+  --divider-color: var(--background-modifier-border);
+  --divider-color-hover: var(--text-faint);
+  --tab-container-background: var(--background-primary);
+  --file-header-background: var(--background-primary);
+  --file-header-background-focused: var(--background-primary);
+  --file-header-font: var(--font-interface);
+  --inline-title-color: var(--text-normal);
+  --inline-title-font: var(--font-interface);
+  --hr-color: var(--background-modifier-border);
+  --blockquote-border-color: var(--background-modifier-border-hover);
+  --embed-border-start: 2px solid var(--background-modifier-border-hover);
+  --collapse-icon-color: var(--text-faint);
+  --collapse-icon-color-collapsed: var(--text-muted);
+  --list-marker-color: var(--text-faint);
+  --list-marker-color-hover: var(--text-muted);
+  --list-marker-color-collapsed: var(--text-muted);
+  --indentation-guide-color: color-mix(in oklch, var(--text-normal) 12%, transparent);
+  --indentation-guide-color-active: color-mix(in oklch, var(--text-normal) 30%, transparent);
+  --link-external-color: var(--text-normal);
+  --link-external-color-hover: var(--text-normal);
+  --link-unresolved-decoration-color: var(--background-modifier-border-hover);
+  --code-background: var(--background-primary-alt);
+  --code-normal: var(--text-normal);
+  --code-comment: var(--text-faint);
+  --code-punctuation: var(--text-muted);
+  --code-border-color: var(--background-modifier-border);
+  --code-bracket-background: var(--background-modifier-hover);
+  --code-function: var(--color-yellow); --code-important: var(--color-orange); --code-keyword: var(--color-pink);
+  --code-operator: var(--color-red); --code-property: var(--color-cyan); --code-string: var(--color-green);
+  --code-tag: var(--color-red); --code-value: var(--color-purple);
+  --metadata-border-color: var(--background-modifier-border);
+  --metadata-divider-color: var(--background-modifier-border);
+  --metadata-property-background-active: var(--background-modifier-hover);
+  --metadata-property-box-shadow-hover: 0 0 0 1px var(--background-modifier-border-hover);
+  --metadata-property-box-shadow-focus: 0 0 0 2px var(--background-modifier-border-focus);
+  --metadata-label-background-active: var(--background-modifier-hover);
+  --metadata-label-font: var(--font-interface);
+  --metadata-label-text-color: var(--text-muted);
+  --metadata-label-text-color-hover: var(--text-muted);
+  --metadata-input-text-color: var(--text-normal);
+  --metadata-input-font: var(--font-interface);
+  --metadata-input-background: transparent;
+  --metadata-input-background-hover: transparent;
+  --metadata-input-background-active: var(--background-modifier-hover);
+  --metadata-input-height: calc(var(--font-preferred-size) * 1.9);
+  --pill-color: var(--text-muted);
+  --pill-color-hover: var(--text-normal);
+  --pill-color-remove: var(--text-faint);
+  --pill-color-remove-hover: var(--text-normal);
+  --pill-border-color: var(--background-modifier-border);
+  --pill-border-color-hover: var(--background-modifier-border-hover);
+  --tag-color: var(--text-muted);
+  --tag-color-hover: var(--text-normal);
+  --tag-background: var(--background-modifier-hover);
+  --tag-background-hover: var(--background-modifier-active-hover);
+  --tag-border-color: transparent;
+  --tag-border-color-hover: transparent;
+  --table-border-color: var(--background-modifier-border);
+  --table-header-color: var(--text-normal);
+  --table-selection: rgba(255, 228, 26, 0.18);
+  --table-selection-border-color: var(--text-normal);
+  --table-add-button-border-color: var(--background-modifier-border);
+  --nav-item-color: var(--text-muted);
+  --nav-item-color-hover: var(--text-normal);
+  --nav-item-background-hover: var(--background-modifier-hover);
+  --prompt-background: var(--background-primary);
+  --prompt-border-color: var(--background-modifier-border);
+}
+/* The note editor in the edit dialog: our surface and text, not the vault's. */
+body.rb-theme-industrial .modal.rb-modal.rb-edit-modal :is(.workspace-split, .workspace-leaf, .workspace-leaf-content, .view-content, .markdown-source-view, .cm-editor, .cm-scroller, .markdown-preview-view) {
+  background-color: var(--background-primary);
+  color: var(--text-normal);
+}
+body.rb-theme-industrial .modal.rb-modal.rb-edit-modal :is(.markdown-source-view, .cm-scroller, .markdown-preview-view, .inline-title) { font-family: var(--font-interface); }
+/* Properties: flat rows like Obsidian's own; a soft wash only on the hovered / focused row. */
+body.rb-theme-industrial .modal.rb-modal.rb-edit-modal .rb-edit-embed {
+  --background-modifier-form-field: transparent;
+  --metadata-label-background: transparent;
+  --metadata-label-background-hover: transparent;
+  --metadata-label-background-active: var(--background-modifier-hover);
+  --metadata-input-background: transparent;
+  --metadata-input-background-hover: transparent;
+  --metadata-input-background-active: var(--background-modifier-hover);
+  --metadata-property-background: transparent;
+  --metadata-property-background-hover: transparent;
+  --metadata-property-background-active: var(--background-modifier-hover);
+}
+body.rb-theme-industrial .modal.rb-modal.rb-edit-modal :is(.metadata-property-key, .metadata-property-value, .metadata-property-key-input, .metadata-input-text, .metadata-input-number, .multi-select-container) {
+  background-color: transparent;
+  border: none;
+  box-shadow: none;
+}
+body.rb-theme-industrial .modal.rb-modal.rb-edit-modal .metadata-property-key-input { color: var(--text-muted); }
+body.rb-theme-industrial .modal.rb-modal.rb-edit-modal .metadata-property:focus-within { background-color: var(--background-modifier-hover); }
+/* Its header: title on the left, "Open note" and a plain close button on the right. */
+body.rb-theme-industrial .modal.rb-modal.rb-edit-modal .rb-edit-header { padding: 14px 18px 12px; }
+body.rb-theme-industrial .modal.rb-modal.rb-edit-modal .rb-edit-title { font-size: 17px; font-weight: 600; }
+body.rb-theme-industrial .modal.rb-modal.rb-edit-modal .rb-edit-open { height: 32px; padding: 0 16px; }
+body.rb-theme-industrial .modal.rb-modal.rb-edit-modal .rb-edit-close {
+  width: 32px;
+  height: 32px;
+  border-radius: 999px;
+  background: var(--rbi-glass);
+  border: 1px solid var(--rbi-glass-edge);
+  box-shadow: var(--rbi-glass-shadow);
+  color: var(--text-muted);
+}
+body.rb-theme-industrial .modal.rb-modal.rb-edit-modal .rb-edit-close:hover { background: var(--rbi-glass); color: var(--text-normal); filter: none; }
+
+/* Form controls and headings take the font from us, not from Obsidian's element rules. */
+body.rb-theme-industrial :is(.rb-root, .rb-home, .rb-embed, .modal.rb-modal, .menu.rb-menu) :is(button, input, select, textarea, h1, h2, h3, h4, h5, h6, .modal-title, .setting-item-name, .menu-item-title) {
+  font-family: var(--font-interface);
+  letter-spacing: normal;
+}
+body.rb-theme-industrial .modal.rb-modal .modal-title { font-size: 16px; font-weight: 600; margin: 0 0 12px; text-align: left; }
+/* Toggles: graphite when on, never the vault's accent. */
+body.rb-theme-industrial :is(.rb-root, .modal.rb-modal) .checkbox-container { background-color: var(--background-modifier-border-hover); outline: none; box-shadow: inset 0 1px 2px rgba(28, 28, 30, 0.12); }
+body.rb-theme-industrial :is(.rb-root, .modal.rb-modal) .checkbox-container.is-enabled { background-color: var(--text-normal); }
+body.rb-theme-industrial.rb-mode-dark :is(.rb-root, .modal.rb-modal) .checkbox-container.is-enabled::after { background-color: #1C1C1E; }
+/* Obsidian's settings rows are cards of their own in 1.9+; ours are plain rows. */
+body.rb-theme-industrial .modal.rb-modal .setting-item { background: transparent; border-radius: 0; margin-bottom: 0; }
+
+/* Default chart series colors (read by the chart code): a graphite ramp with one yellow. */
+body.rb-theme-industrial.rb-mode-light { --rb-chart-palette: #3E3E43, #E9CD62, #A7A79C, #6B6B66, #CDCDC0, #8A8A84, #55554F, #D6D6CF; }
+body.rb-theme-industrial.rb-mode-dark { --rb-chart-palette: #ECECE6, #E9CD62, #8A8A84, #B9B9B2, #5A5A5E, #D6D6CF, #6F6F6A, #A3A39D; }
+
+/* ---------- Canvas and planes ---------- */
+/* Text inherits from <body>, outside R Board: set it on our own roots. */
+.rb-theme-industrial :is(.rb-root, .rb-home, .modal.rb-modal, .menu.rb-menu) { color: var(--text-normal); }
+.rb-theme-industrial .rb-root { background: var(--background-primary); }
+.rb-theme-industrial .rb-root .rb-body,
+.rb-theme-industrial .rb-home { background: var(--rbi-canvas); background-attachment: local; }
+.rb-theme-industrial .rb-embed .rb-body { background: transparent; }
+.rb-theme-industrial .rb-root :is(.rb-card, .rb-schedule-week, .rb-schedule-card, .rb-sched-card, .rb-table-wrap.rb-grid, .rb-chart),
+.rb-theme-industrial .modal.rb-modal :is(.rb-sched-card, .rb-settings-group) {
+  background: var(--rbi-plane);
+  border: 1px solid var(--background-modifier-border);
+  box-shadow: var(--rbi-plane-shadow);
+}
+.rb-theme-industrial .rb-root .rb-card { border-radius: 12px; }
+.rb-theme-industrial .rb-root .rb-card:hover {
+  border-color: var(--background-modifier-border);
+  transform: translateY(-1px);
+  box-shadow: var(--rbi-plane-shadow), 0 12px 24px -14px rgba(28, 28, 30, 0.3);
+}
+.rb-theme-industrial .rb-root .rb-card { transition: transform 0.14s, box-shadow 0.14s; }
+
+/* ---------- Toolbar: the frame stays; colors follow the theme ---------- */
+.rb-theme-industrial .rb-root .rb-new-note {
+  background: var(--rbi-ink-grad);
+  color: var(--rbi-ink-text);
+  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.12) inset, 0 2px 6px rgba(28, 28, 30, 0.18);
+}
+.rb-theme-industrial .rb-root .rb-new-note:hover { background: var(--rbi-ink-grad); filter: brightness(1.1); }
+.rb-theme-industrial .rb-root .rb-view-btn.rb-active .rb-view-btn-icon { color: var(--text-normal); }
+/* Toolbar controls as in the design, stated in full so Obsidian's button / input rules can't win. */
+.rb-theme-industrial .rb-root :is(.rb-view-btn, .rb-tool-btn, .rb-chip, .rb-new-note) {
+  height: 32px;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 500;
+  line-height: 1;
+  filter: none;
+}
+.rb-theme-industrial .rb-root .rb-view-btn { padding: 0 12px; border: 1px solid transparent; background: transparent; box-shadow: none; color: var(--text-muted); }
+.rb-theme-industrial .rb-root .rb-view-btn:hover { background: var(--background-modifier-hover); color: var(--text-normal); }
+.rb-theme-industrial .rb-root .rb-view-btn.rb-active { background: var(--background-modifier-hover); border-color: var(--background-modifier-border); color: var(--text-normal); }
+.rb-theme-industrial .rb-root :is(.rb-tool-btn, .rb-chip) { border: 1px solid var(--background-modifier-border); background: var(--background-primary); box-shadow: none; color: var(--text-muted); }
+.rb-theme-industrial .rb-root .rb-tool-btn { width: 32px; padding: 0; }
+.rb-theme-industrial .rb-root .rb-chip { padding: 0 11px; }
+.rb-theme-industrial .rb-root :is(.rb-tool-btn, .rb-chip):hover { background: var(--background-modifier-hover); color: var(--text-normal); }
+.rb-theme-industrial .rb-root .rb-chip-active { border-color: var(--text-muted); color: var(--text-normal); background: var(--background-primary); }
+.rb-theme-industrial .rb-root .rb-new-note { padding: 0 13px; border: none; font-weight: 600; }
+.rb-theme-industrial .rb-root .rb-search { height: 32px; padding: 0 12px; border-radius: 8px; border: 1px solid var(--background-modifier-border); background: var(--background-primary); box-shadow: none; font-size: 13px; }
+.rb-theme-industrial .rb-root :is(.rb-view-btn, .rb-tool-btn, .rb-chip, .rb-new-note) svg { width: 16px; height: 16px; stroke-width: 1.75px; }
+.rb-theme-industrial .rb-root .rb-chip-badge { background: var(--text-normal); color: var(--background-primary); }
+
+/* ---------- Gallery: a cover area on every card (initials on a gradient + hatch when there's no image) ---------- */
+.rb-theme-industrial .rb-root .rb-gallery-card { overflow: hidden; padding: 0; }
+.rb-theme-industrial .rb-root .rb-gallery-card > .rb-img { margin: 0; border-radius: 0; }
+.rb-theme-industrial .rb-root .rb-gallery-card > .rb-img img { display: block; width: 100%; height: 120px; object-fit: cover; border-radius: 0; }
+.rb-theme-industrial .rb-root .rb-card-art {
+  display: block;
+  position: relative;
+  height: 120px;
+  overflow: hidden;
+  background: #D9D9D2;
+}
+.rb-theme-industrial .rb-root .rb-size-small .rb-card-art,
+.rb-theme-industrial .rb-root .rb-size-small .rb-gallery-card > .rb-img img { height: 90px; }
+.rb-theme-industrial .rb-root .rb-size-large .rb-card-art,
+.rb-theme-industrial .rb-root .rb-size-large .rb-gallery-card > .rb-img img { height: 170px; }
+.rb-theme-industrial .rb-root .rb-card-art::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(120% 90% at 20% 0%, rgba(255, 255, 255, 0.45), transparent 60%),
+    repeating-linear-gradient(-45deg, rgba(255, 255, 255, 0.12) 0 1px, transparent 1px 8px);
+}
+.rb-theme-industrial .rb-root .rb-card-art span {
+  position: absolute;
+  left: 12px;
+  bottom: 10px;
+  font: 600 22px/1 var(--rbi-head);
+  letter-spacing: 0.04em;
+  color: rgba(28, 28, 30, 0.55);
+}
+.rb-theme-industrial.rb-mode-dark .rb-root .rb-card-art { background: #3A3A3E; }
+.rb-theme-industrial.rb-mode-dark .rb-root .rb-card-art::before {
+  background:
+    radial-gradient(120% 90% at 20% 0%, rgba(255, 255, 255, 0.12), transparent 60%),
+    repeating-linear-gradient(-45deg, rgba(255, 255, 255, 0.05) 0 1px, transparent 1px 8px);
+}
+.rb-theme-industrial.rb-mode-dark .rb-root .rb-card-art span { color: rgba(255, 255, 255, 0.45); }
+.rb-theme-industrial .rb-root .rb-gallery-card .rb-card-body { padding: 10px 12px 12px; gap: 6px; }
+.rb-theme-industrial .rb-root .rb-gallery-card:hover { transform: translateY(-2px); }
+
+/* ---------- Kanban: glass columns, floating cards ---------- */
+.rb-theme-industrial .rb-root .rb-kanban-col {
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.5), rgba(255, 255, 255, 0.25));
+  border: 1px solid var(--background-modifier-border);
+  border-radius: 14px;
+  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.8) inset;
+}
+.rb-theme-industrial.rb-mode-dark .rb-root .rb-kanban-col { background: rgba(255, 255, 255, 0.025); box-shadow: none; }
+.rb-theme-industrial .rb-root .rb-kanban-add-btn { border-radius: 10px; }
+/* Swimlanes: the sticky header row sits on the canvas; column heads are titles, not empty boxes. */
+.rb-theme-industrial .rb-root .rb-lane-head { background: transparent; backdrop-filter: blur(8px); padding-bottom: 2px; }
+.rb-theme-industrial .rb-root .rb-kanban-col.rb-kanban-col-head {
+  background: transparent;
+  border: none;
+  box-shadow: none;
+}
+.rb-theme-industrial .rb-root .rb-kanban-col-head .rb-kanban-header { padding: 8px 10px; }
+.rb-theme-industrial .rb-root .rb-lane-header { padding: 10px 4px 8px; }
+.rb-theme-industrial .rb-root .rb-lane-header .rb-kanban-count { background: transparent; padding: 0; color: var(--text-faint); }
+.rb-theme-industrial .rb-root .rb-kanban-cell {
+  border: 1px solid var(--background-modifier-border);
+  border-radius: 14px;
+  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.8) inset;
+  padding-top: 8px;
+}
+.rb-theme-industrial.rb-mode-dark .rb-root .rb-kanban-cell { box-shadow: none; }
+/* A collapsed column leaves only its header: no empty box in the rows below. */
+.rb-theme-industrial .rb-root .rb-kanban-cell.rb-collapsed,
+.rb-theme-industrial.rb-mode-dark .rb-root .rb-kanban-cell.rb-collapsed {
+  min-height: 0;
+  padding: 0;
+  border: none;
+  background: transparent;
+  box-shadow: none;
+}
+.rb-theme-industrial .rb-root .rb-kanban-scrolltop { scrollbar-width: thin; }
+/* Neutral columns: the group's color stays on its pill only. */
+.rb-theme-industrial .rb-root :is(.rb-kanban-col, .rb-kanban-cell) .rb-kanban-card { background: var(--rbi-plane); border-color: var(--background-modifier-border); }
+.rb-theme-industrial .rb-root .rb-kanban-cell { background: rgba(255, 255, 255, 0.35); }
+.rb-theme-industrial.rb-mode-dark .rb-root .rb-kanban-cell { background: rgba(255, 255, 255, 0.025); }
+.rb-theme-industrial .rb-root .rb-kanban-col .rb-kanban-count { margin-left: 2px; font-size: 12px; color: var(--text-faint); }
+.rb-theme-industrial .rb-root .rb-kanban-new {
+  height: 32px;
+  padding: 0 10px;
+  border: 1px dashed var(--background-modifier-border-hover);
+  border-radius: 10px;
+  color: var(--text-faint);
+}
+.rb-theme-industrial .rb-root .rb-kanban-new:hover { background: transparent; border-color: var(--text-faint); color: var(--text-normal); }
+.rb-theme-industrial .rb-root .rb-kanban-list { gap: 8px; padding: 0 8px 8px; }
+/* Swimlane cells have no header above the cards: same gap on top as at the sides. */
+.rb-theme-industrial .rb-root .rb-kanban-cell.rb-kanban-list { padding: 8px; }
+.rb-theme-industrial .rb-root .rb-kanban-card { border-radius: 10px; }
+.rb-theme-industrial .rb-root .rb-kanban-card .rb-card-body { padding: 10px 12px; gap: 6px; }
+
+/* ---------- Pills and section headings ---------- */
+.rb-theme-industrial .rb-root .rb-section-header { border-bottom-color: var(--background-modifier-border); }
+
+/* ---------- Schedule ---------- */
+.rb-theme-industrial .rb-root .rb-schedule-week { border-radius: 12px; }
+.rb-theme-industrial .rb-root .rb-schedule-card { border-radius: 12px; border-left-width: 3px; }
+.rb-theme-industrial .rb-root .rb-schedule-lane {
+  background: var(--rbi-plane);
+  border-radius: 12px;
+  box-shadow: var(--rbi-plane-shadow);
+}
+.rb-theme-industrial .rb-root .rb-schedule-entry.is-current {
+  background: var(--rbi-running);
+  border-left-color: var(--rbi-yellow);
+}
+.rb-theme-industrial .rb-root .rb-schedule-index.is-now { background: var(--rbi-yellow); color: var(--rbi-yellow-ink); }
+.rb-theme-industrial .rb-root .rb-schedule-bar > div { background: var(--text-normal); border-radius: 3px; }
+.rb-theme-industrial .rb-root .rb-schedule-week-sum h4 { font-family: var(--rbi-head); letter-spacing: 0.14em; }
+.rb-theme-industrial .rb-root .rb-schedule-day-bar { background: linear-gradient(180deg, rgba(28, 28, 30, 0.03), rgba(28, 28, 30, 0.07)); box-shadow: inset 0 1px 2px rgba(28, 28, 30, 0.06); }
+.rb-theme-industrial.rb-mode-dark .rb-root .rb-schedule-day-bar { background: linear-gradient(180deg, rgba(255, 255, 255, 0.03), rgba(255, 255, 255, 0.07)); box-shadow: none; }
+.rb-theme-industrial .rb-root .rb-schedule-day-bar i { opacity: 1; background: linear-gradient(180deg, #5A5A5E 0%, #2E2E32 100%); }
+.rb-theme-industrial.rb-mode-dark .rb-root .rb-schedule-day-bar i { background: linear-gradient(180deg, #D8D8D2 0%, #9E9E98 100%); }
+.rb-theme-industrial .rb-root .rb-schedule-day.is-today .rb-schedule-day-bar { box-shadow: inset 0 0 0 1.5px var(--text-normal); }
+.rb-theme-industrial .rb-root .rb-schedule-day.is-future .rb-schedule-day-bar { background: transparent; box-shadow: inset 0 0 0 1px var(--background-modifier-border); }
+.rb-theme-industrial .rb-root .rb-schedule-week > .rb-schedule-log { height: 36px; padding: 0 18px; }
+/* The one yellow button: Log time. */
+.rb-theme-industrial .rb-root .rb-schedule-log,
+.rb-theme-industrial .modal.rb-modal .mod-cta:not([data-slot]) {
+  background: var(--rb-btn-primary-bg);
+  color: var(--rb-btn-primary-fg);
+  border: none;
+  border-radius: 999px;
+  box-shadow: var(--rb-btn-primary-shadow);
+  font-weight: 600;
+}
+.rb-theme-industrial .modal.rb-modal .mod-cta:not([data-slot]):hover { filter: var(--rb-btn-primary-hover-filter); }
+.rb-theme-industrial .modal.rb-modal .mod-cta:not([data-slot]):disabled { opacity: 0.45; }
+.rb-theme-industrial .rb-root .rb-schedule-section-title,
+.rb-theme-industrial .rb-root .rb-schedule-lane-head h4 {
+  font-family: var(--rbi-head);
+  letter-spacing: 0.12em;
+}
+/* Glass pills for the small secondary buttons. */
+.rb-theme-industrial .rb-root :is(.rb-schedule-icon-btn, .rb-schedule-replan-btn) {
+  background: var(--rbi-glass);
+  border: 1px solid var(--rbi-glass-edge);
+  border-radius: 999px;
+  box-shadow: var(--rbi-glass-shadow);
+}
+
+/* ---------- Table ---------- */
+.rb-theme-industrial .rb-root .rb-table-wrap.rb-grid { border-radius: 12px; }
+.rb-theme-industrial .rb-root .rb-th { border-bottom-width: 1px; }
+
+/* ---------- Modals: a soft floating plane on a blurred scrim ---------- */
+.rb-theme-industrial .modal-container:has(.modal.rb-modal) .modal-bg {
+  background: var(--rbi-scrim);
+  backdrop-filter: blur(6px);
+  opacity: 1 !important;
+}
+.rb-theme-industrial .modal.rb-modal {
+  background: var(--rbi-plane-flat);
+  border: 1px solid var(--background-modifier-border);
+  border-radius: 16px;
+  box-shadow: var(--rbi-pop-shadow);
+}
+/* Settings dialog as in the design: underline tabs on a hairline, a sunken body edge to edge, cards on it. */
+.rb-theme-industrial .modal.rb-modal.rb-settings-modal { padding-bottom: 0; overflow: hidden; }
+/* The tab strip runs edge to edge (tabs themselves come from the Tabs primitive + tokens). */
+.rb-theme-industrial .modal.rb-modal .rb-settings-tabs { margin: 0 calc(var(--size-4-4) * -1); padding: 0 20px; }
+.rb-theme-industrial .modal.rb-modal.rb-settings-modal .modal-content { margin-bottom: 0; }
+.rb-theme-industrial .modal.rb-modal .rb-settings-body {
+  flex: 1 1 auto;
+  margin: 0 calc(var(--size-4-4) * -1);
+  padding: 16px 18px 22px;
+  border-radius: 0;
+  background: linear-gradient(180deg, rgba(28, 28, 30, 0.025), rgba(28, 28, 30, 0.045));
+}
+.rb-theme-industrial.rb-mode-dark .modal.rb-modal .rb-settings-body { background: rgba(0, 0, 0, 0.15); }
+.rb-theme-industrial .modal.rb-modal .rb-section-count { background: var(--background-modifier-hover); }
+
+/* ---------- Filters: Where / and-or pills, soft fields, a glass "Add filter rule", Done ---------- */
+.rb-theme-industrial .modal.rb-modal.rb-filter-modal { padding-bottom: 0; }
+.rb-theme-industrial .modal.rb-modal .rb-filter-line { gap: 8px; }
+.rb-theme-industrial .modal.rb-modal .rb-filter-prefix { flex-basis: 64px; font-size: 12px; color: var(--text-faint); }
+.rb-theme-industrial .modal.rb-modal .rb-filter-select.rb-filter-conj {
+  height: 24px;
+  padding: 0 22px 0 10px;
+  border-radius: 999px;
+  background-color: transparent;
+  background-position: right 7px center;
+  background-size: 10px;
+  box-shadow: none;
+  color: var(--text-muted);
+  font-size: 12px;
+  text-transform: lowercase;
+}
+.rb-theme-industrial .modal.rb-modal .rb-filter-conj-static { font-weight: 400; text-transform: lowercase; }
+.rb-theme-industrial .modal.rb-modal .rb-filter-group-box { border-radius: 12px; background: var(--rbi-sunken); }
+.rb-theme-industrial .modal.rb-modal .rb-wizard .rb-filter-add {
+  height: 30px;
+  padding: 0 12px;
+  border: 1px solid var(--rbi-glass-edge);
+  border-radius: 999px;
+  background: var(--rbi-glass);
+  box-shadow: var(--rbi-glass-shadow);
+  color: var(--text-muted);
+  font-size: 12.5px;
+}
+.rb-theme-industrial .modal.rb-modal .rb-wizard .rb-filter-add:hover { color: var(--text-normal); }
+.rb-theme-industrial .modal.rb-modal .rb-filter-footer {
+  margin: 16px calc(var(--size-4-4) * -1) 0;
+  padding: 12px var(--size-4-4);
+  background: rgba(28, 28, 30, 0.02);
+}
+.rb-theme-industrial .modal.rb-modal .rb-wizard .rb-filter-delete { height: 32px; padding: 0 12px; border-radius: 999px; }
+.rb-theme-industrial .modal.rb-modal .rb-filter-done { height: 32px; padding: 0 18px; }
+.rb-theme-industrial .modal.rb-modal .rb-export-preview {
+  margin: 10px 0 0;
+  max-height: 260px;
+  border-radius: 10px;
+  background: var(--rbi-sunken);
+  color: var(--text-muted);
+  font-size: 11.5px;
+  line-height: 1.6;
+}
+/* Not inside the embedded note editor: Obsidian's property rows draw their own (flat) fields. */
+.rb-theme-industrial .modal.rb-modal :is(input[type='text'], input[type='number'], input[type='date'], input[type='search']):not([data-slot]):not(.rb-prop-name):not(.rb-prop-input):not(.rb-filter-value):not(.rb-col-field-input):not(.rb-col-add-input):not(.rb-edit-embed *) {
+  border-radius: var(--rb-control-radius);
+  border-color: var(--rb-field-border);
+  background-color: var(--rb-field-bg);
+}
+
+/* Plain buttons in our modals: a glass pill (the yellow .mod-cta stays the one primary). */
+.rb-theme-industrial .modal.rb-modal button:not([data-slot]):not(.mod-cta):not(.mod-warning):not(.clickable-icon):not([class*='rb-']):not([role='radio']):not([role='tab']) {
+  background: var(--rbi-glass);
+  color: var(--text-normal);
+  border: 1px solid var(--rbi-glass-edge);
+  border-radius: 999px;
+  box-shadow: var(--rbi-glass-shadow);
+}
+
+.rb-theme-industrial .modal.rb-modal button.mod-warning {
+  border-radius: 999px;
+  background: rgba(209, 31, 63, 0.05);
+  border: 1px solid rgba(209, 31, 63, 0.35);
+  color: #C0263F;
+  box-shadow: none;
+}
+.rb-theme-industrial.rb-mode-dark .modal.rb-modal button.mod-warning { color: #FF6B83; }
+
+/* ---------- Menus (ours only): a glass popover ---------- */
+.rb-theme-industrial .menu.rb-menu {
+  background: var(--rbi-glass), var(--rbi-plane-flat) !important;
+  border: 1px solid var(--rbi-glass-edge) !important;
+  border-radius: 12px !important;
+  box-shadow: var(--rbi-glass-shadow), 0 18px 40px -12px rgba(28, 28, 30, 0.28) !important;
+  backdrop-filter: blur(14px) saturate(1.2);
+  padding: 5px !important;
+}
+.rb-theme-industrial .menu.rb-menu .menu-item { border-radius: 8px; color: var(--text-normal); }
+.rb-theme-industrial .menu.rb-menu .menu-item:hover { background: var(--background-modifier-hover); }
+
+/* ---------- Move dialog: the chosen destination fills yellow ---------- */
+.rb-theme-industrial .modal.rb-modal .rb-move-dest {
+  background: var(--rbi-glass);
+  border: 1px solid var(--rbi-glass-edge);
+  box-shadow: var(--rbi-glass-shadow);
+  border-radius: 12px;
+}
+.rb-theme-industrial .modal.rb-modal .rb-move-dest.is-now:not(.is-active) { background: var(--background-modifier-hover); box-shadow: none; }
+.rb-theme-industrial .modal.rb-modal .rb-move-dest.is-active {
+  background: var(--rbi-yellow-grad);
+  color: var(--rbi-yellow-ink);
+  border-color: transparent;
+  box-shadow: var(--rbi-yellow-glow);
+}
+.rb-theme-industrial .modal.rb-modal .rb-move-dest.is-active :is(.rb-move-dest-icon, .rb-move-dest-hint) { color: rgba(28, 28, 30, 0.62); }
+.rb-theme-industrial .modal.rb-modal .rb-move-dest.is-active .rb-move-dest-icon { background: rgba(28, 28, 30, 0.12); color: var(--rbi-yellow-ink); }
+.rb-theme-industrial .modal.rb-modal .rb-move-dest.is-active .rb-schedule-tag { background: rgba(28, 28, 30, 0.12); color: var(--rbi-yellow-ink); }
+.rb-theme-industrial .modal.rb-modal .rb-move-lanes { background: var(--rbi-sunken); border-radius: 12px; }
+.rb-theme-industrial .modal.rb-modal .rb-move-lane { border-radius: 9px; }
+.rb-theme-industrial .modal.rb-modal .rb-move-lane.is-active { background: var(--rbi-plane-flat); }
+.rb-theme-industrial .modal.rb-modal .rb-move-queue { border-radius: 12px; }
+.rb-theme-industrial .modal.rb-modal .rb-move-row.is-me {
+  background: var(--rbi-running);
+  box-shadow: inset 3px 0 0 var(--rbi-yellow);
+}
+.rb-theme-industrial .modal.rb-modal .rb-move-row.is-me .rb-schedule-index { background: var(--rbi-yellow); color: var(--rbi-yellow-ink); }
+.rb-theme-industrial .modal.rb-modal .rb-move-row.is-me .rb-move-row-tag { color: var(--text-muted); }
+
+/* ---------- Log time: glass chips, the picked game fills yellow ---------- */
+.rb-theme-industrial .modal.rb-modal .rb-log-label { font-family: var(--rbi-head); letter-spacing: 0.12em; }
+.rb-theme-industrial .modal.rb-modal :is(.rb-log-game, .rb-log-quick) {
+  background: var(--rbi-glass);
+  border: 1px solid var(--rbi-glass-edge);
+  box-shadow: var(--rbi-glass-shadow);
+}
+.rb-theme-industrial .modal.rb-modal .rb-log-game[aria-checked='true'] {
+  background: var(--rbi-yellow-grad);
+  color: var(--rbi-yellow-ink);
+  border-color: transparent;
+  box-shadow: var(--rbi-yellow-glow);
+}
+.rb-theme-industrial .modal.rb-modal .rb-log-quick[aria-pressed='true'] { background: var(--text-normal); color: var(--background-primary); box-shadow: none; }
+.rb-theme-industrial .modal.rb-modal .rb-log-types { background: var(--rbi-sunken); }
+.rb-theme-industrial .modal.rb-modal .rb-log-types button[aria-checked='true'] { background: var(--rbi-plane-flat); }
+.rb-theme-industrial .modal.rb-modal .rb-log-footer { background: rgba(28, 28, 30, 0.02); }
+.rb-theme-industrial .modal.rb-modal .rb-log-hours input,
+.rb-theme-industrial .modal.rb-modal .rb-log-field input[type='date'] { height: 36px; border-radius: 10px; }
+
+/* Settings cards, fields, value boxes: UI primitives, themed by 10-tokens.css. */
+/* Selects not yet built with the Select primitive (older screens): same look, same tokens. */
+.rb-theme-industrial :is(.rb-root, .modal.rb-modal) select:not([data-slot]):not(.rb-prop-select):not(.rb-filter-select):not(.rb-auto-date-line select) {
+  appearance: none;
+  -webkit-appearance: none;
+  height: var(--rb-control-h);
+  padding: 0 calc(var(--rb-control-px) + 18px) 0 var(--rb-control-px);
+  border: 1px solid var(--rb-field-border);
+  border-radius: var(--rb-control-radius);
+  background-color: var(--rb-field-bg);
+  background-image: var(--rb-caret);
+  background-repeat: no-repeat;
+  background-position: right var(--rb-control-px) center;
+  background-size: 12px;
+  box-shadow: none;
+  font-size: var(--rb-control-font);
+}
+
+/* ---------- Selection / "this one" ---------- */
+.rb-theme-industrial .rb-root .rb-cell-range { background: rgba(255, 228, 26, 0.16); }
+.rb-theme-industrial .rb-root .rb-chart { border-radius: 12px; padding: 12px; }

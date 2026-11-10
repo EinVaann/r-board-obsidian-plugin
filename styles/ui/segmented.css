@@ -1,0 +1,56 @@
+/* ===== Segmented, Switch (segmented.tsx, switch.tsx) ===== */
+:where(.rb-root, .rb-home, .rb-embed, .modal.rb-modal) [data-slot='segmented'][data-slot] {
+  display: inline-flex;
+  gap: 2px;
+  padding: 3px;
+  border: 1px solid var(--rb-track-border);
+  border-radius: var(--rb-control-radius);
+  background: var(--rb-track-bg);
+}
+:where(.rb-root, .rb-home, .rb-embed, .modal.rb-modal) [data-slot='segmented-item'][data-slot] {
+  height: calc(var(--rb-control-h) - 8px);
+  padding: 0 var(--rb-control-px);
+  border: none;
+  border-radius: calc(var(--rb-control-radius) - 3px);
+  background: transparent;
+  box-shadow: none;
+  color: var(--text-muted);
+  font: inherit;
+  font-size: var(--rb-control-font-sm);
+  font-weight: var(--rb-weight-label);
+  white-space: nowrap;
+  cursor: pointer;
+}
+:where(.rb-root, .rb-home, .rb-embed, .modal.rb-modal) [data-slot='segmented-item'][data-size='sm'] { height: calc(var(--rb-control-h-sm) - 8px); padding: 0 var(--rb-control-px-sm); }
+:where(.rb-root, .rb-home, .rb-embed, .modal.rb-modal) [data-slot='segmented-item']:hover { background: transparent; color: var(--text-normal); }
+:where(.rb-root, .rb-home, .rb-embed, .modal.rb-modal) [data-slot='segmented-item'][data-state='on'] {
+  background: var(--rb-segment-on-bg);
+  color: var(--rb-segment-on-fg);
+  box-shadow: var(--rb-segment-on-shadow);
+}
+
+:where(.rb-root, .rb-home, .rb-embed, .modal.rb-modal) [data-slot='switch'][data-slot] {
+  all: unset;
+  box-sizing: border-box;
+  position: relative;
+  flex: none;
+  width: 38px;
+  height: 22px;
+  border-radius: 999px;
+  background: var(--rb-switch-off-bg);
+  cursor: pointer;
+  transition: background-color 0.18s;
+}
+:where(.rb-root, .rb-home, .rb-embed, .modal.rb-modal) [data-slot='switch'][data-state='checked'] { background: var(--rb-switch-on-bg); }
+:where(.rb-root, .rb-home, .rb-embed, .modal.rb-modal) [data-slot='switch']:focus-visible { box-shadow: 0 0 0 2px var(--rb-field-border-focus); }
+:where(.rb-root, .rb-home, .rb-embed, .modal.rb-modal) [data-slot='switch-thumb'] {
+  display: block;
+  width: 18px;
+  height: 18px;
+  border-radius: 999px;
+  background: var(--rb-switch-thumb);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.25);
+  transform: translateX(2px);
+  transition: transform 0.2s cubic-bezier(0.2, 0.9, 0.1, 1);
+}
+:where(.rb-root, .rb-home, .rb-embed, .modal.rb-modal) [data-slot='switch-thumb'][data-state='checked'] { transform: translateX(18px); background: var(--rb-switch-thumb-on); }
