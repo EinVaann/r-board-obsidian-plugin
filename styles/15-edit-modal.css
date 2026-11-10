@@ -8,8 +8,8 @@ body:not(.is-phone) .rb-edit-modal {
 .rb-edit-modal .modal-content {
   padding: 0;
 }
-/* Hide the default modal × — we use a red close button in the header instead. */
-.rb-edit-modal .modal-close-button {
+/* Hide the default modal × (Obsidian 1.15+ calls it modal-header-button): ours sits in the header. */
+.rb-edit-modal > :is(.modal-close-button, .modal-header-button:not(.mod-cta)) {
   display: none;
 }
 

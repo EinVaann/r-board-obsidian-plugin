@@ -163,6 +163,8 @@ describe('forecast', () => {
     const items = [item('A', { state: 'active', start: '2026-11-03' })];
     const f = forecast(items, [{ item: 'A', date: '2026-11-02', hours: 2 }, { item: 'A', date: '2026-11-04', hours: 3 }, { item: 'X', date: '2026-11-04', hours: 1, type: 'trial' }], S(), TODAY);
     expect(f.week.logged).toEqual({ lane: 3, live: 0, detour: 2, trial: 1 });
+    // Mon Nov 2: 2 h; Wed Nov 4: 3 + 1 h; Thursday (today) and later: nothing yet.
+    expect(f.week.days).toEqual([2, 0, 4, 0, 0, 0, 0]);
   });
 
   it('suggests a week split that gives a nearly-done item what it needs', () => {

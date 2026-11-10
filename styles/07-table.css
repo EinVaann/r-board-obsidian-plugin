@@ -119,9 +119,9 @@ body .rb-table-wrap.rb-grid::-webkit-scrollbar-thumb:active { background-color: 
 .is-mobile .rb-row-expand { opacity: 1; }
 /* Summary row (view.summary): per-column totals under the table / group. */
 .rb-summary-row .rb-summary-cell {
-  border-top: 2px solid color-mix(in srgb, var(--interactive-accent) 35%, var(--background-modifier-border));
+  border-top: 2px solid var(--rb-summary-border);
   border-bottom: none;
-  background: color-mix(in srgb, var(--interactive-accent) 7%, var(--background-secondary));
+  background: var(--rb-summary-bg);
   padding-top: 6px;
   padding-bottom: 6px;
   white-space: nowrap;
@@ -154,12 +154,12 @@ body .rb-table-wrap.rb-grid::-webkit-scrollbar-thumb:active { background-color: 
 .rb-summary-count { color: var(--text-muted); font-size: 12px; }
 .rb-summary-hint { color: var(--text-faint); font-size: 12px; opacity: 0; }
 .rb-summary-cell:hover .rb-summary-hint { opacity: 1; }
-.rb-summary-cell:not(.rb-summary-title):hover { background: color-mix(in srgb, var(--interactive-accent) 13%, var(--background-secondary)); }
+.rb-summary-cell:not(.rb-summary-title):hover { background: var(--rb-summary-bg-hover); }
 /* A collapsed group's totals sit right under its header. */
 .rb-section > .rb-summary-only { margin-top: -6px; }
 .rb-grand-total .rb-summary-cell {
   border-top-width: 3px;
-  background: color-mix(in srgb, var(--interactive-accent) 12%, var(--background-secondary));
+  background: var(--rb-summary-total-bg);
 }
 .rb-grand-total .rb-summary-value { font-size: 15px; }
 

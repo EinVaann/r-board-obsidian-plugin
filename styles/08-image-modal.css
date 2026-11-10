@@ -8,7 +8,7 @@
   border: none;
   padding: 0;
 }
-.rb-image-modal .modal-close-button { z-index: 2; }
+.rb-image-modal :is(.modal-close-button, .modal-header-button) { z-index: 2; }
 .rb-image-modal .modal-content { margin: 0; padding: 0; }
 .rb-image-modal-img {
   max-width: 92vw;

@@ -84,7 +84,7 @@ function MasonryLayout({ items, lanes, width, view, properties }: LayoutProps) {
           className="rb-vitem"
           style={{ width: laneW, transform: `translate(${v.lane * (laneW + GAP)}px, ${offset(v.start)}px)` }}
         >
-          <Card item={items[v.index]} properties={properties} showContent={view.showContent} className="rb-gallery-card" />
+          <Card item={items[v.index]} properties={properties} showContent={view.showContent} className="rb-gallery-card" placeholder />
         </div>
       ))}
     </div>
@@ -107,7 +107,7 @@ function GridLayout({ items, lanes, view, properties }: LayoutProps) {
           style={{ gridTemplateColumns: `repeat(${lanes}, minmax(0, 1fr))`, transform: `translateY(${offset(v.start)}px)` }}
         >
           {items.slice(v.index * lanes, v.index * lanes + lanes).map((item) => (
-            <Card key={item.id}item={item} properties={properties} showContent={view.showContent} className="rb-gallery-card" />
+            <Card key={item.id} item={item} properties={properties} showContent={view.showContent} className="rb-gallery-card" placeholder />
           ))}
         </div>
       ))}

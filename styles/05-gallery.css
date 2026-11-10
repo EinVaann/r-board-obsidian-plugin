@@ -16,3 +16,5 @@
   align-items: start;
 }
 .rb-gallery-virtual .rb-view-more { margin-top: 14px; }
+/* No-cover placeholder: only themes that want it show it. */
+.rb-card-art { display: none; }

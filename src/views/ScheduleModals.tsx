@@ -2,7 +2,6 @@ import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import type { App } from 'obsidian';
 import { ReactModal } from '../react/mount';
 import { Icon } from '../react/Icon';
-import { Select, SettingRow } from '../settings/controls';
 import type { SessionType } from '../schedule/types';
 import type { SectionKind } from '../types';
 import { isShown } from '../schedule/sections';
@@ -12,6 +11,10 @@ export interface GameOption {
   title: string;
   /** Shown after the title (e.g. "playing", "8 h"). */
   detail?: string;
+  /** Running now (lane, live or side): shown as a chip in the log form. */
+  running?: boolean;
+  /** Cover image URL, for the chip. */
+  cover?: string | null;
 }
 
 export interface LoggedSession {
@@ -54,52 +57,117 @@ function LogSessionForm({
   onSubmit: (s: LoggedSession) => void;
   onDone: () => void;
 }) {
-  const [item, setItem] = useState(initial ?? games[0]?.id ?? '');
+  // Opened from the toolbar (no game given): nothing is picked yet.
+  const [item, setItem] = useState(initial ?? '');
   const [hours, setHours] = useState('');
   const [date, setDate] = useState(today);
-  const [type, setType] = useState<SessionType | ''>(typeFor(item));
+  const [type, setType] = useState<SessionType | ''>(initial ? typeFor(initial) : '');
+  const [searching, setSearching] = useState(false);
+  const [q, setQ] = useState('');
+  const hoursRef = useRef<HTMLInputElement>(null);
   const h = Number(hours);
   const valid = !!item && hours.trim() !== '' && Number.isFinite(h) && h > 0 && /^\d{4}-\d{2}-\d{2}$/.test(date);
+  const picked = games.find((g) => g.id === item);
+  // Running games are chips; a game picked from the search joins them.
+  const chips = games.filter((g) => g.running || g.id === item);
+  const others = useMemo(() => {
+    const s = q.trim().toLowerCase();
+    return games.filter((g) => !g.running && (!s || g.title.toLowerCase().includes(s)));
+  }, [games, q]);
+  useEffect(() => {
+    if (initial) hoursRef.current?.focus();
+  }, [initial]);
+
+  const pick = (id: string): void => {
+    setItem(id);
+    setType(typeFor(id));
+    setSearching(false);
+    setQ('');
+    setTimeout(() => hoursRef.current?.focus(), 0);
+  };
   const submit = (): void => {
     if (!valid) return;
     onSubmit({ item, hours: Math.round(h * 100) / 100 || h, date, ...(withType && type ? { type } : {}) });
     onDone();
   };
+  const summary = !item ? 'Pick a game' : !valid ? 'How long did you play?' : `${Math.round(h * 100) / 100} h · ${picked?.title ?? ''}`;
+
   return (
     <form
-      className="rb-schedule-form"
+      className="rb-log"
       onSubmit={(e) => {
         e.preventDefault();
         submit();
       }}
     >
-      <SettingRow name="Game">
-        <Select
-          value={item}
-          options={games.map((g) => ({ value: g.id, label: g.detail ? `${g.title} · ${g.detail}` : g.title }))}
-          onChange={(v) => {
-            setItem(v);
-            setType(typeFor(v));
-          }}
-        />
-      </SettingRow>
-      <SettingRow name="Hours">
-        <input type="number" min="0" step="any" autoFocus aria-label="Hours" value={hours} onChange={(e) => setHours(e.target.value)} />
-      </SettingRow>
-      <SettingRow name="Date">
-        <input type="date" aria-label="Date" value={date} onChange={(e) => setDate(e.target.value)} />
-      </SettingRow>
+      <div className="rb-log-field">
+        <span className="rb-log-label">Game</span>
+        <div className="rb-log-games" role="radiogroup" aria-label="Game">
+          {chips.map((g) => (
+            <button key={g.id} type="button" role="radio" aria-checked={g.id === item} className="rb-log-game" onClick={() => pick(g.id)}>
+              {g.cover ? <img className="rb-log-game-cover" src={g.cover} alt="" /> : <span className="rb-log-game-cover" />}
+              {g.title}
+            </button>
+          ))}
+          <button type="button" className={searching ? 'rb-log-game rb-log-other is-open' : 'rb-log-game rb-log-other'} aria-expanded={searching} onClick={() => setSearching((s) => !s)}>
+            Other…
+          </button>
+        </div>
+        {searching && (
+          <div className="rb-log-search">
+            <input type="search" autoFocus placeholder="Search games…" aria-label="Search games" value={q} onChange={(e) => setQ(e.target.value)} />
+            <div className="rb-log-search-list">
+              {others.length === 0 && <div className="rb-schedule-muted">No match.</div>}
+              {others.slice(0, 50).map((g) => (
+                <button key={g.id} type="button" className="rb-log-search-row" onClick={() => pick(g.id)}>
+                  <span>{g.title}</span>
+                  {g.detail && <span className="rb-schedule-muted">{g.detail}</span>}
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+      </div>
+
+      <div className="rb-log-row">
+        <div className="rb-log-field">
+          <span className="rb-log-label">Hours</span>
+          <div className="rb-log-hours">
+            {[1, 2].map((n) => (
+              <button key={n} type="button" className="rb-log-quick" aria-pressed={hours === String(n)} onClick={() => setHours(String(n))}>
+                {n} h
+              </button>
+            ))}
+            <input ref={hoursRef} type="number" min="0" step="any" aria-label="Hours" placeholder="0" value={hours} onChange={(e) => setHours(e.target.value)} />
+          </div>
+        </div>
+        <label className="rb-log-field">
+          <span className="rb-log-label">Date</span>
+          <input type="date" aria-label="Date" value={date} onChange={(e) => setDate(e.target.value)} />
+        </label>
+      </div>
+
       {withType && (
-        <SettingRow name="Type" desc="Trial: trying a game you haven't started. Detour: a game outside the plan.">
-          <Select<'' | SessionType> value={type} options={TYPE_OPTIONS as { value: '' | SessionType; label: string }[]} onChange={(v) => setType(v)} />
-        </SettingRow>
+        <div className="rb-log-field">
+          <span className="rb-log-label">Type</span>
+          <div className="rb-log-types" role="radiogroup" aria-label="Type">
+            {TYPE_OPTIONS.map((t) => (
+              <button key={t.value} type="button" role="radio" aria-checked={type === t.value} onClick={() => setType(t.value)}>
+                {t.label}
+              </button>
+            ))}
+          </div>
+          <span className="rb-log-hint">Trial: trying a game you haven't started. Detour: a game outside the plan.</span>
+        </div>
       )}
-      <div className="rb-schedule-form-buttons">
+
+      <div className="rb-log-footer">
+        <span className="rb-log-summary">{summary}</span>
         <button type="button" onClick={onDone}>
           Cancel
         </button>
         <button type="submit" className="mod-cta" disabled={!valid}>
-          Log
+          <Icon name="timer" /> Log
         </button>
       </div>
     </form>
@@ -346,7 +414,9 @@ function MoveModal({ itemTitle, sections, lanes, from, describe, onMove, onDone 
         title={s.blocked}
         onClick={() => pickSection(s)}
       >
-        <Icon name={info.icon} className="rb-move-dest-icon" />
+        <span className="rb-move-dest-icon">
+          <Icon name={info.icon} />
+        </span>
         <span className="rb-move-dest-text">
           <span className="rb-move-dest-name">
             {s.name}
@@ -358,8 +428,17 @@ function MoveModal({ itemTitle, sections, lanes, from, describe, onMove, onDone 
     );
   };
 
+  const fromName = sections.find((s) => s.index === from.section)?.name;
+  const where =
+    kindOf(from.section) === 'queue' && from.lane !== undefined && lanes[from.lane]
+      ? `Now queued in lane ${lanes[from.lane].name}${from.position !== undefined ? `, ${ordinal(from.position + 1)}` : ''}`
+      : fromName
+        ? `Now in ${fromName}`
+        : '';
+
   return (
     <div className="rb-move">
+      {where && <div className="rb-move-where">{where}</div>}
       <div className="rb-move-dests-wrap" role="radiogroup" aria-label="Section">
         <div className="rb-move-dests">{plan.map(card)}</div>
         {end.length > 0 && (

@@ -145,21 +145,29 @@ test.describe('schedule view', () => {
     await expect(page.locator('.rb-schedule-card.is-side')).toHaveCount(1);
   });
 
-  test('settings: sections are guessed, and editing one saves them all', async ({ page }) => {
+  test('settings: the seven sections are fixed, and editing one saves them all', async ({ page }) => {
     await page.getByLabel('View settings').click();
     const rows = page.locator('.rb-sched-section');
-    const names = await rows.locator('input[aria-label="Section name"]').evaluateAll((els) => els.map((e) => (e as HTMLInputElement).value));
-    expect(names).toEqual(['Live', 'Also playing', 'Lanes', 'Queue', 'On hold', 'Completed', 'Dropped']);
-    // to-play joins the queue: "is" becomes "is any of".
+    await expect(rows.locator('.rb-sched-section-name')).toHaveText(['Live', 'Also playing', 'Lanes', 'Queue', 'On hold', 'Completed', 'Dropped']);
+    // No renaming, adding or removing.
+    await expect(page.locator('input[aria-label="Section name"]')).toHaveCount(0);
+    await expect(page.getByRole('button', { name: /^Remove (Lanes|Queue)/ })).toHaveCount(0);
+    await expect(page.getByRole('button', { name: 'Add section' })).toHaveCount(0);
+    // to-play joins the queue through the value box: "is" becomes "is any of".
     const queue = rows.nth(3);
-    await queue.getByRole('button', { name: 'to-play' }).click();
+    const values = queue.locator('[data-slot="multi-select-trigger"]');
+    await values.click();
+    await queue.getByRole('option', { name: 'to-play' }).click();
+    await expect(values).toHaveText(/planned, to-play/);
     const sections = await page.evaluate(() => window.__store.getState().config!.views[0].schedule!.sections!);
     expect(sections[3].conditions).toEqual([{ property: 'status', op: 'anyOf', value: ['planned', 'to-play'] }]);
-    // Removing the Lanes section shows a warning.
-    await page.getByRole('button', { name: 'Remove Lanes' }).click();
-    await expect(page.locator('.rb-sched-error')).toContainText('Add a Lanes section');
+    // Removing Lanes' only condition switches it off, with a warning.
+    await rows.nth(2).getByRole('button', { name: 'Remove condition' }).click();
+    await expect(rows.nth(2).locator('.rb-sched-section-off')).toBeVisible();
+    await expect(page.locator('.rb-sched-error')).toContainText('Give Lanes a condition');
     await page.getByRole('button', { name: 'Reset to the guessed sections' }).click();
     await expect(rows).toHaveCount(7);
+    await expect(page.locator('.rb-sched-error')).toHaveCount(0);
   });
 
   test('settings: similar groups are chips you add and remove', async ({ page }) => {
@@ -321,14 +329,14 @@ test.describe('schedule view', () => {
     const laneA = page.locator('.rb-schedule-lane').nth(0);
     const second = laneA.locator('.rb-schedule-draggable').nth(1);
     const title = (await second.locator('.rb-title').textContent())!;
-    await second.locator('.rb-schedule-entry-end').dblclick();
+    await second.locator('.rb-schedule-entry-line').dblclick();
     await expect(second.locator('.rb-schedule-flag')).toHaveCount(1);
     const pins = await page.evaluate(() => window.__store.getState().config!.views[0].schedule!.pins);
     expect(pins).toEqual([{ item: `Backlog Items/${title}.md`, lane: 0, position: 1 }]);
-    await second.locator('.rb-schedule-entry-end').dblclick();
+    await second.locator('.rb-schedule-entry-line').dblclick();
     await expect(page.locator('.rb-schedule-flag')).toHaveCount(0);
     // The running game has nothing to pin.
-    await laneA.locator('.rb-schedule-entry.is-current .rb-schedule-entry-end').dblclick();
+    await laneA.locator('.rb-schedule-entry.is-current .rb-schedule-entry-line').dblclick();
     await expect(page.locator('.rb-schedule-flag')).toHaveCount(0);
   });
 

@@ -51,6 +51,9 @@
   cursor: pointer;
   user-select: none;
 }
+/* Title and count first; the fold caret sits at the right edge. */
+.rb-kanban-header .rb-kanban-caret { order: 3; margin-left: auto; color: var(--text-faint); }
+.rb-kanban-header .rb-kanban-count { font-size: 12px; color: var(--text-faint); }
 .rb-kanban-header.rb-draggable { cursor: grab; }
 .rb-kanban-header.rb-draggable:active { cursor: grabbing; }
 

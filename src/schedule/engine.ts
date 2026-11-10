@@ -357,9 +357,13 @@ function weekSummary(
 ): WeekSummary {
   const start = weekStart(todayDay, settings.weekStart);
   const logged = emptyHours();
+  const days = [0, 0, 0, 0, 0, 0, 0];
   for (const s of sessions) {
     const d = toDay(s.date);
-    if (d !== null && d >= start && d <= todayDay) logged[s.type] += s.hours;
+    if (d !== null && d >= start && d <= todayDay) {
+      logged[s.type] += s.hours;
+      days[d - start] += s.hours;
+    }
   }
   let left = Math.max(0, pace.lane - logged.lane);
   const need = inLanes.map((i) => ({ item: i.id, cap: remainingOf(i).hours, w: isLong(i, settings) ? LONG_WEIGHT : 1, hours: 0 }));
@@ -377,7 +381,7 @@ function weekSummary(
     left -= spent;
   }
   for (const k of Object.keys(logged) as SessionType[]) logged[k] = round1(logged[k]);
-  return { start: fromDay(start), logged, budget: pace.weekly, suggested: need.map((n) => ({ item: n.item, hours: round1(n.hours) })) };
+  return { start: fromDay(start), logged, budget: pace.weekly, suggested: need.map((n) => ({ item: n.item, hours: round1(n.hours) })), days: days.map(round1) };
 }
 
 /** Weekly hours per live item: an even share of the unlogged baseline, plus its logged average (weighted by history). */

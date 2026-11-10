@@ -11,7 +11,7 @@ import { useDragSensors } from '../components/dnd';
 import { useElementWidth } from '../components/layout';
 import { Icon } from '../react/Icon';
 import { defaultScheduleConfig, engineSettings, guessLogColumns, guessSchedule } from '../schedule/config';
-import { localDate } from '../schedule/dates';
+import { fromDay, localDate, toDay } from '../schedule/dates';
 import { forecast } from '../schedule/engine';
 import { formatHours, formatRange, formatShortRange } from '../schedule/format';
 import { toScheduleItems, toSessions } from '../schedule/inputs';
@@ -22,6 +22,7 @@ import { logSession, moveToSection } from '../schedule/actions';
 import { addSideSection, matchSection, moveWrites, sectionProblems } from '../schedule/sections';
 import type { Forecast, LaneEntry, ScheduleItem, Session, Suggestion } from '../schedule/types';
 import { useLinkedTable } from '../schedule/useLinkedTable';
+import { showMenu } from '../ui/menu';
 import {
   openLogSession,
   openMoveModal,
@@ -113,7 +114,6 @@ export function ScheduleView({ config, view, all, viewIndex }: { config: Databas
   };
 
   const lanesSection = sections.findIndex((s) => s.kind === 'lanes');
-  const queueSection = sections.findIndex((s) => s.kind === 'queue');
   const sectionOf = (id: string): number => {
     const item = itemOf(id);
     return item ? matchSection(item.values, sections) : -1;
@@ -196,7 +196,13 @@ export function ScheduleView({ config, view, all, viewIndex }: { config: Databas
     }
     const playing = scheduleItems.filter((i) => RUNNING.has(i.state));
     const rest = scheduleItems.filter((i) => !RUNNING.has(i.state)).sort((a, b) => a.title.localeCompare(b.title));
-    const games: GameOption[] = [...playing, ...rest].map((i) => ({ id: i.id, title: i.title, detail: stateLabel(i) }));
+    const games: GameOption[] = [...playing, ...rest].map((i) => ({
+      id: i.id,
+      title: i.title,
+      detail: stateLabel(i),
+      running: RUNNING.has(i.state),
+      cover: coverOf(itemOf(i.id)),
+    }));
     openLogSession(app, {
       games,
       initial,
@@ -237,9 +243,9 @@ export function ScheduleView({ config, view, all, viewIndex }: { config: Databas
       kind: s.kind,
       blocked: index === from.section || moveWrites(item.values, sections, index) ? undefined : 'A section above would still catch it',
     }));
-    // Skip duplicate lanes / queue sections: only the first is used.
-    const usable = moveSections.filter((s) => !((s.kind === 'lanes' && s.index !== lanesSection) || (s.kind === 'queue' && s.index !== queueSection)));
-    // No side section yet: offer one anyway; picking it adds the section (and a "casual" checkbox).
+    // Sections switched off (no conditions) can't be moved into.
+    const usable = moveSections.filter((s) => sections[s.index].conditions.length > 0);
+    // Also playing switched off: offer it anyway; picking it fills it in (and adds a "casual" checkbox).
     const newSide = addSideSection(config, sections);
     if (newSide) usable.splice(usable.findIndex((s) => s.kind === 'lanes'), 0, { index: NEW_SIDE, name: newSide.sections[newSide.index].name, kind: 'side' });
     const lanes: MoveLane[] = result.lanes.map((l, n) => {
@@ -276,7 +282,7 @@ export function ScheduleView({ config, view, all, viewIndex }: { config: Databas
       menu.addSeparator();
       menu.addItem((i) => i.setTitle('Open note').setIcon('file-text').onClick(() => actions.editItem(item)));
     }
-    menu.showAtMouseEvent(ev.nativeEvent);
+    showMenu(menu, ev.nativeEvent);
   };
 
   /** Double-click a queued entry: pin it where it is, or unpin it. */
@@ -371,10 +377,12 @@ export function ScheduleView({ config, view, all, viewIndex }: { config: Databas
                   {coverOf(item) ? <img className="rb-schedule-cover" src={coverOf(item)!} alt="" loading="lazy" draggable={false} /> : <div className="rb-schedule-cover rb-schedule-cover-empty" />}
                   <div className="rb-schedule-entry-body">
                     <div className="rb-schedule-entry-title">{item ? <TitleLink item={item} /> : c.id}</div>
-                    <div className="rb-schedule-muted">
-                      {c.kind === 'live' && weekly !== undefined ? `~${formatHours(weekly)}/wk` : (hours ?? '')}
+                    <div className="rb-schedule-muted rb-schedule-card-line">
+                      <span className="rb-schedule-kind">{section?.name ?? (c.kind === 'live' ? 'Live' : 'Side')}</span>
+                      {(c.kind === 'live' && weekly !== undefined ? `~${formatHours(weekly)}/wk` : hours) && (
+                        <span>· {c.kind === 'live' && weekly !== undefined ? `~${formatHours(weekly)}/wk` : hours}</span>
+                      )}
                     </div>
-                    <span className="rb-schedule-tag rb-schedule-kind">{section?.name ?? (c.kind === 'live' ? 'Live' : 'Side')}</span>
                   </div>
                   {log.status === 'ok' && (
                     <div className="rb-schedule-entry-actions">
@@ -442,6 +450,7 @@ export function ScheduleView({ config, view, all, viewIndex }: { config: Databas
               <section key={n} className="rb-schedule-lane" data-lane={n}>
                 <div className="rb-schedule-lane-head">
                   <h4>Lane {laneName(n)}</h4>
+                  <span className="rb-schedule-muted rb-schedule-lane-count">{queued.length} queued</span>
                   <IconButton
                     icon="refresh-cw"
                     label={movedPins(sc.pins, n) ? `Re-plan lane ${laneName(n)}` : `Lane ${laneName(n)} is in its automatic order`}
@@ -656,30 +665,58 @@ function WeekPanel({
   const { week, pace } = result;
   const logged = week.logged.lane + week.logged.live + week.logged.detour + week.logged.trial;
   const share = Math.min(100, week.budget ? (logged / week.budget) * 100 : 0);
+  // Day bars share one scale: the busiest day, or a typical day's share of the budget.
+  const todayIndex = (toDay(result.today) ?? 0) - (toDay(week.start) ?? 0);
+  const dayMax = Math.max(...week.days, week.budget / 7, 1);
+  const dayNames = Array.from({ length: 7 }, (_, i) => new Date(`${fromDay((toDay(week.start) ?? 0) + i)}T12:00:00`).toLocaleDateString(undefined, { weekday: 'short' }));
   return (
     <section className="rb-schedule-week">
-      <div className="rb-schedule-week-head">
+      <div className="rb-schedule-week-sum">
         <h4>This week</h4>
-        <span>
-          <b>{formatHours(logged)}</b> of ~{formatHours(week.budget)}
-        </span>
-        {onLog && (
-          <button className="mod-cta rb-schedule-log" onClick={onLog}>
-            <Icon name="timer" /> Log time
-          </button>
+        <div className="rb-schedule-week-total">
+          <b>{formatHours(logged)}</b> <span className="rb-schedule-muted">of ~{formatHours(week.budget)}</span>
+        </div>
+        {!compact && (
+          <div className="rb-schedule-week-types rb-schedule-muted">
+            <span>
+              Lanes <b>{formatHours(week.logged.lane)}</b>
+            </span>
+            <span>
+              Live <b>{formatHours(week.logged.live)}</b>
+            </span>
+            <span>
+              Other <b>{formatHours(week.logged.detour + week.logged.trial)}</b>
+            </span>
+            <span>
+              Pace <b>~{formatHours(pace.lane)}/wk</b>
+            </span>
+          </div>
         )}
       </div>
-      <div className="rb-schedule-bar" role="progressbar" aria-valuenow={Math.round(share)} aria-valuemin={0} aria-valuemax={100}>
-        <div style={{ width: `${share}%` }} />
-      </div>
-      {!compact && (
-        <div className="rb-schedule-week-types rb-schedule-muted">
-          Lanes {formatHours(week.logged.lane)} · Live {formatHours(week.logged.live)} · Other {formatHours(week.logged.detour + week.logged.trial)}
-          {' · '}lane pace ~{formatHours(pace.lane)}/wk
+      {compact ? (
+        <div className="rb-schedule-bar" role="progressbar" aria-valuenow={Math.round(share)} aria-valuemin={0} aria-valuemax={100}>
+          <div style={{ width: `${share}%` }} />
+        </div>
+      ) : (
+        <div className="rb-schedule-days" role="img" aria-label={`${formatHours(logged)} logged this week`}>
+          {week.days.map((h, i) => (
+            <div key={i} className={['rb-schedule-day', i === todayIndex ? 'is-today' : '', i > todayIndex ? 'is-future' : ''].filter(Boolean).join(' ')} title={`${dayNames[i]}: ${formatHours(h)}`}>
+              <span className="rb-schedule-day-v">{h > 0 ? formatHours(h) : ''}</span>
+              <span className="rb-schedule-day-bar">
+                <i style={{ height: `${Math.min(100, (h / dayMax) * 100)}%` }} />
+              </span>
+              <span className="rb-schedule-day-name">{dayNames[i]}</span>
+            </div>
+          ))}
         </div>
       )}
+      {onLog && (
+        <button className="mod-cta rb-schedule-log" onClick={onLog}>
+          <Icon name="timer" /> Log time
+        </button>
+      )}
       {!compact && week.suggested.length > 0 && (
-        <ul className="rb-schedule-split">
+        <ul className="rb-schedule-split rb-schedule-week-left">
           {week.suggested.map((s) => {
             const item = itemOf(s.item);
             return (
@@ -773,10 +810,15 @@ function Entry({
           {e.paused && <span className="rb-schedule-tag" title="No lane time for a while: keep going, put it on hold, or drop it">paused?</span>}
           {e.overEstimate && <span className="rb-schedule-tag" title="Played past its estimate">past estimate</span>}
         </div>
-        <div className="rb-schedule-muted">
-          {e.current ? `Playing · ${formatHours(e.remaining)} left` : `Starts ${formatRange(e.start, year)} · ${formatHours(e.remaining)}`}
-        </div>
-        <div className="rb-schedule-entry-end">Done {formatRange(e.end, year)}</div>
+        {e.current ? (
+          <div className="rb-schedule-muted rb-schedule-entry-line">
+            Done <b>{formatRange(e.end, year)}</b>
+          </div>
+        ) : (
+          <div className="rb-schedule-muted rb-schedule-entry-line">
+            Starts <b>{formatRange(e.start, year)}</b> · {formatHours(e.remaining)} · done <b>{formatRange(e.end, year)}</b>
+          </div>
+        )}
         {e.penalty > 0 && (
           <div className="rb-schedule-reasons" title={`Ranked ${e.penalty} lower`}>
             <Icon name="alert-triangle" />
@@ -784,6 +826,13 @@ function Entry({
           </div>
         )}
       </div>
+      {/* Running: what's left, at the right edge, like the preview. */}
+      {e.current && (
+        <div className="rb-schedule-entry-state">
+          <span>Playing</span>
+          <b>{formatHours(e.remaining)} left</b>
+        </div>
+      )}
       {actions && <div className="rb-schedule-entry-actions">{actions}</div>}
     </div>
   );

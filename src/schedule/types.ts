@@ -104,6 +104,8 @@ export interface WeekSummary {
   budget: number;
   /** Suggested remaining lane hours per active item. */
   suggested: { item: string; hours: number }[];
+  /** Logged hours on each day of the week, first day first (7 entries). */
+  days: number[];
 }
 
 export interface Pace {
