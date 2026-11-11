@@ -78,6 +78,14 @@
   font-size: var(--rb-control-font-sm);
 }
 
+/* The dropdown list itself: Windows draws it from the options' own colors (white by default),
+   while the text inherits the field's, so dark mode showed white on white. Set both. */
+:where(.rb-root, .rb-home, .rb-embed, .modal.rb-modal) select :is(option, optgroup) {
+  background-color: var(--rb-popover-bg);
+  color: var(--text-normal);
+}
+:where(.rb-root, .rb-home, .rb-embed, .modal.rb-modal) select option:disabled { color: var(--text-faint); }
+
 /* NumberInput: the box plus a unit after it. */
 :where(.rb-root, .rb-home, .rb-embed, .modal.rb-modal) [data-slot='number-input'] { display: inline-flex; align-items: center; gap: 6px; width: 100%; }
 :where(.rb-root, .rb-home, .rb-embed, .modal.rb-modal) [data-slot='number-input'] > [data-slot='input'] { flex: 1; min-width: 0; width: 100%; text-align: right; font-variant-numeric: tabular-nums; }

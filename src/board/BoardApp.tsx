@@ -15,6 +15,7 @@ import { RecipeView } from '../views/RecipeView';
 import { ChartView } from '../chart/ChartView';
 import { ScheduleView } from '../views/ScheduleView';
 import { showMenu } from '../ui/menu';
+import { TYPE_ICON } from './viewTypes';
 
 /** At most this many view tabs; the rest go in the "more" dropdown. */
 const MAX_VIEW_TABS = 3;
@@ -24,14 +25,7 @@ const MAX_VIEW_TABS = 3;
  */
 const COMPACT_WIDTH = 560;
 
-export const TYPE_ICON: Record<ViewType, string> = {
-  gallery: 'layout-grid',
-  kanban: 'columns-3',
-  table: 'table',
-  recipe: 'utensils',
-  chart: 'bar-chart-3',
-  schedule: 'calendar-range',
-};
+export { TYPE_ICON };
 
 /** The whole board pane: setup prompt, or toolbar + the active view. */
 export function BoardApp() {

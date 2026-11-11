@@ -60,7 +60,7 @@ const ICONS: Record<string, string> = {
 const RENAMED: Record<string, string> = {
   'bar-chart-3': 'chart-column', 'check-square': 'square-check', 'alert-triangle': 'triangle-exclamation-point',
   'check-circle': 'circle-check', 'x-circle': 'circle-x', 'pause-circle': 'circle-pause', 'more-horizontal': 'ellipsis',
-  'grip-vertical': 'grip-vertical', 'layout-grid': 'layout-grid',
+  'grip-vertical': 'grip-vertical', 'layout-grid': 'layout-grid', home: 'house',
 };
 type IconNode = [string, Record<string, string>][];
 

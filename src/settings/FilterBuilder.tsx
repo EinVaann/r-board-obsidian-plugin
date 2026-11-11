@@ -14,6 +14,7 @@ import { Icon } from '../react/Icon';
 import { LIST_OPS, VALUELESS_OPS, countFilterRules, opsForProperty } from '../data/filter';
 import { asArray, optionFor } from '../render/values';
 import { showMenu } from '../ui/menu';
+import { MultiSelect } from '../ui';
 
 const OP_LABELS: Record<FilterOp, string> = {
   eq: 'Is',
@@ -245,25 +246,17 @@ function RuleValue({ rule, prop, edit }: { rule: FilterRule; prop: PropertyConfi
   const options = prop?.type === 'select' || prop?.type === 'multi' ? prop.options ?? [] : [];
 
   if (LIST_OPS.includes(rule.op) && prop && options.length) {
-    const chosen = asArray(rule.value);
+    // "Is any of" / "Is none of": the same dropdown checklist as schedule conditions.
     return (
-      <div className="rb-filter-options">
-        {options.map((o) => {
-          const on = chosen.includes(o.value);
-          const opt = optionFor(prop, o.value);
-          return (
-            <button
-              key={o.value}
-              className={on ? 'rb-pill rb-opt rb-filter-option rb-on' : 'rb-pill rb-opt rb-filter-option'}
-              style={{ '--oc': opt.color } as React.CSSProperties}
-              aria-pressed={on}
-              onClick={() => edit((r) => void (r.value = on ? chosen.filter((v) => v !== o.value) : [...chosen, o.value]))}
-            >
-              {opt.label}
-            </button>
-          );
-        })}
-      </div>
+      <MultiSelect
+        size="sm"
+        className="rb-filter-value"
+        label={`Values of ${prop.label ?? prop.name}`}
+        placeholder="Choose values…"
+        value={asArray(rule.value).map(String)}
+        options={options.map((o) => ({ value: o.value, label: optionFor(prop, o.value).label, color: optionFor(prop, o.value).color }))}
+        onChange={(next) => edit((r) => void (r.value = next))}
+      />
     );
   }
 

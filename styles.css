@@ -364,6 +364,14 @@
   font-size: var(--rb-control-font-sm);
 }
 
+/* The dropdown list itself: Windows draws it from the options' own colors (white by default),
+   while the text inherits the field's, so dark mode showed white on white. Set both. */
+:where(.rb-root, .rb-home, .rb-embed, .modal.rb-modal) select :is(option, optgroup) {
+  background-color: var(--rb-popover-bg);
+  color: var(--text-normal);
+}
+:where(.rb-root, .rb-home, .rb-embed, .modal.rb-modal) select option:disabled { color: var(--text-faint); }
+
 /* NumberInput: the box plus a unit after it. */
 :where(.rb-root, .rb-home, .rb-embed, .modal.rb-modal) [data-slot='number-input'] { display: inline-flex; align-items: center; gap: 6px; width: 100%; }
 :where(.rb-root, .rb-home, .rb-embed, .modal.rb-modal) [data-slot='number-input'] > [data-slot='input'] { flex: 1; min-width: 0; width: 100%; text-align: right; font-variant-numeric: tabular-nums; }
@@ -526,22 +534,22 @@
 :where(.rb-root, .rb-home, .rb-embed, .modal.rb-modal) [data-slot='multi-select-trigger'] { display: inline-flex; align-items: center; justify-content: flex-start; max-width: 260px; }
 :where(.rb-root, .rb-home, .rb-embed, .modal.rb-modal) [data-slot='multi-select-value'] { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 :where(.rb-root, .rb-home, .rb-embed, .modal.rb-modal) [data-slot='multi-select-content'] {
-  position: absolute;
-  top: calc(100% + 4px);
-  right: 0;
-  z-index: 10;
+  position: fixed;
+  z-index: var(--layer-menu, 65);
   display: flex;
   flex-direction: column;
+  box-sizing: border-box;
   min-width: 180px;
+  overflow-y: auto;
   padding: 4px;
   border: 1px solid var(--rb-popover-border);
   border-radius: var(--rb-control-radius);
   background: var(--rb-popover-bg);
   box-shadow: var(--rb-popover-shadow);
 }
-:where(.rb-root, .rb-home, .rb-embed, .modal.rb-modal) [data-slot='multi-select-content'][data-side='top'] { top: auto; bottom: calc(100% + 4px); }
 :where(.rb-root, .rb-home, .rb-embed, .modal.rb-modal) [data-slot='multi-select-item'][data-slot] {
   display: flex;
+  flex: none;
   align-items: center;
   justify-content: flex-start;
   gap: 8px;
@@ -1848,6 +1856,14 @@ body:not(.is-phone) .modal.rb-settings-modal {
 .rb-vis-row .rb-drag-handle { color: var(--text-faint); }
 .rb-vis-row .rb-vis-toggle { margin-left: auto; }
 
+/* ── Board settings → Views: tab order (the list is SortableList) ── */
+.rb-views-row { display: flex; align-items: center; gap: 10px; min-height: 40px; padding: 4px 8px 4px 6px; }
+.rb-views-icon { display: inline-flex; color: var(--text-muted); }
+.rb-views-icon svg { width: 16px; height: 16px; }
+.rb-views-name { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: var(--rb-weight-label); }
+.rb-views-type { color: var(--text-faint); font-size: var(--rb-font-hint); white-space: nowrap; }
+.rb-views-actions { display: flex; gap: 2px; margin-left: auto; }
+
 /* ── Column config (kanban view settings): the list is SortableList ── */
 /* Each row: grip, color swatch, label, value, then clear / hide / remove. */
 .rb-col-config-list { margin-bottom: 10px; }
@@ -1971,11 +1987,13 @@ body:not(.is-phone) .modal:has(.rb-filter-builder) { width: min(720px, 92vw); }
    vertical padding on top of that height pushes the text down and clips it. */
 /* Size, corners, font and caret come from 00-tokens.css (compact, like other list rows). */
 .rb-filter-select,
-.rb-filter-value {
+.rb-filter-value:not([data-slot]) {
   border: 1px solid var(--background-modifier-border);
   background-color: var(--background-modifier-form-field);
   color: var(--text-normal);
 }
+/* The multi-select fills the value column like the text box it replaces. */
+.rb-filter-value[data-slot='multi-select'] > [data-slot='multi-select-trigger'] { width: 100%; max-width: none; }
 .rb-filter-select {
   appearance: none;
   -webkit-appearance: none;
@@ -2393,17 +2411,6 @@ body:not(.is-phone) .rb-edit-modal {
 }
 .rb-option-add { display: flex; gap: 6px; }
 .rb-option-add input { flex: 1; min-width: 0; }
-
-/* Filter builder: option chips for "is any of" / "is none of" */
-.rb-filter-options { display: flex; flex-wrap: wrap; gap: 4px; flex: 1; min-width: 0; }
-.rb-filter-option {
-  cursor: pointer;
-  opacity: 0.45;
-  font-size: 12px;
-  box-shadow: none;
-  height: auto;
-}
-.rb-filter-option.rb-on { opacity: 1; outline: 1px solid color-mix(in srgb, var(--oc) 70%, transparent); }
 
 /* Row editor (tables) */
 .rb-record .setting-item-name { display: flex; align-items: center; gap: 6px; }

@@ -48,17 +48,6 @@
 .rb-option-add { display: flex; gap: 6px; }
 .rb-option-add input { flex: 1; min-width: 0; }
 
-/* Filter builder: option chips for "is any of" / "is none of" */
-.rb-filter-options { display: flex; flex-wrap: wrap; gap: 4px; flex: 1; min-width: 0; }
-.rb-filter-option {
-  cursor: pointer;
-  opacity: 0.45;
-  font-size: 12px;
-  box-shadow: none;
-  height: auto;
-}
-.rb-filter-option.rb-on { opacity: 1; outline: 1px solid color-mix(in srgb, var(--oc) 70%, transparent); }
-
 /* Row editor (tables) */
 .rb-record .setting-item-name { display: flex; align-items: center; gap: 6px; }
 .rb-record-icon { color: var(--text-muted); display: inline-flex; }

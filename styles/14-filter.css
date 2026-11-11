@@ -34,11 +34,13 @@ body:not(.is-phone) .modal:has(.rb-filter-builder) { width: min(720px, 92vw); }
    vertical padding on top of that height pushes the text down and clips it. */
 /* Size, corners, font and caret come from 00-tokens.css (compact, like other list rows). */
 .rb-filter-select,
-.rb-filter-value {
+.rb-filter-value:not([data-slot]) {
   border: 1px solid var(--background-modifier-border);
   background-color: var(--background-modifier-form-field);
   color: var(--text-normal);
 }
+/* The multi-select fills the value column like the text box it replaces. */
+.rb-filter-value[data-slot='multi-select'] > [data-slot='multi-select-trigger'] { width: 100%; max-width: none; }
 .rb-filter-select {
   appearance: none;
   -webkit-appearance: none;

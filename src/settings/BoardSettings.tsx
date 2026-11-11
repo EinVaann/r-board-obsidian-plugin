@@ -4,6 +4,7 @@ import { PropertyEditor } from './PropertyEditor';
 import { Select, SettingRow, SettingsCard, SettingsTabs, TextInput } from './controls';
 import { QuickAddSettings } from './QuickAddSettings';
 import { AutoDateSettings } from './AutoDateSettings';
+import { ViewsSettings } from './ViewsSettings';
 
 /** Board settings modal content: General (name, tag, folder — or a table's title column), Properties, Quick add and (boards) Dates. */
 export function BoardSettings() {
@@ -70,6 +71,7 @@ export function BoardSettings() {
       tabs={[
         { id: 'general', label: 'General', icon: 'settings', content: general },
         { id: 'properties', label: table ? 'Columns' : 'Properties', icon: 'list', content: properties },
+        { id: 'views', label: 'Views', icon: 'layout-list', content: <ViewsSettings /> },
         { id: 'quick-add', label: 'Quick add', icon: 'zap', content: <QuickAddSettings /> },
         ...(table ? [] : [{ id: 'dates', label: 'Dates', icon: 'calendar', content: <AutoDateSettings /> }]),
       ]}

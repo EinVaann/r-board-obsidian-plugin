@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, type ReactNode } from 'react';
+import { useEffect, useLayoutEffect, useRef, useState, type CSSProperties, type ReactNode, type RefObject } from 'react';
 import { Icon } from '../../react/Icon';
 import { cx, slot } from '../cx';
 import type { NativeProps, Option, Size } from '../types';
@@ -35,10 +35,12 @@ export interface MultiSelectProps<T extends string> {
   label?: string;
 }
 
+const GAP = 4;
+const EDGE = 8;
+
 /** A dropdown box listing the picked values; opens a checklist (several values). */
 export function MultiSelect<T extends string>({ value, options, onChange, size = 'md', required = false, placeholder = 'Pick values', className, label }: MultiSelectProps<T>) {
   const [open, setOpen] = useState(false);
-  const [up, setUp] = useState(false);
   const root = useRef<HTMLSpanElement>(null);
 
   useEffect(() => {
@@ -60,14 +62,6 @@ export function MultiSelect<T extends string>({ value, options, onChange, size =
     };
   }, [open]);
 
-  const toggleOpen = (): void => {
-    // Open upward when the nearest scrolling box has no room below.
-    const el = root.current;
-    let scroller: HTMLElement | null | undefined = el?.parentElement;
-    while (scroller && getComputedStyle(scroller).overflowY === 'visible') scroller = scroller.parentElement;
-    if (el && scroller) setUp(scroller.getBoundingClientRect().bottom - el.getBoundingClientRect().bottom < options.length * 30 + 24);
-    setOpen((o) => !o);
-  };
   const toggle = (v: T): void => {
     const next = value.includes(v) ? value.filter((x) => x !== v) : [...value, v];
     if (required && next.length === 0) return;
@@ -77,11 +71,11 @@ export function MultiSelect<T extends string>({ value, options, onChange, size =
 
   return (
     <span ref={root} {...slot('multi-select', undefined, size)} className={className}>
-      <button type="button" {...slot('multi-select-trigger', undefined, size)} aria-haspopup="listbox" aria-expanded={open} aria-label={label} title={text} onClick={toggleOpen}>
+      <button type="button" {...slot('multi-select-trigger', undefined, size)} aria-haspopup="listbox" aria-expanded={open} aria-label={label} title={text} onClick={() => setOpen((o) => !o)}>
         <span {...slot('multi-select-value')}>{text}</span>
       </button>
       {open && (
-        <MultiSelectContent up={up}>
+        <MultiSelectContent anchor={root}>
           {options.map((o) => (
             <MultiSelectItem key={o.value} option={o} selected={value.includes(o.value)} locked={required && value.length === 1 && value.includes(o.value)} onToggle={() => toggle(o.value)} />
           ))}
@@ -91,9 +85,48 @@ export function MultiSelect<T extends string>({ value, options, onChange, size =
   );
 }
 
-function MultiSelectContent({ up, children }: { up: boolean; children: ReactNode }) {
+/** The checklist: fixed to the viewport so dialogs and scroll boxes can't clip it; opens on the side with more room. */
+function MultiSelectContent({ anchor, children }: { anchor: RefObject<HTMLSpanElement | null>; children: ReactNode }) {
+  const ref = useRef<HTMLSpanElement>(null);
+  const [style, setStyle] = useState<CSSProperties>({ visibility: 'hidden', left: 0, top: 0 });
+  const [side, setSide] = useState<'top' | 'bottom'>('bottom');
+
+  useLayoutEffect(() => {
+    const el = ref.current;
+    const trigger = anchor.current;
+    if (!el || !trigger) return;
+    const doc = trigger.ownerDocument;
+    const win = doc.defaultView ?? window;
+    const place = (): void => {
+      const r = trigger.getBoundingClientRect();
+      const below = win.innerHeight - r.bottom - GAP - EDGE;
+      const above = r.top - GAP - EDGE;
+      const up = el.scrollHeight > below && above > below;
+      const width = Math.max(el.offsetWidth, r.width);
+      const left = Math.max(EDGE, Math.min(r.right - width, win.innerWidth - width - EDGE));
+      const top = up ? r.top - GAP - Math.min(el.scrollHeight, above) : r.bottom + GAP;
+      // A transformed ancestor moves the fixed box's origin; measure it and compensate.
+      const now = el.getBoundingClientRect();
+      const originX = now.left - (parseFloat(el.style.left) || 0);
+      const originY = now.top - (parseFloat(el.style.top) || 0);
+      setSide(up ? 'top' : 'bottom');
+      setStyle({ left: left - originX, top: top - originY, minWidth: r.width, maxHeight: up ? above : below });
+    };
+    place();
+    // Fixed boxes don't follow scrolling, so re-place when anything behind it scrolls.
+    const onScroll = (e: Event): void => {
+      if (e.target !== el) place();
+    };
+    doc.addEventListener('scroll', onScroll, true);
+    win.addEventListener('resize', place);
+    return () => {
+      doc.removeEventListener('scroll', onScroll, true);
+      win.removeEventListener('resize', place);
+    };
+  }, [anchor]);
+
   return (
-    <span {...slot('multi-select-content')} data-side={up ? 'top' : 'bottom'} role="listbox" aria-multiselectable="true">
+    <span ref={ref} {...slot('multi-select-content')} data-side={side} role="listbox" aria-multiselectable="true" style={style}>
       {children}
     </span>
   );

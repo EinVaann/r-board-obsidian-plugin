@@ -174,7 +174,7 @@ test.describe('search, sort, filter', () => {
     expect((await activeView(page)).filter).toBeUndefined();
   });
 
-  test('a select rule picks options as pills', async ({ page }) => {
+  test('a select rule picks options in a multi-select dropdown', async ({ page }) => {
     await openShop(page);
     await page.locator('.rb-chip', { hasText: 'Filter' }).click();
     await page.locator('.dev-modal .rb-filter-add').click();
@@ -185,9 +185,33 @@ test.describe('search, sort, filter', () => {
     const listOp = ops.find((o) => /any|in|oneOf/i.test(o));
     test.skip(!listOp, 'no list operator for selects');
     await rule.locator('select').nth(1).selectOption(listOp!);
-    await rule.locator('.rb-filter-option', { hasText: 'Food' }).click();
-    await rule.locator('.rb-filter-option', { hasText: 'Fun' }).click();
+    // Values are picked in the dropdown's checklist.
+    await rule.locator('[data-slot="multi-select-trigger"]').click();
+    await rule.getByRole('option', { name: 'Food' }).click();
+    await rule.getByRole('option', { name: 'Fun' }).click();
     expect(await titles(page)).toEqual(['Apples', 'Bread', 'Cinema']);
+  });
+});
+
+test.describe('board settings → Views', () => {
+  test('dragging a view in the list reorders the tabs; the default opens first', async ({ page }) => {
+    await openShop(page, VIEWS.slice(0, 3));
+    await page.getByLabel('Board settings').click();
+    await page.getByRole('tab', { name: 'Views' }).click();
+    await expect(page.locator('.rb-views-name')).toHaveText(['Rows', 'Lanes', 'Cards']);
+    // Keyboard drag (dnd-kit): pick up "Cards", move it up twice, drop.
+    await page.locator('.rb-views-row', { hasText: 'Cards' }).locator('.rb-drag-handle').focus();
+    for (const key of ['Space', 'ArrowUp', 'ArrowUp', 'Space']) {
+      await page.keyboard.press(key);
+      await page.waitForTimeout(150);
+    }
+    await expect(page.locator('.rb-views-name')).toHaveText(['Cards', 'Rows', 'Lanes']);
+    expect(await tabNames(page)).toEqual(['Cards', 'Rows', 'Lanes']);
+    expect(JSON.parse(await saved(page)).views.map((v: { name: string }) => v.name)).toEqual(['Cards', 'Rows', 'Lanes']);
+    // Make "Lanes" the default.
+    await page.getByRole('button', { name: 'Open Lanes first' }).click();
+    expect(JSON.parse(await saved(page)).defaultView).toBe('Lanes');
+    await expect(page.locator('.rb-views-row', { hasText: 'Lanes' }).locator('.rb-views-default')).toBeVisible();
   });
 });
 

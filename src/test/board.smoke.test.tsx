@@ -497,6 +497,23 @@ describe('settings', () => {
     expect(count(el, '.rb-prop-name.rb-invalid')).toBe(1);
   });
 
+  it('board settings → Views: lists the views in tab order and sets the default', async () => {
+    const { ctx, store } = makeContext(GAMES);
+    const el = await render(
+      <BoardContext.Provider value={ctx}>
+        <BoardSettings />
+      </BoardContext.Provider>,
+    );
+    await act(async () => mousedown([...el.querySelectorAll('.rb-settings-tab')].find((t) => t.textContent === 'Views')!));
+    const names = [...el.querySelectorAll('.rb-views-name')].map((n) => n.textContent);
+    expect(names).toEqual(GAMES.views.map((v) => v.name));
+    // The first view is the default until another is picked.
+    expect(el.querySelectorAll('.rb-views-default')).toHaveLength(1);
+    const second = GAMES.views[1].name;
+    await act(async () => el.querySelector<HTMLButtonElement>(`[aria-label="Open ${second} first"]`)!.click());
+    expect(store.getState().config!.defaultView).toBe(second);
+  });
+
   it('board settings → Dates: add a rule, pick values, remove it', async () => {
     const config: DatabaseConfig = {
       ...GAMES,
@@ -512,8 +529,8 @@ describe('settings', () => {
       </BoardContext.Provider>,
     );
     const tabs = [...el.querySelectorAll('.rb-settings-tab')];
-    expect(tabs.map((t) => t.textContent)).toEqual(['General', 'Properties', 'Quick add', 'Dates']);
-    await act(async () => mousedown(tabs[3]));
+    expect(tabs.map((t) => t.textContent)).toEqual(['General', 'Properties', 'Views', 'Quick add', 'Dates']);
+    await act(async () => mousedown(tabs.find((t) => t.textContent === 'Dates')!));
     const addButton = [...el.querySelectorAll('button')].find((b) => b.textContent?.includes('Add rule'))!;
     await act(async () => addButton.click());
     expect(store.getState().config!.autoDates).toEqual([{ property: 'status', values: [], date: 'start-date' }]);
