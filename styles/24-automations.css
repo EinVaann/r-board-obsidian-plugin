@@ -1,0 +1,57 @@
+/* Board settings → Automations: each automation a card; triggers and effects read as sentences. */
+/* Layout only: the controls are UI primitives (styles/ui/). */
+.rb-automation {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 10px 12px;
+  border: 1px solid var(--rb-surface-border);
+  border-radius: var(--rb-surface-radius);
+}
+.rb-automation + .rb-automation { margin-top: 10px; }
+.rb-automation.is-off { opacity: 0.6; }
+.rb-automation.is-chained { border-color: color-mix(in srgb, var(--color-orange) 55%, var(--rb-surface-border)); }
+.rb-automation-head { display: flex; align-items: center; gap: 8px; }
+.rb-automation-head > [data-slot='input'].rb-automation-name { flex: 1; min-width: 0; font-weight: 600; }
+.rb-automation-section { display: flex; flex-direction: column; gap: 6px; }
+.rb-automation-section-head { display: flex; align-items: center; gap: 8px; }
+.rb-automation-kw { min-width: 44px; font-weight: 600; color: var(--text-muted); font-size: var(--rb-font-hint); text-transform: uppercase; letter-spacing: 0.04em; }
+.rb-automation-hint { color: var(--text-faint); font-size: var(--rb-font-hint); }
+.rb-automation-line { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 8px; }
+.rb-automation-line > [data-slot='select'] { width: auto; min-width: 110px; }
+.rb-automation-line > [data-slot='icon-button'] { margin-left: auto; }
+.rb-automation-join { min-width: 44px; color: var(--text-faint); font-size: var(--rb-font-hint); text-align: right; }
+.rb-automation-join-inline { color: var(--text-faint); font-size: var(--rb-font-hint); }
+.rb-automation-line > [data-slot='input'].rb-automation-text { width: 180px; }
+.rb-automation-line > [data-slot='input'].rb-automation-number { width: 80px; }
+.rb-automation-links { flex: 1 1 200px; min-width: 160px; }
+.rb-automation-check { display: inline-flex; align-items: center; gap: 6px; color: var(--text-muted); font-size: var(--rb-font-hint); cursor: pointer; }
+body .rb-automation-add {
+  align-self: flex-start;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  margin-left: 52px;
+  padding: 2px 6px;
+  height: auto;
+  border: none;
+  background: none;
+  box-shadow: none;
+  color: var(--text-muted);
+  font-size: var(--rb-font-hint);
+  cursor: pointer;
+}
+body .rb-automation-add:hover { color: var(--text-normal); background: var(--background-modifier-hover); }
+.rb-automation-add svg { width: 13px; height: 13px; }
+.rb-automation-warning {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 10px;
+  padding: 8px 10px;
+  border-radius: var(--radius-s);
+  background: rgba(var(--color-orange-rgb), 0.12);
+  color: var(--text-normal);
+  font-size: var(--font-ui-small);
+  line-height: 1.45;
+}
+.rb-automation-warning svg { flex-shrink: 0; width: 15px; height: 15px; margin-top: 2px; color: var(--color-orange); }

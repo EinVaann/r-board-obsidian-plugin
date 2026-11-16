@@ -1,6 +1,8 @@
 import type {
   Aggregate,
-  AutoDateRule,
+  Automation,
+  AutomationEffect,
+  AutomationTrigger,
   Calculation,
   CardSize,
   ChartConfig,
@@ -8,6 +10,7 @@ import type {
   Companion,
   DatabaseConfig,
   DateBucket,
+  EffectOp,
   FilterGroup,
   FilterNode,
   FilterOp,
@@ -20,6 +23,7 @@ import type {
   QuickAddConfig,
   SelectOption,
   SortSpec,
+  TriggerOp,
   ViewConfig,
   ViewType,
 } from './types';
@@ -280,29 +284,60 @@ export function parseDatabaseConfig(raw: string): ParseResult {
         typeof obj.newNoteFolder === 'string' && obj.newNoteFolder.trim() !== ''
           ? obj.newNoteFolder.trim()
           : undefined,
-      autoDates: parseAutoDates(obj.autoDates),
     },
   };
 }
 
-/** Auto-date rules; incomplete ones are dropped. */
-export function parseAutoDates(raw: unknown): AutoDateRule[] | undefined {
-  if (!Array.isArray(raw)) return undefined;
-  const out: AutoDateRule[] = [];
-  for (const r of raw) {
+const TRIGGER_OP_SET = new Set<TriggerOp>(['changes', 'becomes', 'stopsBeing', 'gains', 'loses', 'contains', 'empty', 'filled', 'checked', 'unchecked', 'above', 'below', 'equals']);
+const EFFECT_OP_SET = new Set<EffectOp>(['set', 'clear', 'add', 'remove', 'check', 'uncheck', 'today', 'increment']);
+const strings = (v: unknown): string[] => (Array.isArray(v) ? v.filter((x): x is string => typeof x === 'string' && x !== '') : []);
+
+/** Automations, plus 1.0 auto-date rules ("when X becomes …, set date to today if empty") converted to them. */
+export function parseAutomations(raw: unknown, legacyAutoDates?: unknown): Automation[] | undefined {
+  const out: Automation[] = [];
+  for (const r of Array.isArray(raw) ? raw : []) {
     if (typeof r !== 'object' || r === null) continue;
     const o = r as Record<string, unknown>;
+    const triggers: AutomationTrigger[] = [];
+    for (const t of Array.isArray(o.triggers) ? o.triggers : []) {
+      const x = (t ?? {}) as Record<string, unknown>;
+      if (typeof x.property !== 'string' || !TRIGGER_OP_SET.has(x.op as TriggerOp)) continue;
+      const trig: AutomationTrigger = { property: x.property, op: x.op as TriggerOp };
+      if (strings(x.values).length) trig.values = strings(x.values);
+      if (strings(x.from).length) trig.from = strings(x.from);
+      if (typeof x.number === 'number') trig.number = x.number;
+      triggers.push(trig);
+    }
+    const effects: AutomationEffect[] = [];
+    for (const e of Array.isArray(o.effects) ? o.effects : []) {
+      const x = (e ?? {}) as Record<string, unknown>;
+      if (typeof x.property !== 'string' || !EFFECT_OP_SET.has(x.op as EffectOp)) continue;
+      const eff: AutomationEffect = { property: x.property, op: x.op as EffectOp };
+      if (typeof x.value === 'string' || typeof x.value === 'number') eff.value = x.value;
+      else if (Array.isArray(x.value)) eff.value = strings(x.value);
+      if (typeof x.number === 'number') eff.number = x.number;
+      if (x.includeTime === true) eff.includeTime = true;
+      if (x.onlyIfEmpty === true) eff.onlyIfEmpty = true;
+      effects.push(eff);
+    }
+    const auto: Automation = { id: typeof o.id === 'string' && o.id ? o.id : `a${out.length + 1}`, triggers, effects };
+    if (typeof o.name === 'string' && o.name.trim()) auto.name = o.name;
+    if (o.disabled === true) auto.disabled = true;
+    if (o.match === 'all') auto.match = 'all';
+    out.push(auto);
+  }
+  for (const r of Array.isArray(legacyAutoDates) ? legacyAutoDates : []) {
+    const o = (r ?? {}) as Record<string, unknown>;
     if (typeof o.property !== 'string' || !o.property || typeof o.date !== 'string' || !o.date) continue;
-    const values = Array.isArray(o.values) ? o.values.filter((v): v is string => typeof v === 'string' && v !== '') : [];
-    const rule: AutoDateRule = { property: o.property, values, date: o.date };
-    if (o.includeTime === true) rule.includeTime = true;
-    out.push(rule);
+    const effect: AutomationEffect = { property: o.date, op: 'today', onlyIfEmpty: true };
+    if (o.includeTime === true) effect.includeTime = true;
+    out.push({ id: `d${out.length + 1}`, triggers: [{ property: o.property, op: 'becomes', values: strings(o.values) }], effects: [effect] });
   }
   return out.length ? out : undefined;
 }
 
-/** The parts shared by `.board` and `.table` files: name, properties, views. */
-export function parseSchema(obj: Record<string, unknown>): Pick<DatabaseConfig, 'name' | 'properties' | 'views' | 'defaultView' | 'quickAdd'> {
+/** The parts shared by `.board` and `.table` files: name, properties, views, quick add, automations. */
+export function parseSchema(obj: Record<string, unknown>): Pick<DatabaseConfig, 'name' | 'properties' | 'views' | 'defaultView' | 'quickAdd' | 'automations'> {
   const properties: PropertyConfig[] = Array.isArray(obj.properties)
     ? obj.properties.map(parseProperty).filter((p): p is PropertyConfig => p !== null)
     : [];
@@ -317,7 +352,14 @@ export function parseSchema(obj: Record<string, unknown>): Pick<DatabaseConfig, 
       ? obj.defaultView
       : views[0]?.name;
 
-  return { name: typeof obj.name === 'string' ? obj.name : undefined, properties, views, defaultView, quickAdd: parseQuickAdd(obj.quickAdd) };
+  return {
+    name: typeof obj.name === 'string' ? obj.name : undefined,
+    properties,
+    views,
+    defaultView,
+    quickAdd: parseQuickAdd(obj.quickAdd),
+    automations: parseAutomations(obj.automations, obj.autoDates),
+  };
 }
 
 /** A file's quick-add settings; undefined when absent or without an id. */
@@ -354,7 +396,7 @@ export function serializeDatabase(config: DatabaseConfig): string {
   if (config.defaultView) out.defaultView = config.defaultView;
   if (config.newNoteFolder) out.newNoteFolder = config.newNoteFolder;
   if (config.quickAdd) out.quickAdd = config.quickAdd;
-  if (config.autoDates?.length) out.autoDates = config.autoDates;
+  if (config.automations?.length) out.automations = config.automations;
   return JSON.stringify(out, null, 2);
 }
 

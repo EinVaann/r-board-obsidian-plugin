@@ -1,5 +1,5 @@
 import { expect, test, type Locator, type Page } from '@playwright/test';
-import { menu, open, pageErrors } from './harness';
+import { menu, open, pageErrors, showView } from './harness';
 import { boardConfig, GAME_NOTES, GAME_PROPERTIES } from './fixtures';
 
 test.afterEach(({ page }) => expect(pageErrors(page)).toEqual([]));
@@ -28,8 +28,9 @@ async function drag(page: Page, from: Locator, to: Locator): Promise<void> {
   await page.mouse.up();
 }
 
-test.describe('auto-dates (real watcher, fake metadata cache)', () => {
-  const DATED = boardConfig([{ name: 'Board', type: 'kanban', group: 'status', cardSize: 'small' }], {
+// The board uses 1.0's `autoDates` format: these also check they still run as automations.
+test.describe('automations (real watcher, fake metadata cache)', () => {
+  const DATED = boardConfig([{ name: 'Board', type: 'kanban', group: 'status', cardSize: 'small' }, { name: 'Table', type: 'table', limit: 'none' }], {
     properties: [...GAME_PROPERTIES, { name: 'start-date', label: 'Start', type: 'date' }, { name: 'end-date', label: 'End', type: 'date' }],
     autoDates: [
       { property: 'status', values: ['playing'], date: 'start-date' },
@@ -63,18 +64,36 @@ test.describe('auto-dates (real watcher, fake metadata cache)', () => {
     expect((await notes(page))['Games/Hollow Knight.md']['start-date']).toBeUndefined();
   });
 
-  test('a rule added in Board settings → Dates applies to later changes', async ({ page }) => {
+  test('old rules show as automations; one added in Board settings applies to later changes', async ({ page }) => {
     await page.getByLabel('Board settings').click();
-    await page.getByRole('tab', { name: 'Dates' }).click();
-    await expect(page.locator('.rb-auto-date')).toHaveCount(2);
+    await page.getByRole('tab', { name: 'Automations' }).click();
+    await expect(page.locator('.rb-automation')).toHaveCount(2);
+    // New: when Owned becomes checked, add "owned" to Genre.
+    await page.getByRole('button', { name: 'Add automation' }).click();
+    const auto = page.locator('.rb-automation').nth(2);
+    const trigger = auto.locator('.rb-automation-line').first();
+    await trigger.locator('select').first().selectOption({ label: 'Owned' });
+    await auto.getByRole('button', { name: 'Add effect' }).click();
+    const effect = auto.locator('.rb-automation-line').nth(1);
+    await effect.locator('select').first().selectOption({ label: 'Genre' });
+    await effect.locator('input').fill('owned');
+    await effect.locator('input').press('Enter');
+    await expect.poll(() => page.evaluate(() => window.__store.getState().config!.automations?.[2]?.effects?.[0])).toEqual({ property: 'genre', op: 'add', value: ['owned'] });
     await page.keyboard.press('Escape');
-    await expect(page.locator('.rb-auto-date')).toHaveCount(0);
+    await expect(page.locator('.rb-automation')).toHaveCount(0);
+
     const card = column(page, 'To Play').locator('.rb-kanban-card', { hasText: 'Disco Elysium' });
     await card.hover();
     await card.getByLabel('Card actions').click();
     await menu(page, 'Move to group');
     await menu(page, /^Playing$/);
     await expect.poll(async () => (await notes(page))['Games/Disco Elysium.md']['start-date']).toBe(today());
+
+    // Check Owned in the Table view: the new automation adds "owned" to Genre.
+    await showView(page, 'Table');
+    const row = page.locator('.rb-tr', { hasText: 'Disco Elysium' });
+    await row.locator('.rb-td-checkbox').click();
+    await expect.poll(async () => (await notes(page))['Games/Disco Elysium.md'].genre).toEqual(['rpg', 'owned']);
   });
 });
 

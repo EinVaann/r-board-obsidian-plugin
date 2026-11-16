@@ -7,7 +7,7 @@ import { moveWrites } from './sections';
 import type { SessionType } from './types';
 
 /**
- * Write what puts `item` in section `target`, through the board so auto-dates
+ * Write what puts `item` in section `target`, through the board so automations
  * fire. Returns false when nothing could be written.
  */
 export async function moveToSection(

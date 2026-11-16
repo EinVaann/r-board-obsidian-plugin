@@ -337,7 +337,7 @@
 
 /* Older screens still using classes: same box from the same tokens (compact inside list rows). */
 /* Move each to the Input / Select primitive when its screen is next touched. */
-:where(.rb-root, .rb-home, .rb-embed, .modal.rb-modal) :is(.rb-prop-name, .rb-prop-input, .rb-filter-value, .rb-col-add-input, .rb-col-field-input, .rb-prop-select, .rb-filter-select, .rb-auto-date-line select):not([data-slot]) {
+:where(.rb-root, .rb-home, .rb-embed, .modal.rb-modal) :is(.rb-prop-name, .rb-prop-input, .rb-filter-value, .rb-col-add-input, .rb-col-field-input, .rb-prop-select, .rb-filter-select):not([data-slot]) {
   box-sizing: border-box;
   height: var(--rb-control-h);
   padding: 0 var(--rb-control-px);
@@ -345,7 +345,7 @@
   font-size: var(--rb-control-font);
   line-height: normal;
 }
-:where(.rb-root, .rb-home, .rb-embed, .modal.rb-modal) :is(.rb-prop-select, .rb-filter-select, .rb-auto-date-line select):not([data-slot]) {
+:where(.rb-root, .rb-home, .rb-embed, .modal.rb-modal) :is(.rb-prop-select, .rb-filter-select):not([data-slot]) {
   appearance: none;
   -webkit-appearance: none;
   padding-right: calc(var(--rb-control-px) + 18px);
@@ -358,7 +358,7 @@
   color: var(--rb-field-fg);
   cursor: pointer;
 }
-:where(.rb-root, .rb-home, .rb-embed, .modal.rb-modal) :is(.rb-prop-head .rb-prop-name, .rb-prop-head .rb-prop-select, .rb-filter-select, .rb-filter-value, .rb-col-field-input, .rb-auto-date-line select):not([data-slot]) {
+:where(.rb-root, .rb-home, .rb-embed, .modal.rb-modal) :is(.rb-prop-head .rb-prop-name, .rb-prop-head .rb-prop-select, .rb-filter-select, .rb-filter-value, .rb-col-field-input):not([data-slot]) {
   height: var(--rb-control-h-sm);
   border-radius: var(--rb-control-radius-sm);
   font-size: var(--rb-control-font-sm);
@@ -2807,18 +2807,63 @@ body:not(.is-phone) .rb-edit-modal {
 }
 .rb-qa-remove svg { width: 12px; height: 12px; }
 
-/* Board settings → Dates: each rule reads as a sentence, a hairline between rules. */
+/* Board settings → Automations: each automation a card; triggers and effects read as sentences. */
 /* Layout only: the controls are UI primitives (styles/ui/). */
-.rb-auto-date-list { display: flex; flex-direction: column; border: 1px solid var(--rb-surface-border); border-radius: var(--rb-surface-radius); }
-.rb-auto-date { display: flex; flex-direction: column; gap: 6px; padding: 10px 12px; }
-.rb-auto-date + .rb-auto-date { border-top: 1px solid var(--rb-divider); }
-.rb-auto-date-line { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 8px; }
-.rb-auto-date-line > [data-slot='select'] { width: auto; min-width: 120px; }
-.rb-auto-date-line > [data-slot='icon-button'] { margin-left: auto; }
-.rb-auto-date-join { min-width: 52px; color: var(--text-faint); font-size: var(--rb-font-hint); }
-.rb-auto-date-join:not(:first-child) { min-width: 0; }
-.rb-auto-date-time { display: inline-flex; align-items: center; gap: 6px; margin-left: auto; color: var(--text-muted); font-size: var(--rb-font-hint); cursor: pointer; }
-.rb-auto-date-none { color: var(--text-faint); font-size: var(--rb-font-hint); }
+.rb-automation {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 10px 12px;
+  border: 1px solid var(--rb-surface-border);
+  border-radius: var(--rb-surface-radius);
+}
+.rb-automation + .rb-automation { margin-top: 10px; }
+.rb-automation.is-off { opacity: 0.6; }
+.rb-automation.is-chained { border-color: color-mix(in srgb, var(--color-orange) 55%, var(--rb-surface-border)); }
+.rb-automation-head { display: flex; align-items: center; gap: 8px; }
+.rb-automation-head > [data-slot='input'].rb-automation-name { flex: 1; min-width: 0; font-weight: 600; }
+.rb-automation-section { display: flex; flex-direction: column; gap: 6px; }
+.rb-automation-section-head { display: flex; align-items: center; gap: 8px; }
+.rb-automation-kw { min-width: 44px; font-weight: 600; color: var(--text-muted); font-size: var(--rb-font-hint); text-transform: uppercase; letter-spacing: 0.04em; }
+.rb-automation-hint { color: var(--text-faint); font-size: var(--rb-font-hint); }
+.rb-automation-line { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 8px; }
+.rb-automation-line > [data-slot='select'] { width: auto; min-width: 110px; }
+.rb-automation-line > [data-slot='icon-button'] { margin-left: auto; }
+.rb-automation-join { min-width: 44px; color: var(--text-faint); font-size: var(--rb-font-hint); text-align: right; }
+.rb-automation-join-inline { color: var(--text-faint); font-size: var(--rb-font-hint); }
+.rb-automation-line > [data-slot='input'].rb-automation-text { width: 180px; }
+.rb-automation-line > [data-slot='input'].rb-automation-number { width: 80px; }
+.rb-automation-links { flex: 1 1 200px; min-width: 160px; }
+.rb-automation-check { display: inline-flex; align-items: center; gap: 6px; color: var(--text-muted); font-size: var(--rb-font-hint); cursor: pointer; }
+body .rb-automation-add {
+  align-self: flex-start;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  margin-left: 52px;
+  padding: 2px 6px;
+  height: auto;
+  border: none;
+  background: none;
+  box-shadow: none;
+  color: var(--text-muted);
+  font-size: var(--rb-font-hint);
+  cursor: pointer;
+}
+body .rb-automation-add:hover { color: var(--text-normal); background: var(--background-modifier-hover); }
+.rb-automation-add svg { width: 13px; height: 13px; }
+.rb-automation-warning {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 10px;
+  padding: 8px 10px;
+  border-radius: var(--radius-s);
+  background: rgba(var(--color-orange-rgb), 0.12);
+  color: var(--text-normal);
+  font-size: var(--font-ui-small);
+  line-height: 1.45;
+}
+.rb-automation-warning svg { flex-shrink: 0; width: 15px; height: 15px; margin-top: 2px; color: var(--color-orange); }
 
 /* ===================== Schedule view ===================== */
 .rb-schedule { display: flex; flex-direction: column; gap: 14px; padding: 4px 2px 16px; }
@@ -4222,7 +4267,7 @@ body.rb-theme-industrial.rb-mode-dark { --rb-chart-palette: #ECECE6, #E9CD62, #8
 
 /* Settings cards, fields, value boxes: UI primitives, themed by 10-tokens.css. */
 /* Selects not yet built with the Select primitive (older screens): same look, same tokens. */
-.rb-theme-industrial :is(.rb-root, .modal.rb-modal) select:not([data-slot]):not(.rb-prop-select):not(.rb-filter-select):not(.rb-auto-date-line select) {
+.rb-theme-industrial :is(.rb-root, .modal.rb-modal) select:not([data-slot]):not(.rb-prop-select):not(.rb-filter-select) {
   appearance: none;
   -webkit-appearance: none;
   height: var(--rb-control-h);

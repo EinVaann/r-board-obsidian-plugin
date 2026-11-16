@@ -84,9 +84,9 @@ const BOARD = serializeDatabase({
     { name: 'end-date', type: 'date' },
   ],
   views: [],
-  autoDates: [
-    { property: 'status', values: ['playing'], date: 'start-date' },
-    { property: 'status', values: ['completed', 'dropped'], date: 'end-date' },
+  automations: [
+    { id: 's', triggers: [{ property: 'status', op: 'becomes', values: ['playing'] }], effects: [{ property: 'start-date', op: 'today', onlyIfEmpty: true }] },
+    { id: 'e', triggers: [{ property: 'status', op: 'becomes', values: ['completed', 'dropped'] }], effects: [{ property: 'end-date', op: 'today', onlyIfEmpty: true }] },
   ],
 });
 
@@ -149,7 +149,7 @@ describe('plugin wiring (fake vault)', () => {
     expect(r.ok && r.table.rows.map((row) => row.cells.game)).toEqual([['[[Games/Done/Ex Astris Remastered|Ex Astris]]'], ['[[Other]]']]);
   });
 
-  it('keeps auto-dates working for a note after it is renamed', async () => {
+  it('keeps automations working for a note after it is renamed', async () => {
     const fm: Record<string, Record<string, unknown>> = { 'Games/A.md': { tags: ['backlog'], status: 'planned' } };
     const v = fakeVault({ 'Backlog.board': BOARD }, fm);
     await loadPlugin(v);

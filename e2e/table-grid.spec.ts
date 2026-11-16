@@ -223,6 +223,26 @@ test.describe('links cells', () => {
   });
 });
 
+test.describe('table automations', () => {
+  const autos = [
+    { id: 'a', triggers: [{ property: 'paid', op: 'checked' }], effects: [{ property: 'date', op: 'today', onlyIfEmpty: true }, { property: 'tags', op: 'add', value: ['done'] }] },
+  ];
+  const openWith = (page: Page) => open(page, { fixture: { table: JSON.stringify({ ...JSON.parse(tableFile()), automations: autos }) } });
+
+  test('an edit in the table runs the row’s automations, once, and saves them', async ({ page }) => {
+    await openWith(page);
+    // Gas (row 1): paid is unchecked, date is set.
+    await cell(page, 1, 5).click();
+    await expect.poll(async () => (await rows(page))[1]).toMatchObject({ paid: true, date: '2026-10-03', tags: ['done'] });
+    // Notebook (row 4): no date yet, so it's filled.
+    await cell(page, 4, 5).click();
+    const today = await page.evaluate(() => new Date().toISOString().slice(0, 10));
+    await expect.poll(async () => (await rows(page))[4]).toMatchObject({ paid: true, tags: ['done'] });
+    expect(String((await rows(page))[4].date).slice(0, 7)).toBe(today.slice(0, 7));
+    expect(await saved(page)).toContain('"automations"');
+  });
+});
+
 test.describe('keyboard selection', () => {
   test.beforeEach(({ page }) => openShop(page));
 

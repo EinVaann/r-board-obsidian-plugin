@@ -120,7 +120,7 @@ The theme covers boards, tables, embeds and R Board's own dialogs and menus; Obs
 
 - Notes are matched via Obsidian's native metadata cache — any note whose tags include `sourceTag` (frontmatter `tags` or inline `#tags`).
 - Notes named `_template` are excluded from every database.
-- **Auto-dates** (Board settings → Dates): "when Status becomes Playing, set Start date to today". Works however the property changes (board, table or the note itself) and never overwrites a date already set.
+- **Automations** (Board settings → Automations): "when Status becomes Completed, set End date to today and check Owned". Each automation has triggers (a property changes, becomes or stops being a value, gains or loses a value, crosses a number, is set or cleared…) matched as **any** or **all**, and effects that set, clear, add, remove, check or fill today's date, optionally only if empty. On boards they run however the note changes (board, table or the note itself); in `.table` files, on edits, quick add and logged sessions. An effect never sets off another automation: an edit that would chain them is refused with a warning, and a chain already in a file runs one step only. 1.0's date rules are read as automations.
 - Links in `.table` cells follow note renames.
 - **Links into a board**: `[[Games.board#Lanes]]` opens a view; `[[Budget.table#^r1a2b3]]` (or `#View#^r1a2b3`) opens a table at a row and highlights it. Copy them from a view tab's menu (**Copy link to view**) or a row's menu (**Copy link to row**).
 
@@ -154,7 +154,7 @@ A guide, not a timetable: it forecasts when you'll get to each item of a backlog
 - **Lanes** — what runs now (with the hours left), then what's queued, each with start and done ranges. Finishing or dropping asks **what's next**: the suggestion, two alternatives with their reasons, 🎲 Random, or any item.
 - **Steer** — drag a queued item to reorder it or move it to another lane, or right-click → **Move…**: pick a section, a lane and a place in the queue, and optionally *not before* a date. Double-click a queued item to pin it where it is (📌); **Re-plan** (per lane, or all lanes) goes back to the automatic order.
 
-Pair it with [auto-dates](#data-source) (Board settings → Dates) so start and end dates fill themselves as statuses change.
+Pair it with [automations](#data-source) (Board settings → Automations) so start and end dates fill themselves as statuses change.
 
 ## Tables
 

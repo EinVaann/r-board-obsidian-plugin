@@ -4,6 +4,7 @@ import { parseTableFile, serializeTableFile } from './format';
 import { addRow } from './rows';
 import { relinkRows, type Relink } from './relink';
 import { addOptions } from '../quickadd/options';
+import { activeAutomations, automateRows } from '../data/automations';
 
 /** The pane showing `file`, if one is open. */
 export function openBoardView(app: App, file: TFile): BoardView | null {
@@ -39,7 +40,11 @@ export async function appendTableRow(
       return text;
     }
     addOptions(r.table.config, created);
+    const { config } = r.table;
+    const prev = [...r.table.rows];
     addRow(r.table.rows, cells);
+    // Same as an edit in an open table: a new row can set off automations.
+    r.table.rows = automateRows(activeAutomations(config.automations, config.properties), config.properties, config.titleProperty, prev, r.table.rows, new Date());
     return serializeTableFile(r.table);
   });
   return error;

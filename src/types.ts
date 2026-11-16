@@ -345,17 +345,66 @@ export interface DatabaseConfig {
   titleProperty?: string;
   /** Quick add: a command (and optional hotkey) that adds a record from a small form. */
   quickAdd?: QuickAddConfig;
-  /** Boards: fill a date property when a property changes to one of some values. */
-  autoDates?: AutoDateRule[];
+  /** When some values change, set others (Board settings → Automations). */
+  automations?: Automation[];
 }
 
-/** "When `property` becomes one of `values`, set the empty date property `date` to today." */
-export interface AutoDateRule {
+/** What a trigger watches for. Which ones a property offers depends on its type (`TRIGGER_OPS`). */
+export type TriggerOp =
+  | 'changes'
+  | 'becomes'
+  | 'stopsBeing'
+  | 'gains'
+  | 'loses'
+  | 'contains'
+  | 'empty'
+  | 'filled'
+  | 'checked'
+  | 'unchecked'
+  | 'above'
+  | 'below'
+  | 'equals';
+
+/** "When `property` <op> <values / number>". */
+export interface AutomationTrigger {
   property: string;
-  values: string[];
-  date: string;
-  /** Write the time of day too. */
+  op: TriggerOp;
+  /** becomes / stopsBeing / gains / loses / contains: the values (link texts for links). Empty gains / loses = any. */
+  values?: string[];
+  /** becomes (select): only when the old value was one of these. */
+  from?: string[];
+  /** above / below / equals. */
+  number?: number;
+}
+
+/** What an effect does to its property (`EFFECT_OPS` per type). */
+export type EffectOp = 'set' | 'clear' | 'add' | 'remove' | 'check' | 'uncheck' | 'today' | 'increment';
+
+/** "Set `property` to …". */
+export interface AutomationEffect {
+  property: string;
+  op: EffectOp;
+  /** set / add / remove: the value (a list for multi and links). */
+  value?: string | number | string[];
+  /** today: days from today (0 = today). increment: the amount. */
+  number?: number;
+  /** today: write the time of day too. */
   includeTime?: boolean;
+  /** Leave a value that is already filled. */
+  onlyIfEmpty?: boolean;
+}
+
+/** When any (or all) of the triggers happen, apply every effect. */
+export interface Automation {
+  /** Stable id (for list keys and chain warnings). */
+  id: string;
+  name?: string;
+  /** Off: kept but not run. */
+  disabled?: boolean;
+  /** any (default): one trigger is enough. all: every trigger holds, and one of them just happened. */
+  match?: 'any' | 'all';
+  triggers: AutomationTrigger[];
+  effects: AutomationEffect[];
 }
 
 /** A database's quick-add command. */

@@ -1,6 +1,7 @@
 import { createStore, type StoreApi } from 'zustand/vanilla';
 import { produce } from 'immer';
 import type { DatabaseConfig, TableRow, ViewConfig } from '../types';
+import { activeAutomations, automateRows } from '../data/automations';
 
 /**
  * State for one open board. Config edits go through `updateConfig` (an Immer
@@ -78,8 +79,14 @@ export function createBoardStore(persist: BoardPersistence): BoardStore {
       clearTarget: () => set({ target: null }),
 
       updateRows: (recipe) => {
-        const rows = produce(get().rows, recipe);
-        if (rows === get().rows) return;
+        const prev = get().rows;
+        let rows = produce(prev, recipe);
+        if (rows === prev) return;
+        const config = get().config;
+        if (config?.automations?.length) {
+          const autos = activeAutomations(config.automations, config.properties);
+          rows = automateRows(autos, config.properties, config.titleProperty, prev, rows, new Date());
+        }
         set({ rows });
         persist.saveRows?.(rows);
       },

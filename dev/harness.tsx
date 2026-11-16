@@ -14,7 +14,7 @@ import { openBoardSettings, openFilterModal, openViewSettings } from '../src/set
 import { openRecordEditor } from '../src/table/RecordEditor';
 import { DatabaseEmbed, parseEmbed } from '../src/embed/Embed';
 import SCHEDULE_FIXTURE from '../src/schedule/fixture.json';
-import { AutoDateWatcher } from '../src/data/AutoDateWatcher';
+import { AutomationWatcher } from '../src/data/AutomationWatcher';
 import { applyTheme, parseTheme } from '../src/theme';
 
 const BOARD_PATH = 'Backlog.board';
@@ -207,7 +207,7 @@ const SHOWCASE_BOARD = {
   ],
 };
 
-/** Metadata-cache `changed` listeners (the auto-date watcher). */
+/** Metadata-cache `changed` listeners (the automation watcher). */
 const changedHandlers: ((f: TFile) => void)[] = [];
 /** Vault `modify` listeners (views reading another file, like the schedule's log). */
 const modifyHandlers: ((f: TFile) => void)[] = [];
@@ -308,7 +308,7 @@ async function main(): Promise<void> {
 
   let store!: BoardStore;
   const app = fakeApp(() => store.getState().bumpVault());
-  const watcher = new AutoDateWatcher(app, () => Object.keys(FILES).map((p) => new TFile(p)));
+  const watcher = new AutomationWatcher(app, () => Object.keys(FILES).map((p) => new TFile(p)));
   store = createBoardStore({
     saveConfig: (config) => {
       window.__saved = kind === 'table' ? serializeTableFile({ config, rows: store.getState().rows }) : serializeDatabase(config);
@@ -329,7 +329,7 @@ async function main(): Promise<void> {
     const r = parseDatabaseConfig(JSON.stringify(fixture?.board ?? (SHOWCASE ? SHOWCASE_BOARD : SCHEDULE ? SCHEDULE_BOARD : BACKLOG)));
     if (!r.ok) throw new Error(r.error);
     store.getState().loadConfig(r.config, null);
-    // The real auto-date watcher, fed by the fake metadata cache (as main.tsx wires it).
+    // The real automation watcher, fed by the fake metadata cache (as main.tsx wires it).
     FILES[BOARD_PATH] = serializeDatabase(r.config);
     await watcher.scan();
     changedHandlers.push((f) => void watcher.noteChanged(f));

@@ -707,7 +707,7 @@ body.rb-theme-industrial.rb-mode-dark { --rb-chart-palette: #ECECE6, #E9CD62, #8
 
 /* Settings cards, fields, value boxes: UI primitives, themed by 10-tokens.css. */
 /* Selects not yet built with the Select primitive (older screens): same look, same tokens. */
-.rb-theme-industrial :is(.rb-root, .modal.rb-modal) select:not([data-slot]):not(.rb-prop-select):not(.rb-filter-select):not(.rb-auto-date-line select) {
+.rb-theme-industrial :is(.rb-root, .modal.rb-modal) select:not([data-slot]):not(.rb-prop-select):not(.rb-filter-select) {
   appearance: none;
   -webkit-appearance: none;
   height: var(--rb-control-h);

@@ -514,7 +514,7 @@ describe('settings', () => {
     expect(store.getState().config!.defaultView).toBe(second);
   });
 
-  it('board settings → Dates: add a rule, pick values, remove it', async () => {
+  it('board settings → Automations: add one, pick trigger values, add effects; a chain is refused', async () => {
     const config: DatabaseConfig = {
       ...GAMES,
       properties: [
@@ -528,20 +528,42 @@ describe('settings', () => {
         <BoardSettings />
       </BoardContext.Provider>,
     );
+    const autos = () => store.getState().config!.automations;
+    const button = (text: string) => [...el.querySelectorAll('button')].find((b) => b.textContent?.includes(text))!;
     const tabs = [...el.querySelectorAll('.rb-settings-tab')];
-    expect(tabs.map((t) => t.textContent)).toEqual(['General', 'Properties', 'Views', 'Quick add', 'Dates']);
-    await act(async () => mousedown(tabs.find((t) => t.textContent === 'Dates')!));
-    const addButton = [...el.querySelectorAll('button')].find((b) => b.textContent?.includes('Add rule'))!;
-    await act(async () => addButton.click());
-    expect(store.getState().config!.autoDates).toEqual([{ property: 'status', values: [], date: 'start-date' }]);
+    expect(tabs.map((t) => t.textContent)).toEqual(['General', 'Properties', 'Views', 'Quick add', 'Automations']);
+    await act(async () => mousedown(tabs.find((t) => t.textContent === 'Automations')!));
+    await act(async () => button('Add automation').click());
+    expect(autos()![0].triggers).toEqual([{ property: 'status', op: 'becomes' }]);
 
-    // Values are picked in the dropdown's checklist.
+    // Trigger values are picked in the dropdown's checklist.
     await act(async () => el.querySelector<HTMLButtonElement>('[data-slot="multi-select-trigger"]')!.click());
     await act(async () => [...el.querySelectorAll<HTMLButtonElement>('[data-slot="multi-select-item"]')].find((b) => b.textContent === 'playing')!.click());
-    expect(store.getState().config!.autoDates![0].values).toEqual(['playing']);
+    expect(autos()![0].triggers[0].values).toEqual(['playing']);
 
-    await act(async () => el.querySelector<HTMLButtonElement>('[aria-label="Remove rule"]')!.click());
-    expect(store.getState().config!.autoDates).toBeUndefined();
+    // The first effect property is Status, which this automation watches: set it to "playing" and it chains to itself.
+    await act(async () => button('Add effect').click());
+    expect(autos()![0].effects).toEqual([{ property: 'status', op: 'set' }]);
+    const valueSelect = [...el.querySelectorAll<HTMLSelectElement>('select')].find((s) => [...s.options].some((o) => o.text === 'Pick a value'))!;
+    await act(async () => {
+      valueSelect.value = 'playing';
+      valueSelect.dispatchEvent(new Event('change', { bubbles: true }));
+    });
+    expect(el.querySelector('.rb-automation-warning')?.textContent).toContain('Not saved');
+    expect(autos()![0].effects[0].value).toBeUndefined();
+
+    await act(async () => el.querySelector<HTMLButtonElement>('[aria-label="Remove automation"]')!.click());
+    expect(autos()).toBeUndefined();
+  });
+
+  it('board settings → Automations shows for tables too', async () => {
+    const { ctx } = makeContext({ ...GAMES, kind: 'table', properties: [{ name: 'item', type: 'text' }] });
+    const el = await render(
+      <BoardContext.Provider value={ctx}>
+        <BoardSettings />
+      </BoardContext.Provider>,
+    );
+    expect([...el.querySelectorAll('.rb-settings-tab')].map((t) => t.textContent)).toContain('Automations');
   });
 
   it('filter builder: renders nested groups and saves edits', async () => {
