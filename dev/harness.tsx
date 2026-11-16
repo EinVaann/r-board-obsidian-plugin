@@ -6,6 +6,7 @@ import { parseDatabaseConfig, serializeDatabase } from '../src/config';
 import { parseTableFile, serializeTableFile } from '../src/table/format';
 import { addRow, deleteRows, duplicateRow, setCell } from '../src/table/rows';
 import { createBoardStore, type BoardStore } from '../src/board/store';
+import { followLink, parseBoardLink } from '../src/board/links';
 import { BoardContext, type BoardContextValue } from '../src/board/context';
 import { BoardApp } from '../src/board/BoardApp';
 import { setProperty } from '../src/data/properties';
@@ -29,6 +30,8 @@ declare global {
     __log: string[];
     /** Non-note files of the fake vault (e.g. the schedule's log table), by path. */
     __files: Record<string, string>;
+    /** Follow a link into the open board, as clicking `[[file#subpath]]` would. */
+    __followLink: (subpath: string) => void;
   }
 }
 
@@ -244,6 +247,8 @@ function fakeApp(onNotesChanged: () => void): App {
       on: (name: string, fn: (f: TFile) => void) => (name === 'changed' && changedHandlers.push(fn), {}),
     },
     fileManager: {
+      generateMarkdownLink: (f: TFile, _from: string, subpath = '') => `[[${f.path}${subpath}]]`,
+      getNewFileParent: () => ({ path: 'Inbox' }),
       processFrontMatter: async (f: TFile, fn: (fm: Record<string, unknown>) => void) => {
         const next = { ...NOTES[f.path] };
         fn(next);
@@ -334,6 +339,7 @@ async function main(): Promise<void> {
     store.getState().loadRows(r.table.rows);
     store.getState().loadConfig(r.table.config, null);
   }
+  window.__followLink = (subpath) => followLink(store, parseBoardLink(subpath), new TFile(kind === 'board' ? BOARD_PATH : 'Expenses.table'));
 
   const ctx: BoardContextValue = {
     app,

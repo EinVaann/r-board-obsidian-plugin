@@ -142,6 +142,87 @@ test.describe('editing', () => {
   });
 });
 
+test.describe('links cells', () => {
+  const GAMES = [
+    { name: 'game', label: 'Game', type: 'links' },
+    { name: 'hours', label: 'Hours', type: 'number' },
+  ];
+  const openLog = (page: Page, cells: Record<string, unknown>[]) =>
+    open(page, { fixture: { table: tableFile({ properties: GAMES, titleProperty: 'game', rows: cells.map((c, i) => ({ id: `r${i}`, cells: c })) }) } });
+  const suggestions = (page: Page) => page.locator('.rb-link-suggest-item');
+
+  test('a link without a label shows the note name, not its folders', async ({ page }) => {
+    await openLog(page, [{ game: ['[[Games/Hollow Knight]]'] }, { game: ['[[Games/Hades|The Hades]]'] }]);
+    await expect(page.locator('.rb-tr .rb-link')).toHaveText(['Hollow Knight', 'The Hades']);
+  });
+
+  test('typing in a links cell searches notes; picking one saves a labelled link', async ({ page }) => {
+    await openLog(page, [{ hours: 2 }]);
+    await cell(page, 0, 0).click();
+    await page.keyboard.type('holl');
+    await expect(suggestions(page).first()).toContainText('Hollow Knight');
+    await expect(suggestions(page).first()).toContainText('Games');
+    await page.keyboard.press('Enter');
+    await expect.poll(async () => (await rows(page))[0].game).toEqual(['[[Games/Hollow Knight|Hollow Knight]]']);
+    // The box stays open for more; Enter on the empty box finishes and moves down.
+    await expect(cell(page, 0, 0).locator('.rb-links-editor-pill')).toHaveText('Hollow Knight');
+    await page.keyboard.press('Enter');
+    await expect(cell(page, 0, 0).locator('input')).toHaveCount(0);
+    await expect(cell(page, 0, 0)).toContainText('Hollow Knight');
+  });
+
+  test('pills remove links; Backspace on the empty box removes the last', async ({ page }) => {
+    await openLog(page, [{ game: ['[[Games/Hades|Hades]]', '[[Games/Celeste|Celeste]]'] }]);
+    await cell(page, 0, 0).click();
+    await page.keyboard.press('Enter');
+    await page.keyboard.press('Backspace');
+    await expect.poll(async () => (await rows(page))[0].game).toEqual(['[[Games/Hades|Hades]]']);
+    await cell(page, 0, 0).locator('.rb-links-editor-remove').click();
+    await expect.poll(async () => (await rows(page))[0].game).toBeUndefined();
+  });
+
+  test('a name with no matching note offers to create it', async ({ page }) => {
+    await openLog(page, [{}]);
+    await cell(page, 0, 0).dblclick();
+    await page.keyboard.type('Reverse 1999');
+    await expect(suggestions(page)).toHaveText(['Create note “Reverse 1999”']);
+    await suggestions(page).first().click();
+    await expect.poll(async () => (await rows(page))[0].game).toEqual(['[[Inbox/Reverse 1999|Reverse 1999]]']);
+    expect(await page.evaluate(() => Object.keys(window.__notes))).toContain('Inbox/Reverse 1999.md');
+  });
+
+  test('a single-link column: picking replaces the link and closes the editor', async ({ page }) => {
+    const props = [{ name: 'game', label: 'Game', type: 'links', single: true }, GAMES[1]];
+    await open(page, { fixture: { table: tableFile({ properties: props, titleProperty: 'game', rows: [{ id: 'r0', cells: { game: ['[[Games/Hades|Hades]]'] } }, { id: 'r1', cells: {} }] }) } });
+    await cell(page, 0, 0).dblclick();
+    await expect(cell(page, 0, 0).locator('input')).toHaveAttribute('placeholder', 'Replace…');
+    await page.keyboard.type('cel');
+    await page.keyboard.press('Enter');
+    await expect.poll(async () => (await rows(page))[0].game).toEqual(['[[Games/Celeste|Celeste]]']);
+    await expect(cell(page, 0, 0).locator('input')).toHaveCount(0);
+    await isActive(page, 1, 0);
+    // A typed name with a comma is one note, not two.
+    await cell(page, 1, 0).dblclick();
+    await cell(page, 1, 0).locator('input').fill('Papers, Please');
+    // Tab keeps the text as typed (Enter would pick the "Create note" suggestion).
+    await page.keyboard.press('Tab');
+    await expect.poll(async () => (await rows(page))[1].game).toEqual(['[[Papers, Please]]']);
+  });
+
+  test('Escape closes the suggestions first, then the editor; typed links are kept as is', async ({ page }) => {
+    await openLog(page, [{}]);
+    await cell(page, 0, 0).dblclick();
+    await page.keyboard.type('hades');
+    await expect(suggestions(page)).not.toHaveCount(0);
+    await page.keyboard.press('Escape');
+    await expect(suggestions(page)).toHaveCount(0);
+    await expect(cell(page, 0, 0).locator('input')).toBeFocused();
+    await cell(page, 0, 0).locator('input').fill('https://example.com');
+    await page.keyboard.press('Tab');
+    await expect.poll(async () => (await rows(page))[0].game).toEqual(['https://example.com']);
+  });
+});
+
 test.describe('keyboard selection', () => {
   test.beforeEach(({ page }) => openShop(page));
 

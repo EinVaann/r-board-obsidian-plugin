@@ -75,6 +75,9 @@ export class Menu {
       setChecked() {
         return this;
       },
+      setDisabled() {
+        return this;
+      },
       onClick() {
         return this;
       },
@@ -123,13 +126,14 @@ export class MarkdownRenderChild extends Component {
 }
 
 export class TFile {
+  name: string;
   basename: string;
   extension: string;
   stat = { mtime: 1, ctime: 1, size: 1 };
   constructor(public path: string) {
-    const name = path.split('/').pop()!;
-    this.basename = name.replace(/\.[^.]+$/, '');
-    this.extension = name.split('.').pop()!;
+    this.name = path.split('/').pop()!;
+    this.basename = this.name.replace(/\.[^.]+$/, '');
+    this.extension = this.name.split('.').pop()!;
   }
 }
 export class TFolder {}

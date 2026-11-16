@@ -132,7 +132,19 @@ export function parseLink(value: unknown): ParsedLink | null {
   const inner = raw.replace(/^!?\[\[/, '').replace(/\]\]$/, '');
   const [target, alias] = inner.split('|');
   const linkpath = target.split('#')[0].trim();
-  return { text: (alias ?? linkpath).trim(), url: null, linkpath };
+  // Without an alias, show the note's name, not its folders.
+  const name = linkpath.split('/').pop()!.replace(/\.md$/i, '') || target.trim();
+  return { text: alias?.trim() || name, url: null, linkpath };
+}
+
+/**
+ * A wikilink to `file` in the vault's link format. Labelled with the file's
+ * name when the link text carries folders (`[[Games/Hades|Hades]]`), unless `label` is false.
+ */
+export function linkTo(app: App, file: TFile, sourcePath: string, label = true): string {
+  const target = app.metadataCache.fileToLinktext(file, sourcePath, true);
+  const name = file.extension === 'md' ? file.basename : file.name;
+  return !label || target === name ? `[[${target}]]` : `[[${target}|${name}]]`;
 }
 
 /**

@@ -89,6 +89,11 @@ describe('values', () => {
     expect(toStored({ name: 'm', type: 'multi' }, 'a, b,, c')).toEqual(['a', 'b', 'c']);
     expect(toStored({ name: 't', type: 'text' }, '')).toBeNull();
     expect(toStored({ name: 's', type: 'select' }, 'playing')).toBe('playing');
+    // Single links: one-item list, first link only, commas aren't separators.
+    expect(toStored({ name: 'g', type: 'links', single: true }, 'Papers, Please')).toEqual(['Papers, Please']);
+    expect(toStored({ name: 'g', type: 'links', single: true }, ['[[A]]', '[[B]]'])).toEqual(['[[A]]']);
+    expect(toStored({ name: 'g', type: 'links', single: true }, ['  '])).toBeNull();
+    expect(toStored({ name: 'g', type: 'links' }, '[[A]], [[B]]')).toEqual(['[[A]]', '[[B]]']);
   });
 
   it('labels and colors option values, synthesizing unlisted ones', () => {

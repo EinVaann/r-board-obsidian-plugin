@@ -21,7 +21,12 @@ export interface BoardState {
   pages: Record<string, number>;
   /** Tables: the stored rows (boards: unused). */
   rows: TableRow[];
+  /** A row a link asked to show; the table view scrolls to it, then clears it. */
+  target: { row: string; seq: number } | null;
 
+  /** Scroll the table view to a row and highlight it (row links). */
+  showRow: (id: string) => void;
+  clearTarget: () => void;
   /** Edit the rows (Immer draft); persists to the file. */
   updateRows: (recipe: (draft: TableRow[]) => void) => void;
   /** Replace the rows after (re)reading the `.table` file. */
@@ -67,6 +72,10 @@ export function createBoardStore(persist: BoardPersistence): BoardStore {
       vaultTick: 0,
       pages: {},
       rows: [],
+      target: null,
+
+      showRow: (row) => set((s) => ({ target: { row, seq: (s.target?.seq ?? 0) + 1 } })),
+      clearTarget: () => set({ target: null }),
 
       updateRows: (recipe) => {
         const rows = produce(get().rows, recipe);
@@ -112,7 +121,8 @@ export function createBoardStore(persist: BoardPersistence): BoardStore {
 
       setActiveView: (name) => {
         if (get().activeView === name) return;
-        set({ activeView: name, pages: {} });
+        // A row link that never found its row doesn't follow you to another view.
+        set({ activeView: name, pages: {}, target: null });
         persist.saveActiveView(name);
       },
 

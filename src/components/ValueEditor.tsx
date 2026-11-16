@@ -4,6 +4,8 @@ import type { StoredValue } from '../data/properties';
 import { asArray, asBoolean, optionFor } from '../render/values';
 import { formulaOverride } from '../data/compute';
 import { Toggle } from '../settings/controls';
+import { useApp } from '../react/mount';
+import { LinksEditor } from './LinksEditor';
 
 /** Where the selection goes after an edit finishes (grid): Enter → down, Tab → right / left. */
 export type EditMove = 'down' | 'right' | 'left' | null;
@@ -51,6 +53,7 @@ export function ValueEditor({
   seed,
   autoFocus = false,
   className,
+  sourcePath,
 }: {
   prop: PropertyConfig;
   /** The stored value (for formulas: the per-item override, if any). */
@@ -62,8 +65,24 @@ export function ValueEditor({
   seed?: string;
   autoFocus?: boolean;
   className?: string;
+  /** The database file: links and images get a file search, written relative to it. */
+  sourcePath?: string;
 }) {
   const listId = useId();
+  if (sourcePath !== undefined && (prop.type === 'links' || prop.type === 'image')) {
+    return (
+      <LinksField
+        value={raw}
+        sourcePath={sourcePath}
+        image={prop.type === 'image'}
+        single={!!prop.single}
+        seed={seed}
+        autoFocus={autoFocus}
+        onChange={onCommit}
+        onDone={onDone}
+      />
+    );
+  }
   if (prop.type === 'checkbox') {
     return <Toggle checked={asBoolean(raw) ?? false} onChange={(on) => onCommit(on)} label={prop.label ?? prop.name} />;
   }
@@ -103,7 +122,7 @@ export function ValueEditor({
       ? formulaOverride(raw) === 'none'
         ? prop.formula ?? ''
         : 'Clear to use the formula'
-      : prop.type === 'multi' || prop.type === 'links'
+      : prop.type === 'multi' || (prop.type === 'links' && !prop.single)
         ? 'Comma-separated'
         : undefined;
   return (
@@ -130,6 +149,10 @@ export function ValueEditor({
       ) : null}
     </>
   );
+}
+
+function LinksField(props: Omit<Parameters<typeof LinksEditor>[0], 'app'>) {
+  return <LinksEditor app={useApp()} {...props} />;
 }
 
 function TextEditor({

@@ -98,6 +98,8 @@ export interface PropertyConfig {
   format?: NumberFormat;
   /** date: values carry a time of day. */
   includeTime?: boolean;
+  /** links: one link at most (still stored as a one-item list). Absent = several, as before. */
+  single?: boolean;
 }
 
 /** How many items a view loads per page. `'none'` shows them all. */

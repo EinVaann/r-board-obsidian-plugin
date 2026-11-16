@@ -99,6 +99,12 @@ body .rb-table-wrap.rb-grid::-webkit-scrollbar-thumb:active { background-color: 
 .rb-cell-editor .rb-switch { margin: 0 10px; }
 .rb-grid:focus-within .rb-cell-active { box-shadow: inset 0 0 0 2px var(--interactive-accent); }
 .rb-grid:not(:focus-within) .rb-cell-active { box-shadow: inset 0 0 0 2px var(--background-modifier-border-hover); }
+/* A row opened from a link flashes once. */
+.rb-tr[data-linked] > .rb-td { animation: rb-row-linked 1.6s ease-out; }
+@keyframes rb-row-linked {
+  0%, 40% { background: color-mix(in srgb, var(--interactive-accent) 22%, transparent); }
+  100% { background: transparent; }
+}
 .rb-title-cell { display: flex; align-items: center; gap: 6px; }
 .rb-title-cell .rb-title { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .rb-row-expand {

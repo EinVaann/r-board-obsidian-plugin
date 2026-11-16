@@ -35,7 +35,7 @@ export function openRecordEditor(app: App, ctx: BoardContextValue, rowId: string
 
 /** Every property of a row as an editable form; edits save as you go. */
 function RecordEditor({ rowId, onRemove, onDuplicate }: { rowId: string; onRemove: () => void; onDuplicate: () => void }) {
-  const { actions } = useBoardContext();
+  const { actions, boardFile } = useBoardContext();
   const env = useFieldEnv();
   const config = useBoard((s) => s.config);
   const row = useBoard((s) => s.rows.find((r) => r.id === rowId));
@@ -63,6 +63,7 @@ function RecordEditor({ rowId, onRemove, onDuplicate }: { rowId: string; onRemov
               prop={prop}
               raw={row.cells[prop.name]}
               autoFocus={prop.name === config.titleProperty && !item.title}
+              sourcePath={boardFile.path}
               onCommit={(value) => void actions.setValue(item, prop, value).catch(() => undefined)}
             />
           </div>

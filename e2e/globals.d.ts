@@ -8,5 +8,6 @@ declare global {
     __notes: Record<string, Record<string, unknown>>;
     __log: string[];
     __files: Record<string, string>;
+    __followLink: (subpath: string) => void;
   }
 }

@@ -1,10 +1,11 @@
 import { useEffect, useRef, useState } from 'react';
-import { AbstractInputSuggest, FuzzySuggestModal, type App, type TFile } from 'obsidian';
+import type { App } from 'obsidian';
 import type { PropertyConfig } from '../types';
 import type { StoredValue } from '../data/properties';
-import { asArray, optionFor, parseLink } from '../render/values';
+import { asArray, optionFor } from '../render/values';
 import { optionStyle } from '../components/fields';
 import { ValueEditor } from '../components/ValueEditor';
+import { LinksEditor } from '../components/LinksEditor';
 import { Toggle } from '../settings/controls';
 import { Icon } from '../react/Icon';
 
@@ -43,14 +44,18 @@ export function FormField({
     case 'links':
     case 'image':
       return (
-        <Links
+        <LinksEditor
           app={app}
           value={value}
           image={prop.type === 'image'}
+          single={!!prop.single}
           sourcePath={sourcePath}
           autoFocus={autoFocus}
+          browse
+          className="rb-qa-choices"
           onChange={onChange}
-          onEnter={onEnter}
+          // Quick add stays open: only an Enter on the empty box moves to the next field.
+          onDone={(move) => move === 'down' && onEnter()}
         />
       );
     case 'number':
@@ -297,154 +302,4 @@ function Dropdown({
   );
 }
 
-const IMAGE_EXTENSIONS = new Set(['png', 'jpg', 'jpeg', 'gif', 'webp', 'svg', 'bmp', 'avif']);
-const isImage = (f: TFile): boolean => IMAGE_EXTENSIONS.has(f.extension.toLowerCase());
 
-/**
- * Chosen files as removable chips, a box that suggests files as you type, and
- * a browse button. `image`: one image file (a thumbnail shows), not a list.
- */
-function Links({
-  app,
-  value,
-  image,
-  sourcePath,
-  autoFocus,
-  onChange,
-  onEnter,
-}: {
-  app: App;
-  value: StoredValue | undefined;
-  image: boolean;
-  sourcePath: string;
-  autoFocus: boolean;
-  onChange: (value: StoredValue) => void;
-  onEnter: () => void;
-}) {
-  const links = asArray(value);
-  const input = useRef<HTMLInputElement>(null);
-  // Pickers call back long after render: they read the latest list from here.
-  const latest = useRef(links);
-  latest.current = links;
-  const add = (link: string): void => {
-    if (image) onChange(link);
-    else if (!latest.current.includes(link)) onChange([...latest.current, link]);
-  };
-  const addFile = (file: TFile): void => add(`[[${app.metadataCache.fileToLinktext(file, sourcePath, true)}]]`);
-  const accept = image ? isImage : undefined;
-
-  useEffect(() => {
-    const el = input.current;
-    return el ? attachFileSuggest(app, el, addFile, accept) : undefined;
-  }, [app, sourcePath, image]); // eslint-disable-line react-hooks/exhaustive-deps
-
-  /** An image link's thumbnail URL, when it resolves. */
-  const thumb = (link: string): string | null => {
-    const l = parseLink(link);
-    if (!l) return null;
-    if (l.url) return l.url;
-    const dest = app.metadataCache.getFirstLinkpathDest(l.linkpath, sourcePath);
-    return dest ? app.vault.getResourcePath(dest) : null;
-  };
-
-  return (
-    <div className="rb-qa-choices">
-      {links.map((l) => {
-        const src = image ? thumb(l) : null;
-        return (
-          <span key={l} className="rb-pill rb-qa-link">
-            {src && <img className="rb-qa-thumb" src={src} alt="" />}
-            {parseLink(l)?.text ?? l}
-            <button type="button" className="rb-qa-remove" aria-label="Remove" onClick={() => onChange(image ? null : links.filter((x) => x !== l))}>
-              <Icon name="x" />
-            </button>
-          </span>
-        );
-      })}
-      <input
-        ref={input}
-        type="text"
-        className="rb-qa-new"
-        autoFocus={autoFocus}
-        placeholder={image ? (links.length ? 'Replace…' : 'Find an image or paste a URL…') : 'Find a file…'}
-        onKeyDown={(e) => {
-          if (e.key !== 'Enter' || e.nativeEvent.isComposing) return;
-          e.preventDefault();
-          e.stopPropagation();
-          const el = e.currentTarget;
-          // A picked suggestion clears the box first; only leftover text is added as typed.
-          setTimeout(() => {
-            const t = el.value.trim();
-            if (!t) return onEnter();
-            add(/^https?:\/\/|^\[\[/i.test(t) ? t : `[[${t}]]`);
-            el.value = '';
-          });
-        }}
-      />
-      <button
-        type="button"
-        className="rb-qa-browse"
-        aria-label="Browse the vault"
-        title="Browse the vault"
-        onClick={() => new FilePicker(app, addFile, accept).open()}
-      >
-        <Icon name={image ? 'image' : 'folder-open'} />
-      </button>
-    </div>
-  );
-}
-
-/** Every file in the vault (or those `accept` allows), fuzzy-searched by path. */
-class FilePicker extends FuzzySuggestModal<TFile> {
-  constructor(
-    app: App,
-    private readonly onPick: (file: TFile) => void,
-    private readonly accept?: (file: TFile) => boolean,
-  ) {
-    super(app);
-    this.setPlaceholder(accept ? 'Pick an image…' : 'Link a file…');
-  }
-  getItems(): TFile[] {
-    const files = this.app.vault.getFiles();
-    return this.accept ? files.filter(this.accept) : files;
-  }
-  getItemText(file: TFile): string {
-    return file.path;
-  }
-  onChooseItem(file: TFile): void {
-    this.onPick(file);
-  }
-}
-
-/** Suggest files under an input (Obsidian 1.4.10+; plain typing otherwise). Returns a cleanup. */
-function attachFileSuggest(
-  app: App,
-  el: HTMLInputElement,
-  onPick: (file: TFile) => void,
-  accept?: (file: TFile) => boolean,
-): (() => void) | undefined {
-  if (typeof AbstractInputSuggest !== 'function') return undefined;
-  class FileSuggest extends AbstractInputSuggest<TFile> {
-    protected getSuggestions(query: string): TFile[] {
-      const q = query.trim().toLowerCase();
-      if (!q) return [];
-      const starts = (f: TFile): number => Number(!f.basename.toLowerCase().startsWith(q));
-      return app.vault
-        .getFiles()
-        .filter((f) => (!accept || accept(f)) && f.path.toLowerCase().includes(q))
-        .sort((a, b) => starts(a) - starts(b) || Number(a.extension !== 'md') - Number(b.extension !== 'md'))
-        .slice(0, 20);
-    }
-    renderSuggestion(file: TFile, cell: HTMLElement): void {
-      cell.createDiv({ text: file.extension === 'md' ? file.basename : file.name });
-      if (file.parent?.path && file.parent.path !== '/') cell.createDiv({ cls: 'rb-qa-suggest-path', text: file.parent.path });
-    }
-  }
-  const suggest = new FileSuggest(app, el);
-  suggest.onSelect((file) => {
-    onPick(file);
-    suggest.setValue('');
-    suggest.close();
-  });
-  return () => suggest.close();
-}

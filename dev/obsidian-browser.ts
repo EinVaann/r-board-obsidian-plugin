@@ -240,6 +240,9 @@ export const MarkdownRenderer = {
 export class TFile {
   stat = { mtime: 0, ctime: 0, size: 0 };
   constructor(public path: string) {}
+  get name() {
+    return this.path.split('/').pop()!;
+  }
   get basename() {
     return this.path.split('/').pop()!.replace(/\.[^.]+$/, '');
   }

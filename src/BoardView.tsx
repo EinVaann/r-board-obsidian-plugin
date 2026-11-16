@@ -16,6 +16,7 @@ import { mountReact } from './react/mount';
 import { NoteEditModal } from './ui/NoteEditModal';
 import { openWizard } from './settings/Wizard';
 import { openBoardSettings, openFilterModal, openViewSettings } from './settings/modals';
+import { followLink, parseBoardLink, type BoardLink } from './board/links';
 
 export const BOARD_VIEW_TYPE = 'r-board-view';
 export const BOARD_EXTENSION = 'board';
@@ -35,6 +36,8 @@ export class BoardView extends TextFileView {
   private itemPaths = new Set<string>();
   /** While the edit modal is open, vault changes don't repaint the board. */
   private editing = false;
+  /** A link that arrived before the file was read; applied once it is. */
+  private pendingLink: BoardLink | null = null;
 
   constructor(leaf: WorkspaceLeaf, plugin: RBoardPlugin) {
     super(leaf);
@@ -133,6 +136,28 @@ export class BoardView extends TextFileView {
   }
 
   setViewData(data: string, _clear: boolean): void {
+    this.loadData(data);
+    this.applyLink();
+  }
+
+  /** Links like `[[Games.board#Lanes]]` or `[[Budget.table#^r1a2b3]]` arrive here as `subpath`. */
+  setEphemeralState(state: unknown): void {
+    super.setEphemeralState(state);
+    const subpath = (state as { subpath?: unknown } | null)?.subpath;
+    if (typeof subpath !== 'string' || !subpath) return;
+    this.pendingLink = parseBoardLink(subpath);
+    if (this.store.getState().config) this.applyLink();
+  }
+
+  private applyLink(): void {
+    const link = this.pendingLink;
+    const config = this.store.getState().config;
+    if (!link || !config) return;
+    this.pendingLink = null;
+    followLink(this.store, link, this.file);
+  }
+
+  private loadData(data: string): void {
     this.data = data;
     const saved = this.file ? this.plugin.getActiveView(this.file.path) : undefined;
     if (this.isTable) {

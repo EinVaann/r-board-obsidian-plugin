@@ -202,6 +202,8 @@ function PropertyRow({
           formula: type === 'formula' ? prop.formula : undefined,
           format: type === 'number' || type === 'formula' ? prop.format : undefined,
           includeTime: type === 'date' ? prop.includeTime : undefined,
+          // A new links property holds one link until "Allow multiple" is turned on.
+          single: type === 'links' ? true : undefined,
         });
       }}
     >
@@ -272,6 +274,14 @@ function PropertyRow({
         )}
         {(prop.type === 'number' || prop.type === 'formula') && (
           <NumberFormatFields format={prop.format} onChange={(format) => onChange({ format })} />
+        )}
+        {prop.type === 'links' && (
+          <Field label="Multiple" wide>
+            <div className="rb-prop-toggle-row">
+              <span className="rb-prop-toggle-desc">Allow several links in one cell. Off: picking a note replaces the current one.</span>
+              <Toggle checked={!prop.single} onChange={(on) => onChange({ single: on ? undefined : true })} label="Allow multiple links" />
+            </div>
+          </Field>
         )}
         {prop.type === 'date' && (
           <Field label="Time" wide>

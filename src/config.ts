@@ -108,6 +108,7 @@ function parseProperty(raw: unknown): PropertyConfig | null {
     formula: typeof f.formula === 'string' ? f.formula : undefined,
     format: parseFormat(f.format),
     includeTime: f.includeTime === true ? true : undefined,
+    single: type === 'links' && f.single === true ? true : undefined,
   };
 }
 

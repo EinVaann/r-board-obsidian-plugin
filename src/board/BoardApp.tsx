@@ -16,6 +16,7 @@ import { ChartView } from '../chart/ChartView';
 import { ScheduleView } from '../views/ScheduleView';
 import { showMenu } from '../ui/menu';
 import { TYPE_ICON } from './viewTypes';
+import { copyBoardLink, linkableView } from './links';
 
 /** At most this many view tabs; the rest go in the "more" dropdown. */
 const MAX_VIEW_TABS = 3;
@@ -275,7 +276,7 @@ function useFittingTabs(views: ViewConfig[], activeIndex: number) {
 }
 
 function Toolbar({ config, view }: { config: DatabaseConfig; view: ViewConfig | null }) {
-  const { actions, store, boardFile } = useBoardContext();
+  const { actions, store, boardFile, app } = useBoardContext();
   const setActiveView = useBoard((s) => s.setActiveView);
   const search = useBoard((s) => s.search);
   const setSearch = useBoard((s) => s.setSearch);
@@ -330,6 +331,11 @@ function Toolbar({ config, view }: { config: DatabaseConfig; view: ViewConfig | 
       });
       if (current) menu.addItem((i) => i.setTitle('Close split view').setIcon('x').onClick(() => store.getState().updateView(index, (v) => void (v.companion = undefined))));
     }
+    menu.addItem((i) => {
+      i.setTitle('Copy link to view').setIcon('link');
+      if (linkableView(name)) i.onClick(() => copyBoardLink(app, boardFile, { view: name }, `"${name}"`));
+      else i.setDisabled(true).setTitle('Copy link to view (rename it without # ^ | [ ])');
+    });
     menu.addItem((i) =>
       i.setTitle('Copy embed code').setIcon('code').onClick(() => {
         const code = `\`\`\`rboard\nfile: ${boardFile.path}\nview: ${name}\n\`\`\`\n`;

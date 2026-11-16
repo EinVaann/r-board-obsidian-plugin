@@ -1,6 +1,6 @@
 import { expect, test, type Page } from '@playwright/test';
 import { activeView, headers, menu, open, pageErrors, saved, showView, tab, tabNames, titles } from './harness';
-import { boardConfig, GAME_NOTES, tableFile } from './fixtures';
+import { boardConfig, GAME_NOTES, manyRows, tableFile } from './fixtures';
 
 test.afterEach(({ page }) => expect(pageErrors(page)).toEqual([]));
 
@@ -190,6 +190,52 @@ test.describe('search, sort, filter', () => {
     await rule.getByRole('option', { name: 'Food' }).click();
     await rule.getByRole('option', { name: 'Fun' }).click();
     expect(await titles(page)).toEqual(['Apples', 'Bread', 'Cinema']);
+  });
+});
+
+test.describe('links to views and rows', () => {
+  const linked = (page: Page) => page.locator('.rb-tr[data-linked]');
+  const clipboard = (page: Page) => page.evaluate(() => navigator.clipboard.readText());
+
+  test('the tab menu copies a link to the view; following it switches view', async ({ page, context }) => {
+    await context.grantPermissions(['clipboard-read', 'clipboard-write']);
+    await openShop(page, VIEWS.slice(0, 3));
+    await tab(page, 'Lanes').click({ button: 'right' });
+    await menu(page, 'Copy link to view');
+    await expect.poll(() => clipboard(page)).toBe('[[Expenses.table#Lanes]]');
+    await page.evaluate(() => window.__followLink('#cards'));
+    expect((await activeView(page)).name).toBe('Cards');
+    await page.evaluate(() => window.__followLink('#Nope'));
+    expect((await activeView(page)).name).toBe('Cards');
+    expect(await page.evaluate(() => window.__log.at(-1))).toContain('no view named "Nope"');
+  });
+
+  test('the row menu copies a link to the row; following it from another view shows the row', async ({ page, context }) => {
+    await context.grantPermissions(['clipboard-read', 'clipboard-write']);
+    await open(page, { fixture: { table: tableFile({ rows: manyRows(120), views: [{ name: 'Rows', type: 'table', limit: 25, paging: 'pages' }, VIEWS[1]] }) } });
+    await page.locator('.rb-tr', { hasText: 'Row 003' }).click({ button: 'right' });
+    await menu(page, 'Copy link to row');
+    await expect.poll(() => clipboard(page)).toBe('[[Expenses.table#Rows#^g3]]');
+    await page.locator('input.rb-search').fill('Row 00');
+    await showView(page, 'Lanes');
+    // Row 077 is on page 4 and the search hides it: the link clears the search and turns the page.
+    await page.evaluate(() => window.__followLink('#Rows#^g77'));
+    await expect(linked(page)).toContainText('Row 077');
+    expect((await activeView(page)).name).toBe('Rows');
+    await expect(page.locator('.rb-tr.rb-tr-active')).toContainText('Row 077');
+  });
+
+  test('a row link opens a collapsed group, and says when the filter hides the row', async ({ page }) => {
+    const rows = [{ name: 'Grouped', type: 'table', limit: 'none', group: 'kind', collapsed: ['fuel'] }];
+    await open(page, { fixture: { table: tableFile({ rows: manyRows(9), views: rows }) } });
+    await page.evaluate(() => window.__followLink('#^g4'));
+    await expect(linked(page)).toContainText('Row 004');
+    expect(await page.evaluate(() => window.__store.getState().config!.views[0].collapsed ?? [])).not.toContain('fuel');
+    await page.evaluate(() => window.__store.getState().updateView(0, (v) => void (v.filter = { conjunction: 'and', conditions: [{ property: 'kind', op: 'eq', value: 'food' }] })));
+    await page.evaluate(() => window.__followLink('#^g4'));
+    await expect.poll(() => page.evaluate(() => window.__log.at(-1))).toContain('hidden by the "Grouped" view');
+    await page.evaluate(() => window.__followLink('#^gone'));
+    await expect.poll(() => page.evaluate(() => window.__log.at(-1))).toContain('no longer exists');
   });
 });
 

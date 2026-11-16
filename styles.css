@@ -1028,6 +1028,56 @@
   color: var(--text-normal);
 }
 
+/* Links editor: picked notes as pills, then a box that searches the vault. */
+.rb-links-editor { display: flex; flex-wrap: wrap; align-items: center; gap: 4px; min-width: 0; }
+.rb-links-editor-pill { display: inline-flex; align-items: center; gap: 2px; max-width: 100%; color: var(--text-accent); }
+.rb-links-editor-thumb { width: 18px; height: 18px; object-fit: cover; border-radius: 3px; margin-left: -4px; }
+body .rb-links-editor button.rb-links-editor-remove {
+  display: inline-flex;
+  align-items: center;
+  margin: 0 0 0 2px;
+  padding: 1px;
+  width: auto;
+  height: auto;
+  border: none;
+  border-radius: 50%;
+  background: none;
+  box-shadow: none;
+  color: inherit;
+  opacity: 0.6;
+  cursor: pointer;
+}
+body .rb-links-editor button.rb-links-editor-remove:hover { opacity: 1; background: color-mix(in srgb, currentColor 18%, transparent); }
+.rb-links-editor-remove svg { width: 12px; height: 12px; }
+/* Sits beside the pills; wraps to its own line only when there's no room. */
+body .rb-links-editor input.rb-links-editor-input { flex: 1 1 70px; width: auto; min-width: 70px; }
+.rb-links-editor-browse { display: inline-flex; align-items: center; padding: 4px 8px; }
+.rb-links-editor-browse svg { width: 16px; height: 16px; }
+/* In a grid cell: no box around the input, the cell's outline is the frame. */
+/* The cell grows to fit the pills instead of clipping them. */
+.rb-cell-editor:has(.rb-links-editor) { align-items: stretch; }
+.rb-cell-editor .rb-links-editor { flex: 1; min-width: 0; padding: 3px 8px; min-height: 36px; box-sizing: border-box; background: var(--background-primary); }
+body .rb-cell-editor .rb-links-editor input.rb-links-editor-input,
+body .rb-cell-editor .rb-links-editor input.rb-links-editor-input:focus { height: 28px; border: none; border-radius: 0; background: none; box-shadow: none; outline: none; padding: 0 2px; }
+
+.rb-link-suggest {
+  position: fixed;
+  z-index: var(--layer-menu, 65);
+  max-width: 420px;
+  max-height: 300px;
+  overflow-y: auto;
+  padding: 4px;
+  border: 1px solid var(--background-modifier-border);
+  border-radius: var(--radius-m);
+  background: var(--background-secondary);
+  box-shadow: var(--shadow-l);
+}
+.rb-link-suggest-item { padding: 5px 8px; border-radius: var(--radius-s); cursor: pointer; }
+.rb-link-suggest-item.is-active { background: var(--background-modifier-hover); }
+.rb-link-suggest-name { color: var(--text-normal); }
+.rb-link-suggest-path { font-size: var(--font-ui-smaller); color: var(--text-muted); }
+.rb-link-suggest-create { color: var(--text-muted); }
+
 /* ===================== Gallery ===================== */
 /* Lanes and positions are computed in GalleryView (virtualized); card widths
    there must match these sizes. */
@@ -1341,6 +1391,12 @@ body .rb-table-wrap.rb-grid::-webkit-scrollbar-thumb:active { background-color: 
 .rb-cell-editor .rb-switch { margin: 0 10px; }
 .rb-grid:focus-within .rb-cell-active { box-shadow: inset 0 0 0 2px var(--interactive-accent); }
 .rb-grid:not(:focus-within) .rb-cell-active { box-shadow: inset 0 0 0 2px var(--background-modifier-border-hover); }
+/* A row opened from a link flashes once. */
+.rb-tr[data-linked] > .rb-td { animation: rb-row-linked 1.6s ease-out; }
+@keyframes rb-row-linked {
+  0%, 40% { background: color-mix(in srgb, var(--interactive-accent) 22%, transparent); }
+  100% { background: transparent; }
+}
 .rb-title-cell { display: flex; align-items: center; gap: 6px; }
 .rb-title-cell .rb-title { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .rb-row-expand {
@@ -2682,8 +2738,8 @@ body:not(.is-phone) .rb-edit-modal {
 .rb-quick-add .setting-item-control { flex: 0 1 340px; justify-content: flex-end; }
 .rb-quick-add .setting-item-control > input:not([type='checkbox']),
 .rb-quick-add .setting-item-control > select { width: 100%; }
-.rb-qa-choices { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; width: 100%; }
-.rb-quick-add .rb-qa-choices input.rb-qa-new { flex: 1 1 120px; width: auto; min-width: 120px; }
+.rb-links-editor.rb-qa-choices { width: 100%; }
+.rb-quick-add .rb-qa-choices input.rb-links-editor-input { flex: 1 1 120px; width: auto; min-width: 120px; }
 
 /* Select / multi dropdown */
 .rb-qa-dropdown { position: relative; width: 100%; }
@@ -2729,12 +2785,7 @@ body:not(.is-phone) .rb-edit-modal {
 .rb-qa-create { color: var(--text-muted); font-size: var(--font-ui-small); }
 .rb-qa-empty { padding: 6px; color: var(--text-faint); font-size: var(--font-ui-small); }
 
-.rb-qa-browse { display: inline-flex; align-items: center; padding: 4px 8px; }
-.rb-qa-browse svg { width: 16px; height: 16px; }
-.rb-qa-link { display: inline-flex; align-items: center; gap: 4px; color: var(--text-accent); }
-.rb-qa-thumb { width: 22px; height: 22px; object-fit: cover; border-radius: 4px; margin-left: -6px; }
 /* A bare ✕ in the pill's own color: beats Obsidian's default button look. */
-.rb-quick-add .rb-qa-choices button.rb-qa-remove,
 .rb-quick-add .rb-qa-select button.rb-qa-remove {
   display: inline-flex;
   align-items: center;
@@ -2750,13 +2801,11 @@ body:not(.is-phone) .rb-edit-modal {
   opacity: 0.6;
   cursor: pointer;
 }
-.rb-quick-add .rb-qa-choices button.rb-qa-remove:hover,
 .rb-quick-add .rb-qa-select button.rb-qa-remove:hover {
   opacity: 1;
   background: color-mix(in srgb, currentColor 18%, transparent);
 }
 .rb-qa-remove svg { width: 12px; height: 12px; }
-.rb-qa-suggest-path { font-size: var(--font-ui-smaller); color: var(--text-muted); }
 
 /* Board settings → Dates: each rule reads as a sentence, a hairline between rules. */
 /* Layout only: the controls are UI primitives (styles/ui/). */

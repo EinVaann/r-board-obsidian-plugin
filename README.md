@@ -101,6 +101,7 @@ The theme covers boards, tables, embeds and R Board's own dialogs and menus; Obs
 - Image `fill` crops to fill (`object-fit: cover`); `fit` shrinks without cropping (`object-fit: contain`).
 - `stars` / `bar` / `circle` use the property's `max`. `stars` renders fractional values (e.g. `4.3` fills three and a bit stars).
 - Add `"searchable": true` to a property to include it in the search bar (by default the title plus all visible text/multi properties are searched).
+- **Links** cells and fields search your vault as you type; picking a note saves a labelled link (`[[Folder/Note|Note]]`), and a name with no match can create the note. Links without a label show the note's name, not its folders. `"single": true` (the default for new links properties; "Allow multiple links" off) keeps one link per cell: a pick replaces it. It is still stored as a one-item list.
 
 ### View config
 
@@ -121,6 +122,7 @@ The theme covers boards, tables, embeds and R Board's own dialogs and menus; Obs
 - Notes named `_template` are excluded from every database.
 - **Auto-dates** (Board settings → Dates): "when Status becomes Playing, set Start date to today". Works however the property changes (board, table or the note itself) and never overwrites a date already set.
 - Links in `.table` cells follow note renames.
+- **Links into a board**: `[[Games.board#Lanes]]` opens a view; `[[Budget.table#^r1a2b3]]` (or `#View#^r1a2b3`) opens a table at a row and highlights it. Copy them from a view tab's menu (**Copy link to view**) or a row's menu (**Copy link to row**).
 
 ## Views
 

@@ -12,6 +12,11 @@ export type StoredValue = string | number | boolean | string[] | null;
  */
 export function toStored(prop: PropertyConfig, value: StoredValue): StoredValue {
   if (value === null || value === '') return null;
+  // One link: keep the first, and don't split on commas ("Papers, Please" is one note).
+  if (prop.type === 'links' && prop.single) {
+    const first = (Array.isArray(value) ? value : [String(value)]).map((v) => v.trim()).find((v) => v !== '');
+    return first ? [first] : null;
+  }
   if (Array.isArray(value)) {
     const list = value.map((v) => v.trim()).filter((v) => v !== '');
     if (prop.type === 'multi' || prop.type === 'links') return list.length ? list : null;

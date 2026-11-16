@@ -19,7 +19,9 @@ import type { BoardItem, PropertyConfig, SortSpec, ViewConfig } from '../types';
 import { propertyLabel, TITLE_SORT_KEY } from '../config';
 import { asArray, asBoolean, fieldValue, optionFor } from '../render/values';
 import { toText, type FValue } from '../formula/evaluate';
-import { cellsForGroup, type ItemGroup } from '../data/group';
+import { cellsForGroup, collapseKey, groupItems, type ItemGroup } from '../data/group';
+import { selectCurrentView } from '../board/store';
+import { copyBoardLink, linkableView } from '../board/links';
 import { CALCULATION_LABELS, calculate, calculationText, calculationsFor } from '../data/summary';
 import type { StoredValue } from '../data/properties';
 import { TitleLink, useFieldEnv } from '../components/Card';
@@ -58,6 +60,7 @@ export function TableView(props: TableProps) {
   const groupProp = view.group ? allProperties.find((p) => p.name === view.group) : undefined;
   const isTable = useBoard((s) => s.config?.kind === 'table');
   const { actions } = useBoardContext();
+  useLinkedRow(view, items, groupProp);
   const table = (list: BoardItem[], pageKey: string, group?: ItemGroup) => (
     <Grid key={pageKey} {...props} items={list} pageKey={pageKey} group={group} groupProp={groupProp} />
   );
@@ -84,6 +87,32 @@ export function TableView(props: TableProps) {
       {view.summary && <SummaryTable {...props} label="Total" grand />}
     </SyncedScroll>
   );
+}
+
+/**
+ * A row link, before the grid takes it: say so if the view hides the row,
+ * and open its group if collapsed. The grid holding the row then shows it.
+ */
+function useLinkedRow(view: ViewConfig, items: BoardItem[], groupProp: PropertyConfig | undefined): void {
+  const target = useBoard((s) => s.target);
+  const isActive = useBoard((s) => selectCurrentView(s) === view);
+  const exists = useBoard((s) => !!target && s.rows.some((r) => r.id === target.row));
+  const viewIndex = useBoard((s) => s.config?.views.indexOf(view) ?? -1);
+  const { store } = useBoardContext();
+  useEffect(() => {
+    // The split view's companion leaves links to the main pane.
+    if (!target || !isActive) return;
+    const item = items.find((i) => i.id === target.row);
+    if (!item) {
+      store.getState().clearTarget();
+      new Notice(exists ? `R Board: that row is hidden by the "${view.name}" view's filter.` : 'R Board: that row no longer exists.');
+      return;
+    }
+    if (!groupProp) return;
+    const group = groupItems([item], groupProp, { order: view.columns, groupConfig: view.groupConfig, bucket: view.groupBucket }).find((g) => g.items.length);
+    const key = group && collapseKey(group.key);
+    if (key !== undefined && view.collapsed?.includes(key)) store.getState().toggleCollapsed(viewIndex, key);
+  }, [target, isActive]); // eslint-disable-line react-hooks/exhaustive-deps
 }
 
 /**
@@ -307,7 +336,7 @@ function Grid({
   const updateView = useBoard((s) => s.updateView);
   const isTable = useBoard((s) => s.config?.kind === 'table');
   const allProperties = useBoard((s) => s.config?.properties);
-  const { scrollRef, actions } = useBoardContext();
+  const { scrollRef, actions, app, boardFile } = useBoardContext();
   const sensors = useDragSensors();
   const usingPages = view.paging === 'pages';
   // Both hooks always run (hook order); the view's paging mode picks one.
@@ -378,6 +407,34 @@ function Grid({
     if (!extend) setAnchor(p);
     reveal(p);
   };
+
+  // A row link: bring the row onto the shown page, select it and flash it.
+  const target = useBoard((s) => s.target);
+  const clearTarget = useBoard((s) => s.clearTarget);
+  const setPage = useBoard((s) => s.setPage);
+  const isActiveView = useBoard((s) => selectCurrentView(s) === view);
+  useEffect(() => {
+    if (!target || !isActiveView) return;
+    const at = items.findIndex((i) => i.id === target.row);
+    if (at < 0) return;
+    const r = visible.findIndex((i) => i.id === target.row);
+    if (r < 0) {
+      const size = view.limit === 'none' || !view.limit ? items.length : view.limit;
+      if (usingPages) paged.setPage(Math.floor(at / size));
+      else setPage(pageKey, Math.ceil((at + 1) / size) * size);
+      return;
+    }
+    clearTarget();
+    select({ r, c: 0 });
+    focusGrid();
+    const flash = (tries: number): void => {
+      const tr = wrapRef.current?.querySelector<HTMLElement>(`tr[data-index="${r}"]`);
+      if (!tr) return void (tries > 0 && requestAnimationFrame(() => flash(tries - 1)));
+      tr.dataset.linked = '';
+      window.setTimeout(() => delete tr.dataset.linked, 1600);
+    };
+    requestAnimationFrame(() => flash(10));
+  }, [target, visible]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const move = (dr: number, dc: number, extend = false): void => {
     if (visible.length === 0) return;
@@ -569,6 +626,11 @@ function Grid({
       m.addItem((i) => i.setTitle('Expand row').setIcon('maximize-2').onClick(() => actions.editItem(item)));
       m.addItem((i) => i.setTitle('Insert row below').setIcon('arrow-down').onClick(() => addRow(item.id)));
       m.addItem((i) => i.setTitle('Duplicate row').setIcon('copy').onClick(() => actions.duplicateRow(item.id)));
+      m.addItem((i) =>
+        i.setTitle('Copy link to row').setIcon('link').onClick(() =>
+          copyBoardLink(app, boardFile, { view: view.type === 'table' && linkableView(view.name) ? view.name : undefined, row: item.id }, 'the row'),
+        ),
+      );
       m.addSeparator();
       m.addItem((i) => {
         i.setTitle(ids.length > 1 ? `Delete ${ids.length} rows` : 'Delete row').setIcon('trash-2').onClick(() => actions.deleteRows(ids));
@@ -826,7 +888,7 @@ const Row = memo(
   function Row({ item, cols, index, sel, isTable, measure, handlers }: RowProps) {
     const { onCellPointerDown, onCellEnter, onEdit, onToggle, onCommit, onDone, onMenu } = handlers;
     const env = useFieldEnv();
-    const { actions } = useBoardContext();
+    const { actions, boardFile } = useBoardContext();
     return (
       <tr className={sel.active >= 0 ? 'rb-tr rb-tr-active' : 'rb-tr'} ref={measure} data-index={index} onContextMenu={(e) => onMenu(e, index)}>
         {cols.map((col, c) => {
@@ -883,6 +945,7 @@ const Row = memo(
                     seed={sel.seed}
                     autoFocus
                     className="rb-cell-input"
+                    sourcePath={(item.file ?? boardFile).path}
                     onCommit={(value) => onCommit(item, col.prop!, value)}
                     onDone={onDone}
                   />

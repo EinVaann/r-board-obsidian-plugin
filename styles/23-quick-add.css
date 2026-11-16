@@ -18,8 +18,8 @@
 .rb-quick-add .setting-item-control { flex: 0 1 340px; justify-content: flex-end; }
 .rb-quick-add .setting-item-control > input:not([type='checkbox']),
 .rb-quick-add .setting-item-control > select { width: 100%; }
-.rb-qa-choices { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; width: 100%; }
-.rb-quick-add .rb-qa-choices input.rb-qa-new { flex: 1 1 120px; width: auto; min-width: 120px; }
+.rb-links-editor.rb-qa-choices { width: 100%; }
+.rb-quick-add .rb-qa-choices input.rb-links-editor-input { flex: 1 1 120px; width: auto; min-width: 120px; }
 
 /* Select / multi dropdown */
 .rb-qa-dropdown { position: relative; width: 100%; }
@@ -65,12 +65,7 @@
 .rb-qa-create { color: var(--text-muted); font-size: var(--font-ui-small); }
 .rb-qa-empty { padding: 6px; color: var(--text-faint); font-size: var(--font-ui-small); }
 
-.rb-qa-browse { display: inline-flex; align-items: center; padding: 4px 8px; }
-.rb-qa-browse svg { width: 16px; height: 16px; }
-.rb-qa-link { display: inline-flex; align-items: center; gap: 4px; color: var(--text-accent); }
-.rb-qa-thumb { width: 22px; height: 22px; object-fit: cover; border-radius: 4px; margin-left: -6px; }
 /* A bare ✕ in the pill's own color: beats Obsidian's default button look. */
-.rb-quick-add .rb-qa-choices button.rb-qa-remove,
 .rb-quick-add .rb-qa-select button.rb-qa-remove {
   display: inline-flex;
   align-items: center;
@@ -86,10 +81,8 @@
   opacity: 0.6;
   cursor: pointer;
 }
-.rb-quick-add .rb-qa-choices button.rb-qa-remove:hover,
 .rb-quick-add .rb-qa-select button.rb-qa-remove:hover {
   opacity: 1;
   background: color-mix(in srgb, currentColor 18%, transparent);
 }
 .rb-qa-remove svg { width: 12px; height: 12px; }
-.rb-qa-suggest-path { font-size: var(--font-ui-smaller); color: var(--text-muted); }
