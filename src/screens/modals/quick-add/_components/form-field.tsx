@@ -249,7 +249,7 @@ function Dropdown({
             </span>
           );
         })}
-        <Icon name="chevron-down" className="rb-qa-caret" />
+        <Icon name="chevrons-up-down" className="rb-qa-caret" />
       </div>
       </PopoverAnchor>
       <PopoverContent

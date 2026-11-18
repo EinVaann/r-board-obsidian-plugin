@@ -3252,7 +3252,6 @@ body.rb-theme-industrial.rb-mode-dark { --rb-chart-palette: #ECECE6, #E9CD62, #8
 .rb-theme-industrial.rb-mode-dark .modal.rb-modal .rb-settings-body { background: rgba(0, 0, 0, 0.15); }
 .rb-theme-industrial .modal.rb-modal .rb-section-count { background: var(--background-modifier-hover); }
 
-.rb-theme-industrial .modal.rb-modal.rb-filter-modal { padding-bottom: 0; }
 .rb-theme-industrial .modal.rb-modal .rb-export-preview {
   margin: 10px 0 0;
   max-height: 260px;
@@ -4862,14 +4861,6 @@ body.rb-theme-industrial.rb-mode-dark { --rb-chart-palette: #ECECE6, #E9CD62, #8
 }
 
 .rb\:\[\&_\[data-slot\=input\]\:not\(\:hover\)\:not\(\:focus\)\:not\(\[aria-invalid\]\)\]\:bg-transparent [data-slot="input"]:not(:hover):not(:focus):not([aria-invalid]) {
-  background-color: #0000 !important;
-}
-
-.rb\:\[\&_\[data-slot\=native-select\]\:not\(\:hover\)\:not\(\:focus\)\]\:border-transparent [data-slot="native-select"]:not(:hover):not(:focus) {
-  border-color: #0000 !important;
-}
-
-.rb\:\[\&_\[data-slot\=native-select\]\:not\(\:hover\)\:not\(\:focus\)\]\:bg-transparent [data-slot="native-select"]:not(:hover):not(:focus) {
   background-color: #0000 !important;
 }
 

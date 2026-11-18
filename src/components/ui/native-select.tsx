@@ -1,6 +1,6 @@
 import * as React from "react"
 import { cn } from "@/lib/utils"
-import { ChevronDownIcon } from "lucide-react"
+import { ChevronsUpDownIcon } from "lucide-react"
 
 // shadcn native select (a real <select>: keyboard, typeahead and phones work as in Obsidian). Same box as Input.
 function NativeSelect({
@@ -25,7 +25,8 @@ function NativeSelect({
         )}
         {...props}
       />
-      <ChevronDownIcon
+      {/* ⇅, not ⌄: ⌄ means "expand in place" (styles/RULES.md) and sits next to selects in list rows. */}
+      <ChevronsUpDownIcon
         className="rb:pointer-events-none rb:absolute rb:top-1/2 rb:right-2.5 rb:size-3.5 rb:-translate-y-1/2 rb:text-muted-foreground rb:select-none"
         aria-hidden="true"
         data-slot="native-select-icon"

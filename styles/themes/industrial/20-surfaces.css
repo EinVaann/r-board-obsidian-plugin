@@ -529,7 +529,6 @@ body.rb-theme-industrial.rb-mode-dark { --rb-chart-palette: #ECECE6, #E9CD62, #8
 .rb-theme-industrial.rb-mode-dark .modal.rb-modal .rb-settings-body { background: rgba(0, 0, 0, 0.15); }
 .rb-theme-industrial .modal.rb-modal .rb-section-count { background: var(--background-modifier-hover); }
 
-.rb-theme-industrial .modal.rb-modal.rb-filter-modal { padding-bottom: 0; }
 .rb-theme-industrial .modal.rb-modal .rb-export-preview {
   margin: 10px 0 0;
   max-height: 260px;

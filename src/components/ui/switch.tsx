@@ -11,7 +11,8 @@ function Switch({
     <SwitchPrimitive.Root
       data-slot="switch"
       className={cn(
-        "rb:peer rb:relative rb:inline-flex rb:shrink-0 rb:items-center rb:m-0 rb:p-0 rb:border-0 rb:shadow-none rb:cursor-pointer rb:transition-colors rb:outline-none",
+        // justify-start: Obsidian centres button content, which would push the thumb past the end.
+        "rb:peer rb:relative rb:box-border rb:inline-flex rb:shrink-0 rb:items-center rb:justify-start rb:m-0 rb:p-0 rb:border-0 rb:shadow-none rb:cursor-pointer rb:transition-colors rb:outline-none",
         "rb:h-switch-h rb:w-switch-w rb:rounded-switch rb:bg-switch-off rb:data-[state=checked]:bg-switch-on",
         "rb:focus-visible:ring-2 rb:focus-visible:ring-ring rb:disabled:cursor-not-allowed rb:disabled:opacity-50",
         className

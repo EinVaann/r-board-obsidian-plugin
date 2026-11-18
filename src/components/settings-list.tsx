@@ -87,7 +87,7 @@ export function SettingsRow({ icon, name, meta, handle, actions, control, childr
         {name}
       </div>
       {meta !== undefined && (
-        <span className="rb:shrink-0 rb:whitespace-nowrap rb:text-hint rb:text-faint-foreground rb:[&_[data-slot=native-select]:not(:hover):not(:focus)]:border-transparent rb:[&_[data-slot=native-select]:not(:hover):not(:focus)]:bg-transparent">
+        <span className="rb:shrink-0 rb:whitespace-nowrap rb:text-hint rb:text-faint-foreground">
           {meta}
         </span>
       )}

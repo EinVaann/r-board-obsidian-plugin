@@ -47,7 +47,11 @@ body {
   display: flex;
   flex-direction: column;
 }
+/* Like Obsidian's app.css: buttons centre their content (components must not rely on the default). */
 button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   font: inherit;
   padding: 4px 10px;
   border: 1px solid #ddd;

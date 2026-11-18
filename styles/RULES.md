@@ -30,7 +30,8 @@ Labelled buttons are one height: `--rb-control-h`. `size="sm"` is only for butto
 
 | Icon | Means | Never use it for |
 | --- | --- | --- |
-| `chevron-down` (turns up when open) | Expand / collapse **in place** | opening a dialog |
+| `chevron-down` (turns up when open) | Expand / collapse **in place** | opening a dialog, a dropdown |
+| `chevrons-up-down` (⇅) | A dropdown: pick one or more values from a list | expanding |
 | `sliders-horizontal` | Opens a **settings dialog** (view settings) | expanding a row |
 | `settings` (gear) | Opens **board / table settings** | anything else |
 | `plus` | Adds | |
@@ -54,7 +55,8 @@ one bordered box, a hairline between rows, rows 40px high. A row is, left to rig
 
 - A row that has more options expands **in place** with `⌄` (not a dialog). The open row gets a sunken
   background; its options sit under a hairline, indented to the name.
-- Text in a row (a name, a type) looks like plain text until hovered or focused.
+- A name typed into a row looks like plain text until hovered or focused. A dropdown in a row (a type)
+  always shows its box and ⇅, so it never reads as the row's ⌄.
 - The list's add action is an `AddRow` directly under the box.
 
 ## Backgrounds

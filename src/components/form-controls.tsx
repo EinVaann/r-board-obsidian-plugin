@@ -186,7 +186,7 @@ export function MultiSelect<T extends string>({
           )}
         >
           <span className="rb:min-w-0 rb:truncate">{text}</span>
-          <Icon name="chevron-down" className="rb:inline-flex rb:shrink-0 rb:text-muted-foreground rb:[&_svg]:size-3.5" />
+          <Icon name="chevrons-up-down" className="rb:inline-flex rb:shrink-0 rb:text-muted-foreground rb:[&_svg]:size-3.5" />
         </button>
       </PopoverTrigger>
       <PopoverContent align="start" className="rb:w-auto rb:min-w-[var(--radix-popover-trigger-width)] rb:max-h-[var(--radix-popover-content-available-height)] rb:overflow-y-auto">
