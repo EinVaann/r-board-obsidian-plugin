@@ -10,11 +10,10 @@ import { queryItems } from '../../../lib/data/query';
 import { toStored, type StoredValue } from '../../../lib/data/properties';
 import { asArray, linkTo, parseLink } from '../../../lib/render/values';
 import { saveImageDraft, type ImageDraft } from '../../../lib/data/image-import';
-import { FormField } from './_components/form-field';
+import { FieldBox, FormField } from './_components/form-field';
 import { ReactModal } from '../../../obsidian/mount';
 import { Icon } from '../../../components/icon';
 import { TextButton as Button } from '@/components/form-controls';
-import { PROPERTY_TYPE_ICON } from '../settings/_components/property-editor';
 import { TABLE_EXTENSION } from '../../../obsidian/board-view';
 import { quickAddCommand, quickAddCommandId } from '../../../lib/quick-add/ids';
 import { addOptions } from '../../../lib/quick-add/options';
@@ -299,47 +298,26 @@ export function QuickAddForm({
               />
             </div>
           )}
-          {fields.map((prop, i) => {
-              const field = (
-                <FormField
-                  app={app}
-                  prop={prop}
-                  value={values.current[prop.name]}
-                  known={known[prop.name] ?? []}
-                  sourcePath={sourcePath}
-                  autoFocus={!!titleProp && i === 0}
-                  draft={drafts[prop.name] ?? null}
-                  imageFolder={config.quickAdd?.imageFolders?.[prop.name]}
-                  onDraft={(d) => setDrafts((all) => ({ ...all, [prop.name]: d }))}
-                  onChange={(value) => {
-                    values.current[prop.name] = value;
-                    rerender((n) => n + 1);
-                  }}
-                  onEnter={next}
-                />
-              );
-              const label = (
-                <span className="rb-qa-label">
-                  <Icon name={PROPERTY_TYPE_ICON[prop.type]} />
-                  {propertyLabel(prop)}
-                </span>
-              );
-              // A switch sits beside its label, in a box the height of the other controls.
-              return prop.type === 'checkbox' ? (
-                <div key={prop.name} className="rb-qa-field rb-qa-field-check" data-width="half">
-                  <label className="rb-qa-check-row">
-                    {label}
-                    {field}
-                  </label>
-                </div>
-              ) : (
-                <div key={prop.name} className={isTitle(prop) ? 'rb-qa-field rb-qa-field-title' : 'rb-qa-field'} data-width={isTitle(prop) ? 'full' : fieldWidth(prop)}>
-                  {/* Not a <label>: a click on it would re-open dropdowns and pickers. */}
-                  <div className="rb-qa-label-row">{label}</div>
-                  {field}
-                </div>
-              );
-            })}
+          {fields.map((prop, i) => (
+            <FieldBox key={prop.name} prop={prop} title={isTitle(prop)}>
+              <FormField
+                app={app}
+                prop={prop}
+                value={values.current[prop.name]}
+                known={known[prop.name] ?? []}
+                sourcePath={sourcePath}
+                autoFocus={!!titleProp && i === 0}
+                draft={drafts[prop.name] ?? null}
+                imageFolder={config.quickAdd?.imageFolders?.[prop.name]}
+                onDraft={(d) => setDrafts((all) => ({ ...all, [prop.name]: d }))}
+                onChange={(value) => {
+                  values.current[prop.name] = value;
+                  rerender((n) => n + 1);
+                }}
+                onEnter={next}
+              />
+            </FieldBox>
+          ))}
         </div>
       </div>
       <div className="rb-qa-footer">
@@ -362,7 +340,4 @@ export function QuickAddForm({
   );
 }
 
-/** Short values share a row; lists, links, images and free text take the full width. */
-function fieldWidth(prop: PropertyConfig): 'half' | 'full' {
-  return prop.type === 'select' || prop.type === 'number' || prop.type === 'date' || prop.type === 'checkbox' ? 'half' : 'full';
-}
+

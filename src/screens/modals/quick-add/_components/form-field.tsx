@@ -1,6 +1,8 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, type ReactNode } from 'react';
 import type { App } from 'obsidian';
 import type { PropertyConfig } from '../../../../types/database';
+import { propertyLabel } from '../../../../lib/config';
+import { PROPERTY_TYPE_ICON } from '../../settings/_components/property-editor';
 import type { StoredValue } from '../../../../lib/data/properties';
 import { asArray, optionFor } from '../../../../lib/render/values';
 import { optionStyle } from '../../../../components/fields';
@@ -98,6 +100,44 @@ export function FormField({
         />
       );
   }
+}
+
+/** Short values share a row; lists, links, images and free text take the full width. */
+function fieldWidth(prop: PropertyConfig): 'half' | 'full' {
+  return prop.type === 'select' || prop.type === 'number' || prop.type === 'date' || prop.type === 'checkbox' ? 'half' : 'full';
+}
+
+/**
+ * A field's place in the form (quick add, row editor): icon + label above the control, half or full width.
+ * A switch sits beside its label instead. `title`: the record's name, first and full width.
+ */
+export function FieldBox({ prop, title = false, extra, children }: { prop: PropertyConfig; title?: boolean; extra?: ReactNode; children: ReactNode }) {
+  const label = (
+    <span className="rb-qa-label">
+      <Icon name={PROPERTY_TYPE_ICON[prop.type]} />
+      {propertyLabel(prop)}
+    </span>
+  );
+  if (prop.type === 'checkbox') {
+    return (
+      <div className="rb-qa-field rb-qa-field-check" data-width="half">
+        <label className="rb-qa-check-row">
+          {label}
+          {children}
+        </label>
+      </div>
+    );
+  }
+  return (
+    <div className={title ? 'rb-qa-field rb-qa-field-title' : 'rb-qa-field'} data-width={title ? 'full' : fieldWidth(prop)}>
+      {/* Not a <label>: a click on it would re-open dropdowns and pickers. */}
+      <div className="rb-qa-label-row">
+        {label}
+        {extra}
+      </div>
+      {children}
+    </div>
+  );
 }
 
 /** Digits, sign, decimal point / comma and spaces only. */

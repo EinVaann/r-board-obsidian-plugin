@@ -26,15 +26,8 @@
 .rb-option-row [data-slot='badge'] { max-width: 110px; overflow: hidden; text-overflow: ellipsis; }
 
 /* Row editor (tables) */
-.rb-record .setting-item-name { display: flex; align-items: center; gap: 6px; }
-.rb-record-icon { color: var(--text-muted); display: inline-flex; }
-.rb-record-icon svg { width: 14px; height: 14px; }
-.rb-record .setting-item-control input:not([type='checkbox']),
-.rb-record .setting-item-control select { width: 220px; max-width: 100%; }
-.rb-record-result { display: flex; gap: 4px; align-items: center; }
-.rb-record-actions { display: flex; justify-content: flex-end; gap: 8px; padding-top: 12px; }
-.rb-record-actions button { display: inline-flex; align-items: center; gap: 4px; }
-.rb-record-actions svg { width: 14px; height: 14px; }
+/* Row editor (quick-add layout): a formula's computed value, read-only, in the box a control would take. */
+.rb-record-result { display: flex; align-items: center; gap: 4px; min-height: var(--rb-control-h); padding: 0 var(--rb-control-px); border-radius: var(--rb-control-radius); background: var(--rb-surface-sunken); color: var(--text-muted); }
 
 /* Property editor: formula */
 .rb-formula-edit { display: flex; flex-direction: column; gap: 4px; width: 100%; }

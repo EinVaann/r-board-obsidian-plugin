@@ -437,12 +437,13 @@ test.describe('rows', () => {
     await cell(page, 0, 0).hover();
     await cell(page, 0, 0).getByLabel('Expand row').click();
     const modal = page.locator('.dev-modal');
-    await expect(modal.locator('.rb-record-row')).toHaveCount(8);
-    const price = modal.locator('.rb-record-row', { hasText: 'Price' }).locator('input');
+    // The quick-add layout: one field box per column.
+    await expect(modal.locator('.rb-record .rb-qa-field')).toHaveCount(8);
+    const price = modal.locator('.rb-qa-field', { hasText: 'Price' }).locator('input');
     await price.fill('42');
     await price.press('Enter');
     await expect(cell(page, 0, 2)).toHaveText('42');
-    await expect(modal.locator('.rb-record-result')).toHaveText('= 126');
+    await expect(modal.locator('.rb-record-result')).toHaveText('126');
   });
 
   test('the record editor deletes and duplicates', async ({ page }) => {
