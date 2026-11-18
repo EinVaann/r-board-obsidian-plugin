@@ -6,8 +6,7 @@ import { newId } from '../../../../lib/table/format';
 import { Icon } from '../../../../components/icon';
 import { PROPERTY_TYPE_ICON } from './property-editor';
 import { FolderInput } from '../../../../components/folder-input';
-import { SettingRow, SettingsCard, Toggle } from './controls';
-import { LabeledField, SettingsList, SettingsRow } from '../../../../components/ui';
+import { Field as LabeledField, Button, IconButton, SettingRow, SettingsCard, SettingsList, SettingsRow, Toggle } from './controls';
 import { quickAddCommandId } from '../../../../lib/quick-add/ids';
 import { canSetHotkeys, hotkeyConflicts, openHotkeySettings, printHotkey, recordHotkey, setHotkey } from '../../../../obsidian/hotkeys';
 
@@ -152,24 +151,14 @@ function ShortcutRow({ app, commandId, commandName }: { app: App; commandId: str
         desc={recording ? 'Press the keys… (Esc to cancel)' : direct ? 'Click the shortcut, then press the keys.' : 'Set it in Obsidian’s Hotkeys settings.'}
       >
         {direct && (
-          <button className={recording ? 'rb-hotkey mod-cta' : 'rb-hotkey'} onClick={recording ? undefined : record}>
+          <Button className="rb-hotkey" variant={recording ? 'primary' : 'secondary'} onClick={recording ? undefined : record}>
             {recording ? 'Press keys…' : current || 'Set shortcut'}
-          </button>
+          </Button>
         )}
         {direct && current && !recording && (
-          <button
-            className="clickable-icon"
-            aria-label="Remove shortcut"
-            onClick={() => void setHotkey(app, commandId, null).then(() => refresh((n) => n + 1))}
-          >
-            <Icon name="x" />
-          </button>
+          <IconButton icon="trash-2" tone="danger" label="Remove shortcut" onClick={() => void setHotkey(app, commandId, null).then(() => refresh((n) => n + 1))} />
         )}
-        {!recording && (
-          <button className="clickable-icon" aria-label="Open Hotkeys settings" onClick={() => openHotkeySettings(app, commandName)}>
-            <Icon name="keyboard" />
-          </button>
-        )}
+        {!recording && <IconButton icon="keyboard" label="Open Hotkeys settings" onClick={() => openHotkeySettings(app, commandName)} />}
       </SettingRow>
       {conflicts.length > 0 && (
         <div className="rb-quick-add-warning">

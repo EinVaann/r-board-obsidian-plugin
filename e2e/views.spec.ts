@@ -12,7 +12,7 @@ const VIEWS = [
   { name: 'Fifth', type: 'table', limit: 'none' },
 ];
 const openShop = (page: Page, views: Record<string, unknown>[] = VIEWS) => open(page, { fixture: { table: tableFile({ views }) } });
-const setting = (page: Page, name: string) => page.locator('.dev-modal .setting-item', { has: page.locator('.setting-item-name', { hasText: new RegExp(`^${name}$`) }) });
+const setting = (page: Page, name: string) => page.locator('.dev-modal [data-slot="setting-row"]', { has: page.locator('[data-slot="setting-row-name"]', { hasText: new RegExp(`^${name}$`) }) });
 
 test.describe('view tabs', () => {
   test('up to three tabs, the rest in a "more" dropdown that shows the active view', async ({ page }) => {
@@ -161,14 +161,14 @@ test.describe('search, sort, filter', () => {
     await modal.locator('.rb-filter-add').last().click();
     await menu(page, 'Add filter group');
     await expect(modal.locator('.rb-filter-group-box')).toHaveCount(1);
-    await modal.locator('.rb-filter-conj').selectOption('or');
+    await modal.locator('.rb-filter-conj select').selectOption('or');
     const inner = modal.locator('.rb-filter-group-box .rb-filter-rule');
     await inner.locator('select').first().selectOption({ label: 'Item' });
     await inner.locator('select').nth(1).selectOption('contains');
     await inner.locator('.rb-filter-value').fill('bread');
     expect(await titles(page)).toEqual(['Gas', 'Bread', 'Cinema']);
 
-    await modal.locator('.rb-filter-delete').click();
+    await modal.getByRole('button', { name: 'Delete filter' }).click();
     await expect(modal).toHaveCount(0);
     expect(await titles(page)).toHaveLength(5);
     expect((await activeView(page)).filter).toBeUndefined();
@@ -186,9 +186,10 @@ test.describe('search, sort, filter', () => {
     test.skip(!listOp, 'no list operator for selects');
     await rule.locator('select').nth(1).selectOption(listOp!);
     // Values are picked in the dropdown's checklist.
-    await rule.locator('[data-slot="multi-select-trigger"]').click();
-    await rule.getByRole('option', { name: 'Food' }).click();
-    await rule.getByRole('option', { name: 'Fun' }).click();
+    // The checklist opens in a popover (portalled to <body>).
+    await rule.locator('[data-slot="multi-select"]').click();
+    await page.getByRole('option', { name: 'Food' }).click();
+    await page.getByRole('option', { name: 'Fun' }).click();
     expect(await titles(page)).toEqual(['Apples', 'Bread', 'Cinema']);
   });
 });
@@ -246,7 +247,7 @@ test.describe('board settings → Views', () => {
     await page.getByRole('tab', { name: 'Views' }).click();
     await expect(page.locator('.rb-views-name')).toHaveText(['Rows', 'Lanes', 'Cards']);
     // Keyboard drag (dnd-kit): pick up "Cards", move it up twice, drop.
-    await page.locator('.rb-views-row', { hasText: 'Cards' }).locator('.rb-drag-handle').focus();
+    await page.locator('.rb-views-row', { hasText: 'Cards' }).locator('[data-slot="drag-handle"]').focus();
     for (const key of ['Space', 'ArrowUp', 'ArrowUp', 'Space']) {
       await page.keyboard.press(key);
       await page.waitForTimeout(150);
@@ -280,7 +281,7 @@ test.describe('view settings', () => {
   test('the summary toggle adds a summary row', async ({ page }) => {
     await openShop(page, VIEWS.slice(0, 1));
     await page.getByLabel('View settings').click();
-    await setting(page, 'Summary row').locator('.rb-switch').click();
+    await setting(page, 'Summary row').getByRole('switch').click();
     await expect(page.locator('.rb-summary-row')).toHaveCount(1);
   });
 
@@ -288,7 +289,7 @@ test.describe('view settings', () => {
     await openShop(page, VIEWS.slice(0, 1));
     await page.getByLabel('View settings').click();
     await page.locator('.rb-settings-tab', { hasText: 'Display' }).click();
-    await page.locator('.rb-vis-row', { hasText: 'Tags' }).locator('.rb-vis-toggle').click();
+    await page.locator('.rb-vis-row', { hasText: 'Tags' }).getByRole('switch').click();
     expect(await headers(page)).not.toContain('Tags');
   });
 

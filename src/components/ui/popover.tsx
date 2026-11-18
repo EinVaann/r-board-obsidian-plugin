@@ -1,67 +1,87 @@
-import { useLayoutEffect, useRef, useState, type CSSProperties, type ReactNode, type RefObject } from 'react';
+import * as React from "react"
+import { cn } from "@/lib/utils"
+import { Popover as PopoverPrimitive } from "radix-ui"
 
-const GAP = 4;
-const EDGE = 8;
+function Popover({
+  ...props
+}: React.ComponentProps<typeof PopoverPrimitive.Root>) {
+  return <PopoverPrimitive.Root data-slot="popover" {...props} />
+}
 
-/**
- * A box fixed to the viewport under (or above) `anchor`, so scroll areas and
- * dialogs neither clip it nor grow a scrollbar for it. Opens on the side with
- * more room and follows the anchor when anything scrolls.
- */
-export function Floating({
-  anchor,
-  children,
+function PopoverTrigger({
+  ...props
+}: React.ComponentProps<typeof PopoverPrimitive.Trigger>) {
+  return <PopoverPrimitive.Trigger data-slot="popover-trigger" {...props} />
+}
+
+function PopoverContent({
   className,
-  matchWidth = true,
-  role,
-}: {
-  anchor: RefObject<HTMLElement | null>;
-  children: ReactNode;
-  className?: string;
-  /** At least as wide as the anchor. */
-  matchWidth?: boolean;
-  role?: string;
-}) {
-  const ref = useRef<HTMLDivElement>(null);
-  const [style, setStyle] = useState<CSSProperties>({ position: 'fixed', visibility: 'hidden', left: 0, top: 0 });
-  const [side, setSide] = useState<'top' | 'bottom'>('bottom');
-
-  useLayoutEffect(() => {
-    const el = ref.current;
-    const trigger = anchor.current;
-    if (!el || !trigger) return;
-    const doc = trigger.ownerDocument;
-    const win = doc.defaultView ?? window;
-    const place = (): void => {
-      const r = trigger.getBoundingClientRect();
-      const below = win.innerHeight - r.bottom - GAP - EDGE;
-      const above = r.top - GAP - EDGE;
-      const up = el.scrollHeight > below && above > below;
-      const width = Math.max(el.offsetWidth, matchWidth ? r.width : 0);
-      const left = Math.max(EDGE, Math.min(r.left, win.innerWidth - width - EDGE));
-      const top = up ? r.top - GAP - Math.min(el.scrollHeight, above) : r.bottom + GAP;
-      // A transformed ancestor (an animating modal) moves the fixed box's origin; measure it and compensate.
-      const now = el.getBoundingClientRect();
-      const originX = now.left - (parseFloat(el.style.left) || 0);
-      const originY = now.top - (parseFloat(el.style.top) || 0);
-      setSide(up ? 'top' : 'bottom');
-      setStyle({ position: 'fixed', left: left - originX, top: top - originY, minWidth: matchWidth ? r.width : undefined, maxHeight: up ? above : below });
-    };
-    place();
-    const onScroll = (e: Event): void => {
-      if (!el.contains(e.target as Node)) place();
-    };
-    doc.addEventListener('scroll', onScroll, true);
-    win.addEventListener('resize', place);
-    return () => {
-      doc.removeEventListener('scroll', onScroll, true);
-      win.removeEventListener('resize', place);
-    };
-  }, [anchor, matchWidth]);
-
+  align = "center",
+  sideOffset = 4,
+  ...props
+}: React.ComponentProps<typeof PopoverPrimitive.Content>) {
   return (
-    <div ref={ref} className={className} data-side={side} style={style} role={role}>
-      {children}
-    </div>
-  );
+    <PopoverPrimitive.Portal>
+      <PopoverPrimitive.Content
+        data-slot="popover-content"
+        align={align}
+        sideOffset={sideOffset}
+        className={cn(
+          // Above Obsidian's modals (its menu layer); our theme tokens need .rb-popover as a scope (styles/00-tokens.css).
+          "rb-popover rb:z-[var(--layer-menu,65)] rb:w-72 rb:origin-(--radix-popover-content-transform-origin) rb:rounded-control rb:border rb:border-solid rb:border-[var(--rb-popover-border)] rb:bg-popover rb:p-1 rb:text-popover-foreground rb:shadow-popover rb:outline-hidden",
+          className
+        )}
+        {...props}
+      />
+    </PopoverPrimitive.Portal>
+  )
+}
+
+function PopoverAnchor({
+  ...props
+}: React.ComponentProps<typeof PopoverPrimitive.Anchor>) {
+  return <PopoverPrimitive.Anchor data-slot="popover-anchor" {...props} />
+}
+
+function PopoverHeader({ className, ...props }: React.ComponentProps<"div">) {
+  return (
+    <div
+      data-slot="popover-header"
+      className={cn("rb:flex rb:flex-col rb:gap-1 rb:text-sm", className)}
+      {...props}
+    />
+  )
+}
+
+function PopoverTitle({ className, ...props }: React.ComponentProps<"h2">) {
+  return (
+    <div
+      data-slot="popover-title"
+      className={cn("rb:font-medium", className)}
+      {...props}
+    />
+  )
+}
+
+function PopoverDescription({
+  className,
+  ...props
+}: React.ComponentProps<"p">) {
+  return (
+    <p
+      data-slot="popover-description"
+      className={cn("rb:text-muted-foreground", className)}
+      {...props}
+    />
+  )
+}
+
+export {
+  Popover,
+  PopoverTrigger,
+  PopoverContent,
+  PopoverAnchor,
+  PopoverHeader,
+  PopoverTitle,
+  PopoverDescription,
 }

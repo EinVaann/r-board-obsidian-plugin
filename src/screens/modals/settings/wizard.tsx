@@ -4,7 +4,7 @@ import type { DatabaseConfig, PropertyConfig } from '../../../types/database';
 import { normalizeTag } from '../../../lib/config';
 import { ReactModal } from '../../../obsidian/mount';
 import { PropertyEditor } from './_components/property-editor';
-import { SettingRow, TextInput } from './_components/controls';
+import { Button, SettingRow, SettingsCard, TextInput } from './_components/controls';
 
 /**
  * Guided setup for a database: name, base tag, and its properties. Used both
@@ -32,20 +32,24 @@ function Wizard({ seed, onComplete, onCancel }: { seed: Partial<DatabaseConfig>;
 
   return (
     <div className="rb-wizard">
-      <SettingRow name="Name" desc="Shown in the board title.">
-        <TextInput value={name} onChange={setName} />
-      </SettingRow>
-      <SettingRow name="Base tag" desc="Notes carrying this tag become rows (without the leading #).">
-        <TextInput value={sourceTag} placeholder="backlog" onChange={setSourceTag} />
-      </SettingRow>
-      <h4>Properties</h4>
-      <p className="rb-wizard-hint">Frontmatter keys to show on cards and in tables.</p>
-      <PropertyEditor properties={properties} onChange={setProperties} />
+      <SettingsCard icon="settings" title="Board" desc="Which notes this board shows.">
+        <SettingRow name="Name" desc="Shown in the board title.">
+          <TextInput value={name} onChange={setName} />
+        </SettingRow>
+        <SettingRow name="Base tag" desc="Notes carrying this tag become rows (without the leading #).">
+          <TextInput value={sourceTag} placeholder="backlog" onChange={setSourceTag} />
+        </SettingRow>
+      </SettingsCard>
+      <SettingsCard icon="list" title="Properties" desc="Frontmatter keys to show on cards and in tables.">
+        <PropertyEditor properties={properties} onChange={setProperties} />
+      </SettingsCard>
       <div className="rb-wizard-actions">
-        <button onClick={onCancel}>Cancel</button>
-        <button className="mod-cta" onClick={submit}>
+        <Button variant="ghost" onClick={onCancel}>
+          Cancel
+        </Button>
+        <Button variant="primary" onClick={submit}>
           Create
-        </button>
+        </Button>
       </div>
     </div>
   );

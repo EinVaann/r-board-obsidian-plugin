@@ -39,18 +39,15 @@
 /* --- Settings content on phones --- */
 /* Tabs share the width evenly. */
 .is-phone .rb-settings-tabs { overflow-x: visible; }
-.is-phone .rb-wizard .rb-settings-tab { flex: 1 1 0; justify-content: center; padding: 10px 6px; }
-/* Stacked rows (label above, control below): controls take the full width. */
-.is-phone .rb-settings-body .setting-item-control select,
-.is-phone .rb-settings-body .setting-item-control input[type='text'] { flex: 1 1 0; min-width: 0; }
+.is-phone .rb-settings-tab { flex: 1 1 0; justify-content: center; }
+/* Segmented controls fill the row. */
 .is-phone .rb-segmented { display: flex; width: 100%; }
-.is-phone .rb-wizard .rb-segment { flex: 1 1 0; padding: 8px 6px; }
-/* Bigger touch targets for drag handles and icon buttons. */
-.is-phone .rb-drag-handle { padding: 8px 4px; }
-.is-phone .rb-drag-handle svg { width: 18px; height: 18px; }
-.is-phone .rb-wizard .rb-icon-btn { width: 38px; height: 38px; }
+.is-phone .rb-segment { flex: 1 1 0; }
+/* Bigger touch targets for drag handles. */
+.is-phone [data-slot='drag-handle'] { padding: 8px 4px; }
+.is-phone [data-slot='drag-handle'] svg { width: 18px; height: 18px; }
 .is-phone [data-slot='settings-row-body'] { padding-left: 14px; }
-.is-phone .rb-prop-remove-wide[data-slot] { width: 100%; }
+.is-phone .rb-prop-remove-wide { width: 100%; }
 
 /* Wizard: actions pinned at the bottom as full-width buttons. */
 .is-phone .rb-wizard-actions {
@@ -59,15 +56,15 @@
   padding: 12px 0 4px;
   background: var(--modal-background, var(--background-primary));
 }
-.is-phone .rb-wizard-actions > button { flex: 1 1 0; height: 44px; }
+.is-phone .rb-wizard-actions > [data-slot='button'] { flex: 1 1 0; }
 
 /* Filter builder: each rule wraps — conjunction + menu on top, then the
    property / operator pair, then the value at full width. */
 .is-phone .rb-filter-line { flex-wrap: wrap; align-items: center; row-gap: 6px; }
 .is-phone .rb-filter-prefix { flex: 1 1 auto; }
-.is-phone .rb-filter-line > .rb-filter-row-menu { order: 2; margin-left: auto; }
+.is-phone .rb-filter-line > [data-slot='button'] { order: 2; margin-left: auto; }
 .is-phone .rb-filter-line > .rb-filter-rule,
 .is-phone .rb-filter-line > .rb-filter-group-box { order: 3; flex: 1 1 100%; }
 .is-phone .rb-filter-rule { flex-wrap: wrap; }
-.is-phone .rb-filter-rule > .rb-filter-select { flex: 1 1 40%; min-width: 0; }
+.is-phone .rb-filter-rule > [data-slot='native-select-wrapper'] { flex: 1 1 40%; max-width: none; }
 .is-phone .rb-filter-rule > .rb-filter-value { flex: 1 1 100%; }

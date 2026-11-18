@@ -452,7 +452,7 @@ describe('settings', () => {
     expect(tabs).toEqual(['General', 'Display', 'Columns', 'Export']);
 
     // Rename through the Name input.
-    const name = el.querySelector<HTMLInputElement>('.setting-item input[type="text"]')!;
+    const name = el.querySelector<HTMLInputElement>('[data-slot="setting-row"] input')!;
     await act(async () => {
       const setter = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value')!.set!;
       setter.call(name, 'Kanban!');
@@ -465,13 +465,13 @@ describe('settings', () => {
     // Display tab: a sortable row per property with a visibility toggle.
     await act(async () => mousedown(el.querySelectorAll('.rb-settings-tab')[1]));
     expect(count(el, '.rb-vis-row')).toBe(GAMES.properties.length);
-    await act(async () => el.querySelector<HTMLButtonElement>('.rb-vis-toggle')!.click());
+    await act(async () => el.querySelector<HTMLButtonElement>('.rb-vis-row [role="switch"]')!.click());
     expect(store.getState().config!.views[2].properties).not.toContain('cover');
 
-    // Columns tab: pinned columns with label inputs and a hide button each.
+    // Columns tab: pinned columns with label inputs and a show switch each.
     await act(async () => mousedown(el.querySelectorAll('.rb-settings-tab')[2]));
-    expect(count(el, '.rb-col-config-row')).toBe(2);
-    expect(count(el, 'button[aria-label="Hide column"]')).toBe(2);
+    expect(count(el, '.rb-col-row')).toBe(2);
+    expect(count(el, '.rb-col-row [role="switch"]')).toBe(2);
 
     // Export tab: a preview of the view's items.
     await act(async () => mousedown(el.querySelectorAll('.rb-settings-tab')[3]));
@@ -537,8 +537,8 @@ describe('settings', () => {
     expect(autos()![0].triggers).toEqual([{ property: 'status', op: 'becomes' }]);
 
     // Trigger values are picked in the dropdown's checklist.
-    await act(async () => el.querySelector<HTMLButtonElement>('[data-slot="multi-select-trigger"]')!.click());
-    await act(async () => [...el.querySelectorAll<HTMLButtonElement>('[data-slot="multi-select-item"]')].find((b) => b.textContent === 'playing')!.click());
+    await act(async () => el.querySelector<HTMLButtonElement>('[data-slot="multi-select"]')!.click());
+    await act(async () => [...document.querySelectorAll<HTMLButtonElement>('[role="option"]')].find((b) => b.textContent === 'playing')!.click());
     expect(autos()![0].triggers[0].values).toEqual(['playing']);
 
     // The first effect property is Status, which this automation watches: set it to "playing" and it chains to itself.
@@ -574,14 +574,14 @@ describe('settings', () => {
     expect(count(el, '.rb-filter-group-box')).toBe(1);
     expect(count(el, '.rb-filter-rule')).toBe(2);
     // The conjunction picker sits on a group's 2nd condition.
-    const conj = el.querySelector<HTMLSelectElement>('.rb-filter-conj')!;
+    const conj = el.querySelector<HTMLSelectElement>('.rb-filter-conj select')!;
     expect(conj.value).toBe('and');
     await act(async () => {
       conj.value = 'or';
       conj.dispatchEvent(new Event('change', { bubbles: true }));
     });
     expect((saved as { conjunction: string }).conjunction).toBe('or');
-    await act(async () => el.querySelector<HTMLButtonElement>('.rb-filter-delete')!.click());
+    await act(async () => [...el.querySelectorAll<HTMLButtonElement>('button')].find((b) => b.textContent === 'Delete filter')!.click());
     expect(saved).toBeUndefined();
   });
 

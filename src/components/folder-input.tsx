@@ -1,6 +1,9 @@
 import { useId, useState } from 'react';
 import { TFolder, type App } from 'obsidian';
-import { Input, type InputProps } from './ui';
+import type { ComponentProps } from 'react';
+import { TextField } from './form-controls';
+
+type InputProps = ComponentProps<typeof TextField>;
 
 /** Every folder path in the vault, sorted; the root excluded. */
 export function vaultFolders(app: App): string[] {
@@ -19,7 +22,7 @@ export function FolderInput({ app, value, onChange, onFocus, ...props }: Omit<In
   const listId = useId();
   return (
     <>
-      <Input
+      <TextField
         {...props}
         list={listId}
         value={value}

@@ -27,32 +27,14 @@
 
 /* ===================== Wizard / settings forms ===================== */
 body:not(.is-phone) .modal:has(.rb-wizard) { width: min(620px, 90vw); }
-.rb-wizard-actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 16px; }
-.rb-wizard .rb-wizard-hint { color: var(--text-muted); font-size: 12px; margin: -4px 0 10px; }
-.rb-wizard h4 {
-  margin: 20px 0 6px;
-  font-size: 12px;
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
-  color: var(--text-muted);
-}
+.rb-wizard:not(.rb-settings) { display: flex; flex-direction: column; gap: 12px; }
+.rb-wizard-actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 4px; }
+.rb-wizard-hint { color: var(--text-muted); font-size: var(--rb-font-hint); }
 
-/* ----- Property editor (board settings + setup wizard) ----- */
-/* The list and rows are SettingsList / SettingsRow (styles/ui/settings-list.css); this is only the options layout. */
+/* ----- Property editor (board settings + setup wizard): the expanded options grid ----- */
 .rb-prop-body { display: grid; grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)); gap: 12px 14px; }
 .rb-prop-type { flex: 0 0 132px; }
-.rb-prop-field { display: flex; flex-direction: column; gap: 5px; min-width: 0; }
 .rb-prop-field-wide { grid-column: 1 / -1; }
-.rb-prop-field-label {
-  font-size: 11px;
-  font-weight: 600;
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
-  color: var(--text-muted);
-}
-.rb-prop-toggle-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
-.rb-prop-toggle-desc { font-size: 12px; color: var(--text-muted); }
-.rb-prop-input { width: 100%; }
 
 @media (max-width: 480px) {
   .rb-prop-type { flex-basis: 96px; }

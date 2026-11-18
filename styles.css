@@ -5,7 +5,7 @@
  * These defaults follow Obsidian (the Classic look). A theme changes the look
  * by overriding the variables (see 30-theme-industrial.css), not the components.
  */
-:is(.rb-root, .rb-home, .rb-embed, .modal.rb-modal, .menu.rb-menu, .rb-drag-ghost) {
+:is(.rb-root, .rb-home, .rb-embed, .modal.rb-modal, .menu.rb-menu, .rb-drag-ghost, .rb-popover, .rb-link-suggest) {
   /* --- Size scale: md (default) and sm (dense lists, toolbars inside panels) --- */
   --rb-control-h: 34px;
   --rb-control-h-sm: 28px;
@@ -54,7 +54,7 @@
   --rb-field-fg: var(--text-normal);
   --rb-caret: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%239C9C95' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
 
-  /* --- Buttons: one set per variant (bg can be a gradient) --- */
+  /* --- Buttons: one set per variant (flat colours; styles/RULES.md) --- */
   --rb-btn-primary-bg: var(--interactive-accent);
   --rb-btn-primary-fg: var(--text-on-accent);
   --rb-btn-primary-border: transparent;
@@ -122,177 +122,6 @@
   /* --- Status --- */
   --rb-danger-fg: var(--text-error);
 }
-
-/* ===== Button, IconButton (src/ui/primitives/button.tsx) ===== */
-:where(.rb-root, .rb-home, .rb-embed, .modal.rb-modal) [data-slot='button'][data-slot] {
-  box-sizing: border-box;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: var(--rb-control-gap);
-  height: var(--rb-control-h);
-  padding: 0 var(--rb-btn-px);
-  border: 1px solid transparent;
-  border-radius: var(--rb-btn-radius);
-  font: inherit;
-  font-size: var(--rb-control-font);
-  font-weight: var(--rb-weight-label);
-  line-height: 1;
-  white-space: nowrap;
-  cursor: pointer;
-  box-shadow: none;
-  filter: none;
-  transition: background-color 0.12s, border-color 0.12s, color 0.12s, filter 0.12s;
-}
-:where(.rb-root, .rb-home, .rb-embed, .modal.rb-modal) [data-slot='button'][data-size='sm'] {
-  height: var(--rb-control-h-sm);
-  padding: 0 var(--rb-btn-px-sm);
-  border-radius: var(--rb-btn-radius-sm);
-  font-size: var(--rb-control-font-sm);
-}
-:where(.rb-root, .rb-home, .rb-embed, .modal.rb-modal) [data-slot='button'] .rb-icon { display: inline-flex; }
-:where(.rb-root, .rb-home, .rb-embed, .modal.rb-modal) [data-slot='button'] svg { width: var(--rb-icon-size-sm); height: var(--rb-icon-size-sm); }
-:where(.rb-root, .rb-home, .rb-embed, .modal.rb-modal) [data-slot='button']:disabled { opacity: 0.45; cursor: default; }
-
-:where(.rb-root, .rb-home, .rb-embed, .modal.rb-modal) [data-slot='button'][data-variant='primary'] {
-  background: var(--rb-btn-primary-bg);
-  color: var(--rb-btn-primary-fg);
-  border-color: var(--rb-btn-primary-border);
-  box-shadow: var(--rb-btn-primary-shadow);
-  font-weight: var(--rb-weight-title);
-}
-:where(.rb-root, .rb-home, .rb-embed, .modal.rb-modal) [data-slot='button'][data-variant='primary']:hover:not(:disabled) {
-  background: var(--rb-btn-primary-bg);
-  filter: var(--rb-btn-primary-hover-filter);
-}
-:where(.rb-root, .rb-home, .rb-embed, .modal.rb-modal) [data-slot='button'][data-variant='secondary'] {
-  background: var(--rb-btn-secondary-bg);
-  color: var(--rb-btn-secondary-fg);
-  border-color: var(--rb-btn-secondary-border);
-  box-shadow: var(--rb-btn-secondary-shadow);
-}
-:where(.rb-root, .rb-home, .rb-embed, .modal.rb-modal) [data-slot='button'][data-variant='secondary']:hover:not(:disabled) { background: var(--rb-btn-secondary-hover-bg); }
-:where(.rb-root, .rb-home, .rb-embed, .modal.rb-modal) [data-slot='button'][data-variant='ghost'] {
-  padding: 0 var(--rb-btn-px-sm);
-  background: transparent;
-  color: var(--rb-btn-ghost-fg);
-}
-:where(.rb-root, .rb-home, .rb-embed, .modal.rb-modal) [data-slot='button'][data-variant='ghost']:hover:not(:disabled) {
-  background: var(--rb-btn-ghost-hover-bg);
-  color: var(--rb-btn-ghost-hover-fg);
-}
-:where(.rb-root, .rb-home, .rb-embed, .modal.rb-modal) [data-slot='button'][data-variant='danger'] {
-  background: var(--rb-btn-danger-bg);
-  color: var(--rb-btn-danger-fg);
-  border-color: var(--rb-btn-danger-border);
-}
-:where(.rb-root, .rb-home, .rb-embed, .modal.rb-modal) [data-slot='button'][data-variant='danger']:hover:not(:disabled) { background: var(--rb-btn-danger-hover-bg); }
-
-/* Icon button: square, no frame until hovered. */
-:where(.rb-root, .rb-home, .rb-embed, .modal.rb-modal) [data-slot='icon-button'][data-slot] {
-  box-sizing: border-box;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  flex: none;
-  width: var(--rb-control-h-sm);
-  height: var(--rb-control-h-sm);
-  padding: 0;
-  border: none;
-  border-radius: var(--rb-control-radius-sm);
-  background: transparent;
-  box-shadow: none;
-  color: var(--rb-icon-btn-fg);
-  cursor: pointer;
-}
-:where(.rb-root, .rb-home, .rb-embed, .modal.rb-modal) [data-slot='icon-button'][data-size='sm'] { width: var(--rb-icon-btn-sm); height: var(--rb-icon-btn-sm); }
-:where(.rb-root, .rb-home, .rb-embed, .modal.rb-modal) [data-slot='icon-button'] svg { width: var(--rb-icon-size); height: var(--rb-icon-size); }
-:where(.rb-root, .rb-home, .rb-embed, .modal.rb-modal) [data-slot='icon-button'][data-size='sm'] svg { width: var(--rb-icon-size-sm); height: var(--rb-icon-size-sm); }
-:where(.rb-root, .rb-home, .rb-embed, .modal.rb-modal) [data-slot='icon-button']:hover:not(:disabled) {
-  background: var(--rb-icon-btn-hover-bg);
-  color: var(--rb-icon-btn-hover-fg);
-}
-:where(.rb-root, .rb-home, .rb-embed, .modal.rb-modal) [data-slot='icon-button'][data-variant='danger']:hover:not(:disabled) { color: var(--rb-danger-fg); }
-:where(.rb-root, .rb-home, .rb-embed, .modal.rb-modal) [data-slot='icon-button']:disabled { opacity: 0.3; cursor: default; }
-
-/* ===== Card and its parts (card.tsx) ===== */
-:where(.rb-root, .rb-home, .rb-embed, .modal.rb-modal) [data-slot='card'][data-variant='raised'] {
-  padding: var(--rb-card-pad);
-  border: 1px solid var(--rb-surface-border);
-  border-radius: var(--rb-surface-radius);
-  background: var(--rb-surface-bg);
-  box-shadow: var(--rb-surface-shadow);
-}
-:where(.rb-root, .rb-home, .rb-embed, .modal.rb-modal) [data-slot='card'][data-variant='sunken'] {
-  padding: var(--rb-card-pad);
-  border-radius: var(--rb-surface-radius);
-  background: var(--rb-surface-sunken);
-}
-:where(.rb-root, .rb-home, .rb-embed, .modal.rb-modal) [data-slot='card'][data-size='sm'] { padding: var(--rb-card-pad-sm); }
-:where(.rb-root, .rb-home, .rb-embed, .modal.rb-modal) [data-slot='card-header'] { display: flex; align-items: flex-start; gap: 12px; }
-:where(.rb-root, .rb-home, .rb-embed, .modal.rb-modal) [data-slot='card-icon'] {
-  flex: none;
-  display: grid;
-  place-items: center;
-  width: 30px;
-  height: 30px;
-  border-radius: 999px;
-  background: var(--rb-icon-chip-bg);
-  color: var(--text-muted);
-}
-:where(.rb-root, .rb-home, .rb-embed, .modal.rb-modal) [data-slot='card-icon'] svg { width: 15px; height: 15px; }
-:where(.rb-root, .rb-home, .rb-embed, .modal.rb-modal) [data-slot='card-heading'] { flex: 1; min-width: 0; }
-:where(.rb-root, .rb-home, .rb-embed, .modal.rb-modal) [data-slot='card-title'][data-slot] {
-  margin: 0;
-  color: var(--text-normal);
-  font-size: var(--rb-font-title);
-  font-weight: var(--rb-weight-title);
-  letter-spacing: 0;
-  line-height: 1.3;
-  text-transform: none;
-}
-:where(.rb-root, .rb-home, .rb-embed, .modal.rb-modal) [data-slot='card-description'] { margin: 2px 0 0; color: var(--text-faint); font-size: var(--rb-font-hint); line-height: 1.4; }
-:where(.rb-root, .rb-home, .rb-embed, .modal.rb-modal) [data-slot='card-actions'] { display: flex; flex: none; gap: 4px; }
-:where(.rb-root, .rb-home, .rb-embed, .modal.rb-modal) [data-slot='card-content'] { margin-top: 10px; }
-:where(.rb-root, .rb-home, .rb-embed, .modal.rb-modal) [data-slot='card-content'] > [data-slot='setting-row']:first-child { padding-top: 6px; }
-:where(.rb-root, .rb-home, .rb-embed, .modal.rb-modal) [data-slot='card-content'] > [data-slot='setting-row']:last-child { padding-bottom: 2px; }
-:where(.rb-root, .rb-home, .rb-embed, .modal.rb-modal) [data-slot='card-footer'] { display: flex; justify-content: flex-end; gap: 8px; margin-top: 12px; }
-
-/* ===== Field, SettingRow (field.tsx, setting-row.tsx) ===== */
-/* Vertical field: label above control (field grids in cards). */
-:where(.rb-root, .rb-home, .rb-embed, .modal.rb-modal) [data-slot='field'][data-variant='vertical'] { display: flex; flex-direction: column; gap: 6px; min-width: 0; }
-:where(.rb-root, .rb-home, .rb-embed, .modal.rb-modal) [data-slot='field'][data-variant='horizontal'] { display: flex; align-items: center; gap: 16px; }
-:where(.rb-root, .rb-home, .rb-embed, .modal.rb-modal) [data-slot='field-label'] {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: baseline;
-  gap: 0 6px;
-  color: var(--text-normal);
-  font-size: var(--rb-font-label);
-  font-weight: var(--rb-weight-label);
-}
-:where(.rb-root, .rb-home, .rb-embed, .modal.rb-modal) [data-slot='field-hint'] { color: var(--text-faint); font-size: var(--rb-font-hint); font-weight: 400; }
-:where(.rb-root, .rb-home, .rb-embed, .modal.rb-modal) [data-slot='field-description'] { color: var(--text-faint); font-size: var(--rb-font-hint); }
-:where(.rb-root, .rb-home, .rb-embed, .modal.rb-modal) [data-slot='field-control'] { display: flex; align-items: center; min-width: 0; }
-:where(.rb-root, .rb-home, .rb-embed, .modal.rb-modal) [data-slot='field-control'] > :is([data-slot='select'], [data-slot='input']) { width: 100%; max-width: 100%; }
-:where(.rb-root, .rb-home, .rb-embed, .modal.rb-modal) [data-slot='field-error'] { color: var(--rb-danger-fg); font-size: var(--rb-font-hint); }
-
-/* Setting row: label + description left, control right, a hairline between rows. */
-:where(.rb-root, .rb-home, .rb-embed, .modal.rb-modal) [data-slot='setting-row'][data-slot] {
-  align-items: center;
-  margin: 0;
-  padding: 10px 4px;
-  border: none;
-  border-radius: 0;
-  background: transparent;
-}
-/* Obsidian gives modal setting rows a top border (strong selector): one hairline is ours, below. */
-.modal.rb-modal [data-slot='setting-row'].setting-item:not(.setting-item-heading),
-.rb-root [data-slot='setting-row'].setting-item { border-top: none; }
-:where(.rb-root, .rb-home, .rb-embed, .modal.rb-modal) [data-slot='setting-row']:not(:last-child) { border-bottom: 1px solid var(--rb-divider); }
-:where(.rb-root, .rb-home, .rb-embed, .modal.rb-modal) [data-slot='setting-row-name'] { color: var(--text-normal); font-size: var(--rb-control-font); font-weight: var(--rb-weight-label); }
-:where(.rb-root, .rb-home, .rb-embed, .modal.rb-modal) [data-slot='setting-row-description'] { color: var(--text-faint); font-size: var(--rb-font-hint); }
-:where(.rb-root, .rb-home, .rb-embed, .modal.rb-modal) [data-slot='setting-row-control'] > :is([data-slot='select'], [data-slot='input']) { min-width: 200px; }
 
 /* ===== ImageField (components/ImageField.tsx) ===== */
 [data-slot='image-field'] { display: flex; flex-direction: column; gap: 6px; width: 100%; min-width: 0; }
@@ -396,348 +225,14 @@
 
 .rb-image-field-dialog { display: flex; flex-direction: column; gap: 12px; }
 
-/* ===== Input, NumberInput, Select, MultiSelect trigger (input.tsx, select.tsx) ===== */
-/* Every field-like part shares one box: same height, corners, font and border per size. */
-:where(.rb-root, .rb-home, .rb-embed, .modal.rb-modal) :is([data-slot='input'], [data-slot='select'], [data-slot='multi-select-trigger'])[data-slot] {
-  box-sizing: border-box;
-  height: var(--rb-control-h);
-  padding: 0 var(--rb-control-px);
-  border: 1px solid var(--rb-field-border);
-  border-radius: var(--rb-control-radius);
-  background-color: var(--rb-field-bg);
-  box-shadow: none;
-  color: var(--rb-field-fg);
-  font: inherit;
-  font-size: var(--rb-control-font);
-  font-weight: 400;
-  line-height: normal;
-  filter: none;
-}
-:where(.rb-root, .rb-home, .rb-embed, .modal.rb-modal) :is([data-slot='input'], [data-slot='select'], [data-slot='multi-select-trigger'])[data-size='sm'] {
-  height: var(--rb-control-h-sm);
-  padding: 0 var(--rb-control-px-sm);
-  border-radius: var(--rb-control-radius-sm);
-  font-size: var(--rb-control-font-sm);
-}
-:where(.rb-root, .rb-home, .rb-embed, .modal.rb-modal) :is([data-slot='input'], [data-slot='select'], [data-slot='multi-select-trigger']):hover:not(:disabled) {
-  border-color: var(--rb-field-border-hover);
-  background-color: var(--rb-field-bg);
-}
-:where(.rb-root, .rb-home, .rb-embed, .modal.rb-modal) :is([data-slot='input'], [data-slot='select'], [data-slot='multi-select-trigger']):focus-visible {
-  outline: none;
-  border-color: var(--rb-field-border-focus);
-}
-:where(.rb-root, .rb-home, .rb-embed, .modal.rb-modal) [data-slot='input'][aria-invalid='true'] { border-color: var(--rb-danger-fg); }
-:where(.rb-root, .rb-home, .rb-embed, .modal.rb-modal) [data-slot='input']::placeholder { color: var(--text-faint); }
-
-/* Dropdowns: one caret for native selects and multi-select triggers. */
-:where(.rb-root, .rb-home, .rb-embed, .modal.rb-modal) :is([data-slot='select'], [data-slot='multi-select-trigger'])[data-slot] {
-  appearance: none;
-  -webkit-appearance: none;
-  padding-right: calc(var(--rb-control-px) + 18px);
-  background-image: var(--rb-caret);
-  background-repeat: no-repeat;
-  background-position: right var(--rb-control-px) center;
-  background-size: 12px;
-  cursor: pointer;
-  text-align: left;
-}
-:where(.rb-root, .rb-home, .rb-embed, .modal.rb-modal) :is([data-slot='select'], [data-slot='multi-select-trigger'])[data-size='sm'] {
-  padding-right: calc(var(--rb-control-px-sm) + 16px);
-  background-position: right var(--rb-control-px-sm) center;
-}
-
-/* Older screens still using classes: same box from the same tokens (compact inside list rows). */
-/* Move each to the Input / Select primitive when its screen is next touched. */
-:where(.rb-root, .rb-home, .rb-embed, .modal.rb-modal) :is(.rb-prop-input, .rb-filter-value, .rb-col-add-input, .rb-col-field-input, .rb-filter-select):not([data-slot]) {
-  box-sizing: border-box;
-  height: var(--rb-control-h);
-  padding: 0 var(--rb-control-px);
-  border-radius: var(--rb-control-radius);
-  font-size: var(--rb-control-font);
-  line-height: normal;
-}
-:where(.rb-root, .rb-home, .rb-embed, .modal.rb-modal) .rb-filter-select:not([data-slot]) {
-  appearance: none;
-  -webkit-appearance: none;
-  padding-right: calc(var(--rb-control-px) + 18px);
-  border: 1px solid var(--rb-field-border);
-  background-color: var(--rb-field-bg);
-  background-image: var(--rb-caret);
-  background-repeat: no-repeat;
-  background-position: right var(--rb-control-px) center;
-  background-size: 12px;
-  color: var(--rb-field-fg);
-  cursor: pointer;
-}
-:where(.rb-root, .rb-home, .rb-embed, .modal.rb-modal) :is(.rb-filter-select, .rb-filter-value, .rb-col-field-input):not([data-slot]) {
-  height: var(--rb-control-h-sm);
-  border-radius: var(--rb-control-radius-sm);
-  font-size: var(--rb-control-font-sm);
-}
-
-/* The dropdown list itself: Windows draws it from the options' own colors (white by default),
-   while the text inherits the field's, so dark mode showed white on white. Set both. */
+/* ===== Native option lists (the shadcn NativeSelect renders a real <select>) ===== */
+/* Windows draws the open list from the options' own colours (white by default) while the text
+   inherits the field's, so dark mode showed white on white. Set both. */
 :where(.rb-root, .rb-home, .rb-embed, .modal.rb-modal) select :is(option, optgroup) {
   background-color: var(--rb-popover-bg);
   color: var(--text-normal);
 }
 :where(.rb-root, .rb-home, .rb-embed, .modal.rb-modal) select option:disabled { color: var(--text-faint); }
-
-/* NumberInput: the box plus a unit after it. */
-:where(.rb-root, .rb-home, .rb-embed, .modal.rb-modal) [data-slot='number-input'] { display: inline-flex; align-items: center; gap: 6px; width: 100%; }
-:where(.rb-root, .rb-home, .rb-embed, .modal.rb-modal) [data-slot='number-input'] > [data-slot='input'] { flex: 1; min-width: 0; width: 100%; text-align: right; font-variant-numeric: tabular-nums; }
-:where(.rb-root, .rb-home, .rb-embed, .modal.rb-modal) [data-slot='number-input-unit'] { flex: none; color: var(--text-muted); font-size: var(--rb-font-hint); }
-
-/* ===== Tabs, SortableList (tabs.tsx, sortable-list.tsx) ===== */
-:where(.rb-root, .rb-home, .rb-embed, .modal.rb-modal) [data-slot='tabs-list'] {
-  display: flex;
-  gap: var(--rb-tabs-gap);
-  box-shadow: inset 0 -1px 0 var(--rb-divider);
-  overflow-x: auto;
-  scrollbar-width: none;
-}
-:where(.rb-root, .rb-home, .rb-embed, .modal.rb-modal) [data-slot='tabs-trigger'][data-slot] {
-  display: inline-flex;
-  align-items: center;
-  gap: 7px;
-  height: auto;
-  padding: 10px var(--rb-tabs-px);
-  border: none;
-  border-bottom: 2px solid transparent;
-  border-radius: 0;
-  background: transparent;
-  box-shadow: none;
-  color: var(--text-faint);
-  font: inherit;
-  font-size: var(--rb-control-font);
-  font-weight: var(--rb-weight-label);
-  white-space: nowrap;
-  cursor: pointer;
-}
-:where(.rb-root, .rb-home, .rb-embed, .modal.rb-modal) [data-slot='tabs-trigger']:hover { background: transparent; color: var(--text-normal); }
-:where(.rb-root, .rb-home, .rb-embed, .modal.rb-modal) [data-slot='tabs-trigger'][data-state='active'] { border-bottom-color: var(--rb-tabs-indicator); color: var(--text-normal); }
-:where(.rb-root, .rb-home, .rb-embed, .modal.rb-modal) [data-slot='tabs-trigger'] svg { width: 15px; height: 15px; }
-
-:where(.rb-root, .rb-home, .rb-embed, .modal.rb-modal) [data-slot='sortable-list'] {
-  display: flex;
-  flex-direction: column;
-  border: 1px solid var(--rb-surface-border);
-  border-radius: var(--rb-surface-radius);
-  overflow: hidden;
-}
-:where(.rb-root, .rb-home, .rb-embed, .modal.rb-modal) [data-slot='sortable-row'] + [data-slot='sortable-row'] { border-top: 1px solid var(--rb-divider); }
-:where(.rb-root, .rb-home, .rb-embed, .modal.rb-modal) [data-slot='sortable-row'][data-state='dragging'] { position: relative; z-index: 2; background: var(--rb-popover-bg); box-shadow: var(--rb-popover-shadow); }
-:where(.rb-root, .rb-home, .rb-embed, .modal.rb-modal) [data-slot='drag-handle'] { display: inline-flex; color: var(--text-faint); cursor: grab; touch-action: none; }
-:where(.rb-root, .rb-home, .rb-embed, .modal.rb-modal) [data-slot='drag-handle'] svg { width: var(--rb-icon-size-sm); height: var(--rb-icon-size-sm); }
-
-/* ===== Pill, Chip (pill.tsx) ===== */
-:where(.rb-root, .rb-home, .rb-embed, .modal.rb-modal) [data-slot='pill'] {
-  display: inline-flex;
-  align-items: center;
-  gap: 2px;
-  height: var(--rb-pill-h);
-  padding: 0 var(--rb-pill-px);
-  border-radius: var(--rb-pill-radius);
-  background: color-mix(in srgb, var(--rb-pill-c, var(--rb-pill-default)) 22%, transparent);
-  color: color-mix(in srgb, var(--rb-pill-c, var(--rb-pill-default)) 65%, var(--text-normal));
-  font-size: var(--rb-pill-font);
-  font-weight: var(--rb-weight-label);
-  white-space: nowrap;
-}
-:where(.rb-root, .rb-home, .rb-embed, .modal.rb-modal) [data-slot='pill-remove'][data-slot] {
-  display: inline-grid;
-  place-items: center;
-  width: 16px;
-  height: 16px;
-  margin-right: -4px;
-  padding: 0;
-  border: none;
-  border-radius: 999px;
-  background: transparent;
-  box-shadow: none;
-  color: inherit;
-  opacity: 0.6;
-  cursor: pointer;
-}
-:where(.rb-root, .rb-home, .rb-embed, .modal.rb-modal) [data-slot='pill-remove']:hover { opacity: 1; color: var(--rb-danger-fg); }
-:where(.rb-root, .rb-home, .rb-embed, .modal.rb-modal) [data-slot='pill-remove'] svg { width: 11px; height: 11px; }
-
-:where(.rb-root, .rb-home, .rb-embed, .modal.rb-modal) [data-slot='chip'][data-slot] {
-  display: inline-flex;
-  align-items: center;
-  height: calc(var(--rb-pill-h) + 2px);
-  padding: 0 calc(var(--rb-pill-px) + 1px);
-  border: 1px solid var(--rb-chip-border);
-  border-radius: var(--rb-pill-radius);
-  background: transparent;
-  box-shadow: none;
-  color: var(--rb-chip-fg);
-  font: inherit;
-  font-size: var(--rb-pill-font);
-  cursor: pointer;
-}
-:where(.rb-root, .rb-home, .rb-embed, .modal.rb-modal) [data-slot='chip']:hover { background: transparent; color: var(--text-normal); }
-:where(.rb-root, .rb-home, .rb-embed, .modal.rb-modal) [data-slot='chip'][data-state='on'] {
-  border-color: transparent;
-  background: var(--rb-select-on-bg);
-  color: var(--rb-select-on-fg);
-}
-
-/* ===== Segmented (segmented.tsx). Switch is a shadcn component: its look is in switch.tsx. ===== */
-:where(.rb-root, .rb-home, .rb-embed, .modal.rb-modal) [data-slot='segmented'][data-slot] {
-  display: inline-flex;
-  gap: 2px;
-  padding: 3px;
-  border: 1px solid var(--rb-track-border);
-  border-radius: var(--rb-control-radius);
-  background: var(--rb-track-bg);
-}
-:where(.rb-root, .rb-home, .rb-embed, .modal.rb-modal) [data-slot='segmented-item'][data-slot] {
-  height: calc(var(--rb-control-h) - 8px);
-  padding: 0 var(--rb-control-px);
-  border: none;
-  border-radius: calc(var(--rb-control-radius) - 3px);
-  background: transparent;
-  box-shadow: none;
-  color: var(--text-muted);
-  font: inherit;
-  font-size: var(--rb-control-font-sm);
-  font-weight: var(--rb-weight-label);
-  white-space: nowrap;
-  cursor: pointer;
-}
-:where(.rb-root, .rb-home, .rb-embed, .modal.rb-modal) [data-slot='segmented-item'][data-size='sm'] { height: calc(var(--rb-control-h-sm) - 8px); padding: 0 var(--rb-control-px-sm); }
-:where(.rb-root, .rb-home, .rb-embed, .modal.rb-modal) [data-slot='segmented-item']:hover { background: transparent; color: var(--text-normal); }
-:where(.rb-root, .rb-home, .rb-embed, .modal.rb-modal) [data-slot='segmented-item'][data-state='on'] {
-  background: var(--rb-segment-on-bg);
-  color: var(--rb-segment-on-fg);
-  box-shadow: var(--rb-segment-on-shadow);
-}
-
-/* ===== MultiSelect popup (src/ui/primitives/select.tsx) — the trigger shares the field box in input.css ===== */
-:where(.rb-root, .rb-home, .rb-embed, .modal.rb-modal) [data-slot='multi-select'] { position: relative; display: inline-flex; max-width: 100%; }
-:where(.rb-root, .rb-home, .rb-embed, .modal.rb-modal) [data-slot='multi-select-trigger'] { display: inline-flex; align-items: center; justify-content: flex-start; max-width: 260px; }
-:where(.rb-root, .rb-home, .rb-embed, .modal.rb-modal) [data-slot='multi-select-value'] { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-:where(.rb-root, .rb-home, .rb-embed, .modal.rb-modal) [data-slot='multi-select-content'] {
-  position: fixed;
-  z-index: var(--layer-menu, 65);
-  display: flex;
-  flex-direction: column;
-  box-sizing: border-box;
-  min-width: 180px;
-  overflow-y: auto;
-  padding: 4px;
-  border: 1px solid var(--rb-popover-border);
-  border-radius: var(--rb-control-radius);
-  background: var(--rb-popover-bg);
-  box-shadow: var(--rb-popover-shadow);
-}
-:where(.rb-root, .rb-home, .rb-embed, .modal.rb-modal) [data-slot='multi-select-item'][data-slot] {
-  display: flex;
-  flex: none;
-  align-items: center;
-  justify-content: flex-start;
-  gap: 8px;
-  height: var(--rb-control-h-sm);
-  padding: 0 8px;
-  border: none;
-  border-radius: calc(var(--rb-control-radius-sm) - 2px);
-  background: transparent;
-  box-shadow: none;
-  color: var(--text-normal);
-  font: inherit;
-  font-size: var(--rb-control-font-sm);
-  text-align: left;
-  cursor: pointer;
-}
-:where(.rb-root, .rb-home, .rb-embed, .modal.rb-modal) [data-slot='multi-select-item']:hover { background: var(--rb-icon-btn-hover-bg); }
-:where(.rb-root, .rb-home, .rb-embed, .modal.rb-modal) [data-slot='multi-select-item']:disabled { opacity: 1; cursor: default; }
-:where(.rb-root, .rb-home, .rb-embed, .modal.rb-modal) [data-slot='multi-select-check'] { display: inline-flex; width: var(--rb-icon-size-sm); }
-:where(.rb-root, .rb-home, .rb-embed, .modal.rb-modal) [data-slot='multi-select-check'] svg { width: var(--rb-icon-size-sm); height: var(--rb-icon-size-sm); }
-:where(.rb-root, .rb-home, .rb-embed, .modal.rb-modal) [data-slot='color-dot'] { flex: none; width: 8px; height: 8px; border-radius: 999px; background: var(--rb-dot, var(--rb-pill-default)); }
-
-/* ===== SettingsList, SettingsRow, AddRow (settings-list.tsx) — rules in styles/RULES.md ===== */
-:where(.rb-root, .rb-home, .rb-embed, .modal.rb-modal) :is([data-slot='settings-list'], [data-slot='sortable-list'][data-variant='settings']) {
-  display: flex;
-  flex-direction: column;
-  border: 1px solid var(--rb-surface-border);
-  border-radius: var(--rb-surface-radius);
-  overflow: hidden;
-}
-:where(.rb-root, .rb-home, .rb-embed, .modal.rb-modal) [data-slot='settings-list'] > [data-slot='settings-row'] + [data-slot='settings-row'] { border-top: 1px solid var(--rb-divider); }
-
-:where(.rb-root, .rb-home, .rb-embed, .modal.rb-modal) [data-slot='settings-row'][data-state='open'] { background: var(--rb-surface-sunken); }
-:where(.rb-root, .rb-home, .rb-embed, .modal.rb-modal) [data-slot='settings-row'][data-muted] [data-slot='settings-row-name'] { color: var(--text-faint); }
-
-:where(.rb-root, .rb-home, .rb-embed, .modal.rb-modal) [data-slot='settings-row-head'] {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  min-height: var(--rb-row-h);
-  padding: 4px 8px 4px 10px;
-}
-:where(.rb-root, .rb-home, .rb-embed, .modal.rb-modal) [data-slot='settings-row-icon'] { display: inline-flex; flex: none; color: var(--text-muted); }
-:where(.rb-root, .rb-home, .rb-embed, .modal.rb-modal) [data-slot='settings-row-icon'] svg { width: var(--rb-icon-size); height: var(--rb-icon-size); }
-:where(.rb-root, .rb-home, .rb-embed, .modal.rb-modal) [data-slot='settings-row-name'] {
-  display: flex;
-  align-items: center;
-  flex: 1 1 auto;
-  min-width: 0;
-  color: var(--text-normal);
-  font-size: var(--rb-control-font);
-  font-weight: var(--rb-weight-label);
-}
-:where(.rb-root, .rb-home, .rb-embed, .modal.rb-modal) [data-slot='settings-row-meta'] { flex: none; color: var(--text-faint); font-size: var(--rb-font-hint); white-space: nowrap; }
-:where(.rb-root, .rb-home, .rb-embed, .modal.rb-modal) [data-slot='settings-row-actions'],
-:where(.rb-root, .rb-home, .rb-embed, .modal.rb-modal) [data-slot='settings-row-control'] { display: flex; align-items: center; flex: none; gap: 2px; }
-
-/* Text in a row (name / type editors) reads as plain text until hovered or focused. */
-:where(.rb-root, .rb-home, .rb-embed, .modal.rb-modal) [data-slot='settings-row-head'] :is([data-slot='input'], [data-slot='select']):not(:hover):not(:focus):not([aria-invalid]) {
-  border-color: transparent;
-  background-color: transparent;
-}
-:where(.rb-root, .rb-home, .rb-embed, .modal.rb-modal) [data-slot='settings-row-name'] > [data-slot='input'] { flex: 1; min-width: 0; margin-left: calc(-1 * var(--rb-control-px-sm)); font-weight: var(--rb-weight-label); }
-
-:where(.rb-root, .rb-home, .rb-embed, .modal.rb-modal) [data-slot='settings-row-head'] [data-part='expand-spacer'] { flex: none; width: var(--rb-icon-btn-sm); }
-/* ⌄ turns up while the row is open. */
-:where(.rb-root, .rb-home, .rb-embed, .modal.rb-modal) [data-slot='settings-row'] [data-part='expand'] svg { transition: transform 0.15s ease; }
-:where(.rb-root, .rb-home, .rb-embed, .modal.rb-modal) [data-slot='settings-row'][data-state='open'] > [data-slot='settings-row-head'] [data-part='expand'] svg { transform: rotate(180deg); }
-
-/* In-place options: under a hairline, indented to the name. */
-:where(.rb-root, .rb-home, .rb-embed, .modal.rb-modal) [data-slot='settings-row-body'] {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-  padding: 12px 14px 14px var(--rb-row-indent);
-  border-top: 1px solid var(--rb-divider);
-}
-:where(.rb-root, .rb-home, .rb-embed, .modal.rb-modal) [data-slot='settings-row-body'][hidden] { display: none; }
-
-/* Add row: under its list, full width, dashed; quiet until hovered. */
-:where(.rb-root, .rb-home, .rb-embed, .modal.rb-modal) [data-slot='add-row'][data-slot] {
-  box-sizing: border-box;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: var(--rb-control-gap);
-  width: 100%;
-  height: var(--rb-control-h);
-  margin: 10px 0 0;
-  padding: 0 var(--rb-btn-px);
-  border: 1px dashed var(--rb-field-border-hover);
-  border-radius: var(--rb-surface-radius);
-  background: transparent;
-  box-shadow: none;
-  color: var(--text-faint);
-  font: inherit;
-  font-size: var(--rb-control-font);
-  font-weight: var(--rb-weight-label);
-  cursor: pointer;
-}
-:where(.rb-root, .rb-home, .rb-embed, .modal.rb-modal) [data-slot='add-row']:hover { border-color: var(--text-faint); background: transparent; color: var(--text-normal); }
-:where(.rb-root, .rb-home, .rb-embed, .modal.rb-modal) [data-slot='add-row'] .rb-icon { display: inline-flex; }
-:where(.rb-root, .rb-home, .rb-embed, .modal.rb-modal) [data-slot='add-row'] svg { width: var(--rb-icon-size-sm); height: var(--rb-icon-size-sm); }
 
 /* ===================== Board base ===================== */
 .rb-root {
@@ -1228,6 +723,7 @@ body .rb-links-editor input.rb-links-editor-input { flex: 1 1 70px; width: auto;
 body .rb-cell-editor .rb-links-editor input.rb-links-editor-input,
 body .rb-cell-editor .rb-links-editor input.rb-links-editor-input:focus { height: 28px; border: none; border-radius: 0; background: none; box-shadow: none; outline: none; padding: 0 2px; }
 
+/* Lives in <body>; .rb-link-suggest is a token scope (00-tokens.css), so the theme's popover colours apply. */
 .rb-link-suggest {
   position: fixed;
   z-index: var(--layer-menu, 65);
@@ -1235,17 +731,13 @@ body .rb-cell-editor .rb-links-editor input.rb-links-editor-input:focus { height
   max-height: 300px;
   overflow-y: auto;
   padding: 4px;
-  border: 1px solid var(--background-modifier-border);
-  border-radius: var(--radius-m);
-  background: var(--background-secondary);
-  box-shadow: var(--shadow-l);
+  border: 1px solid var(--rb-popover-border);
+  border-radius: var(--rb-control-radius);
+  background: var(--rb-popover-bg);
+  box-shadow: var(--rb-popover-shadow);
+  color: var(--text-normal);
 }
-/* Lives in <body>, outside the themed modal: take the industrial popover colours from the body theme. */
-body.rb-theme-industrial.rb-mode-light .rb-link-suggest { background: #FFFFFF; border-color: rgba(0, 0, 0, 0.1); color: #1C1C1E; --text-normal: #1C1C1E; --text-muted: #6E6E73; --background-modifier-hover: rgba(0, 0, 0, 0.05); }
-body.rb-theme-industrial.rb-mode-dark .rb-link-suggest { background: #232326; border-color: rgba(255, 255, 255, 0.1); color: #EDEDF0; --text-normal: #EDEDF0; --text-muted: #9A9AA0; --background-modifier-hover: rgba(255, 255, 255, 0.07); }
-body.rb-theme-industrial .rb-link-suggest { border-radius: 10px; padding: 6px; }
-body.rb-theme-industrial .rb-link-suggest-item { border-radius: 8px; }
-.rb-link-suggest-item { padding: 5px 8px; border-radius: var(--radius-s); cursor: pointer; }
+.rb-link-suggest-item { padding: 5px 8px; border-radius: var(--rb-control-radius-sm); cursor: pointer; }
 .rb-link-suggest-item.is-active { background: var(--background-modifier-hover); }
 .rb-link-suggest-name { color: var(--text-normal); }
 .rb-link-suggest-path { font-size: var(--font-ui-smaller); color: var(--text-muted); }
@@ -1867,176 +1359,44 @@ body .rb-table-wrap.rb-summary-only::-webkit-scrollbar { display: none; }
 
 /* ===================== Wizard / settings forms ===================== */
 body:not(.is-phone) .modal:has(.rb-wizard) { width: min(620px, 90vw); }
-.rb-wizard-actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 16px; }
-.rb-wizard .rb-wizard-hint { color: var(--text-muted); font-size: 12px; margin: -4px 0 10px; }
-.rb-wizard h4 {
-  margin: 20px 0 6px;
-  font-size: 12px;
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
-  color: var(--text-muted);
-}
+.rb-wizard:not(.rb-settings) { display: flex; flex-direction: column; gap: 12px; }
+.rb-wizard-actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 4px; }
+.rb-wizard-hint { color: var(--text-muted); font-size: var(--rb-font-hint); }
 
-/* ----- Property editor (board settings + setup wizard) ----- */
-/* The list and rows are SettingsList / SettingsRow (styles/ui/settings-list.css); this is only the options layout. */
+/* ----- Property editor (board settings + setup wizard): the expanded options grid ----- */
 .rb-prop-body { display: grid; grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)); gap: 12px 14px; }
 .rb-prop-type { flex: 0 0 132px; }
-.rb-prop-field { display: flex; flex-direction: column; gap: 5px; min-width: 0; }
 .rb-prop-field-wide { grid-column: 1 / -1; }
-.rb-prop-field-label {
-  font-size: 11px;
-  font-weight: 600;
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
-  color: var(--text-muted);
-}
-.rb-prop-toggle-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
-.rb-prop-toggle-desc { font-size: 12px; color: var(--text-muted); }
-.rb-prop-input { width: 100%; }
 
 @media (max-width: 480px) {
   .rb-prop-type { flex-basis: 96px; }
 }
 
-/* ===================== Settings modal (board / view settings) ===================== */
+/* ===================== Settings modal (board / view settings): layout only ===================== */
+/* Controls are shadcn components; cards / rows / lists come from components/settings-layout + settings-list. */
+
 /* Fixed size so switching tabs doesn't make the modal jump around. */
-.modal.rb-settings-modal {
-  display: flex;
-  flex-direction: column;
-}
-body:not(.is-phone) .modal.rb-settings-modal {
-  width: min(760px, 94vw);
-  height: min(680px, 88vh);
-}
+.modal.rb-settings-modal { display: flex; flex-direction: column; }
+body:not(.is-phone) .modal.rb-settings-modal { width: min(760px, 94vw); height: min(680px, 88vh); }
 .rb-settings-modal .modal-content,
-.rb-settings-modal .rb-settings {
-  flex: 1 1 auto;
-  min-height: 0;
-  display: flex;
-  flex-direction: column;
-}
+.rb-settings-modal .rb-settings { flex: 1 1 auto; min-height: 0; display: flex; flex-direction: column; }
 
-/*
- * The hairline is an inset shadow so the active tab's underline paints over it
- * without overflowing the row (an overflow there showed a vertical scrollbar).
- */
-/* The tabs themselves are the Tabs primitive (styles/ui/list.css); this is the dialog's layout. */
-.rb-settings-tabs { flex: 0 0 auto; margin-bottom: 4px; overflow-y: hidden; }
+.rb-settings-tabs { flex: 0 0 auto; margin-bottom: 4px; }
 .rb-settings-tabs::-webkit-scrollbar { display: none; }
-.rb-settings-tab-icon { display: inline-flex; }
 
-.rb-settings-body {
-  flex: 1 1 auto;
-  min-height: 0;
-  overflow-y: auto;
-  padding: 8px 2px 16px;
-}
-.rb-settings-body[hidden] { display: none; }
-/* Settings rows: label left, control right, light separators. */
-.rb-settings-body .setting-item {
-  border: none;
-  padding: 10px 4px;
-  align-items: center;
-}
-.rb-settings-body .setting-item:not(:last-child) {
-  border-bottom: 1px solid var(--background-modifier-border);
-}
-.rb-settings-body .setting-item-control select,
-.rb-settings-body .setting-item-control input[type='text'] { min-width: 200px; }
-/* Settings cards: icon chip + title + description, then rows. The destructive action sits apart. */
+/* The scrolling body: cards stacked with a gap; children keep their height instead of squeezing. */
+.rb-settings-body { flex: 1 1 auto; min-height: 0; overflow-y: auto; padding: 8px 2px 16px; }
 .rb-settings-body:not([hidden]) { display: flex; flex-direction: column; gap: 12px; }
-/* Children keep their height: the body scrolls instead of squeezing (and clipping) them. */
+.rb-settings-body[hidden] { display: none; }
 .rb-settings-body > * { flex-shrink: 0; }
-/* Settings cards are the Card primitive (styles/ui/card.css). */
-[data-slot='card-content'] > .rb-vis-list { margin-top: 4px; }
-.rb-settings-danger { display: flex; justify-content: flex-end; }
-.rb-btn-icon { display: inline-flex; align-items: center; gap: 6px; }
-.rb-btn-icon svg { width: 14px; height: 14px; }
-/* Property cards inside Board settings span the full width. */
 .rb-settings-body > .rb-wizard-hint { margin: 4px 0 12px; }
-.rb-settings-body > h4:first-child,
-.rb-settings-body > .rb-section-head:first-child { margin-top: 6px; }
 
-@media (max-width: 480px) {
-  .rb-settings-body .setting-item-control select,
-  .rb-settings-body .setting-item-control input[type='text'] { min-width: 0; }
-}
+/* A destructive action sits apart, at the bottom right. */
+.rb-settings-danger { display: flex; justify-content: flex-end; }
 
-/* ── Shared settings controls ── */
-/* Small square icon button (expand, delete, visibility). */
-.rb-wizard .rb-icon-btn {
-  flex: 0 0 auto;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 30px;
-  height: 30px;
-  padding: 0;
-  border: none;
-  border-radius: 6px;
-  background: transparent;
-  color: var(--text-muted);
-}
-.rb-wizard .rb-icon-btn:hover { background: var(--background-modifier-hover); color: var(--text-normal); }
-.rb-icon-btn svg { width: 16px; height: 16px; }
-
-/* Drag grip for reorderable lists (pointer-based, so touch works too). */
-.rb-drag-handle {
-  flex: 0 0 auto;
-  display: inline-flex;
-  padding: 4px 2px;
-  color: var(--text-faint);
-  cursor: grab;
-  touch-action: none;
-}
-.rb-drag-handle:hover { color: var(--text-muted); }
-.rb-drag-handle svg { width: 16px; height: 16px; }
-.rb-wizard .rb-dragging {
-  position: relative;
-  z-index: 1;
-  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.3);
-  cursor: grabbing;
-}
-.rb-wizard .rb-dragging .rb-drag-handle { cursor: grabbing; }
-
-/* Segmented control and switch: UI primitives (styles/ui/segmented.css). */
-.rb-segmented { flex-wrap: wrap; align-self: flex-start; }
-
-/* Section heading with a count and inline actions. */
-.rb-section-head { display: flex; align-items: center; gap: 10px; margin: 20px 0 6px; }
-.rb-section-head h4 { margin: 0; }
-.rb-section-count { font-size: 12px; color: var(--text-faint); }
-/* ── Display tab: property visibility + order (the list itself is SortableList) ── */
-.rb-vis-row { display: flex; align-items: center; gap: 10px; }
-.rb-vis-type { display: inline-flex; color: var(--text-muted); }
-.rb-vis-type svg { width: 16px; height: 16px; }
-.rb-vis-text { flex: 1 1 auto; min-width: 0; display: flex; align-items: baseline; gap: 8px; }
-.rb-vis-name { font-size: 13px; font-weight: 500; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.rb-vis-meta { font-size: 11px; color: var(--text-faint); white-space: nowrap; }
-.rb-vis-row.rb-hidden { opacity: 0.45; }
-.rb-vis-row { min-height: 38px; padding: 4px 8px 4px 10px; background: transparent; }
-.rb-vis-row .rb-drag-handle { color: var(--text-faint); }
-.rb-vis-row .rb-vis-toggle { margin-left: auto; }
-
-/* ── Board settings → Views: the list is SettingsList; only the name's overflow and the pill gap here ── */
+/* Views list: the name truncates; the Default pill sits next to it. */
 .rb-views-name { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .rb-views-default { margin-left: 8px; }
-
-/* ── Column config (kanban view settings): the list is SortableList ── */
-/* Each row: grip, color swatch, label, value, then clear / hide / remove. */
-.rb-col-config-list { margin-bottom: 10px; }
-.rb-col-row { display: flex; align-items: center; gap: 10px; min-height: 42px; padding: 4px 8px 4px 6px; }
-.rb-col-row.is-hidden > :not([data-slot='icon-button']) { opacity: 0.45; }
-.rb-col-row .rb-drag-handle { color: var(--text-faint); }
-.rb-col-swatch { position: relative; flex: none; width: 14px; height: 14px; border-radius: 4px; background: var(--c); box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.08); cursor: pointer; }
-.rb-col-swatch input { position: absolute; inset: 0; width: 100%; height: 100%; padding: 0; border: none; opacity: 0; cursor: pointer; }
-.rb-col-key-label { flex: none; font-size: 11.5px; color: var(--text-faint); }
-/* The label field reads as plain text until hovered or focused. */
-.rb-col-row .rb-col-field-input { flex: 1 1 auto; min-width: 0; border-color: transparent; background-color: transparent; font-weight: var(--rb-weight-label); }
-.rb-col-row .rb-col-field-input:is(:hover, :focus) { border-color: var(--rb-field-border); background-color: var(--rb-field-bg); }
-
-.rb-col-add-row { display: flex; gap: 8px; align-items: center; margin-top: 4px; }
-.rb-col-add-input { flex: 1 1 auto; }
 
 /* Export tab: a read-only preview of what will be copied or saved. */
 .rb-export-preview {
@@ -2044,204 +1404,45 @@ body:not(.is-phone) .modal.rb-settings-modal {
   padding: 10px 12px;
   max-height: 320px;
   overflow: auto;
-  border: 1px solid var(--background-modifier-border);
-  border-radius: 6px;
-  background: var(--background-secondary);
+  border: 1px solid var(--rb-surface-border);
+  border-radius: var(--rb-control-radius-sm);
+  background: var(--rb-surface-sunken);
   font-family: var(--font-monospace);
   font-size: 12px;
   white-space: pre;
   user-select: text;
 }
 
-/* ===================== Custom buttons ===================== */
-/* Replaces Obsidian's default button chrome inside our forms (wizard, settings
-   modals, and the settings sidebar — all carry the .rb-wizard class). */
-/* Kit buttons ([data-slot]) are styled by styles/ui/button.css; these cover the rest. */
-.rb-wizard button:not([data-slot]) {
-  padding: 7px 14px;
-  border-radius: 8px;
-  border: 1px solid var(--background-modifier-border);
-  background: var(--background-primary);
-  color: var(--text-normal);
-  font-size: 13px;
-  font-weight: 500;
-  cursor: pointer;
-  box-shadow: none;
-  transition: background 0.12s ease, border-color 0.12s ease, transform 0.05s ease;
-}
-.rb-wizard button:not([data-slot]):hover {
-  background: var(--background-modifier-hover);
-  border-color: var(--background-modifier-border-hover);
-}
-.rb-wizard button:not([data-slot]):active { transform: translateY(1px); }
-
-.rb-wizard button.mod-cta:not([data-slot]) {
-  background: var(--interactive-accent);
-  border-color: transparent;
-  color: var(--text-on-accent);
-}
-.rb-wizard button.mod-cta:not([data-slot]):hover { background: var(--interactive-accent-hover); }
-
-.rb-wizard button.mod-warning:not([data-slot]) {
-  background: transparent;
-  border-color: var(--text-error);
-  color: var(--text-error);
-}
-.rb-wizard button.mod-warning:not([data-slot]):hover {
-  background: var(--text-error);
-  border-color: var(--text-error);
-  color: var(--text-on-accent);
-}
-
-/* Full-width primary buttons for "Add property" / "Add filter" / "Delete view". */
-.rb-wizard .setting-item:not(.rb-filter-row) > .setting-item-control:only-child {
-  justify-content: stretch;
-}
-.rb-wizard .setting-item:not(.rb-filter-row) > .setting-item-control:only-child button {
-  flex: 1 1 auto;
-}
-
-/* "View More" and home/empty primary buttons share the custom look. */
-.rb-view-more,
-.rb-home-create {
-  transition: background 0.12s ease, transform 0.05s ease;
-}
-.rb-view-more:active,
-.rb-home-create:active { transform: translateY(1px); }
-
-/* ===================== Filter builder ===================== */
+/* ===================== Filter builder (layout only; controls are shadcn components) ===================== */
 body:not(.is-phone) .modal:has(.rb-filter-builder) { width: min(720px, 92vw); }
 
-.rb-filter-empty { color: var(--text-muted); font-size: 13px; padding: 4px 0 12px; }
-
+.rb-filter-empty { padding: 4px 0 12px; color: var(--text-muted); font-size: var(--rb-control-font); }
 .rb-filter-root { display: flex; flex-direction: column; gap: 8px; }
+.rb-filter-line { display: flex; align-items: center; gap: 8px; }
 
-.rb-filter-line {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-/* Aligns the property selects under each other (Where / And / Or column). */
-.rb-filter-prefix {
-  flex: 0 0 64px;
-  display: flex;
-  align-items: center;
-  font-size: 13px;
-  color: var(--text-muted);
-}
-.rb-filter-where { font-weight: 500; }
-.rb-filter-conj-static { font-weight: 500; }
+/* Where / And / Or column, so the property selects line up. */
+.rb-filter-prefix { flex: 0 0 72px; display: flex; align-items: center; color: var(--text-faint); font-size: var(--rb-font-label); }
 
-.rb-filter-rule {
-  flex: 1 1 auto;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  min-width: 0;
-}
-
-/* Inline selects (custom caret, no native glyph clipping). Obsidian gives
-   selects/inputs a fixed height, so set our own and pad only horizontally —
-   vertical padding on top of that height pushes the text down and clips it. */
-/* Size, corners, font and caret come from 00-tokens.css (compact, like other list rows). */
-.rb-filter-select,
-.rb-filter-value:not([data-slot]) {
-  border: 1px solid var(--background-modifier-border);
-  background-color: var(--background-modifier-form-field);
-  color: var(--text-normal);
-}
-/* The multi-select fills the value column like the text box it replaces. */
-.rb-filter-value[data-slot='multi-select'] > [data-slot='multi-select-trigger'] { width: 100%; max-width: none; }
-.rb-filter-select {
-  appearance: none;
-  -webkit-appearance: none;
-  background-repeat: no-repeat;
-  cursor: pointer;
-}
-.rb-filter-conj { flex: 0 0 auto; }
+.rb-filter-rule { flex: 1 1 auto; display: flex; align-items: center; gap: 8px; min-width: 0; }
+.rb-filter-rule > [data-slot='native-select-wrapper'] { flex: 0 1 auto; max-width: 200px; }
 .rb-filter-value { flex: 1 1 120px; min-width: 80px; }
 
-/* Nested group box. */
+/* A nested group: a sunken box holding its own lines. */
 .rb-filter-group-box {
   flex: 1 1 auto;
-  min-width: 0;
   display: flex;
   flex-direction: column;
   gap: 8px;
+  min-width: 0;
   padding: 10px;
-  border: 1px solid var(--background-modifier-border);
-  border-radius: 10px;
-  background: var(--background-secondary);
+  border: 1px solid var(--rb-surface-border);
+  border-radius: var(--rb-surface-radius);
+  background: var(--rb-surface-sunken);
 }
+.rb-filter-add { align-self: flex-start; }
 
-/* The buttons below are scoped under .rb-wizard so they out-rank the generic
-   `.rb-wizard button` chrome in 13-buttons.css (its padding squashed the
-   30px "⋯" button's icon down to a dot). */
-
-/* "⋯" row menu. */
-.rb-wizard .rb-filter-row-menu {
-  flex: 0 0 auto;
-  margin-left: auto;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 30px;
-  height: 30px;
-  padding: 0;
-  border: none;
-  border-radius: 6px;
-  background: transparent;
-  color: var(--text-muted);
-  cursor: pointer;
-}
-.rb-wizard .rb-filter-row-menu:hover { background: var(--background-modifier-hover); color: var(--text-normal); }
-.rb-filter-row-menu svg { width: 17px; height: 17px; }
-
-/* "Add filter rule" button. */
-.rb-wizard .rb-filter-add {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  align-self: flex-start;
-  margin-top: 2px;
-  padding: 6px 10px;
-  border: none;
-  border-radius: 7px;
-  background: transparent;
-  color: var(--text-muted);
-  cursor: pointer;
-  font-size: 13px;
-}
-.rb-wizard .rb-filter-add:hover { background: var(--background-modifier-hover); color: var(--text-normal); }
-.rb-filter-add-icon, .rb-filter-add-caret { display: inline-flex; }
-.rb-filter-add-icon svg { width: 15px; height: 15px; }
-.rb-filter-add-caret svg { width: 13px; height: 13px; opacity: 0.7; }
-
-/* Footer "Delete filter". */
-.rb-filter-footer {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  margin-top: 14px;
-  padding-top: 12px;
-  border-top: 1px solid var(--background-modifier-border);
-}
-.rb-filter-summary { flex: 1; min-width: 0; font-size: var(--font-ui-smaller); color: var(--text-faint); text-align: right; }
-.rb-wizard .rb-filter-delete {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  padding: 7px 12px;
-  border: none;
-  border-radius: 7px;
-  background: transparent;
-  color: var(--text-muted);
-  cursor: pointer;
-  font-size: 13px;
-}
-.rb-wizard .rb-filter-delete:hover { background: transparent; color: var(--text-error); }
-.rb-filter-delete-icon { display: inline-flex; }
-.rb-filter-delete-icon svg { width: 15px; height: 15px; }
+.rb-filter-footer { display: flex; align-items: center; gap: 10px; margin-top: 14px; padding-top: 12px; border-top: 1px solid var(--rb-divider); }
+.rb-filter-summary { flex: 1; min-width: 0; color: var(--text-faint); font-size: var(--rb-font-hint); text-align: right; }
 
 /* ===================== In-place note edit modal ===================== */
 /* Roomy, note-shaped modal that hosts a real embedded editor. */
@@ -2487,18 +1688,15 @@ body:not(.is-phone) .rb-edit-modal {
 /* --- Settings content on phones --- */
 /* Tabs share the width evenly. */
 .is-phone .rb-settings-tabs { overflow-x: visible; }
-.is-phone .rb-wizard .rb-settings-tab { flex: 1 1 0; justify-content: center; padding: 10px 6px; }
-/* Stacked rows (label above, control below): controls take the full width. */
-.is-phone .rb-settings-body .setting-item-control select,
-.is-phone .rb-settings-body .setting-item-control input[type='text'] { flex: 1 1 0; min-width: 0; }
+.is-phone .rb-settings-tab { flex: 1 1 0; justify-content: center; }
+/* Segmented controls fill the row. */
 .is-phone .rb-segmented { display: flex; width: 100%; }
-.is-phone .rb-wizard .rb-segment { flex: 1 1 0; padding: 8px 6px; }
-/* Bigger touch targets for drag handles and icon buttons. */
-.is-phone .rb-drag-handle { padding: 8px 4px; }
-.is-phone .rb-drag-handle svg { width: 18px; height: 18px; }
-.is-phone .rb-wizard .rb-icon-btn { width: 38px; height: 38px; }
+.is-phone .rb-segment { flex: 1 1 0; }
+/* Bigger touch targets for drag handles. */
+.is-phone [data-slot='drag-handle'] { padding: 8px 4px; }
+.is-phone [data-slot='drag-handle'] svg { width: 18px; height: 18px; }
 .is-phone [data-slot='settings-row-body'] { padding-left: 14px; }
-.is-phone .rb-prop-remove-wide[data-slot] { width: 100%; }
+.is-phone .rb-prop-remove-wide { width: 100%; }
 
 /* Wizard: actions pinned at the bottom as full-width buttons. */
 .is-phone .rb-wizard-actions {
@@ -2507,17 +1705,17 @@ body:not(.is-phone) .rb-edit-modal {
   padding: 12px 0 4px;
   background: var(--modal-background, var(--background-primary));
 }
-.is-phone .rb-wizard-actions > button { flex: 1 1 0; height: 44px; }
+.is-phone .rb-wizard-actions > [data-slot='button'] { flex: 1 1 0; }
 
 /* Filter builder: each rule wraps — conjunction + menu on top, then the
    property / operator pair, then the value at full width. */
 .is-phone .rb-filter-line { flex-wrap: wrap; align-items: center; row-gap: 6px; }
 .is-phone .rb-filter-prefix { flex: 1 1 auto; }
-.is-phone .rb-filter-line > .rb-filter-row-menu { order: 2; margin-left: auto; }
+.is-phone .rb-filter-line > [data-slot='button'] { order: 2; margin-left: auto; }
 .is-phone .rb-filter-line > .rb-filter-rule,
 .is-phone .rb-filter-line > .rb-filter-group-box { order: 3; flex: 1 1 100%; }
 .is-phone .rb-filter-rule { flex-wrap: wrap; }
-.is-phone .rb-filter-rule > .rb-filter-select { flex: 1 1 40%; min-width: 0; }
+.is-phone .rb-filter-rule > [data-slot='native-select-wrapper'] { flex: 1 1 40%; max-width: none; }
 .is-phone .rb-filter-rule > .rb-filter-value { flex: 1 1 100%; }
 
 /* Option-colored pills and tags (select / multi values). Color set inline via --oc. */
@@ -2542,33 +1740,10 @@ body:not(.is-phone) .rb-edit-modal {
   cursor: help;
 }
 
-/* Property editor: option list */
-.rb-options { display: flex; flex-direction: column; gap: 6px; width: 100%; }
-.rb-options-list { display: flex; flex-direction: column; gap: 4px; }
-.rb-option-row {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-}
-.rb-option-row input[type='text'] { flex: 1 1 0; min-width: 0; }
-.rb-option-color {
-  flex: none;
-  width: 26px;
-  height: 26px;
-  padding: 0;
-  border: none;
-  background: none;
-  cursor: pointer;
-}
-.rb-option-preview {
-  flex: none;
-  max-width: 110px;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-.rb-option-add { display: flex; gap: 6px; }
-.rb-option-add input { flex: 1; min-width: 0; }
+/* Property editor: option list (SettingsList rows; value + label share the name column) */
+.rb-options { display: flex; flex-direction: column; width: 100%; }
+.rb-option-row [data-slot='input'] { flex: 1 1 0; min-width: 0; }
+.rb-option-row [data-slot='badge'] { max-width: 110px; overflow: hidden; text-overflow: ellipsis; }
 
 /* Row editor (tables) */
 .rb-record .setting-item-name { display: flex; align-items: center; gap: 6px; }
@@ -3035,7 +2210,7 @@ body:not(.is-phone) .modal.rb-quick-add-modal { width: min(560px, 94vw); max-hei
 .is-phone .rb-qa-footer > button { flex: 1 1 0; height: 44px; }
 
 /* Board settings → Automations: each automation a card; triggers and effects read as sentences. */
-/* Layout only: the controls are UI primitives (styles/ui/). */
+/* Layout only: the controls are shadcn components (src/components/ui). */
 .rb-automation {
   display: flex;
   flex-direction: column;
@@ -3048,18 +2223,16 @@ body:not(.is-phone) .modal.rb-quick-add-modal { width: min(560px, 94vw); max-hei
 .rb-automation.is-off { opacity: 0.6; }
 .rb-automation.is-chained { border-color: color-mix(in srgb, var(--color-orange) 55%, var(--rb-surface-border)); }
 .rb-automation-head { display: flex; align-items: center; gap: 8px; }
-.rb-automation-head > [data-slot='input'].rb-automation-name { flex: 1; min-width: 0; font-weight: 600; }
+
 .rb-automation-section { display: flex; flex-direction: column; gap: 6px; }
 .rb-automation-section-head { display: flex; align-items: center; gap: 8px; }
 .rb-automation-kw { min-width: 44px; font-weight: 600; color: var(--text-muted); font-size: var(--rb-font-hint); text-transform: uppercase; letter-spacing: 0.04em; }
 .rb-automation-hint { color: var(--text-faint); font-size: var(--rb-font-hint); }
 .rb-automation-line { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 8px; }
-.rb-automation-line > [data-slot='select'] { width: auto; min-width: 110px; }
-.rb-automation-line > [data-slot='icon-button'] { margin-left: auto; }
+.rb-automation-line > [data-slot='native-select-wrapper'] { min-width: 110px; }
+.rb-automation-line > [data-slot='button']:last-child { margin-left: auto; }
 .rb-automation-join { min-width: 44px; color: var(--text-faint); font-size: var(--rb-font-hint); text-align: right; }
 .rb-automation-join-inline { color: var(--text-faint); font-size: var(--rb-font-hint); }
-.rb-automation-line > [data-slot='input'].rb-automation-text { width: 180px; }
-.rb-automation-line > [data-slot='input'].rb-automation-number { width: 80px; }
 .rb-automation-links { flex: 1 1 200px; min-width: 160px; }
 .rb-automation-check { display: inline-flex; align-items: center; gap: 6px; color: var(--text-muted); font-size: var(--rb-font-hint); cursor: pointer; }
 /* "Add trigger / effect" is a ghost Button; only its place in the section here. */
@@ -3640,7 +2813,7 @@ button.rb-move-row.is-pick:focus-visible .rb-move-row-action,
 .rb-move-summary { flex: 1; min-width: 0; color: var(--text-muted); font-size: var(--font-ui-smaller); }
 
 /* ===================== View settings → Schedule ===================== */
-/* Layout only: the cards, fields, buttons, pills and value boxes are UI primitives (styles/ui/). */
+/* Layout only: the cards, fields, buttons, pills and value boxes are shadcn components (src/components/ui). */
 .rb-sched-settings { display: flex; flex-direction: column; gap: 14px; padding: 4px 0 12px; container-type: inline-size; }
 .rb-sched-card > [data-slot='card-content'] { display: flex; flex-direction: column; gap: 12px; margin-top: 12px; }
 
@@ -3669,7 +2842,7 @@ button.rb-move-row.is-pick:focus-visible .rb-move-row-action,
 }
 .rb-sched-section-name { font-weight: var(--rb-weight-title); }
 .rb-sched-section-off { justify-self: start; padding: 1px 8px; border-radius: 999px; background: var(--rb-icon-chip-bg); color: var(--text-faint); font-size: 11px; }
-.rb-sched-section:not(.is-off) .rb-sched-section-head > [data-slot='icon-button']:first-of-type { grid-column: 4; }
+.rb-sched-section:not(.is-off) .rb-sched-section-head > [data-slot='button']:first-of-type { grid-column: 4; }
 .rb-sched-section.is-off .rb-sched-section-name { color: var(--text-muted); }
 .rb-sched-section > .rb-sched-field-hint { grid-column: 2; margin-top: -2px; color: var(--text-faint); font-size: var(--rb-font-hint); }
 
@@ -3685,9 +2858,7 @@ button.rb-move-row.is-pick:focus-visible .rb-move-row-action,
 
 /* Similar groups: removable pills, then a box to add one. */
 .rb-sched-similar { display: flex; flex-direction: column; gap: 8px; padding-top: 12px; border-top: 1px solid var(--rb-divider); }
-.rb-sched-similar-list { display: flex; flex-wrap: wrap; gap: 6px; }
-.rb-sched-similar-add { display: flex; gap: 8px; max-width: 420px; }
-.rb-sched-similar-add > [data-slot='input'] { flex: 1; min-width: 0; }
+.rb-sched-similar-list { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 6px; }
 
 .rb-sched-error { padding: 6px 10px; border-radius: var(--rb-control-radius-sm); background: color-mix(in srgb, var(--rb-danger-fg) 10%, transparent); color: var(--rb-danger-fg); font-size: var(--rb-control-font-sm); }
 .rb-sched-hint { color: var(--text-muted); font-size: var(--rb-control-font-sm); }
@@ -3703,23 +2874,23 @@ button.rb-move-row.is-pick:focus-visible .rb-move-row-action,
  * theme, different numbers. Base palette (--rbi-*) and Obsidian variable
  * overrides live in 20-surfaces.css; slot-specific rules in 30-slots.css.
  */
-body.rb-theme-industrial :is(.rb-root, .rb-home, .rb-embed, .modal.rb-modal, .menu.rb-menu, .rb-drag-ghost) {
+body.rb-theme-industrial :is(.rb-root, .rb-home, .rb-embed, .modal.rb-modal, .menu.rb-menu, .rb-drag-ghost, .rb-popover, .rb-link-suggest) {
   /* Shape */
   --rb-btn-radius: 999px;
   --rb-btn-radius-sm: 999px;
   --rb-surface-radius: 12px;
 
-  /* Buttons */
-  --rb-btn-primary-bg: var(--rbi-yellow-grad);
+  /* Buttons: flat. Primary is the one yellow action in a dialog. */
+  --rb-btn-primary-bg: var(--rbi-yellow);
   --rb-btn-primary-fg: var(--rbi-yellow-ink);
   --rb-btn-primary-border: transparent;
-  --rb-btn-primary-shadow: var(--rbi-yellow-glow);
-  --rb-btn-primary-hover-filter: brightness(0.97);
-  --rb-btn-secondary-bg: var(--rbi-glass);
+  --rb-btn-primary-shadow: none;
+  --rb-btn-primary-hover-filter: brightness(0.96);
+  --rb-btn-secondary-bg: var(--rbi-plane-flat);
   --rb-btn-secondary-fg: var(--text-normal);
-  --rb-btn-secondary-border: var(--rbi-glass-edge);
-  --rb-btn-secondary-shadow: var(--rbi-glass-shadow);
-  --rb-btn-secondary-hover-bg: var(--rbi-glass);
+  --rb-btn-secondary-border: var(--background-modifier-border);
+  --rb-btn-secondary-shadow: none;
+  --rb-btn-secondary-hover-bg: var(--background-modifier-hover);
   --rb-btn-ghost-fg: var(--text-muted);
   --rb-btn-ghost-hover-fg: var(--text-normal);
   --rb-btn-ghost-hover-bg: var(--background-modifier-hover);
@@ -3768,7 +2939,7 @@ body.rb-theme-industrial :is(.rb-root, .rb-home, .rb-embed, .modal.rb-modal, .me
 
   --rb-danger-fg: #C0263F;
 }
-body.rb-theme-industrial.rb-mode-dark :is(.rb-root, .rb-home, .rb-embed, .modal.rb-modal, .menu.rb-menu, .rb-drag-ghost) {
+body.rb-theme-industrial.rb-mode-dark :is(.rb-root, .rb-home, .rb-embed, .modal.rb-modal, .menu.rb-menu, .rb-drag-ghost, .rb-popover, .rb-link-suggest) {
   --rb-btn-danger-fg: #FF6B83;
   --rb-danger-fg: #FF6B83;
   --rb-switch-off-bg: rgba(255, 255, 255, 0.14);
@@ -3831,7 +3002,7 @@ body.rb-theme-industrial.rb-mode-dark {
 }
 
 /* Where the palette applies: R Board's own elements only. */
-body.rb-theme-industrial.rb-mode-light :is(.rb-root, .rb-home, .rb-embed, .modal.rb-modal, .menu.rb-menu, .rb-drag-ghost) {
+body.rb-theme-industrial.rb-mode-light :is(.rb-root, .rb-home, .rb-embed, .modal.rb-modal, .menu.rb-menu, .rb-drag-ghost, .rb-popover, .rb-link-suggest) {
   color-scheme: light;
   --background-primary: #FFFFFF;
   --background-primary-alt: #F6F6F2;
@@ -3877,7 +3048,7 @@ body.rb-theme-industrial.rb-mode-light :is(.rb-root, .rb-home, .rb-embed, .modal
   --color-green: rgb(var(--color-green-rgb)); --color-cyan: rgb(var(--color-cyan-rgb)); --color-blue: rgb(var(--color-blue-rgb));
   --color-purple: rgb(var(--color-purple-rgb)); --color-pink: rgb(var(--color-pink-rgb));
 }
-body.rb-theme-industrial.rb-mode-dark :is(.rb-root, .rb-home, .rb-embed, .modal.rb-modal, .menu.rb-menu, .rb-drag-ghost) {
+body.rb-theme-industrial.rb-mode-dark :is(.rb-root, .rb-home, .rb-embed, .modal.rb-modal, .menu.rb-menu, .rb-drag-ghost, .rb-popover, .rb-link-suggest) {
   color-scheme: dark;
   --background-primary: #1E1E20;
   --background-primary-alt: #232326;
@@ -3924,7 +3095,7 @@ body.rb-theme-industrial.rb-mode-dark :is(.rb-root, .rb-home, .rb-embed, .modal.
 
 /* Industrial owns every Obsidian variable R Board reads (type, sizes, inputs, menus...): */
 /* the vault's theme, fonts and snippets don't reach inside. */
-body.rb-theme-industrial :is(.rb-root, .rb-home, .rb-embed, .modal.rb-modal, .menu.rb-menu, .rb-drag-ghost) {
+body.rb-theme-industrial :is(.rb-root, .rb-home, .rb-embed, .modal.rb-modal, .menu.rb-menu, .rb-drag-ghost, .rb-popover, .rb-link-suggest) {
   --font-interface: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
   --font-text: var(--font-interface);
   --font-monospace: ui-monospace, SFMono-Regular, Menlo, monospace;
@@ -4001,7 +3172,7 @@ body.rb-theme-industrial :is(.rb-root, .rb-home, .rb-embed, .modal.rb-modal, .me
 }
 /* Obsidian derives these from the palette on <body>, so they'd keep its colors and fonts. */
 /* Declared again here, they follow Industrial's palette (the note editor, properties, code). */
-body.rb-theme-industrial :is(.rb-root, .rb-home, .rb-embed, .modal.rb-modal, .menu.rb-menu, .rb-drag-ghost) {
+body.rb-theme-industrial :is(.rb-root, .rb-home, .rb-embed, .modal.rb-modal, .menu.rb-menu, .rb-drag-ghost, .rb-popover, .rb-link-suggest) {
   --caret-color: var(--text-normal);
   --divider-color: var(--background-modifier-border);
   --divider-color-hover: var(--text-faint);
@@ -4354,42 +3525,7 @@ body.rb-theme-industrial.rb-mode-dark { --rb-chart-palette: #ECECE6, #E9CD62, #8
 .rb-theme-industrial.rb-mode-dark .modal.rb-modal .rb-settings-body { background: rgba(0, 0, 0, 0.15); }
 .rb-theme-industrial .modal.rb-modal .rb-section-count { background: var(--background-modifier-hover); }
 
-/* ---------- Filters: Where / and-or pills, soft fields, a glass "Add filter rule", Done ---------- */
 .rb-theme-industrial .modal.rb-modal.rb-filter-modal { padding-bottom: 0; }
-.rb-theme-industrial .modal.rb-modal .rb-filter-line { gap: 8px; }
-.rb-theme-industrial .modal.rb-modal .rb-filter-prefix { flex-basis: 64px; font-size: 12px; color: var(--text-faint); }
-.rb-theme-industrial .modal.rb-modal .rb-filter-select.rb-filter-conj {
-  height: 24px;
-  padding: 0 22px 0 10px;
-  border-radius: 999px;
-  background-color: transparent;
-  background-position: right 7px center;
-  background-size: 10px;
-  box-shadow: none;
-  color: var(--text-muted);
-  font-size: 12px;
-  text-transform: lowercase;
-}
-.rb-theme-industrial .modal.rb-modal .rb-filter-conj-static { font-weight: 400; text-transform: lowercase; }
-.rb-theme-industrial .modal.rb-modal .rb-filter-group-box { border-radius: 12px; background: var(--rbi-sunken); }
-.rb-theme-industrial .modal.rb-modal .rb-wizard .rb-filter-add {
-  height: 30px;
-  padding: 0 12px;
-  border: 1px solid var(--rbi-glass-edge);
-  border-radius: 999px;
-  background: var(--rbi-glass);
-  box-shadow: var(--rbi-glass-shadow);
-  color: var(--text-muted);
-  font-size: 12.5px;
-}
-.rb-theme-industrial .modal.rb-modal .rb-wizard .rb-filter-add:hover { color: var(--text-normal); }
-.rb-theme-industrial .modal.rb-modal .rb-filter-footer {
-  margin: 16px calc(var(--size-4-4) * -1) 0;
-  padding: 12px var(--size-4-4);
-  background: rgba(28, 28, 30, 0.02);
-}
-.rb-theme-industrial .modal.rb-modal .rb-wizard .rb-filter-delete { height: 32px; padding: 0 12px; border-radius: 999px; }
-.rb-theme-industrial .modal.rb-modal .rb-filter-done { height: 32px; padding: 0 18px; }
 .rb-theme-industrial .modal.rb-modal .rb-export-preview {
   margin: 10px 0 0;
   max-height: 260px;
@@ -4406,23 +3542,6 @@ body.rb-theme-industrial.rb-mode-dark { --rb-chart-palette: #ECECE6, #E9CD62, #8
   background-color: var(--rb-field-bg);
 }
 
-/* Plain buttons in our modals: a glass pill (the yellow .mod-cta stays the one primary). */
-.rb-theme-industrial .modal.rb-modal button:not([data-slot]):not(.mod-cta):not(.mod-warning):not(.clickable-icon):not([class*='rb-']):not([role='radio']):not([role='tab']) {
-  background: var(--rbi-glass);
-  color: var(--text-normal);
-  border: 1px solid var(--rbi-glass-edge);
-  border-radius: 999px;
-  box-shadow: var(--rbi-glass-shadow);
-}
-
-/* Obsidian's own danger buttons only; the kit's danger Button takes its look from tokens. */
-.rb-theme-industrial .modal.rb-modal button.mod-warning:not([data-slot]) {
-  border-radius: 999px;
-  background: var(--rb-btn-danger-bg);
-  border: 1px solid var(--rb-btn-danger-border);
-  color: var(--rb-btn-danger-fg);
-  box-shadow: none;
-}
 
 /* ---------- Menus (ours only): a glass popover ---------- */
 .rb-theme-industrial .menu.rb-menu {
@@ -4514,6 +3633,13 @@ body.rb-theme-industrial.rb-mode-dark { --rb-chart-palette: #ECECE6, #E9CD62, #8
       --tw-translate-y: 0;
       --tw-translate-z: 0;
       --tw-border-style: solid;
+      --tw-leading: initial;
+      --tw-font-weight: initial;
+      --tw-ordinal: initial;
+      --tw-slashed-zero: initial;
+      --tw-numeric-figure: initial;
+      --tw-numeric-spacing: initial;
+      --tw-numeric-fraction: initial;
       --tw-shadow: 0 0 #0000;
       --tw-shadow-color: initial;
       --tw-shadow-alpha: 100%;
@@ -4528,41 +3654,296 @@ body.rb-theme-industrial.rb-mode-dark { --rb-chart-palette: #ECECE6, #E9CD62, #8
       --tw-ring-offset-width: 0px;
       --tw-ring-offset-color: #fff;
       --tw-ring-offset-shadow: 0 0 #0000;
+      --tw-blur: initial;
+      --tw-brightness: initial;
+      --tw-contrast: initial;
+      --tw-grayscale: initial;
+      --tw-hue-rotate: initial;
+      --tw-invert: initial;
+      --tw-opacity: initial;
+      --tw-saturate: initial;
+      --tw-sepia: initial;
+      --tw-drop-shadow: initial;
+      --tw-drop-shadow-color: initial;
+      --tw-drop-shadow-alpha: 100%;
+      --tw-drop-shadow-size: initial;
     }
   }
 }
 
 :root, :host {
+  --rb-spacing: .25rem;
+  --rb-text-sm: .875rem;
+  --rb-text-sm--line-height: calc(1.25 / .875);
+  --rb-text-base: 1rem;
+  --rb-text-base--line-height: calc(1.5 / 1);
+  --rb-font-weight-normal: 400;
+  --rb-font-weight-medium: 500;
+  --rb-font-weight-semibold: 600;
+  --rb-leading-snug: 1.375;
   --rb-default-transition-duration: .15s;
   --rb-default-transition-timing-function: cubic-bezier(.4, 0, .2, 1);
+}
+
+.rb\:\@container\/field-group {
+  container: field-group / inline-size !important;
 }
 
 .rb\:pointer-events-none {
   pointer-events: none !important;
 }
 
+.rb\:absolute {
+  position: absolute !important;
+}
+
 .rb\:relative {
   position: relative !important;
+}
+
+.rb\:inset-0 {
+  inset: 0 !important;
+}
+
+.rb\:top-1\/2 {
+  top: 50% !important;
+}
+
+.rb\:right-2\.5 {
+  right: calc(var(--rb-spacing) * 2.5) !important;
+}
+
+.rb\:z-10 {
+  z-index: 10 !important;
+}
+
+.rb\:z-\[var\(--layer-menu\,65\)\] {
+  z-index: var(--layer-menu, 65) !important;
+}
+
+.rb\:col-start-2 {
+  grid-column-start: 2 !important;
+}
+
+.rb\:col-start-3 {
+  grid-column-start: 3 !important;
+}
+
+.rb\:row-span-2 {
+  grid-row: span 2 / span 2 !important;
+}
+
+.rb\:row-start-1 {
+  grid-row-start: 1 !important;
 }
 
 .rb\:m-0 {
   margin: 0 !important;
 }
 
+.rb\:mx-0 {
+  margin-inline: 0 !important;
+}
+
+.rb\:mx-auto {
+  margin-inline: auto !important;
+}
+
+.rb\:-my-2 {
+  margin-block: calc(var(--rb-spacing) * -2) !important;
+}
+
+.rb\:mt-2\.5 {
+  margin-top: calc(var(--rb-spacing) * 2.5) !important;
+}
+
+.rb\:-mr-1 {
+  margin-right: calc(var(--rb-spacing) * -1) !important;
+}
+
+.rb\:mr-2 {
+  margin-right: calc(var(--rb-spacing) * 2) !important;
+}
+
+.rb\:mb-0 {
+  margin-bottom: 0 !important;
+}
+
+.rb\:mb-3 {
+  margin-bottom: calc(var(--rb-spacing) * 3) !important;
+}
+
+.rb\:ml-4 {
+  margin-left: calc(var(--rb-spacing) * 4) !important;
+}
+
+.rb\:ml-auto {
+  margin-left: auto !important;
+}
+
+.rb\:box-border {
+  box-sizing: border-box !important;
+}
+
 .rb\:block {
   display: block !important;
+}
+
+.rb\:flex {
+  display: flex !important;
+}
+
+.rb\:grid {
+  display: grid !important;
+}
+
+.rb\:inline-block {
+  display: inline-block !important;
 }
 
 .rb\:inline-flex {
   display: inline-flex !important;
 }
 
+.rb\:inline-grid {
+  display: inline-grid !important;
+}
+
+.rb\:size-2 {
+  width: calc(var(--rb-spacing) * 2) !important;
+  height: calc(var(--rb-spacing) * 2) !important;
+}
+
+.rb\:size-3\.5 {
+  width: calc(var(--rb-spacing) * 3.5) !important;
+  height: calc(var(--rb-spacing) * 3.5) !important;
+}
+
+.rb\:size-4 {
+  width: calc(var(--rb-spacing) * 4) !important;
+  height: calc(var(--rb-spacing) * 4) !important;
+}
+
+.rb\:size-5 {
+  width: calc(var(--rb-spacing) * 5) !important;
+  height: calc(var(--rb-spacing) * 5) !important;
+}
+
+.rb\:size-7\.5 {
+  width: calc(var(--rb-spacing) * 7.5) !important;
+  height: calc(var(--rb-spacing) * 7.5) !important;
+}
+
+.rb\:size-control {
+  width: var(--rb-control-h) !important;
+  height: var(--rb-control-h) !important;
+}
+
+.rb\:size-control-sm {
+  width: var(--rb-control-h-sm) !important;
+  height: var(--rb-control-h-sm) !important;
+}
+
+.rb\:size-full {
+  width: 100% !important;
+  height: 100% !important;
+}
+
+.rb\:size-icon-btn-sm {
+  width: var(--rb-icon-btn-sm) !important;
+  height: var(--rb-icon-btn-sm) !important;
+}
+
+.rb\:h-5 {
+  height: calc(var(--rb-spacing) * 5) !important;
+}
+
+.rb\:h-6 {
+  height: calc(var(--rb-spacing) * 6) !important;
+}
+
+.rb\:h-10 {
+  height: calc(var(--rb-spacing) * 10) !important;
+}
+
+.rb\:h-\[calc\(var\(--rb-control-h\)-8px\)\] {
+  height: calc(var(--rb-control-h) - 8px) !important;
+}
+
+.rb\:h-\[calc\(var\(--rb-control-h-sm\)-8px\)\] {
+  height: calc(var(--rb-control-h-sm) - 8px) !important;
+}
+
 .rb\:h-\[calc\(var\(--rb-switch-h\)-2\*var\(--rb-switch-pad\)\)\] {
   height: calc(var(--rb-switch-h) - 2 * var(--rb-switch-pad)) !important;
 }
 
+.rb\:h-control {
+  height: var(--rb-control-h) !important;
+}
+
+.rb\:h-control-sm {
+  height: var(--rb-control-h-sm) !important;
+}
+
+.rb\:h-full {
+  height: 100% !important;
+}
+
+.rb\:h-pill-h {
+  height: var(--rb-pill-h) !important;
+}
+
 .rb\:h-switch-h {
   height: var(--rb-switch-h) !important;
+}
+
+.rb\:max-h-\[var\(--radix-popover-content-available-height\)\] {
+  max-height: var(--radix-popover-content-available-height) !important;
+}
+
+.rb\:min-h-row {
+  min-height: var(--rb-row-h) !important;
+}
+
+.rb\:w-20 {
+  width: calc(var(--rb-spacing) * 20) !important;
+}
+
+.rb\:w-24 {
+  width: calc(var(--rb-spacing) * 24) !important;
+}
+
+.rb\:w-72 {
+  width: calc(var(--rb-spacing) * 72) !important;
+}
+
+.rb\:w-\[180px\] {
+  width: 180px !important;
+}
+
+.rb\:w-\[var\(--radix-popover-trigger-width\)\] {
+  width: var(--radix-popover-trigger-width) !important;
+}
+
+.rb\:w-auto {
+  width: auto !important;
+}
+
+.rb\:w-fit {
+  width: fit-content !important;
+}
+
+.rb\:w-full {
+  width: 100% !important;
+}
+
+.rb\:w-icon-btn-sm {
+  width: var(--rb-icon-btn-sm) !important;
+}
+
+.rb\:w-icon-sm {
+  width: var(--rb-icon-size-sm) !important;
 }
 
 .rb\:w-switch-thumb {
@@ -4573,8 +3954,44 @@ body.rb-theme-industrial.rb-mode-dark { --rb-chart-palette: #ECECE6, #E9CD62, #8
   width: var(--rb-switch-w) !important;
 }
 
+.rb\:max-w-\[260px\] {
+  max-width: 260px !important;
+}
+
+.rb\:max-w-full {
+  max-width: 100% !important;
+}
+
+.rb\:max-w-none {
+  max-width: none !important;
+}
+
+.rb\:min-w-0 {
+  min-width: 0 !important;
+}
+
+.rb\:min-w-\[200px\] {
+  min-width: 200px !important;
+}
+
+.rb\:min-w-\[var\(--radix-popover-trigger-width\)\] {
+  min-width: var(--radix-popover-trigger-width) !important;
+}
+
+.rb\:flex-1 {
+  flex: 1 !important;
+}
+
 .rb\:shrink-0 {
   flex-shrink: 0 !important;
+}
+
+.rb\:basis-\[220px\] {
+  flex-basis: 220px !important;
+}
+
+.rb\:origin-\(--radix-popover-content-transform-origin\) {
+  transform-origin: var(--radix-popover-content-transform-origin) !important;
 }
 
 .rb\:translate-x-switch-pad {
@@ -4582,12 +3999,211 @@ body.rb-theme-industrial.rb-mode-dark { --rb-chart-palette: #ECECE6, #E9CD62, #8
   translate: var(--tw-translate-x) var(--tw-translate-y) !important;
 }
 
+.rb\:-translate-y-1\/2 {
+  --tw-translate-y: calc(calc(1 / 2 * 100%) * -1) !important;
+  translate: var(--tw-translate-x) var(--tw-translate-y) !important;
+}
+
+.rb\:cursor-grab {
+  cursor: grab !important;
+}
+
+.rb\:cursor-grabbing {
+  cursor: grabbing !important;
+}
+
 .rb\:cursor-pointer {
   cursor: pointer !important;
 }
 
+.rb\:cursor-text {
+  cursor: text !important;
+}
+
+.rb\:touch-none {
+  touch-action: none !important;
+}
+
+.rb\:\[scrollbar-width\:none\] {
+  scrollbar-width: none !important;
+}
+
+.rb\:list-disc {
+  list-style-type: disc !important;
+}
+
+.rb\:appearance-none {
+  appearance: none !important;
+}
+
+.rb\:auto-rows-min {
+  grid-auto-rows: min-content !important;
+}
+
+.rb\:grid-cols-\[auto_1fr\] {
+  grid-template-columns: auto 1fr !important;
+}
+
+.rb\:flex-col {
+  flex-direction: column !important;
+}
+
+.rb\:flex-row {
+  flex-direction: row !important;
+}
+
+.rb\:flex-wrap {
+  flex-wrap: wrap !important;
+}
+
+.rb\:place-items-center {
+  place-items: center !important;
+}
+
 .rb\:items-center {
   align-items: center !important;
+}
+
+.rb\:items-start {
+  align-items: flex-start !important;
+}
+
+.rb\:justify-between {
+  justify-content: space-between !important;
+}
+
+.rb\:justify-center {
+  justify-content: center !important;
+}
+
+.rb\:justify-end {
+  justify-content: flex-end !important;
+}
+
+.rb\:justify-start {
+  justify-content: flex-start !important;
+}
+
+.rb\:gap-0 {
+  gap: 0 !important;
+}
+
+.rb\:gap-0\.5 {
+  gap: calc(var(--rb-spacing) * .5) !important;
+}
+
+.rb\:gap-1 {
+  gap: var(--rb-spacing) !important;
+}
+
+.rb\:gap-1\.5 {
+  gap: calc(var(--rb-spacing) * 1.5) !important;
+}
+
+.rb\:gap-2 {
+  gap: calc(var(--rb-spacing) * 2) !important;
+}
+
+.rb\:gap-2\.5 {
+  gap: calc(var(--rb-spacing) * 2.5) !important;
+}
+
+.rb\:gap-3 {
+  gap: calc(var(--rb-spacing) * 3) !important;
+}
+
+.rb\:gap-4 {
+  gap: calc(var(--rb-spacing) * 4) !important;
+}
+
+.rb\:gap-6 {
+  gap: calc(var(--rb-spacing) * 6) !important;
+}
+
+.rb\:gap-7 {
+  gap: calc(var(--rb-spacing) * 7) !important;
+}
+
+.rb\:gap-\[var\(--rb-tabs-gap\)\] {
+  gap: var(--rb-tabs-gap) !important;
+}
+
+.rb\:gap-x-3 {
+  column-gap: calc(var(--rb-spacing) * 3) !important;
+}
+
+.rb\:gap-y-0\.5 {
+  row-gap: calc(var(--rb-spacing) * .5) !important;
+}
+
+.rb\:gap-y-2 {
+  row-gap: calc(var(--rb-spacing) * 2) !important;
+}
+
+.rb\:self-start {
+  align-self: flex-start !important;
+}
+
+.rb\:justify-self-end {
+  justify-self: flex-end !important;
+}
+
+.rb\:truncate {
+  text-overflow: ellipsis !important;
+  white-space: nowrap !important;
+  overflow: hidden !important;
+}
+
+.rb\:overflow-hidden {
+  overflow: hidden !important;
+}
+
+.rb\:overflow-x-auto {
+  overflow-x: auto !important;
+}
+
+.rb\:overflow-y-auto {
+  overflow-y: auto !important;
+}
+
+.rb\:overflow-y-hidden {
+  overflow-y: hidden !important;
+}
+
+.rb\:rounded-\[4px\] {
+  border-radius: 4px !important;
+}
+
+.rb\:rounded-\[calc\(var\(--rb-control-radius\)-3px\)\] {
+  border-radius: calc(var(--rb-control-radius) - 3px) !important;
+}
+
+.rb\:rounded-button {
+  border-radius: var(--rb-btn-radius) !important;
+}
+
+.rb\:rounded-button-sm {
+  border-radius: var(--rb-btn-radius-sm) !important;
+}
+
+.rb\:rounded-control {
+  border-radius: var(--rb-control-radius) !important;
+}
+
+.rb\:rounded-control-sm {
+  border-radius: var(--rb-control-radius-sm) !important;
+}
+
+.rb\:rounded-full {
+  border-radius: 2147483647px !important;
+}
+
+.rb\:rounded-pill {
+  border-radius: var(--rb-pill-radius) !important;
+}
+
+.rb\:rounded-surface {
+  border-radius: var(--rb-surface-radius) !important;
 }
 
 .rb\:rounded-switch {
@@ -4598,9 +4214,121 @@ body.rb-theme-industrial.rb-mode-dark { --rb-chart-palette: #ECECE6, #E9CD62, #8
   border-radius: var(--rb-switch-thumb-radius) !important;
 }
 
+.rb\:border {
+  border-style: var(--tw-border-style) !important;
+  border-width: 1px !important;
+}
+
 .rb\:border-0 {
   border-style: var(--tw-border-style) !important;
   border-width: 0 !important;
+}
+
+.rb\:border-x-0 {
+  border-inline-style: var(--tw-border-style) !important;
+  border-inline-width: 0 !important;
+}
+
+.rb\:border-t {
+  border-top-style: var(--tw-border-style) !important;
+  border-top-width: 1px !important;
+}
+
+.rb\:border-b-0 {
+  border-bottom-style: var(--tw-border-style) !important;
+  border-bottom-width: 0 !important;
+}
+
+.rb\:border-dashed {
+  --tw-border-style: dashed !important;
+  border-style: dashed !important;
+}
+
+.rb\:border-solid {
+  --tw-border-style: solid !important;
+  border-style: solid !important;
+}
+
+.rb\:border-\[var\(--rb-popover-border\)\] {
+  border-color: var(--rb-popover-border) !important;
+}
+
+.rb\:border-border {
+  border-color: var(--rb-surface-border) !important;
+}
+
+.rb\:border-danger-border {
+  border-color: var(--rb-btn-danger-border) !important;
+}
+
+.rb\:border-divider {
+  border-color: var(--rb-divider) !important;
+}
+
+.rb\:border-input {
+  border-color: var(--rb-field-border) !important;
+}
+
+.rb\:border-input-hover {
+  border-color: var(--rb-field-border-hover) !important;
+}
+
+.rb\:border-secondary-border {
+  border-color: var(--rb-btn-secondary-border) !important;
+}
+
+.rb\:border-track-border {
+  border-color: var(--rb-track-border) !important;
+}
+
+.rb\:border-transparent {
+  border-color: #0000 !important;
+}
+
+.rb\:bg-\[color-mix\(in_srgb\,var\(--rb-pill-c\,var\(--rb-pill-default\)\)_22\%\,transparent\)\] {
+  background-color: var(--rb-pill-c, var(--rb-pill-default)) !important;
+}
+
+@supports (color: color-mix(in lab, red, red)) {
+  .rb\:bg-\[color-mix\(in_srgb\,var\(--rb-pill-c\,var\(--rb-pill-default\)\)_22\%\,transparent\)\] {
+    background-color: color-mix(in srgb,var(--rb-pill-c, var(--rb-pill-default)) 22%,transparent) !important;
+  }
+}
+
+.rb\:bg-accent {
+  background-color: var(--background-modifier-hover) !important;
+}
+
+.rb\:bg-background {
+  background-color: var(--rb-field-bg) !important;
+}
+
+.rb\:bg-card {
+  background-color: var(--rb-surface-bg) !important;
+}
+
+.rb\:bg-danger-surface {
+  background-color: var(--rb-btn-danger-bg) !important;
+}
+
+.rb\:bg-divider {
+  background-color: var(--rb-divider) !important;
+}
+
+.rb\:bg-field {
+  background-color: var(--rb-field-bg) !important;
+}
+
+.rb\:bg-popover {
+  background-color: var(--rb-popover-bg) !important;
+}
+
+.rb\:bg-primary {
+  background-color: var(--rb-btn-primary-bg) !important;
+}
+
+.rb\:bg-secondary {
+  background-color: var(--rb-btn-secondary-bg) !important;
 }
 
 .rb\:bg-switch-off {
@@ -4611,8 +4339,278 @@ body.rb-theme-industrial.rb-mode-dark { --rb-chart-palette: #ECECE6, #E9CD62, #8
   background-color: var(--rb-switch-thumb) !important;
 }
 
+.rb\:bg-track {
+  background-color: var(--rb-track-bg) !important;
+}
+
+.rb\:bg-transparent {
+  background-color: #0000 !important;
+}
+
+.rb\:bg-none {
+  background-image: none !important;
+}
+
 .rb\:p-0 {
   padding: 0 !important;
+}
+
+.rb\:p-1 {
+  padding: var(--rb-spacing) !important;
+}
+
+.rb\:p-1\.5 {
+  padding: calc(var(--rb-spacing) * 1.5) !important;
+}
+
+.rb\:p-\[3px\] {
+  padding: 3px !important;
+}
+
+.rb\:px-0 {
+  padding-inline: 0 !important;
+}
+
+.rb\:px-0\.5 {
+  padding-inline: calc(var(--rb-spacing) * .5) !important;
+}
+
+.rb\:px-1 {
+  padding-inline: var(--rb-spacing) !important;
+}
+
+.rb\:px-2 {
+  padding-inline: calc(var(--rb-spacing) * 2) !important;
+}
+
+.rb\:px-4 {
+  padding-inline: calc(var(--rb-spacing) * 4) !important;
+}
+
+.rb\:px-6 {
+  padding-inline: calc(var(--rb-spacing) * 6) !important;
+}
+
+.rb\:px-btn-px {
+  padding-inline: var(--rb-btn-px) !important;
+}
+
+.rb\:px-btn-px-sm {
+  padding-inline: var(--rb-btn-px-sm) !important;
+}
+
+.rb\:px-control-px {
+  padding-inline: var(--rb-control-px) !important;
+}
+
+.rb\:px-control-px-sm {
+  padding-inline: var(--rb-control-px-sm) !important;
+}
+
+.rb\:py-0 {
+  padding-block: 0 !important;
+}
+
+.rb\:py-1 {
+  padding-block: var(--rb-spacing) !important;
+}
+
+.rb\:py-2\.5 {
+  padding-block: calc(var(--rb-spacing) * 2.5) !important;
+}
+
+.rb\:py-3\.5 {
+  padding-block: calc(var(--rb-spacing) * 3.5) !important;
+}
+
+.rb\:pt-3 {
+  padding-top: calc(var(--rb-spacing) * 3) !important;
+}
+
+.rb\:pr-2 {
+  padding-right: calc(var(--rb-spacing) * 2) !important;
+}
+
+.rb\:pr-3\.5 {
+  padding-right: calc(var(--rb-spacing) * 3.5) !important;
+}
+
+.rb\:pr-8 {
+  padding-right: calc(var(--rb-spacing) * 8) !important;
+}
+
+.rb\:pb-3\.5 {
+  padding-bottom: calc(var(--rb-spacing) * 3.5) !important;
+}
+
+.rb\:pl-2\.5 {
+  padding-left: calc(var(--rb-spacing) * 2.5) !important;
+}
+
+.rb\:pl-control-px {
+  padding-left: var(--rb-control-px) !important;
+}
+
+.rb\:pl-row-indent {
+  padding-left: var(--rb-row-indent) !important;
+}
+
+.rb\:text-left {
+  text-align: left !important;
+}
+
+.rb\:text-sm {
+  font-size: var(--rb-text-sm) !important;
+  line-height: var(--tw-leading, var(--rb-text-sm--line-height)) !important;
+}
+
+.rb\:text-\[length\:var\(--rb-pill-font\)\] {
+  font-size: var(--rb-pill-font) !important;
+}
+
+.rb\:text-control {
+  font-size: var(--rb-control-font) !important;
+}
+
+.rb\:text-control-sm {
+  font-size: var(--rb-control-font-sm) !important;
+}
+
+.rb\:text-hint {
+  font-size: var(--rb-font-hint) !important;
+}
+
+.rb\:text-label {
+  font-size: var(--rb-font-label) !important;
+}
+
+.rb\:text-title {
+  font-size: var(--rb-font-title) !important;
+}
+
+.rb\:leading-none {
+  --tw-leading: 1 !important;
+  line-height: 1 !important;
+}
+
+.rb\:leading-snug {
+  --tw-leading: var(--rb-leading-snug) !important;
+  line-height: var(--rb-leading-snug) !important;
+}
+
+.rb\:font-medium {
+  --tw-font-weight: var(--rb-font-weight-medium) !important;
+  font-weight: var(--rb-font-weight-medium) !important;
+}
+
+.rb\:font-normal {
+  --tw-font-weight: var(--rb-font-weight-normal) !important;
+  font-weight: var(--rb-font-weight-normal) !important;
+}
+
+.rb\:font-semibold {
+  --tw-font-weight: var(--rb-font-weight-semibold) !important;
+  font-weight: var(--rb-font-weight-semibold) !important;
+}
+
+.rb\:whitespace-nowrap {
+  white-space: nowrap !important;
+}
+
+.rb\:text-\[color-mix\(in_srgb\,var\(--rb-pill-c\,var\(--rb-pill-default\)\)_65\%\,var\(--text-normal\)\)\] {
+  color: var(--rb-pill-c, var(--rb-pill-default)) !important;
+}
+
+@supports (color: color-mix(in lab, red, red)) {
+  .rb\:text-\[color-mix\(in_srgb\,var\(--rb-pill-c\,var\(--rb-pill-default\)\)_65\%\,var\(--text-normal\)\)\] {
+    color: color-mix(in srgb,var(--rb-pill-c, var(--rb-pill-default)) 65%,var(--text-normal)) !important;
+  }
+}
+
+.rb\:text-card-foreground {
+  color: var(--text-normal) !important;
+}
+
+.rb\:text-destructive {
+  color: var(--rb-danger-fg) !important;
+}
+
+.rb\:text-faint-foreground {
+  color: var(--text-faint) !important;
+}
+
+.rb\:text-foreground {
+  color: var(--text-normal) !important;
+}
+
+.rb\:text-ghost-foreground {
+  color: var(--rb-btn-ghost-fg) !important;
+}
+
+.rb\:text-icon-foreground {
+  color: var(--rb-icon-btn-fg) !important;
+}
+
+.rb\:text-inherit {
+  color: inherit !important;
+}
+
+.rb\:text-muted-foreground {
+  color: var(--text-muted) !important;
+}
+
+.rb\:text-popover-foreground {
+  color: var(--text-normal) !important;
+}
+
+.rb\:text-primary-foreground {
+  color: var(--rb-btn-primary-fg) !important;
+}
+
+.rb\:text-secondary-foreground {
+  color: var(--rb-btn-secondary-fg) !important;
+}
+
+.rb\:tabular-nums {
+  --tw-numeric-spacing: tabular-nums !important;
+  font-variant-numeric: var(--tw-ordinal, ) var(--tw-slashed-zero, ) var(--tw-numeric-figure, ) var(--tw-numeric-spacing, ) var(--tw-numeric-fraction, ) !important;
+}
+
+.rb\:underline-offset-4 {
+  text-underline-offset: 4px !important;
+}
+
+.rb\:opacity-0 {
+  opacity: 0 !important;
+}
+
+.rb\:opacity-60 {
+  opacity: .6 !important;
+}
+
+.rb\:shadow-\[inset_0_-1px_0_var\(--rb-divider\)\] {
+  --tw-shadow: inset 0 -1px 0 var(--tw-shadow-color, var(--rb-divider)) !important;
+  box-shadow: var(--tw-inset-shadow), var(--tw-inset-ring-shadow), var(--tw-ring-offset-shadow), var(--tw-ring-shadow), var(--tw-shadow) !important;
+}
+
+.rb\:shadow-\[inset_0_0_0_1px_rgba\(0\,0\,0\,0\.08\)\] {
+  --tw-shadow: inset 0 0 0 1px var(--tw-shadow-color, #00000014) !important;
+  box-shadow: var(--tw-inset-shadow), var(--tw-inset-ring-shadow), var(--tw-ring-offset-shadow), var(--tw-ring-shadow), var(--tw-shadow) !important;
+}
+
+.rb\:shadow-button-primary {
+  --tw-shadow: var(--rb-btn-primary-shadow) !important;
+  box-shadow: var(--tw-inset-shadow), var(--tw-inset-ring-shadow), var(--tw-ring-offset-shadow), var(--tw-ring-shadow), var(--tw-shadow) !important;
+}
+
+.rb\:shadow-button-secondary {
+  --tw-shadow: var(--rb-btn-secondary-shadow) !important;
+  box-shadow: var(--tw-inset-shadow), var(--tw-inset-ring-shadow), var(--tw-ring-offset-shadow), var(--tw-ring-shadow), var(--tw-shadow) !important;
+}
+
+.rb\:shadow-lg {
+  --tw-shadow: 0 10px 15px -3px var(--tw-shadow-color, #0000001a), 0 4px 6px -4px var(--tw-shadow-color, #0000001a) !important;
+  box-shadow: var(--tw-inset-shadow), var(--tw-inset-ring-shadow), var(--tw-ring-offset-shadow), var(--tw-ring-shadow), var(--tw-shadow) !important;
 }
 
 .rb\:shadow-none {
@@ -4620,9 +4618,31 @@ body.rb-theme-industrial.rb-mode-dark { --rb-chart-palette: #ECECE6, #E9CD62, #8
   box-shadow: var(--tw-inset-shadow), var(--tw-inset-ring-shadow), var(--tw-ring-offset-shadow), var(--tw-ring-shadow), var(--tw-shadow) !important;
 }
 
+.rb\:shadow-popover {
+  --tw-shadow: var(--rb-popover-shadow) !important;
+  box-shadow: var(--tw-inset-shadow), var(--tw-inset-ring-shadow), var(--tw-ring-offset-shadow), var(--tw-ring-shadow), var(--tw-shadow) !important;
+}
+
 .rb\:shadow-sm {
   --tw-shadow: 0 1px 3px 0 var(--tw-shadow-color, #0000001a), 0 1px 2px -1px var(--tw-shadow-color, #0000001a) !important;
   box-shadow: var(--tw-inset-shadow), var(--tw-inset-ring-shadow), var(--tw-ring-offset-shadow), var(--tw-ring-shadow), var(--tw-shadow) !important;
+}
+
+.rb\:shadow-surface {
+  --tw-shadow: var(--rb-surface-shadow) !important;
+  box-shadow: var(--tw-inset-shadow), var(--tw-inset-ring-shadow), var(--tw-ring-offset-shadow), var(--tw-ring-shadow), var(--tw-shadow) !important;
+}
+
+.rb\:outline-hidden {
+  --tw-outline-style: none !important;
+  outline-style: none !important;
+}
+
+@media (forced-colors: active) {
+  .rb\:outline-hidden {
+    outline-offset: 2px !important;
+    outline: 2px solid #0000 !important;
+  }
 }
 
 .rb\:transition-colors {
@@ -4642,21 +4662,292 @@ body.rb-theme-industrial.rb-mode-dark { --rb-chart-palette: #ECECE6, #E9CD62, #8
   outline-style: none !important;
 }
 
+.rb\:select-none {
+  -webkit-user-select: none !important;
+  user-select: none !important;
+}
+
+:is(:where(.rb\:group)[data-disabled="true"] .rb\:group-data-\[disabled\=true\]\:pointer-events-none) {
+  pointer-events: none !important;
+}
+
+:is(:where(.rb\:group)[data-disabled="true"] .rb\:group-data-\[disabled\=true\]\:opacity-50), :is(:where(.rb\:group\/field)[data-disabled="true"] .rb\:group-data-\[disabled\=true\]\/field\:opacity-50) {
+  opacity: .5 !important;
+}
+
+:is(:where(.rb\:group\/tabs)[data-orientation="vertical"] .rb\:group-data-\[orientation\=vertical\]\/tabs\:h-fit) {
+  height: fit-content !important;
+}
+
+:is(:where(.rb\:group\/tabs)[data-orientation="vertical"] .rb\:group-data-\[orientation\=vertical\]\/tabs\:flex-col) {
+  flex-direction: column !important;
+}
+
+:is(:where(.rb\:group\/tabs-list)[data-variant="default"] .rb\:group-data-\[variant\=default\]\/tabs-list\:h-\[calc\(var\(--rb-control-h\)-8px\)\]) {
+  height: calc(var(--rb-control-h) - 8px) !important;
+}
+
+:is(:where(.rb\:group\/tabs-list)[data-variant="default"] .rb\:group-data-\[variant\=default\]\/tabs-list\:rounded-control-sm) {
+  border-radius: var(--rb-control-radius-sm) !important;
+}
+
+:is(:where(.rb\:group\/tabs-list)[data-variant="default"] .rb\:group-data-\[variant\=default\]\/tabs-list\:px-control-px) {
+  padding-inline: var(--rb-control-px) !important;
+}
+
+:is(:where(.rb\:group\/tabs-list)[data-variant="line"] .rb\:group-data-\[variant\=line\]\/tabs-list\:h-auto) {
+  height: auto !important;
+}
+
+:is(:where(.rb\:group\/tabs-list)[data-variant="line"] .rb\:group-data-\[variant\=line\]\/tabs-list\:rounded-none) {
+  border-radius: 0 !important;
+}
+
+:is(:where(.rb\:group\/tabs-list)[data-variant="line"] .rb\:group-data-\[variant\=line\]\/tabs-list\:border-b-2) {
+  border-bottom-style: var(--tw-border-style) !important;
+  border-bottom-width: 2px !important;
+}
+
+:is(:where(.rb\:group\/tabs-list)[data-variant="line"] .rb\:group-data-\[variant\=line\]\/tabs-list\:border-solid) {
+  --tw-border-style: solid !important;
+  border-style: solid !important;
+}
+
+:is(:where(.rb\:group\/tabs-list)[data-variant="line"] .rb\:group-data-\[variant\=line\]\/tabs-list\:border-transparent) {
+  border-color: #0000 !important;
+}
+
+:is(:where(.rb\:group\/tabs-list)[data-variant="line"] .rb\:group-data-\[variant\=line\]\/tabs-list\:px-\[var\(--rb-tabs-px\)\]) {
+  padding-inline: var(--rb-tabs-px) !important;
+}
+
+:is(:where(.rb\:group\/tabs-list)[data-variant="line"] .rb\:group-data-\[variant\=line\]\/tabs-list\:py-2\.5) {
+  padding-block: calc(var(--rb-spacing) * 2.5) !important;
+}
+
+:is(:where(.rb\:group\/field-group)[data-variant="outline"] .rb\:group-data-\[variant\=outline\]\/field-group\:-mb-2) {
+  margin-bottom: calc(var(--rb-spacing) * -2) !important;
+}
+
+:is(:where(.rb\:peer):disabled ~ .rb\:peer-disabled\:cursor-not-allowed) {
+  cursor: not-allowed !important;
+}
+
+:is(:where(.rb\:peer):disabled ~ .rb\:peer-disabled\:opacity-50) {
+  opacity: .5 !important;
+}
+
+.rb\:placeholder\:text-faint-foreground::placeholder {
+  color: var(--text-faint) !important;
+}
+
+.rb\:focus-within\:border-solid:focus-within {
+  --tw-border-style: solid !important;
+  border-style: solid !important;
+}
+
+.rb\:focus-within\:border-ring:focus-within {
+  border-color: var(--rb-field-border-focus) !important;
+}
+
+@media (hover: hover) {
+  .rb\:hover\:border-faint-foreground:hover {
+    border-color: var(--text-faint) !important;
+  }
+
+  .rb\:hover\:border-input-hover:hover {
+    border-color: var(--rb-field-border-hover) !important;
+  }
+
+  .rb\:hover\:bg-accent:hover {
+    background-color: var(--background-modifier-hover) !important;
+  }
+
+  .rb\:hover\:bg-danger-hover:hover {
+    background-color: var(--rb-btn-danger-hover-bg) !important;
+  }
+
+  .rb\:hover\:bg-secondary-hover:hover {
+    background-color: var(--rb-btn-secondary-hover-bg) !important;
+  }
+
+  .rb\:hover\:bg-transparent:hover {
+    background-color: #0000 !important;
+  }
+
+  .rb\:hover\:text-accent-foreground:hover {
+    color: var(--text-normal) !important;
+  }
+
+  .rb\:hover\:text-destructive:hover {
+    color: var(--rb-danger-fg) !important;
+  }
+
+  .rb\:hover\:text-foreground:hover {
+    color: var(--text-normal) !important;
+  }
+
+  .rb\:hover\:text-muted-foreground:hover {
+    color: var(--text-muted) !important;
+  }
+
+  .rb\:hover\:underline:hover {
+    text-decoration-line: underline !important;
+  }
+
+  .rb\:hover\:opacity-100:hover {
+    opacity: 1 !important;
+  }
+
+  .rb\:hover\:brightness-95:hover {
+    --tw-brightness: brightness(95%) !important;
+    filter: var(--tw-blur, ) var(--tw-brightness, ) var(--tw-contrast, ) var(--tw-grayscale, ) var(--tw-hue-rotate, ) var(--tw-invert, ) var(--tw-saturate, ) var(--tw-sepia, ) var(--tw-drop-shadow, ) !important;
+  }
+}
+
+.rb\:focus\:z-10:focus, .rb\:focus-visible\:z-10:focus-visible {
+  z-index: 10 !important;
+}
+
+.rb\:focus-visible\:border-ring:focus-visible {
+  border-color: var(--rb-field-border-focus) !important;
+}
+
 .rb\:focus-visible\:ring-2:focus-visible {
   --tw-ring-shadow: var(--tw-ring-inset, ) 0 0 0 calc(2px + var(--tw-ring-offset-width)) var(--tw-ring-color, currentcolor) !important;
   box-shadow: var(--tw-inset-shadow), var(--tw-inset-ring-shadow), var(--tw-ring-offset-shadow), var(--tw-ring-shadow), var(--tw-shadow) !important;
 }
 
-.rb\:focus-visible\:ring-ring:focus-visible {
+.rb\:focus-visible\:ring-ring:focus-visible, .rb\:focus-visible\:ring-ring\/20:focus-visible {
   --tw-ring-color: var(--rb-field-border-focus) !important;
+}
+
+@supports (color: color-mix(in lab, red, red)) {
+  .rb\:focus-visible\:ring-ring\/20:focus-visible {
+    --tw-ring-color: color-mix(in oklab, var(--rb-field-border-focus) 20%, transparent) !important;
+  }
+}
+
+.rb\:focus-visible\:outline-none:focus-visible {
+  --tw-outline-style: none !important;
+  outline-style: none !important;
+}
+
+.rb\:disabled\:pointer-events-none:disabled {
+  pointer-events: none !important;
+}
+
+.rb\:disabled\:cursor-default:disabled {
+  cursor: default !important;
 }
 
 .rb\:disabled\:cursor-not-allowed:disabled {
   cursor: not-allowed !important;
 }
 
+.rb\:disabled\:opacity-45:disabled {
+  opacity: .45 !important;
+}
+
 .rb\:disabled\:opacity-50:disabled {
   opacity: .5 !important;
+}
+
+.rb\:has-data-\[slot\=card-action\]\:grid-cols-\[auto_1fr_auto\]:has([data-slot="card-action"]) {
+  grid-template-columns: auto 1fr auto !important;
+}
+
+.rb\:has-\[select\:disabled\]\:opacity-50:has(:is(select:disabled)) {
+  opacity: .5 !important;
+}
+
+.rb\:has-\[\>\[data-slot\=checkbox-group\]\]\:gap-3:has( > [data-slot="checkbox-group"]) {
+  gap: calc(var(--rb-spacing) * 3) !important;
+}
+
+.rb\:has-\[\>\[data-slot\=field-content\]\]\:items-start:has( > [data-slot="field-content"]) {
+  align-items: flex-start !important;
+}
+
+.rb\:has-\[\>\[data-slot\=radio-group\]\]\:gap-3:has( > [data-slot="radio-group"]) {
+  gap: calc(var(--rb-spacing) * 3) !important;
+}
+
+.rb\:aria-invalid\:border-destructive[aria-invalid="true"] {
+  border-color: var(--rb-danger-fg) !important;
+}
+
+.rb\:data-\[invalid\=true\]\:text-destructive[data-invalid="true"] {
+  color: var(--rb-danger-fg) !important;
+}
+
+.rb\:data-\[orientation\=horizontal\]\:h-px[data-orientation="horizontal"] {
+  height: 1px !important;
+}
+
+.rb\:data-\[orientation\=horizontal\]\:w-full[data-orientation="horizontal"] {
+  width: 100% !important;
+}
+
+.rb\:data-\[orientation\=horizontal\]\:flex-col[data-orientation="horizontal"] {
+  flex-direction: column !important;
+}
+
+.rb\:data-\[orientation\=vertical\]\:h-full[data-orientation="vertical"] {
+  height: 100% !important;
+}
+
+.rb\:data-\[orientation\=vertical\]\:w-px[data-orientation="vertical"] {
+  width: 1px !important;
+}
+
+.rb\:data-\[size\=sm\]\:h-control-sm[data-size="sm"] {
+  height: var(--rb-control-h-sm) !important;
+}
+
+.rb\:data-\[size\=sm\]\:rounded-control-sm[data-size="sm"] {
+  border-radius: var(--rb-control-radius-sm) !important;
+}
+
+.rb\:data-\[size\=sm\]\:px-control-px-sm[data-size="sm"] {
+  padding-inline: var(--rb-control-px-sm) !important;
+}
+
+.rb\:data-\[size\=sm\]\:pr-7[data-size="sm"] {
+  padding-right: calc(var(--rb-spacing) * 7) !important;
+}
+
+.rb\:data-\[size\=sm\]\:pl-control-px-sm[data-size="sm"] {
+  padding-left: var(--rb-control-px-sm) !important;
+}
+
+.rb\:data-\[size\=sm\]\:text-control-sm[data-size="sm"] {
+  font-size: var(--rb-control-font-sm) !important;
+}
+
+.rb\:data-\[slot\=checkbox-group\]\:gap-3[data-slot="checkbox-group"] {
+  gap: calc(var(--rb-spacing) * 3) !important;
+}
+
+.rb\:data-\[state\=active\]\:text-foreground[data-state="active"] {
+  color: var(--text-normal) !important;
+}
+
+:is(:where(.rb\:group\/tabs-list)[data-variant="default"] .rb\:group-data-\[variant\=default\]\/tabs-list\:data-\[state\=active\]\:bg-segment-on)[data-state="active"] {
+  background-color: var(--rb-segment-on-bg) !important;
+}
+
+:is(:where(.rb\:group\/tabs-list)[data-variant="default"] .rb\:group-data-\[variant\=default\]\/tabs-list\:data-\[state\=active\]\:text-segment-on-foreground)[data-state="active"] {
+  color: var(--rb-segment-on-fg) !important;
+}
+
+:is(:where(.rb\:group\/tabs-list)[data-variant="default"] .rb\:group-data-\[variant\=default\]\/tabs-list\:data-\[state\=active\]\:shadow-segment-on)[data-state="active"] {
+  --tw-shadow: var(--rb-segment-on-shadow) !important;
+  box-shadow: var(--tw-inset-shadow), var(--tw-inset-ring-shadow), var(--tw-ring-offset-shadow), var(--tw-ring-shadow), var(--tw-shadow) !important;
+}
+
+:is(:where(.rb\:group\/tabs-list)[data-variant="line"] .rb\:group-data-\[variant\=line\]\/tabs-list\:data-\[state\=active\]\:border-\[var\(--rb-tabs-indicator\)\])[data-state="active"] {
+  border-color: var(--rb-tabs-indicator) !important;
 }
 
 .rb\:data-\[state\=checked\]\:translate-x-\[calc\(var\(--rb-switch-w\)-var\(--rb-switch-thumb-w\)-var\(--rb-switch-pad\)\)\][data-state="checked"] {
@@ -4670,6 +4961,261 @@ body.rb-theme-industrial.rb-mode-dark { --rb-chart-palette: #ECECE6, #E9CD62, #8
 
 .rb\:data-\[state\=checked\]\:bg-switch-thumb-on[data-state="checked"] {
   background-color: var(--rb-switch-thumb-on) !important;
+}
+
+.rb\:data-\[state\=on\]\:bg-accent[data-state="on"] {
+  background-color: var(--background-modifier-hover) !important;
+}
+
+.rb\:data-\[state\=on\]\:bg-segment-on[data-state="on"] {
+  background-color: var(--rb-segment-on-bg) !important;
+}
+
+.rb\:data-\[state\=on\]\:text-foreground[data-state="on"] {
+  color: var(--text-normal) !important;
+}
+
+.rb\:data-\[state\=on\]\:text-segment-on-foreground[data-state="on"] {
+  color: var(--rb-segment-on-fg) !important;
+}
+
+.rb\:data-\[state\=on\]\:shadow-segment-on[data-state="on"] {
+  --tw-shadow: var(--rb-segment-on-shadow) !important;
+  box-shadow: var(--tw-inset-shadow), var(--tw-inset-ring-shadow), var(--tw-ring-offset-shadow), var(--tw-ring-shadow), var(--tw-shadow) !important;
+}
+
+.rb\:data-\[state\=open\]\:flex[data-state="open"] {
+  display: flex !important;
+}
+
+.rb\:data-\[state\=open\]\:border-ring[data-state="open"] {
+  border-color: var(--rb-field-border-focus) !important;
+}
+
+.rb\:data-\[state\=open\]\:bg-muted[data-state="open"] {
+  background-color: var(--rb-surface-sunken) !important;
+}
+
+.rb\:data-\[variant\=label\]\:text-sm[data-variant="label"] {
+  font-size: var(--rb-text-sm) !important;
+  line-height: var(--tw-leading, var(--rb-text-sm--line-height)) !important;
+}
+
+.rb\:data-\[variant\=legend\]\:text-base[data-variant="legend"] {
+  font-size: var(--rb-text-base) !important;
+  line-height: var(--tw-leading, var(--rb-text-base--line-height)) !important;
+}
+
+@media not all and (min-width: 40rem) {
+  .rb\:max-sm\:grow {
+    flex-grow: 1 !important;
+  }
+}
+
+@container field-group (min-width: 28rem) {
+  .rb\:\@md\/field-group\:flex-row {
+    flex-direction: row !important;
+  }
+
+  .rb\:\@md\/field-group\:items-center {
+    align-items: center !important;
+  }
+}
+
+.rb\:\[\&_\.rb-icon\]\:inline-flex .rb-icon {
+  display: inline-flex !important;
+}
+
+.rb\:\[\&_\[data-slot\=input\]\:not\(\:hover\)\:not\(\:focus\)\:not\(\[aria-invalid\]\)\]\:border-transparent [data-slot="input"]:not(:hover):not(:focus):not([aria-invalid]) {
+  border-color: #0000 !important;
+}
+
+.rb\:\[\&_\[data-slot\=input\]\:not\(\:hover\)\:not\(\:focus\)\:not\(\[aria-invalid\]\)\]\:bg-transparent [data-slot="input"]:not(:hover):not(:focus):not([aria-invalid]) {
+  background-color: #0000 !important;
+}
+
+.rb\:\[\&_\[data-slot\=native-select\]\:not\(\:hover\)\:not\(\:focus\)\]\:border-transparent [data-slot="native-select"]:not(:hover):not(:focus) {
+  border-color: #0000 !important;
+}
+
+.rb\:\[\&_\[data-slot\=native-select\]\:not\(\:hover\)\:not\(\:focus\)\]\:bg-transparent [data-slot="native-select"]:not(:hover):not(:focus) {
+  background-color: #0000 !important;
+}
+
+.rb\:\[\&_svg\]\:pointer-events-none svg {
+  pointer-events: none !important;
+}
+
+.rb\:\[\&_svg\]\:size-3\.5 svg {
+  width: calc(var(--rb-spacing) * 3.5) !important;
+  height: calc(var(--rb-spacing) * 3.5) !important;
+}
+
+.rb\:\[\&_svg\]\:size-\[11px\] svg {
+  width: 11px !important;
+  height: 11px !important;
+}
+
+.rb\:\[\&_svg\]\:size-\[15px\] svg {
+  width: 15px !important;
+  height: 15px !important;
+}
+
+.rb\:\[\&_svg\]\:size-\[var\(--rb-icon-size\)\] svg {
+  width: var(--rb-icon-size) !important;
+  height: var(--rb-icon-size) !important;
+}
+
+.rb\:\[\&_svg\]\:size-\[var\(--rb-icon-size-sm\)\] svg, .rb\:\[\&_svg\]\:size-icon-sm svg {
+  width: var(--rb-icon-size-sm) !important;
+  height: var(--rb-icon-size-sm) !important;
+}
+
+.rb\:\[\&_svg\]\:shrink-0 svg {
+  flex-shrink: 0 !important;
+}
+
+.rb\:\[\&_svg\]\:transition-transform svg {
+  transition-property: transform, translate, scale, rotate !important;
+  transition-timing-function: var(--tw-ease, var(--rb-default-transition-timing-function)) !important;
+  transition-duration: var(--tw-duration, var(--rb-default-transition-duration)) !important;
+}
+
+.rb\:aria-expanded\:\[\&_svg\]\:rotate-180[aria-expanded="true"] svg {
+  rotate: 180deg !important;
+}
+
+.rb\:\[\&_svg\:not\(\[class\*\=size-\]\)\]\:size-3 svg:not([class*="size-"]) {
+  width: calc(var(--rb-spacing) * 3) !important;
+  height: calc(var(--rb-spacing) * 3) !important;
+}
+
+.rb\:\[\&_svg\:not\(\[class\*\=size-\]\)\]\:size-\[15px\] svg:not([class*="size-"]) {
+  width: 15px !important;
+  height: 15px !important;
+}
+
+.rb\:\[\&_svg\:not\(\[class\*\=size-\]\)\]\:size-icon svg:not([class*="size-"]) {
+  width: var(--rb-icon-size) !important;
+  height: var(--rb-icon-size) !important;
+}
+
+.rb\:\[\&_svg\:not\(\[class\*\=size-\]\)\]\:size-icon-sm svg:not([class*="size-"]) {
+  width: var(--rb-icon-size-sm) !important;
+  height: var(--rb-icon-size-sm) !important;
+}
+
+.rb\:\[\&\+\&\]\:border-x-0 + .rb\:\[\&\+\&\]\:border-x-0 {
+  border-inline-style: var(--tw-border-style) !important;
+  border-inline-width: 0 !important;
+}
+
+.rb\:\[\&\+\&\]\:border-t + .rb\:\[\&\+\&\]\:border-t {
+  border-top-style: var(--tw-border-style) !important;
+  border-top-width: 1px !important;
+}
+
+.rb\:\[\&\+\&\]\:border-b-0 + .rb\:\[\&\+\&\]\:border-b-0 {
+  border-bottom-style: var(--tw-border-style) !important;
+  border-bottom-width: 0 !important;
+}
+
+.rb\:\[\&\+\&\]\:border-solid + .rb\:\[\&\+\&\]\:border-solid {
+  --tw-border-style: solid !important;
+  border-style: solid !important;
+}
+
+.rb\:\[\&\+\&\]\:border-divider + .rb\:\[\&\+\&\]\:border-divider {
+  border-color: var(--rb-divider) !important;
+}
+
+.rb\:\[\&\>\*\]\:w-full > * {
+  width: 100% !important;
+}
+
+@container field-group (min-width: 28rem) {
+  .rb\:\@md\/field-group\:\[\&\>\*\]\:w-auto > * {
+    width: auto !important;
+  }
+}
+
+.rb\:\[\&\>\.sr-only\]\:w-auto > .sr-only {
+  width: auto !important;
+}
+
+.rb\:\[\&\>\[data-slot\=field-group\]\]\:gap-4 > [data-slot="field-group"] {
+  gap: calc(var(--rb-spacing) * 4) !important;
+}
+
+.rb\:\[\&\>\[data-slot\=field-label\]\]\:flex-auto > [data-slot="field-label"] {
+  flex: auto !important;
+}
+
+@container field-group (min-width: 28rem) {
+  .rb\:\@md\/field-group\:\[\&\>\[data-slot\=field-label\]\]\:flex-auto > [data-slot="field-label"] {
+    flex: auto !important;
+  }
+}
+
+.rb\:\[\&\>\[data-slot\=input\]\]\:-ml-\[var\(--rb-control-px-sm\)\] > [data-slot="input"] {
+  margin-left: calc(var(--rb-control-px-sm) * -1) !important;
+}
+
+.rb\:\[\&\>\[data-slot\=input\]\]\:w-\[200px\] > [data-slot="input"] {
+  width: 200px !important;
+}
+
+.rb\:\[\&\>\[data-slot\=input\]\]\:w-full > [data-slot="input"] {
+  width: 100% !important;
+}
+
+.rb\:\[\&\>\[data-slot\=input\]\]\:min-w-0 > [data-slot="input"] {
+  min-width: 0 !important;
+}
+
+.rb\:\[\&\>\[data-slot\=input\]\]\:flex-1 > [data-slot="input"] {
+  flex: 1 !important;
+}
+
+@media not all and (min-width: 40rem) {
+  .rb\:max-sm\:\[\&\>\[data-slot\=input\]\]\:flex-1 > [data-slot="input"] {
+    flex: 1 !important;
+  }
+}
+
+.rb\:\[\&\>\[data-slot\=native-select-wrapper\]\]\:w-full > [data-slot="native-select-wrapper"] {
+  width: 100% !important;
+}
+
+.rb\:\[\&\>\[data-slot\=native-select-wrapper\]\]\:min-w-\[200px\] > [data-slot="native-select-wrapper"] {
+  min-width: 200px !important;
+}
+
+@media not all and (min-width: 40rem) {
+  .rb\:max-sm\:\[\&\>\[data-slot\=native-select-wrapper\]\]\:min-w-0 > [data-slot="native-select-wrapper"] {
+    min-width: 0 !important;
+  }
+
+  .rb\:max-sm\:\[\&\>\[data-slot\=native-select-wrapper\]\]\:flex-1 > [data-slot="native-select-wrapper"] {
+    flex: 1 !important;
+  }
+}
+
+.rb\:\[\&\>a\]\:underline > a {
+  text-decoration-line: underline !important;
+}
+
+.rb\:\[\&\>a\]\:underline-offset-4 > a {
+  text-underline-offset: 4px !important;
+}
+
+.rb\:\[\&\>svg\]\:pointer-events-none > svg {
+  pointer-events: none !important;
+}
+
+.rb\:\[\&\>svg\]\:size-3 > svg {
+  width: calc(var(--rb-spacing) * 3) !important;
+  height: calc(var(--rb-spacing) * 3) !important;
 }
 
 @property --tw-translate-x {
@@ -4694,6 +5240,41 @@ body.rb-theme-industrial.rb-mode-dark { --rb-chart-palette: #ECECE6, #E9CD62, #8
   syntax: "*";
   inherits: false;
   initial-value: solid;
+}
+
+@property --tw-leading {
+  syntax: "*";
+  inherits: false
+}
+
+@property --tw-font-weight {
+  syntax: "*";
+  inherits: false
+}
+
+@property --tw-ordinal {
+  syntax: "*";
+  inherits: false
+}
+
+@property --tw-slashed-zero {
+  syntax: "*";
+  inherits: false
+}
+
+@property --tw-numeric-figure {
+  syntax: "*";
+  inherits: false
+}
+
+@property --tw-numeric-spacing {
+  syntax: "*";
+  inherits: false
+}
+
+@property --tw-numeric-fraction {
+  syntax: "*";
+  inherits: false
 }
 
 @property --tw-shadow {
@@ -4773,4 +5354,70 @@ body.rb-theme-industrial.rb-mode-dark { --rb-chart-palette: #ECECE6, #E9CD62, #8
   syntax: "*";
   inherits: false;
   initial-value: 0 0 #0000;
+}
+
+@property --tw-blur {
+  syntax: "*";
+  inherits: false
+}
+
+@property --tw-brightness {
+  syntax: "*";
+  inherits: false
+}
+
+@property --tw-contrast {
+  syntax: "*";
+  inherits: false
+}
+
+@property --tw-grayscale {
+  syntax: "*";
+  inherits: false
+}
+
+@property --tw-hue-rotate {
+  syntax: "*";
+  inherits: false
+}
+
+@property --tw-invert {
+  syntax: "*";
+  inherits: false
+}
+
+@property --tw-opacity {
+  syntax: "*";
+  inherits: false
+}
+
+@property --tw-saturate {
+  syntax: "*";
+  inherits: false
+}
+
+@property --tw-sepia {
+  syntax: "*";
+  inherits: false
+}
+
+@property --tw-drop-shadow {
+  syntax: "*";
+  inherits: false
+}
+
+@property --tw-drop-shadow-color {
+  syntax: "*";
+  inherits: false
+}
+
+@property --tw-drop-shadow-alpha {
+  syntax: "<percentage>";
+  inherits: false;
+  initial-value: 100%;
+}
+
+@property --tw-drop-shadow-size {
+  syntax: "*";
+  inherits: false
 }

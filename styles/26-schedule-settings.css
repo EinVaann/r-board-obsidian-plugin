@@ -1,5 +1,5 @@
 /* ===================== View settings → Schedule ===================== */
-/* Layout only: the cards, fields, buttons, pills and value boxes are UI primitives (styles/ui/). */
+/* Layout only: the cards, fields, buttons, pills and value boxes are shadcn components (src/components/ui). */
 .rb-sched-settings { display: flex; flex-direction: column; gap: 14px; padding: 4px 0 12px; container-type: inline-size; }
 .rb-sched-card > [data-slot='card-content'] { display: flex; flex-direction: column; gap: 12px; margin-top: 12px; }
 
@@ -28,7 +28,7 @@
 }
 .rb-sched-section-name { font-weight: var(--rb-weight-title); }
 .rb-sched-section-off { justify-self: start; padding: 1px 8px; border-radius: 999px; background: var(--rb-icon-chip-bg); color: var(--text-faint); font-size: 11px; }
-.rb-sched-section:not(.is-off) .rb-sched-section-head > [data-slot='icon-button']:first-of-type { grid-column: 4; }
+.rb-sched-section:not(.is-off) .rb-sched-section-head > [data-slot='button']:first-of-type { grid-column: 4; }
 .rb-sched-section.is-off .rb-sched-section-name { color: var(--text-muted); }
 .rb-sched-section > .rb-sched-field-hint { grid-column: 2; margin-top: -2px; color: var(--text-faint); font-size: var(--rb-font-hint); }
 
@@ -44,9 +44,7 @@
 
 /* Similar groups: removable pills, then a box to add one. */
 .rb-sched-similar { display: flex; flex-direction: column; gap: 8px; padding-top: 12px; border-top: 1px solid var(--rb-divider); }
-.rb-sched-similar-list { display: flex; flex-wrap: wrap; gap: 6px; }
-.rb-sched-similar-add { display: flex; gap: 8px; max-width: 420px; }
-.rb-sched-similar-add > [data-slot='input'] { flex: 1; min-width: 0; }
+.rb-sched-similar-list { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 6px; }
 
 .rb-sched-error { padding: 6px 10px; border-radius: var(--rb-control-radius-sm); background: color-mix(in srgb, var(--rb-danger-fg) 10%, transparent); color: var(--rb-danger-fg); font-size: var(--rb-control-font-sm); }
 .rb-sched-hint { color: var(--text-muted); font-size: var(--rb-control-font-sm); }

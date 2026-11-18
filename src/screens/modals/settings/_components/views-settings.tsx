@@ -1,7 +1,7 @@
 import { arrayMove } from '@dnd-kit/sortable';
 import { useBoard, useBoardContext } from '../../../../stores/board-context';
 import { TYPE_ICON, TYPE_NAME } from '../../../../lib/board/view-types';
-import { IconButton, Pill, SettingsRow, SimpleCard, SortableSettingsList } from '../../../../components/ui';
+import { IconButton, Pill, SettingsCard as SimpleCard, SettingsRow, SortableSettingsList } from './controls';
 
 /** Board settings → Views: the order of the view tabs, and which one opens first. */
 export function ViewsSettings() {

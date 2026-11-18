@@ -174,9 +174,9 @@ test.describe('schedule view', () => {
     await expect(page.getByRole('button', { name: 'Add section' })).toHaveCount(0);
     // to-play joins the queue through the value box: "is" becomes "is any of".
     const queue = rows.nth(3);
-    const values = queue.locator('[data-slot="multi-select-trigger"]');
+    const values = queue.locator('[data-slot="multi-select"]');
     await values.click();
-    await queue.getByRole('option', { name: 'to-play' }).click();
+    await page.getByRole('option', { name: 'to-play' }).click();
     await expect(values).toHaveText(/planned, to-play/);
     const sections = await page.evaluate(() => window.__store.getState().config!.views[0].schedule!.sections!);
     expect(sections[3].conditions).toEqual([{ property: 'status', op: 'anyOf', value: ['planned', 'to-play'] }]);

@@ -1,54 +1,106 @@
-import type { HTMLAttributes, ReactNode } from 'react';
-import { Icon } from '../icon';
-import { cx, slot } from './cx';
-import type { Size, SurfaceVariant } from './types';
+import * as React from "react"
+import { cn } from "@/lib/utils"
 
-type DivProps = HTMLAttributes<HTMLDivElement>;
-
-/** A raised surface holding a header and content (settings cards, panels). */
-export function Card({ variant = 'raised', size = 'md', className, ...props }: DivProps & { variant?: SurfaceVariant; size?: Size }) {
-  return <section {...slot('card', variant, size)} className={className} {...props} />;
-}
-export function CardHeader({ className, ...props }: DivProps) {
-  return <header {...slot('card-header')} className={className} {...props} />;
-}
-/** The round icon at the start of a card header. */
-export function CardIcon({ icon }: { icon: string }) {
+// shadcn card, values from the --rb-surface-* tokens. Settings cards: CardHeader (icon · title · description · action) + CardContent.
+function Card({ className, ...props }: React.ComponentProps<"div">) {
   return (
-    <span {...slot('card-icon')}>
-      <Icon name={icon} />
-    </span>
-  );
-}
-export function CardTitle({ className, ...props }: HTMLAttributes<HTMLHeadingElement>) {
-  return <h4 {...slot('card-title')} className={className} {...props} />;
-}
-export function CardDescription({ className, ...props }: HTMLAttributes<HTMLParagraphElement>) {
-  return <p {...slot('card-description')} className={className} {...props} />;
-}
-export function CardActions({ className, ...props }: DivProps) {
-  return <div {...slot('card-actions')} className={className} {...props} />;
-}
-export function CardContent({ className, ...props }: DivProps) {
-  return <div {...slot('card-content')} className={className} {...props} />;
-}
-export function CardFooter({ className, ...props }: DivProps) {
-  return <div {...slot('card-footer')} className={className} {...props} />;
+    <div
+      data-slot="card"
+      className={cn(
+        "rb:flex rb:flex-col rb:gap-2.5 rb:rounded-surface rb:border rb:border-solid rb:border-border rb:bg-card rb:px-4 rb:py-3.5 rb:text-card-foreground rb:shadow-surface",
+        className
+      )}
+      {...props}
+    />
+  )
 }
 
-/** The usual card: icon, title, description, optional actions, then content. */
-export function SimpleCard({ icon, title, desc, actions, children, className }: { icon: string; title: string; desc?: ReactNode; actions?: ReactNode; children?: ReactNode; className?: string }) {
+function CardHeader({ className, ...props }: React.ComponentProps<"div">) {
   return (
-    <Card className={cx('rb-scard', className)}>
-      <CardHeader>
-        <CardIcon icon={icon} />
-        <div {...slot('card-heading')}>
-          <CardTitle>{title}</CardTitle>
-          {desc && <CardDescription>{desc}</CardDescription>}
-        </div>
-        {actions && <CardActions>{actions}</CardActions>}
-      </CardHeader>
-      {children && <CardContent>{children}</CardContent>}
-    </Card>
-  );
+    <div
+      data-slot="card-header"
+      className={cn(
+        "rb:grid rb:auto-rows-min rb:grid-cols-[auto_1fr] rb:items-start rb:gap-x-3 rb:gap-y-0.5 rb:has-data-[slot=card-action]:grid-cols-[auto_1fr_auto]",
+        className
+      )}
+      {...props}
+    />
+  )
+}
+
+function CardIcon({ className, ...props }: React.ComponentProps<"div">) {
+  return (
+    <div
+      data-slot="card-icon"
+      className={cn(
+        "rb:row-span-2 rb:grid rb:size-7.5 rb:place-items-center rb:rounded-full rb:bg-accent rb:text-muted-foreground rb:[&_svg]:size-[15px]",
+        className
+      )}
+      {...props}
+    />
+  )
+}
+
+function CardTitle({ className, ...props }: React.ComponentProps<"div">) {
+  return (
+    <div
+      data-slot="card-title"
+      className={cn("rb:text-title rb:leading-snug rb:font-semibold rb:text-foreground", className)}
+      {...props}
+    />
+  )
+}
+
+function CardDescription({ className, ...props }: React.ComponentProps<"div">) {
+  return (
+    <div
+      data-slot="card-description"
+      className={cn("rb:col-start-2 rb:text-hint rb:leading-snug rb:text-faint-foreground", className)}
+      {...props}
+    />
+  )
+}
+
+function CardAction({ className, ...props }: React.ComponentProps<"div">) {
+  return (
+    <div
+      data-slot="card-action"
+      className={cn(
+        "rb:col-start-3 rb:row-span-2 rb:row-start-1 rb:flex rb:items-center rb:gap-1 rb:self-start rb:justify-self-end",
+        className
+      )}
+      {...props}
+    />
+  )
+}
+
+function CardContent({ className, ...props }: React.ComponentProps<"div">) {
+  return (
+    <div
+      data-slot="card-content"
+      className={cn("rb:flex rb:flex-col", className)}
+      {...props}
+    />
+  )
+}
+
+function CardFooter({ className, ...props }: React.ComponentProps<"div">) {
+  return (
+    <div
+      data-slot="card-footer"
+      className={cn("rb:flex rb:items-center rb:justify-end rb:gap-2", className)}
+      {...props}
+    />
+  )
+}
+
+export {
+  Card,
+  CardHeader,
+  CardIcon,
+  CardFooter,
+  CardTitle,
+  CardAction,
+  CardDescription,
+  CardContent,
 }

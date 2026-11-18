@@ -8,9 +8,9 @@ import { ValueEditor } from '../../../../components/value-editor';
 import { LinksEditor } from '../../../../components/links-editor';
 import { ImageField } from '../../../../components/image-field';
 import type { ImageDraft } from '../../../../lib/data/image-import';
-import { Toggle } from '../../settings/_components/controls';
-import { Icon } from '../../../../components/icon';
-import { Floating } from '../../../../components/ui';
+import { Toggle } from '@/components/form-controls';
+import { Icon } from '@/components/icon';
+import { Popover, PopoverAnchor, PopoverContent } from '@/components/ui/popover';
 
 /**
  * One quick-add field, edited the way its type is picked: a dropdown for
@@ -163,7 +163,6 @@ function Dropdown({
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState('');
   const [active, setActive] = useState(0);
-  const root = useRef<HTMLDivElement>(null);
   const trigger = useRef<HTMLDivElement>(null);
 
   const choices = [...new Set([...(prop.options?.map((o) => o.value) ?? []), ...known, ...chosen])];
@@ -175,16 +174,6 @@ function Dropdown({
   useEffect(() => {
     if (autoFocus) trigger.current?.focus();
   }, [autoFocus]);
-
-  // Close on a click outside.
-  useEffect(() => {
-    if (!open) return;
-    const onDown = (e: MouseEvent): void => {
-      if (!root.current?.contains(e.target as Node)) close(false);
-    };
-    document.addEventListener('mousedown', onDown, true);
-    return () => document.removeEventListener('mousedown', onDown, true);
-  });
 
   const show = (seed = ''): void => {
     setQuery(seed);
@@ -210,8 +199,10 @@ function Dropdown({
 
   const remove = (v: string): void => onChange(multi ? chosen.filter((c) => c !== v) : null);
 
+  // shadcn Popover (Radix): floats above the modal, closes on outside click and Escape, keeps focus right.
   return (
-    <div className="rb-qa-dropdown" ref={root}>
+    <Popover open={open} onOpenChange={(o) => (o ? show() : close())}>
+      <PopoverAnchor asChild>
       <div
         ref={trigger}
         className={open ? 'rb-qa-select is-open' : 'rb-qa-select'}
@@ -260,8 +251,13 @@ function Dropdown({
         })}
         <Icon name="chevron-down" className="rb-qa-caret" />
       </div>
-      {open && (
-        <Floating anchor={trigger} className="rb-qa-menu">
+      </PopoverAnchor>
+      <PopoverContent
+        align="start"
+        className="rb-qa-menu rb:w-[var(--radix-popover-trigger-width)] rb:min-w-[200px] rb:p-1.5"
+        onOpenAutoFocus={(e) => e.preventDefault()}
+        onCloseAutoFocus={(e) => e.preventDefault()}
+      >
           <input
             type="text"
             className="rb-qa-search"
@@ -288,9 +284,11 @@ function Dropdown({
                   onEnter();
                 }
               } else if (e.key === 'Escape' || e.key === 'Tab') {
+                // Escape closes the list only, not the quick add modal behind it.
                 if (e.key === 'Escape') {
                   e.preventDefault();
                   e.stopPropagation();
+                  e.nativeEvent.stopImmediatePropagation();
                 }
                 close(e.key === 'Escape');
               }
@@ -321,9 +319,8 @@ function Dropdown({
               );
             })}
           </div>
-        </Floating>
-      )}
-    </div>
+      </PopoverContent>
+    </Popover>
   );
 }
 

@@ -19,7 +19,7 @@ import {
   triggerNeedsValues,
   type Chain,
 } from '../../../../lib/data/automations';
-import { AddRow, Button, IconButton, Input, MultiSelect, Segmented, Select, SimpleCard as SettingsCard, Switch as Toggle } from '../../../../components/ui';
+import { AddRow, Button, IconButton, Input, MultiSelect, Segmented, Select, SettingsCard, Toggle } from './controls';
 import { LinksEditor } from '../../../../components/links-editor';
 import { Icon } from '../../../../components/icon';
 
@@ -154,7 +154,7 @@ function AutomationCard({
         <Toggle checked={!auto.disabled} onChange={(on) => onChange((a) => void (on ? delete a.disabled : (a.disabled = true)))} label="Automation on" />
         <Input
           size="sm"
-          className="rb-automation-name"
+          className="rb-automation-name rb:flex-1 rb:font-semibold"
           aria-label="Automation name"
           placeholder={`Automation ${index + 1}`}
           defaultValue={auto.name ?? ''}
@@ -402,7 +402,7 @@ function TextBox({ value, placeholder, onChange }: { value: string; placeholder?
     <Input
       key={value}
       size="sm"
-      className="rb-automation-text"
+      className="rb-automation-text rb:w-[180px]"
       defaultValue={value}
       placeholder={placeholder}
       onBlur={(e) => e.target.value !== value && onChange(e.target.value)}
@@ -417,7 +417,7 @@ function NumberBox({ value, onChange }: { value: number | undefined; onChange: (
       key={value ?? ''}
       size="sm"
       type="number"
-      className="rb-automation-number"
+      className="rb-automation-number rb:w-20"
       defaultValue={value ?? ''}
       onBlur={(e) => {
         const t = e.target.value.trim();

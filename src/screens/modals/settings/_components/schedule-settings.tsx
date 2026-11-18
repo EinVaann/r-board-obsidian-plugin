@@ -7,7 +7,7 @@ import { defaultScheduleConfig, guessLogColumns, guessSchedule } from '../../../
 import { conditionProperties, defaultSections, kindName, sectionProblems } from '../../../../lib/schedule/sections';
 import { DEFAULT_PENALTIES, DEFAULT_SETTINGS } from '../../../../types/schedule';
 import { useLinkedTable } from '../../../../hooks/use-linked-table';
-import { Button, FieldHint, FieldLabel, IconButton, Input, LabeledField as Field, MultiSelect, NumberInput, Pill, Segmented, Select, SimpleCard, type Option } from '../../../../components/ui';
+import { AddRowInput, Button, Field, IconButton, Input, MultiSelect, NumberInput, Pill, Segmented, Select, SettingsCard as SimpleCard, type Option } from './controls';
 
 const KINDS: { value: SectionKind; hint: string }[] = [
   { value: 'lanes', hint: 'running now, in a lane' },
@@ -349,40 +349,24 @@ function ValuePicker({ prop, condition: c, onChange }: { prop: PropertyConfig | 
 
 /** Groups of values that count as alike, edited as removable chips. */
 function SimilarGroups({ groups, onChange }: { groups: string[][]; onChange: (groups: string[][]) => void }) {
-  const [draft, setDraft] = useState('');
-  const add = (): void => {
-    const group = draft.split(',').map((s) => s.trim()).filter(Boolean);
-    if (group.length < 2) return;
-    onChange([...groups, group]);
-    setDraft('');
+  const add = (text: string): void => {
+    const group = text.split(',').map((s) => s.trim()).filter(Boolean);
+    if (group.length >= 2) onChange([...groups, group]);
   };
   return (
-    <div className="rb-sched-similar">
-      <FieldLabel>
-        Similar values
-        <FieldHint>count as alike, at the "Similar counts" share</FieldHint>
-      </FieldLabel>
-      {groups.length > 0 && (
-        <div className="rb-sched-similar-list">
-          {groups.map((g, i) => (
-            <Pill key={i} className="rb-sched-similar-group" removeLabel={`Remove ${g.join(', ')}`} onRemove={() => onChange(groups.filter((_, j) => j !== i))}>
-              {g.join(' ≈ ')}
-            </Pill>
-          ))}
-        </div>
-      )}
-      <div className="rb-sched-similar-add">
-        <Input
-          placeholder="JRPG, Visual novel"
-          aria-label="New similar group"
-          value={draft}
-          onChange={(e) => setDraft(e.target.value)}
-          onKeyDown={(e) => e.key === 'Enter' && (e.preventDefault(), add())}
-        />
-        <Button icon="plus" onClick={add} disabled={draft.split(',').filter((s) => s.trim()).length < 2}>
-          Add
-        </Button>
+    <Field label="Similar values" hint={'count as alike, at the "Similar counts" share'} className="rb-sched-similar">
+      <div className="rb:flex rb:w-full rb:flex-col">
+        {groups.length > 0 && (
+          <div className="rb-sched-similar-list">
+            {groups.map((g, i) => (
+              <Pill key={i} className="rb-sched-similar-group" removeLabel={`Remove ${g.join(', ')}`} onRemove={() => onChange(groups.filter((_, j) => j !== i))}>
+                {g.join(' ≈ ')}
+              </Pill>
+            ))}
+          </div>
+        )}
+        <AddRowInput placeholder="Add a group: JRPG, Visual novel" label="New similar group" onAdd={add} />
       </div>
-    </div>
+    </Field>
   );
 }

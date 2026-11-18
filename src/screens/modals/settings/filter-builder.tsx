@@ -10,11 +10,10 @@ import {
   type FilterRule,
   type PropertyConfig,
 } from '../../../types/database';
-import { Icon } from '../../../components/icon';
 import { LIST_OPS, VALUELESS_OPS, countFilterRules, opsForProperty } from '../../../lib/data/filter';
 import { asArray, optionFor } from '../../../lib/render/values';
 import { showMenu } from '../../../obsidian/menu';
-import { MultiSelect } from '../../../components/ui';
+import { Button, IconButton, Input, MultiSelect, Select } from './_components/controls';
 
 const OP_LABELS: Record<FilterOp, string> = {
   eq: 'Is',
@@ -81,24 +80,25 @@ export function FilterBuilder({
         <Group group={root} path={[]} properties={properties} change={change} newRule={newRule} />
       </div>
       <div className="rb-filter-footer">
-        <button
-          className="rb-filter-delete"
+        <Button
+          variant="danger"
+          icon="trash-2"
+          disabled={root.conditions.length === 0}
           onClick={() => {
             onSave(undefined);
             onClose();
           }}
         >
-          <Icon name="trash" className="rb-filter-delete-icon" />
-          <span>Delete filter</span>
-        </button>
+          Delete filter
+        </Button>
         <span className="rb-filter-summary">
           {root.conditions.length === 0
             ? 'Showing everything'
             : `${countFilterRules(root)} rule${countFilterRules(root) === 1 ? '' : 's'} · ${root.conjunction === 'or' ? 'any' : 'all'} must match`}
         </span>
-        <button className="mod-cta rb-filter-done" onClick={onClose}>
+        <Button variant="primary" onClick={onClose}>
           Done
-        </button>
+        </Button>
       </div>
     </div>
   );
@@ -139,14 +139,17 @@ function Group({ group, path, properties, change, newRule }: GroupProps) {
               {i === 0 ? (
                 <span className="rb-filter-where">Where</span>
               ) : i === 1 ? (
-                <select
-                  className="rb-filter-select rb-filter-conj"
+                <Select<FilterConjunction>
+                  size="sm"
+                  className="rb-filter-conj rb:w-full"
+                  aria-label="Match"
                   value={group.conjunction}
-                  onChange={(e) => edit((g) => void (g.conjunction = e.target.value as FilterConjunction))}
-                >
-                  <option value="and">And</option>
-                  <option value="or">Or</option>
-                </select>
+                  options={[
+                    { value: 'and', label: 'And' },
+                    { value: 'or', label: 'Or' },
+                  ]}
+                  onChange={(v) => edit((g) => void (g.conjunction = v))}
+                />
               ) : (
                 <span className="rb-filter-conj-static">{group.conjunction === 'or' ? 'Or' : 'And'}</span>
               )}
@@ -160,26 +163,14 @@ function Group({ group, path, properties, change, newRule }: GroupProps) {
               <Rule rule={cond} properties={properties} edit={(recipe) => edit((g) => recipe(g.conditions[i] as FilterRule))} />
             )}
 
-            <button
-              className="rb-filter-row-menu"
-              aria-label="More"
-              onClick={(e) => {
-                const menu = new Menu();
-                menu.addItem((it) => it.setTitle('Delete').setIcon('trash').onClick(remove));
-                showMenu(menu, e.nativeEvent);
-              }}
-            >
-              <Icon name="more-horizontal" />
-            </button>
+            <IconButton icon="trash-2" size="sm" tone="danger" label={isFilterGroup(cond) ? 'Remove group' : 'Remove rule'} onClick={remove} />
           </div>
         );
       })}
 
-      <button className="rb-filter-add" onClick={openAddMenu}>
-        <Icon name="plus" className="rb-filter-add-icon" />
-        <span>Add filter rule</span>
-        <Icon name="chevron-down" className="rb-filter-add-caret" />
-      </button>
+      <Button variant="ghost" size="sm" icon="plus" className="rb-filter-add" onClick={openAddMenu}>
+        Add filter rule…
+      </Button>
     </>
   );
 }
@@ -193,11 +184,12 @@ function Rule({ rule, properties, edit }: { rule: FilterRule; properties: Proper
 
   return (
     <div className="rb-filter-rule">
-      <select
-        className="rb-filter-select"
+      <Select
+        size="sm"
+        aria-label="Property"
         value={rule.property}
-        onChange={(e) => {
-          const name = e.target.value;
+        options={[...properties.map((p) => ({ value: p.name, label: p.label ?? p.name })), ...(!prop && rule.property ? [{ value: rule.property, label: rule.property }] : [])]}
+        onChange={(name) => {
           const next = properties.find((p) => p.name === name);
           edit((r) => {
             r.property = name;
@@ -209,33 +201,21 @@ function Rule({ rule, properties, edit }: { rule: FilterRule; properties: Proper
             }
           });
         }}
-      >
-        {properties.map((p) => (
-          <option key={p.name} value={p.name}>
-            {p.label ?? p.name}
-          </option>
-        ))}
-        {!prop && rule.property && <option value={rule.property}>{rule.property}</option>}
-      </select>
-      <select
-        className="rb-filter-select"
+      />
+      <Select<FilterOp>
+        size="sm"
+        aria-label="Condition"
         value={rule.op}
-        onChange={(e) => {
-          const op = e.target.value as FilterOp;
+        options={offered.map((op) => ({ value: op, label: label(op) }))}
+        onChange={(op) =>
           edit((r) => {
             const wasList = LIST_OPS.includes(r.op);
             r.op = op;
             if (VALUELESS_OPS.includes(op)) delete r.value;
             else if (LIST_OPS.includes(op) !== wasList) r.value = LIST_OPS.includes(op) ? asArray(r.value) : asArray(r.value)[0] ?? '';
-          });
-        }}
-      >
-        {offered.map((op) => (
-          <option key={op} value={op}>
-            {label(op)}
-          </option>
-        ))}
-      </select>
+          })
+        }
+      />
       {!VALUELESS_OPS.includes(rule.op) && <RuleValue rule={rule} prop={prop} edit={edit} />}
     </div>
   );
@@ -250,7 +230,7 @@ function RuleValue({ rule, prop, edit }: { rule: FilterRule; prop: PropertyConfi
     return (
       <MultiSelect
         size="sm"
-        className="rb-filter-value"
+        className="rb-filter-value rb:max-w-none"
         label={`Values of ${prop.label ?? prop.name}`}
         placeholder="Choose values…"
         value={asArray(rule.value).map(String)}
@@ -262,21 +242,23 @@ function RuleValue({ rule, prop, edit }: { rule: FilterRule; prop: PropertyConfi
 
   if (prop?.type === 'select' && options.length && (rule.op === 'eq' || rule.op === 'ne')) {
     return (
-      <select className="rb-filter-select rb-filter-value" value={String(rule.value ?? '')} onChange={(e) => edit((r) => void (r.value = e.target.value))}>
-        <option value="">Choose…</option>
-        {options.map((o) => (
-          <option key={o.value} value={o.value}>
-            {o.label ?? o.value}
-          </option>
-        ))}
-      </select>
+      <Select
+        size="sm"
+        className="rb-filter-value"
+        aria-label="Value"
+        value={String(rule.value ?? '')}
+        options={[{ value: '', label: 'Choose…' }, ...options.map((o) => ({ value: o.value, label: o.label ?? o.value }))]}
+        onChange={(v) => edit((r) => void (r.value = v))}
+      />
     );
   }
 
   const list = LIST_OPS.includes(rule.op);
   return (
-    <input
+    <Input
+      size="sm"
       className="rb-filter-value"
+      aria-label="Value"
       type={prop?.type === 'number' && !list ? 'number' : 'text'}
       placeholder={prop?.type === 'date' ? 'YYYY-MM-DD, today, today-7' : list ? 'Values, comma-separated' : 'Value'}
       value={list ? asArray(rule.value).join(', ') : rule.value != null ? String(rule.value) : ''}

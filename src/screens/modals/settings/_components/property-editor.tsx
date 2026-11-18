@@ -5,8 +5,7 @@ import type { NumberFormat, NumberStyle, PropertyConfig, PropertyType } from '..
 import { formatNumber } from '../../../../lib/render/values';
 import { FUNCTIONS } from '../../../../lib/formula/evaluate';
 import { parseFormula } from '../../../../lib/formula/parse';
-import { Segmented, Select, TextInput, Toggle, type HandleProps } from './controls';
-import { AddRow, Button, IconButton, Input, SettingsRow, SortableSettingsList } from '../../../../components/ui';
+import { AddRow, Button, Field as LabeledField, IconButton, Input, Segmented, Select, SettingRow, SettingsRow, SortableSettingsList, TextInput, Toggle, type HandleProps } from './controls';
 import { OptionsEditor } from './options-editor';
 import { renameRefs } from '../../../../lib/formula/tokenize';
 import { newId as newKey } from '../../../../lib/table/format';
@@ -253,20 +252,15 @@ function PropertyRow({
           <NumberFormatFields format={prop.format} onChange={(format) => onChange({ format })} />
         )}
         {prop.type === 'links' && (
-          <Field label="Multiple" wide>
-            <div className="rb-prop-toggle-row">
-              <span className="rb-prop-toggle-desc">Allow several links in one cell. Off: picking a note replaces the current one.</span>
-              <Toggle checked={!prop.single} onChange={(on) => onChange({ single: on ? undefined : true })} label="Allow multiple links" />
-            </div>
-          </Field>
+          <ToggleField
+            name="Allow multiple links"
+            desc="Several links in one cell. Off: picking a note replaces the current one."
+            checked={!prop.single}
+            onChange={(on) => onChange({ single: on ? undefined : true })}
+          />
         )}
         {prop.type === 'date' && (
-          <Field label="Time" wide>
-            <div className="rb-prop-toggle-row">
-              <span className="rb-prop-toggle-desc">Dates include a time of day.</span>
-              <Toggle checked={!!prop.includeTime} onChange={(on) => onChange({ includeTime: on || undefined })} label="Include time" />
-            </div>
-          </Field>
+          <ToggleField name="Include time" desc="Dates include a time of day." checked={!!prop.includeTime} onChange={(on) => onChange({ includeTime: on || undefined })} />
         )}
         {!table && (
           <Field label="Label">
@@ -303,18 +297,16 @@ function PropertyRow({
             </Field>
           </>
         )}
-        <Field label="Searchable" wide>
-          <div className="rb-prop-toggle-row">
-            <span className="rb-prop-toggle-desc">Match this property in the search bar, even when it isn’t shown.</span>
-            <Toggle checked={!!prop.searchable} onChange={(on) => onChange({ searchable: on || undefined })} label="Searchable" />
-          </div>
-        </Field>
+        <ToggleField
+          name="Searchable"
+          desc="Match this property in the search bar, even when it isn’t shown."
+          checked={!!prop.searchable}
+          onChange={(on) => onChange({ searchable: on || undefined })}
+        />
         {phone && (
-          <Field label="" wide>
-            <Button variant="danger" icon="trash-2" className="rb-prop-remove-wide" onClick={onRemove}>
-              {table ? 'Remove column' : 'Remove property'}
-            </Button>
-          </Field>
+          <Button variant="danger" icon="trash-2" className="rb-prop-field-wide rb-prop-remove-wide" onClick={onRemove}>
+            {table ? 'Remove column' : 'Remove property'}
+          </Button>
         )}
       </div>
     </SettingsRow>
@@ -390,21 +382,29 @@ function NumberFormatFields({ format, onChange }: { format?: NumberFormat; onCha
           <TextInput className="rb-prop-input" value={f.currency ?? ''} placeholder="$" onChange={(v) => set({ currency: v || undefined })} />
         </Field>
       )}
-      <Field label="Separators" wide>
-        <div className="rb-prop-toggle-row">
-          <span className="rb-prop-toggle-desc">Thousands separators · e.g. {formatNumber(f.style === 'percent' ? 0.1234 : 1234.5, f)}</span>
-          <Toggle checked={f.grouping ?? f.style !== 'plain'} onChange={(on) => set({ grouping: on })} label="Thousands separators" />
-        </div>
-      </Field>
+      <ToggleField
+        name="Thousands separators"
+        desc={`e.g. ${formatNumber(f.style === 'percent' ? 0.1234 : 1234.5, f)}`}
+        checked={f.grouping ?? f.style !== 'plain'}
+        onChange={(on) => set({ grouping: on })}
+      />
     </>
   );
 }
 
 function Field({ label, wide = false, children }: { label: string; wide?: boolean; children: React.ReactNode }) {
   return (
-    <div className={wide ? 'rb-prop-field rb-prop-field-wide' : 'rb-prop-field'}>
-      <div className="rb-prop-field-label">{label}</div>
+    <LabeledField label={label} className={wide ? 'rb-prop-field-wide' : undefined}>
       {children}
-    </div>
+    </LabeledField>
+  );
+}
+
+/** An on/off option inside the property body: name and description left, switch right. */
+function ToggleField({ name, desc, checked, onChange }: { name: string; desc: React.ReactNode; checked: boolean; onChange: (on: boolean) => void }) {
+  return (
+    <SettingRow name={name} desc={desc} className="rb-prop-field-wide rb:px-0 rb:py-1">
+      <Toggle checked={checked} onChange={onChange} label={name} />
+    </SettingRow>
   );
 }

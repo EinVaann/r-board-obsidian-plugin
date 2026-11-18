@@ -1,133 +1,30 @@
-/* ===================== Filter builder ===================== */
+/* ===================== Filter builder (layout only; controls are shadcn components) ===================== */
 body:not(.is-phone) .modal:has(.rb-filter-builder) { width: min(720px, 92vw); }
 
-.rb-filter-empty { color: var(--text-muted); font-size: 13px; padding: 4px 0 12px; }
-
+.rb-filter-empty { padding: 4px 0 12px; color: var(--text-muted); font-size: var(--rb-control-font); }
 .rb-filter-root { display: flex; flex-direction: column; gap: 8px; }
+.rb-filter-line { display: flex; align-items: center; gap: 8px; }
 
-.rb-filter-line {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-/* Aligns the property selects under each other (Where / And / Or column). */
-.rb-filter-prefix {
-  flex: 0 0 64px;
-  display: flex;
-  align-items: center;
-  font-size: 13px;
-  color: var(--text-muted);
-}
-.rb-filter-where { font-weight: 500; }
-.rb-filter-conj-static { font-weight: 500; }
+/* Where / And / Or column, so the property selects line up. */
+.rb-filter-prefix { flex: 0 0 72px; display: flex; align-items: center; color: var(--text-faint); font-size: var(--rb-font-label); }
 
-.rb-filter-rule {
-  flex: 1 1 auto;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  min-width: 0;
-}
-
-/* Inline selects (custom caret, no native glyph clipping). Obsidian gives
-   selects/inputs a fixed height, so set our own and pad only horizontally —
-   vertical padding on top of that height pushes the text down and clips it. */
-/* Size, corners, font and caret come from 00-tokens.css (compact, like other list rows). */
-.rb-filter-select,
-.rb-filter-value:not([data-slot]) {
-  border: 1px solid var(--background-modifier-border);
-  background-color: var(--background-modifier-form-field);
-  color: var(--text-normal);
-}
-/* The multi-select fills the value column like the text box it replaces. */
-.rb-filter-value[data-slot='multi-select'] > [data-slot='multi-select-trigger'] { width: 100%; max-width: none; }
-.rb-filter-select {
-  appearance: none;
-  -webkit-appearance: none;
-  background-repeat: no-repeat;
-  cursor: pointer;
-}
-.rb-filter-conj { flex: 0 0 auto; }
+.rb-filter-rule { flex: 1 1 auto; display: flex; align-items: center; gap: 8px; min-width: 0; }
+.rb-filter-rule > [data-slot='native-select-wrapper'] { flex: 0 1 auto; max-width: 200px; }
 .rb-filter-value { flex: 1 1 120px; min-width: 80px; }
 
-/* Nested group box. */
+/* A nested group: a sunken box holding its own lines. */
 .rb-filter-group-box {
   flex: 1 1 auto;
-  min-width: 0;
   display: flex;
   flex-direction: column;
   gap: 8px;
+  min-width: 0;
   padding: 10px;
-  border: 1px solid var(--background-modifier-border);
-  border-radius: 10px;
-  background: var(--background-secondary);
+  border: 1px solid var(--rb-surface-border);
+  border-radius: var(--rb-surface-radius);
+  background: var(--rb-surface-sunken);
 }
+.rb-filter-add { align-self: flex-start; }
 
-/* The buttons below are scoped under .rb-wizard so they out-rank the generic
-   `.rb-wizard button` chrome in 13-buttons.css (its padding squashed the
-   30px "⋯" button's icon down to a dot). */
-
-/* "⋯" row menu. */
-.rb-wizard .rb-filter-row-menu {
-  flex: 0 0 auto;
-  margin-left: auto;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 30px;
-  height: 30px;
-  padding: 0;
-  border: none;
-  border-radius: 6px;
-  background: transparent;
-  color: var(--text-muted);
-  cursor: pointer;
-}
-.rb-wizard .rb-filter-row-menu:hover { background: var(--background-modifier-hover); color: var(--text-normal); }
-.rb-filter-row-menu svg { width: 17px; height: 17px; }
-
-/* "Add filter rule" button. */
-.rb-wizard .rb-filter-add {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  align-self: flex-start;
-  margin-top: 2px;
-  padding: 6px 10px;
-  border: none;
-  border-radius: 7px;
-  background: transparent;
-  color: var(--text-muted);
-  cursor: pointer;
-  font-size: 13px;
-}
-.rb-wizard .rb-filter-add:hover { background: var(--background-modifier-hover); color: var(--text-normal); }
-.rb-filter-add-icon, .rb-filter-add-caret { display: inline-flex; }
-.rb-filter-add-icon svg { width: 15px; height: 15px; }
-.rb-filter-add-caret svg { width: 13px; height: 13px; opacity: 0.7; }
-
-/* Footer "Delete filter". */
-.rb-filter-footer {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  margin-top: 14px;
-  padding-top: 12px;
-  border-top: 1px solid var(--background-modifier-border);
-}
-.rb-filter-summary { flex: 1; min-width: 0; font-size: var(--font-ui-smaller); color: var(--text-faint); text-align: right; }
-.rb-wizard .rb-filter-delete {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  padding: 7px 12px;
-  border: none;
-  border-radius: 7px;
-  background: transparent;
-  color: var(--text-muted);
-  cursor: pointer;
-  font-size: 13px;
-}
-.rb-wizard .rb-filter-delete:hover { background: transparent; color: var(--text-error); }
-.rb-filter-delete-icon { display: inline-flex; }
-.rb-filter-delete-icon svg { width: 15px; height: 15px; }
+.rb-filter-footer { display: flex; align-items: center; gap: 10px; margin-top: 14px; padding-top: 12px; border-top: 1px solid var(--rb-divider); }
+.rb-filter-summary { flex: 1; min-width: 0; color: var(--text-faint); font-size: var(--rb-font-hint); text-align: right; }

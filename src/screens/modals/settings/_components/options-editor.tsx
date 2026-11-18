@@ -1,17 +1,12 @@
-import { useMemo, useRef, useState } from 'react';
+import { useMemo, useRef } from 'react';
 import { debounce } from 'obsidian';
 import { arrayMove } from '@dnd-kit/sortable';
 import type { SelectOption } from '../../../../types/database';
 import { autoColor } from '../../../../lib/render/values';
-import { Icon } from '../../../../components/icon';
-import { DragHandle, SortableList, TextInput } from './controls';
+import { ColorSwatch } from '@/components/color-swatch';
+import { AddRowInput, IconButton, Pill, SettingsRow, SortableSettingsList, TextInput } from './controls';
 
 let nextId = 0;
-
-/** CSS color → `#rrggbb` for the color input (non-hex colors show as gray). */
-function hexOf(color: string): string {
-  return /^#[0-9a-f]{6}$/i.test(color) ? color : '#888888';
-}
 
 /**
  * The known values of a select / multi property: drag to reorder (sets group
@@ -22,7 +17,6 @@ export function OptionsEditor({ options, onChange }: { options: SelectOption[]; 
   if (ids.current.length !== options.length) {
     ids.current = Array.from({ length: options.length }, (_, i) => ids.current[i] ?? `o${nextId++}`);
   }
-  const [draft, setDraft] = useState('');
   const latest = useRef({ options, onChange });
   latest.current = { options, onChange };
 
@@ -32,70 +26,53 @@ export function OptionsEditor({ options, onChange }: { options: SelectOption[]; 
   // Color pickers fire continuously while dragging; persist once the user settles.
   const setColor = useMemo(() => debounce((i: number, color: string) => patch(i, { color }), 200), []);
 
-  const add = (): void => {
-    const value = draft.trim();
-    setDraft('');
-    if (!value || options.some((o) => o.value === value)) return;
+  const add = (value: string): void => {
+    if (options.some((o) => o.value === value)) return;
     ids.current = [...ids.current, `o${nextId++}`];
     emit([...options, { value }]);
   };
 
   return (
     <div className="rb-options">
-      <SortableList
-        ids={ids.current}
-        onReorder={(from, to) => {
-          ids.current = arrayMove(ids.current, from, to);
-          emit(arrayMove(options, from, to));
-        }}
-        className="rb-options-list"
-        rowClassName="rb-option-row"
-        renderRow={(_id, i, handle) => {
-          const o = options[i];
-          return (
-            <>
-              <DragHandle handle={handle} />
-              <input
-                className="rb-option-color"
-                type="color"
-                aria-label="Color"
-                value={hexOf(o.color ?? '')}
-                style={o.color ? undefined : { opacity: 0.5 }}
-                onChange={(e) => setColor(i, e.target.value)}
+      {options.length > 0 && (
+        <SortableSettingsList
+          ids={ids.current}
+          onReorder={(from, to) => {
+            ids.current = arrayMove(ids.current, from, to);
+            emit(arrayMove(options, from, to));
+          }}
+          renderRow={(_id, i, handle) => {
+            const o = options[i];
+            return (
+              <SettingsRow
+                className="rb-option-row"
+                handle={handle}
+                name={
+                  <>
+                    <ColorSwatch color={o.color} label={`Color of ${o.label || o.value}`} onChange={(c) => setColor(i, c)} />
+                    <TextInput size="sm" aria-label="Value" value={o.value} placeholder="Value" onChange={(v) => v.trim() && patch(i, { value: v.trim() })} />
+                    <TextInput size="sm" aria-label="Label" value={o.label ?? ''} placeholder="Label" onChange={(v) => patch(i, { label: v.trim() || undefined })} />
+                  </>
+                }
+                meta={<Pill color={o.color ?? autoColor(o.value)}>{o.label || o.value}</Pill>}
+                actions={
+                  <IconButton
+                    icon="trash-2"
+                    size="sm"
+                    tone="danger"
+                    label={`Remove ${o.label || o.value}`}
+                    onClick={() => {
+                      ids.current = ids.current.filter((_, j) => j !== i);
+                      emit(options.filter((_, j) => j !== i));
+                    }}
+                  />
+                }
               />
-              <TextInput className="rb-option-value" value={o.value} placeholder="Value" onChange={(v) => v.trim() && patch(i, { value: v.trim() })} />
-              <TextInput className="rb-option-label" value={o.label ?? ''} placeholder="Label" onChange={(v) => patch(i, { label: v.trim() || undefined })} />
-              <span className="rb-pill rb-opt rb-option-preview" style={{ '--oc': o.color ?? autoColor(o.value) } as React.CSSProperties}>
-                {o.label || o.value}
-              </span>
-              <button
-                className="rb-icon-btn"
-                aria-label="Remove value"
-                onClick={() => {
-                  ids.current = ids.current.filter((_, j) => j !== i);
-                  emit(options.filter((_, j) => j !== i));
-                }}
-              >
-                <Icon name="x" />
-              </button>
-            </>
-          );
-        }}
-      />
-      <div className="rb-option-add">
-        <input
-          type="text"
-          placeholder="Add a value…"
-          value={draft}
-          onChange={(e) => setDraft(e.target.value)}
-          onKeyDown={(e) => {
-            if (e.key === 'Enter') add();
+            );
           }}
         />
-        <button onClick={add}>
-          <Icon name="plus" /> Add
-        </button>
-      </div>
+      )}
+      <AddRowInput placeholder="Add a value…" onAdd={add} />
     </div>
   );
 }

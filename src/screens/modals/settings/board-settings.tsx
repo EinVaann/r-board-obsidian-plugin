@@ -1,7 +1,7 @@
 import { useBoard } from '../../../stores/board-context';
 import { propertyLabel } from '../../../lib/config';
 import { PropertyEditor } from './_components/property-editor';
-import { Select, SettingRow, SettingsCard, SettingsTabs, TextInput } from './_components/controls';
+import { Button, Select, SettingRow, SettingsCard, SettingsTabs, TextInput } from './_components/controls';
 import { QuickAddSettings } from './_components/quick-add-settings';
 import { AutomationSettings } from './_components/automation-settings';
 import { ViewsSettings } from './_components/views-settings';
@@ -45,7 +45,9 @@ export function BoardSettings() {
             />
           </SettingRow>
           <SettingRow name="Refresh index" desc="Re-query notes from the vault.">
-            <button onClick={bumpVault}>Refresh</button>
+            <Button icon="refresh-cw" onClick={bumpVault}>
+              Refresh
+            </Button>
           </SettingRow>
         </>
       )}

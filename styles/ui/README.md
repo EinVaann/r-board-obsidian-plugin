@@ -1,11 +1,10 @@
-# UI primitives: shapes
+# styles/ui
 
-One file per primitive in `src/ui/primitives/`. Rules here:
+The UI components are shadcn components in `src/components/ui/` (generated with `npx shadcn add`,
+configured by `components.json`) and styled with `rb:`-prefixed Tailwind classes. Their colours,
+sizes and radii come from the `--rb-*` tokens through `styles/tailwind.css`.
 
-- Select parts by `[data-slot]` (plus `[data-variant]`, `[data-size]`, `[data-state]`), never by class.
-- Use only `--rb-*` tokens from `styles/00-tokens.css`. No colors or pixel sizes typed in.
-- Wrap the scope in `:where(...)` (zero specificity) so a slot rule always beats generic element rules from Obsidian, and a theme's `[data-slot]` rule beats these.
+Only what Tailwind classes can't reach lives here (e.g. the colours of a native `<select>`'s open
+option list). Everything else: edit the component's classes, or a token.
 
-To change a control everywhere: edit its file here (shape) or a token (value).
-To change it for one theme: set tokens or add a slot rule in `styles/themes/<name>/`.
-To change one place: pass `className` to the component.
+Rules for which component to use where: `styles/RULES.md`.

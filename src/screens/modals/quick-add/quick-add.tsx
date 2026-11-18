@@ -13,7 +13,7 @@ import { saveImageDraft, type ImageDraft } from '../../../lib/data/image-import'
 import { FormField } from './_components/form-field';
 import { ReactModal } from '../../../obsidian/mount';
 import { Icon } from '../../../components/icon';
-import { Button } from '../../../components/ui';
+import { TextButton as Button } from '@/components/form-controls';
 import { PROPERTY_TYPE_ICON } from '../settings/_components/property-editor';
 import { TABLE_EXTENSION } from '../../../obsidian/board-view';
 import { quickAddCommand, quickAddCommandId } from '../../../lib/quick-add/ids';

@@ -5,7 +5,7 @@ import { titleLabel } from '../../../../lib/config';
 import { useBoardContext } from '../../../../stores/board-context';
 import { useViewItems } from '../../../../hooks/use-items';
 import { EXPORT_EXTENSION, exportItems, type ExportFormat } from '../../../../lib/data/export';
-import { Segmented, SettingRow, SettingsCard } from './controls';
+import { Button, Segmented, SettingRow, SettingsCard } from './controls';
 
 const PREVIEW_LINES = 40;
 
@@ -58,10 +58,12 @@ export function ExportSettings({ config, view }: { config: DatabaseConfig; view:
         />
       </SettingRow>
       <SettingRow name="Save" desc={`Copy to the clipboard, or save a .${EXPORT_EXTENSION[format]} file next to ${boardFile.name}.`}>
-        <button onClick={() => void copy()}>Copy</button>
-        <button className="mod-cta" onClick={() => void save()}>
+        <Button icon="copy" onClick={() => void copy()}>
+          Copy
+        </Button>
+        <Button icon="download" onClick={() => void save()}>
           Save file
-        </button>
+        </Button>
       </SettingRow>
       <pre className="rb-export-preview">{preview}</pre>
     </SettingsCard>

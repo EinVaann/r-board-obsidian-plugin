@@ -16,7 +16,9 @@ import {
 } from '../lib/data/image-import';
 import type { StoredValue } from '../lib/data/properties';
 import { asArray, linkTo, parseLink } from '../lib/render/values';
-import { Button, IconButton, Input, NumberInput, Segmented, slot, type Option } from './ui';
+import { TextButton as Button, IconButton, NumberInput, Segmented, TextField as Input, type Option } from './form-controls';
+
+const slot = (name: string): { 'data-slot': string } => ({ 'data-slot': name });
 import { ReactModal } from '../obsidian/mount';
 import { Icon } from './icon';
 import { isImageFile, LinkSearch } from './link-search';

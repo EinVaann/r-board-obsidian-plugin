@@ -20,33 +20,10 @@
   cursor: help;
 }
 
-/* Property editor: option list */
-.rb-options { display: flex; flex-direction: column; gap: 6px; width: 100%; }
-.rb-options-list { display: flex; flex-direction: column; gap: 4px; }
-.rb-option-row {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-}
-.rb-option-row input[type='text'] { flex: 1 1 0; min-width: 0; }
-.rb-option-color {
-  flex: none;
-  width: 26px;
-  height: 26px;
-  padding: 0;
-  border: none;
-  background: none;
-  cursor: pointer;
-}
-.rb-option-preview {
-  flex: none;
-  max-width: 110px;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-.rb-option-add { display: flex; gap: 6px; }
-.rb-option-add input { flex: 1; min-width: 0; }
+/* Property editor: option list (SettingsList rows; value + label share the name column) */
+.rb-options { display: flex; flex-direction: column; width: 100%; }
+.rb-option-row [data-slot='input'] { flex: 1 1 0; min-width: 0; }
+.rb-option-row [data-slot='badge'] { max-width: 110px; overflow: hidden; text-overflow: ellipsis; }
 
 /* Row editor (tables) */
 .rb-record .setting-item-name { display: flex; align-items: center; gap: 6px; }

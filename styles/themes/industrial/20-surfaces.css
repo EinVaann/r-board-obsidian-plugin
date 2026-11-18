@@ -49,7 +49,7 @@ body.rb-theme-industrial.rb-mode-dark {
 }
 
 /* Where the palette applies: R Board's own elements only. */
-body.rb-theme-industrial.rb-mode-light :is(.rb-root, .rb-home, .rb-embed, .modal.rb-modal, .menu.rb-menu, .rb-drag-ghost) {
+body.rb-theme-industrial.rb-mode-light :is(.rb-root, .rb-home, .rb-embed, .modal.rb-modal, .menu.rb-menu, .rb-drag-ghost, .rb-popover, .rb-link-suggest) {
   color-scheme: light;
   --background-primary: #FFFFFF;
   --background-primary-alt: #F6F6F2;
@@ -95,7 +95,7 @@ body.rb-theme-industrial.rb-mode-light :is(.rb-root, .rb-home, .rb-embed, .modal
   --color-green: rgb(var(--color-green-rgb)); --color-cyan: rgb(var(--color-cyan-rgb)); --color-blue: rgb(var(--color-blue-rgb));
   --color-purple: rgb(var(--color-purple-rgb)); --color-pink: rgb(var(--color-pink-rgb));
 }
-body.rb-theme-industrial.rb-mode-dark :is(.rb-root, .rb-home, .rb-embed, .modal.rb-modal, .menu.rb-menu, .rb-drag-ghost) {
+body.rb-theme-industrial.rb-mode-dark :is(.rb-root, .rb-home, .rb-embed, .modal.rb-modal, .menu.rb-menu, .rb-drag-ghost, .rb-popover, .rb-link-suggest) {
   color-scheme: dark;
   --background-primary: #1E1E20;
   --background-primary-alt: #232326;
@@ -142,7 +142,7 @@ body.rb-theme-industrial.rb-mode-dark :is(.rb-root, .rb-home, .rb-embed, .modal.
 
 /* Industrial owns every Obsidian variable R Board reads (type, sizes, inputs, menus...): */
 /* the vault's theme, fonts and snippets don't reach inside. */
-body.rb-theme-industrial :is(.rb-root, .rb-home, .rb-embed, .modal.rb-modal, .menu.rb-menu, .rb-drag-ghost) {
+body.rb-theme-industrial :is(.rb-root, .rb-home, .rb-embed, .modal.rb-modal, .menu.rb-menu, .rb-drag-ghost, .rb-popover, .rb-link-suggest) {
   --font-interface: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
   --font-text: var(--font-interface);
   --font-monospace: ui-monospace, SFMono-Regular, Menlo, monospace;
@@ -219,7 +219,7 @@ body.rb-theme-industrial :is(.rb-root, .rb-home, .rb-embed, .modal.rb-modal, .me
 }
 /* Obsidian derives these from the palette on <body>, so they'd keep its colors and fonts. */
 /* Declared again here, they follow Industrial's palette (the note editor, properties, code). */
-body.rb-theme-industrial :is(.rb-root, .rb-home, .rb-embed, .modal.rb-modal, .menu.rb-menu, .rb-drag-ghost) {
+body.rb-theme-industrial :is(.rb-root, .rb-home, .rb-embed, .modal.rb-modal, .menu.rb-menu, .rb-drag-ghost, .rb-popover, .rb-link-suggest) {
   --caret-color: var(--text-normal);
   --divider-color: var(--background-modifier-border);
   --divider-color-hover: var(--text-faint);
@@ -572,42 +572,7 @@ body.rb-theme-industrial.rb-mode-dark { --rb-chart-palette: #ECECE6, #E9CD62, #8
 .rb-theme-industrial.rb-mode-dark .modal.rb-modal .rb-settings-body { background: rgba(0, 0, 0, 0.15); }
 .rb-theme-industrial .modal.rb-modal .rb-section-count { background: var(--background-modifier-hover); }
 
-/* ---------- Filters: Where / and-or pills, soft fields, a glass "Add filter rule", Done ---------- */
 .rb-theme-industrial .modal.rb-modal.rb-filter-modal { padding-bottom: 0; }
-.rb-theme-industrial .modal.rb-modal .rb-filter-line { gap: 8px; }
-.rb-theme-industrial .modal.rb-modal .rb-filter-prefix { flex-basis: 64px; font-size: 12px; color: var(--text-faint); }
-.rb-theme-industrial .modal.rb-modal .rb-filter-select.rb-filter-conj {
-  height: 24px;
-  padding: 0 22px 0 10px;
-  border-radius: 999px;
-  background-color: transparent;
-  background-position: right 7px center;
-  background-size: 10px;
-  box-shadow: none;
-  color: var(--text-muted);
-  font-size: 12px;
-  text-transform: lowercase;
-}
-.rb-theme-industrial .modal.rb-modal .rb-filter-conj-static { font-weight: 400; text-transform: lowercase; }
-.rb-theme-industrial .modal.rb-modal .rb-filter-group-box { border-radius: 12px; background: var(--rbi-sunken); }
-.rb-theme-industrial .modal.rb-modal .rb-wizard .rb-filter-add {
-  height: 30px;
-  padding: 0 12px;
-  border: 1px solid var(--rbi-glass-edge);
-  border-radius: 999px;
-  background: var(--rbi-glass);
-  box-shadow: var(--rbi-glass-shadow);
-  color: var(--text-muted);
-  font-size: 12.5px;
-}
-.rb-theme-industrial .modal.rb-modal .rb-wizard .rb-filter-add:hover { color: var(--text-normal); }
-.rb-theme-industrial .modal.rb-modal .rb-filter-footer {
-  margin: 16px calc(var(--size-4-4) * -1) 0;
-  padding: 12px var(--size-4-4);
-  background: rgba(28, 28, 30, 0.02);
-}
-.rb-theme-industrial .modal.rb-modal .rb-wizard .rb-filter-delete { height: 32px; padding: 0 12px; border-radius: 999px; }
-.rb-theme-industrial .modal.rb-modal .rb-filter-done { height: 32px; padding: 0 18px; }
 .rb-theme-industrial .modal.rb-modal .rb-export-preview {
   margin: 10px 0 0;
   max-height: 260px;
@@ -624,23 +589,6 @@ body.rb-theme-industrial.rb-mode-dark { --rb-chart-palette: #ECECE6, #E9CD62, #8
   background-color: var(--rb-field-bg);
 }
 
-/* Plain buttons in our modals: a glass pill (the yellow .mod-cta stays the one primary). */
-.rb-theme-industrial .modal.rb-modal button:not([data-slot]):not(.mod-cta):not(.mod-warning):not(.clickable-icon):not([class*='rb-']):not([role='radio']):not([role='tab']) {
-  background: var(--rbi-glass);
-  color: var(--text-normal);
-  border: 1px solid var(--rbi-glass-edge);
-  border-radius: 999px;
-  box-shadow: var(--rbi-glass-shadow);
-}
-
-/* Obsidian's own danger buttons only; the kit's danger Button takes its look from tokens. */
-.rb-theme-industrial .modal.rb-modal button.mod-warning:not([data-slot]) {
-  border-radius: 999px;
-  background: var(--rb-btn-danger-bg);
-  border: 1px solid var(--rb-btn-danger-border);
-  color: var(--rb-btn-danger-fg);
-  box-shadow: none;
-}
 
 /* ---------- Menus (ours only): a glass popover ---------- */
 .rb-theme-industrial .menu.rb-menu {

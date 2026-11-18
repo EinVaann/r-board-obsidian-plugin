@@ -4,23 +4,23 @@
  * theme, different numbers. Base palette (--rbi-*) and Obsidian variable
  * overrides live in 20-surfaces.css; slot-specific rules in 30-slots.css.
  */
-body.rb-theme-industrial :is(.rb-root, .rb-home, .rb-embed, .modal.rb-modal, .menu.rb-menu, .rb-drag-ghost) {
+body.rb-theme-industrial :is(.rb-root, .rb-home, .rb-embed, .modal.rb-modal, .menu.rb-menu, .rb-drag-ghost, .rb-popover, .rb-link-suggest) {
   /* Shape */
   --rb-btn-radius: 999px;
   --rb-btn-radius-sm: 999px;
   --rb-surface-radius: 12px;
 
-  /* Buttons */
-  --rb-btn-primary-bg: var(--rbi-yellow-grad);
+  /* Buttons: flat. Primary is the one yellow action in a dialog. */
+  --rb-btn-primary-bg: var(--rbi-yellow);
   --rb-btn-primary-fg: var(--rbi-yellow-ink);
   --rb-btn-primary-border: transparent;
-  --rb-btn-primary-shadow: var(--rbi-yellow-glow);
-  --rb-btn-primary-hover-filter: brightness(0.97);
-  --rb-btn-secondary-bg: var(--rbi-glass);
+  --rb-btn-primary-shadow: none;
+  --rb-btn-primary-hover-filter: brightness(0.96);
+  --rb-btn-secondary-bg: var(--rbi-plane-flat);
   --rb-btn-secondary-fg: var(--text-normal);
-  --rb-btn-secondary-border: var(--rbi-glass-edge);
-  --rb-btn-secondary-shadow: var(--rbi-glass-shadow);
-  --rb-btn-secondary-hover-bg: var(--rbi-glass);
+  --rb-btn-secondary-border: var(--background-modifier-border);
+  --rb-btn-secondary-shadow: none;
+  --rb-btn-secondary-hover-bg: var(--background-modifier-hover);
   --rb-btn-ghost-fg: var(--text-muted);
   --rb-btn-ghost-hover-fg: var(--text-normal);
   --rb-btn-ghost-hover-bg: var(--background-modifier-hover);
@@ -69,7 +69,7 @@ body.rb-theme-industrial :is(.rb-root, .rb-home, .rb-embed, .modal.rb-modal, .me
 
   --rb-danger-fg: #C0263F;
 }
-body.rb-theme-industrial.rb-mode-dark :is(.rb-root, .rb-home, .rb-embed, .modal.rb-modal, .menu.rb-menu, .rb-drag-ghost) {
+body.rb-theme-industrial.rb-mode-dark :is(.rb-root, .rb-home, .rb-embed, .modal.rb-modal, .menu.rb-menu, .rb-drag-ghost, .rb-popover, .rb-link-suggest) {
   --rb-btn-danger-fg: #FF6B83;
   --rb-danger-fg: #FF6B83;
   --rb-switch-off-bg: rgba(255, 255, 255, 0.14);

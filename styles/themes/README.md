@@ -50,7 +50,7 @@ for layout of the screen using them.
 ## Adding a theme
 
 1. Create `styles/themes/<name>/` (the build picks up every folder here, after the shared CSS).
-2. `10-tokens.css`: under `body.rb-theme-<name> :is(.rb-root, .rb-home, .rb-embed, .modal.rb-modal, .menu.rb-menu, .rb-drag-ghost)`, set the `--rb-*` tokens. Give theme-private values a prefix (Industrial uses `--rbi-*`).
+2. `10-tokens.css`: under `body.rb-theme-<name> :is(.rb-root, .rb-home, .rb-embed, .modal.rb-modal, .menu.rb-menu, .rb-drag-ghost, .rb-popover, .rb-link-suggest)`, set the `--rb-*` tokens. Give theme-private values a prefix (Industrial uses `--rbi-*`).
 3. Optional: further files for surfaces (views, canvas) and slot rules, e.g.
    `body.rb-theme-<name> [data-slot='button'][data-variant='secondary'] { … }`.
 4. Add the name to `ThemeName` in `src/theme.ts` and to the settings dropdown.

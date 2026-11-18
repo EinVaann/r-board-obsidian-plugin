@@ -23,8 +23,8 @@ import { countFilterRules } from '../../../lib/data/filter';
 import { useBoard, useBoardContext } from '../../../stores/board-context';
 import { Icon } from '../../../components/icon';
 import { PROPERTY_TYPE_ICON } from './_components/property-editor';
-import { DragHandle, Field, Segmented, Select, SettingRow, SettingsCard, SettingsTabs, SortableList, TextInput, Toggle, type Option } from './_components/controls';
-import { Button, IconButton, Input } from '../../../components/ui';
+import { AddRowInput, Button, Field, IconButton, Input, Segmented, Select, SettingRow, SettingsCard, SettingsList, SettingsRow, SettingsTabs, SortableSettingsList, TextInput, Toggle, type Option } from './_components/controls';
+import { ColorSwatch } from '@/components/color-swatch';
 import { ExportSettings } from './_components/export-settings';
 import { ScheduleSettings } from './_components/schedule-settings';
 
@@ -291,22 +291,30 @@ function ChartSettings({ config, view, edit }: TabProps) {
         </div>
       </SettingsCard>
       <SettingsCard icon="sigma" title={chart.type === 'scatter' ? 'Y axis' : 'Values'} desc={chart.type === 'scatter' ? 'A number property.' : 'Numbers to add up. None picked: count items.'}>
-        <div className="rb-chart-values">
-          {numeric.length === 0 && <span className="rb-wizard-hint">No number properties.</span>}
-          {numeric.map((p) => {
-            const on = chart.values.includes(p.name);
-            return (
-              <label key={p.name} className="rb-chart-value">
-                <input
-                  type="checkbox"
-                  checked={on}
-                  onChange={() => set({ values: on ? chart.values.filter((v) => v !== p.name) : chart.type === 'scatter' ? [p.name] : [...chart.values, p.name] })}
+        {numeric.length === 0 ? (
+          <span className="rb-wizard-hint">No number properties.</span>
+        ) : (
+          <SettingsList>
+            {numeric.map((p) => {
+              const on = chart.values.includes(p.name);
+              return (
+                <SettingsRow
+                  key={p.name}
+                  icon={PROPERTY_TYPE_ICON[p.type]}
+                  name={propertyLabel(p)}
+                  muted={!on}
+                  control={
+                    <Toggle
+                      checked={on}
+                      label={`Use ${propertyLabel(p)}`}
+                      onChange={() => set({ values: on ? chart.values.filter((v) => v !== p.name) : chart.type === 'scatter' ? [p.name] : [...chart.values, p.name] })}
+                    />
+                  }
                 />
-                {propertyLabel(p)}
-              </label>
-            );
-          })}
-        </div>
+              );
+            })}
+          </SettingsList>
+        )}
         {chart.values.length > 0 && chart.type !== 'scatter' && (
           <div className="rb-sched-grid rb-chart-agg">
             <Field label="Combine with">
@@ -456,23 +464,22 @@ function Display({ config, view, edit }: TabProps) {
         <div className="rb-wizard-hint">This board has no properties yet — add some in Board settings.</div>
       ) : (
         <>
-          <SortableList
+          <SortableSettingsList
             ids={order}
             onReorder={(from, to) => setVisible(arrayMove(order, from, to), visible)}
-            className="rb-vis-list"
             renderRow={(name, _i, handle) => {
               const prop = config.properties.find((p) => p.name === name)!;
               const on = visible.has(name);
               return (
-                <div className={on ? 'rb-vis-row' : 'rb-vis-row rb-hidden'}>
-                  <DragHandle handle={handle} />
-                  <Icon name={PROPERTY_TYPE_ICON[prop.type]} className="rb-vis-type" />
-                  <div className="rb-vis-text">
-                    <span className="rb-vis-name">{propertyLabel(prop)}</span>
-                    <span className="rb-vis-meta">{[prop.type, prop.render].filter(Boolean).join(' · ')}</span>
-                  </div>
-                  <IconButton className="rb-vis-toggle" icon={on ? 'eye' : 'eye-off'} label={on ? 'Hide' : 'Show'} onClick={() => toggle(name)} />
-                </div>
+                <SettingsRow
+                  className="rb-vis-row"
+                  handle={handle}
+                  icon={PROPERTY_TYPE_ICON[prop.type]}
+                  name={propertyLabel(prop)}
+                  meta={[prop.type, prop.render].filter(Boolean).join(' · ')}
+                  muted={!on}
+                  control={<Toggle checked={on} onChange={() => toggle(name)} label={`Show ${propertyLabel(prop)}`} />}
+                />
               );
             }}
           />
@@ -486,7 +493,6 @@ function Display({ config, view, edit }: TabProps) {
 /** Columns tab (kanban): pinned order, label, color, visibility. */
 function Columns({ view, edit }: { view: ViewConfig; edit: (recipe: ViewRecipe) => void }) {
   const cols = view.columns ?? [];
-  const [draft, setDraft] = useState('');
   // Color pickers fire continuously while dragging; persist once the user settles.
   const setColor = useMemo(
     () => debounce((key: string, color: string) => edit((d) => void ((d.groupConfig ??= {})[key] = { ...d.groupConfig?.[key], color })), 200),
@@ -499,10 +505,8 @@ function Columns({ view, edit }: { view: ViewConfig; edit: (recipe: ViewRecipe) 
       cfg[key] = { ...cfg[key], ...value };
     });
 
-  const add = (): void => {
-    const name = draft.trim();
-    setDraft('');
-    if (name && !cols.includes(name)) edit((d) => void (d.columns = [...cols, name]));
+  const add = (name: string): void => {
+    if (!cols.includes(name)) edit((d) => void (d.columns = [...cols, name]));
   };
 
   return (
@@ -514,44 +518,37 @@ function Columns({ view, edit }: { view: ViewConfig; edit: (recipe: ViewRecipe) 
       {!view.group && <div className="rb-wizard-hint">Choose a "Group by" property in General first.</div>}
 
       {cols.length > 0 && (
-        <SortableList
+        <SortableSettingsList
           ids={cols}
           onReorder={(from, to) => edit((d) => void (d.columns = arrayMove(cols, from, to)))}
-          className="rb-col-config-list"
-          rowClassName="rb-col-config-row"
           renderRow={(key, i, handle) => {
             const cfg = view.groupConfig?.[key];
             return (
-              <div className={cfg?.hidden ? 'rb-col-row is-hidden' : 'rb-col-row'}>
-                <DragHandle handle={handle} />
-                <label className="rb-col-swatch" style={{ ['--c' as string]: cfg?.color ?? 'var(--background-modifier-border-hover)' }} title="Color">
-                  <input type="color" aria-label={`Color of ${key}`} defaultValue={cfg?.color ?? '#888888'} onChange={(e) => setColor(key, e.target.value)} />
-                </label>
-                <TextInput size="sm" className="rb-col-field-input" value={cfg?.label ?? ''} placeholder={key} onChange={(v) => patch(key, { label: v.trim() || undefined })} />
-                <span className="rb-col-key-label">{key}</span>
-                {cfg?.color && <IconButton icon="rotate-ccw" label="Clear color" size="sm" onClick={() => patch(key, { color: undefined })} />}
-                <IconButton icon={cfg?.hidden ? 'eye-off' : 'eye'} label={cfg?.hidden ? 'Show column' : 'Hide column'} size="sm" onClick={() => patch(key, { hidden: cfg?.hidden ? undefined : true })} />
-                <IconButton icon="trash-2" label="Unpin column" size="sm" tone="danger" onClick={() => edit((d) => void (d.columns = cols.filter((_, j) => j !== i)))} />
-              </div>
+              <SettingsRow
+                className="rb-col-row"
+                handle={handle}
+                muted={!!cfg?.hidden}
+                name={
+                  <>
+                    <ColorSwatch color={cfg?.color} label={`Color of ${key}`} onChange={(c) => setColor(key, c)} />
+                    <TextInput size="sm" value={cfg?.label ?? ''} placeholder={key} aria-label={`Label of ${key}`} onChange={(v) => patch(key, { label: v.trim() || undefined })} />
+                  </>
+                }
+                meta={key}
+                actions={
+                  <>
+                    {cfg?.color && <IconButton icon="rotate-ccw" label="Clear color" size="sm" onClick={() => patch(key, { color: undefined })} />}
+                    <IconButton icon="trash-2" label="Unpin column" size="sm" tone="danger" onClick={() => edit((d) => void (d.columns = cols.filter((_, j) => j !== i)))} />
+                  </>
+                }
+                control={<Toggle checked={!cfg?.hidden} onChange={(on) => patch(key, { hidden: on ? undefined : true })} label={`Show ${key}`} />}
+              />
             );
           }}
         />
       )}
 
-      <div className="rb-col-add-row">
-        <Input
-          className="rb-col-add-input"
-          placeholder="Column value…"
-          value={draft}
-          onChange={(e) => setDraft(e.target.value)}
-          onKeyDown={(e) => {
-            if (e.key === 'Enter') add();
-          }}
-        />
-        <Button icon="plus" onClick={add}>
-          Add
-        </Button>
-      </div>
+      <AddRowInput placeholder="Pin a column value…" onAdd={add} />
     </SettingsCard>
   );
 }

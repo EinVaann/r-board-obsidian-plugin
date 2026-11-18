@@ -5,7 +5,7 @@
  * These defaults follow Obsidian (the Classic look). A theme changes the look
  * by overriding the variables (see 30-theme-industrial.css), not the components.
  */
-:is(.rb-root, .rb-home, .rb-embed, .modal.rb-modal, .menu.rb-menu, .rb-drag-ghost) {
+:is(.rb-root, .rb-home, .rb-embed, .modal.rb-modal, .menu.rb-menu, .rb-drag-ghost, .rb-popover, .rb-link-suggest) {
   /* --- Size scale: md (default) and sm (dense lists, toolbars inside panels) --- */
   --rb-control-h: 34px;
   --rb-control-h-sm: 28px;
@@ -54,7 +54,7 @@
   --rb-field-fg: var(--text-normal);
   --rb-caret: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%239C9C95' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
 
-  /* --- Buttons: one set per variant (bg can be a gradient) --- */
+  /* --- Buttons: one set per variant (flat colours; styles/RULES.md) --- */
   --rb-btn-primary-bg: var(--interactive-accent);
   --rb-btn-primary-fg: var(--text-on-accent);
   --rb-btn-primary-border: transparent;

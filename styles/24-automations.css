@@ -1,5 +1,5 @@
 /* Board settings → Automations: each automation a card; triggers and effects read as sentences. */
-/* Layout only: the controls are UI primitives (styles/ui/). */
+/* Layout only: the controls are shadcn components (src/components/ui). */
 .rb-automation {
   display: flex;
   flex-direction: column;
@@ -12,18 +12,16 @@
 .rb-automation.is-off { opacity: 0.6; }
 .rb-automation.is-chained { border-color: color-mix(in srgb, var(--color-orange) 55%, var(--rb-surface-border)); }
 .rb-automation-head { display: flex; align-items: center; gap: 8px; }
-.rb-automation-head > [data-slot='input'].rb-automation-name { flex: 1; min-width: 0; font-weight: 600; }
+
 .rb-automation-section { display: flex; flex-direction: column; gap: 6px; }
 .rb-automation-section-head { display: flex; align-items: center; gap: 8px; }
 .rb-automation-kw { min-width: 44px; font-weight: 600; color: var(--text-muted); font-size: var(--rb-font-hint); text-transform: uppercase; letter-spacing: 0.04em; }
 .rb-automation-hint { color: var(--text-faint); font-size: var(--rb-font-hint); }
 .rb-automation-line { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 8px; }
-.rb-automation-line > [data-slot='select'] { width: auto; min-width: 110px; }
-.rb-automation-line > [data-slot='icon-button'] { margin-left: auto; }
+.rb-automation-line > [data-slot='native-select-wrapper'] { min-width: 110px; }
+.rb-automation-line > [data-slot='button']:last-child { margin-left: auto; }
 .rb-automation-join { min-width: 44px; color: var(--text-faint); font-size: var(--rb-font-hint); text-align: right; }
 .rb-automation-join-inline { color: var(--text-faint); font-size: var(--rb-font-hint); }
-.rb-automation-line > [data-slot='input'].rb-automation-text { width: 180px; }
-.rb-automation-line > [data-slot='input'].rb-automation-number { width: 80px; }
 .rb-automation-links { flex: 1 1 200px; min-width: 160px; }
 .rb-automation-check { display: inline-flex; align-items: center; gap: 6px; color: var(--text-muted); font-size: var(--rb-font-hint); cursor: pointer; }
 /* "Add trigger / effect" is a ghost Button; only its place in the section here. */

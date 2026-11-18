@@ -1,63 +1,23 @@
-import { forwardRef, useEffect, useState } from 'react';
-import { cx, slot } from './cx';
-import type { NativeProps } from './types';
+import * as React from "react"
+import { cn } from "@/lib/utils"
 
-export interface InputProps extends NativeProps<'input'> {
-  invalid?: boolean;
-}
-
-/** A plain text / number / date field. */
-export const Input = forwardRef<HTMLInputElement, InputProps>(function Input({ size = 'md', invalid, className, type = 'text', ...props }, ref) {
-  return <input ref={ref} type={type} {...slot('input', undefined, size)} aria-invalid={invalid || undefined} className={cx(invalid && 'rb-invalid', className)} {...props} />;
-});
-
-/** A text field that keeps its own draft and reports every change; resyncs when `value` changes elsewhere. */
-export function TextInput({ value, onChange, ...props }: Omit<InputProps, 'value' | 'onChange'> & { value: string; onChange: (value: string) => void }) {
-  const [draft, setDraft] = useState(value);
-  useEffect(() => setDraft(value), [value]);
+// shadcn input, values from the --rb-field-* / --rb-control-* tokens. `data-size="sm"` for dense rows.
+function Input({ className, type, ...props }: React.ComponentProps<"input">) {
   return (
-    <Input
+    <input
+      type={type}
+      data-slot="input"
+      className={cn(
+        "rb:box-border rb:h-control rb:w-full rb:min-w-0 rb:m-0 rb:px-control-px rb:rounded-control rb:border rb:border-solid rb:border-input rb:bg-field rb:text-control rb:text-foreground rb:shadow-none rb:transition-colors rb:outline-none",
+        "rb:placeholder:text-faint-foreground rb:hover:border-input-hover rb:disabled:pointer-events-none rb:disabled:cursor-not-allowed rb:disabled:opacity-50",
+        "rb:data-[size=sm]:h-control-sm rb:data-[size=sm]:px-control-px-sm rb:data-[size=sm]:rounded-control-sm rb:data-[size=sm]:text-control-sm",
+        "rb:focus-visible:border-ring rb:focus-visible:ring-2 rb:focus-visible:ring-ring/20",
+        "rb:aria-invalid:border-destructive",
+        className
+      )}
       {...props}
-      value={draft}
-      onChange={(e) => {
-        setDraft(e.target.value);
-        onChange(e.target.value);
-      }}
     />
-  );
+  )
 }
 
-export interface NumberInputProps extends Omit<InputProps, 'value' | 'onChange' | 'type' | 'min' | 'max' | 'step'> {
-  value: number;
-  onChange: (n: number) => void;
-  min?: number;
-  max?: number;
-  step?: number;
-  /** Shown after the box ("h", "pts", "%"). */
-  unit?: string;
-}
-
-/** A number field with an optional unit; keeps the typed text while it isn't a valid number yet. */
-export function NumberInput({ value, onChange, min, max, step, unit, className, ...props }: NumberInputProps) {
-  const [draft, setDraft] = useState<string | null>(null);
-  return (
-    <span {...slot('number-input')} className={className}>
-      <Input
-        {...props}
-        type="number"
-        value={draft ?? String(value)}
-        min={min}
-        max={max}
-        step={step ?? 'any'}
-        onChange={(e) => {
-          setDraft(e.target.value);
-          const n = Number(e.target.value);
-          if (e.target.value.trim() === '' || !Number.isFinite(n)) return;
-          onChange(Math.min(max ?? Infinity, Math.max(min ?? -Infinity, n)));
-        }}
-        onBlur={() => setDraft(null)}
-      />
-      {unit && <span {...slot('number-input-unit')}>{unit}</span>}
-    </span>
-  );
-}
+export { Input }

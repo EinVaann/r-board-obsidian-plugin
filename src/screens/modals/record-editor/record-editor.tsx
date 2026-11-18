@@ -3,6 +3,7 @@ import { BoardContext, useBoard, useBoardContext, type BoardContextValue } from 
 import { propertyLabel } from '../../../lib/config';
 import { ReactModal } from '../../../obsidian/mount';
 import { Icon } from '../../../components/icon';
+import { TextButton } from '@/components/form-controls';
 import { PROPERTY_TYPE_ICON } from '../settings/_components/property-editor';
 import { ValueEditor } from '../../../components/value-editor';
 import { FormulaEvaluator } from '../../../lib/data/compute';
@@ -70,12 +71,12 @@ function RecordEditor({ rowId, onRemove, onDuplicate }: { rowId: string; onRemov
         </div>
       ))}
       <div className="rb-record-actions">
-        <button onClick={onDuplicate}>
-          <Icon name="copy" /> Duplicate
-        </button>
-        <button className="mod-warning" onClick={onRemove}>
-          <Icon name="trash-2" /> Delete row
-        </button>
+        <TextButton icon="copy" onClick={onDuplicate}>
+          Duplicate
+        </TextButton>
+        <TextButton variant="danger" icon="trash-2" onClick={onRemove}>
+          Delete row
+        </TextButton>
       </div>
     </div>
   );

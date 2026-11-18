@@ -1,7 +1,12 @@
 # UI rules
 
-One look per job. Before adding a control, find its job here and use that primitive (`src/ui`).
-Never restyle a primitive for one screen; if a screen needs something new, add a variant here first.
+One look per job. Before adding a control, find its job here and use that component.
+Never restyle a component for one screen; if a screen needs something new, add a variant here first.
+
+Components: shadcn in `src/components/ui/` (generated with `npx shadcn add`, see `components.json`;
+only shadcn files live there). Screens use the value + onChange wrappers in
+`src/components/form-controls.tsx`, `settings-layout.tsx` and `settings-list.tsx` (settings screens
+import them all from `screens/modals/settings/_components/controls`).
 
 ## Buttons: which one
 
@@ -55,9 +60,11 @@ uses `--rb-canvas`. A theme may change the colors, not add gradients.
 
 ## Where styles live
 
-- A primitive's look: `styles/ui/<primitive>.css`, selected only by `[data-slot]` (and `[data-part]` for
-  a piece inside it). Never by a class: class names are global and collide (`.rb-row-expand` is also the
+- A component's look: `rb:`-prefixed Tailwind classes in its file in `src/components/ui/`. Colours, sizes
+  and radii come from `--rb-*` tokens, mapped to Tailwind names in `styles/tailwind.css` (custom names
+  also go in `src/lib/utils.ts`, so `cn` merges them right).
+- Utilities are `!important`, so screen CSS can't resize a component. Pass a class instead
+  (`className="rb:w-20"`). Screen CSS may place components (flex, order, margins), selected by
+  `[data-slot]` or the screen's own classes, never by a shared class (`.rb-row-expand` is also the
   table's hover-only expand button, which hid the settings ⌄).
-- A screen's layout (spacing, columns): the screen's own file, selected by its classes. It never sets a
-  primitive's colors, borders or sizes.
 - A theme: token values in `styles/themes/<name>/10-tokens.css`. Slot rules only when a token can't say it.

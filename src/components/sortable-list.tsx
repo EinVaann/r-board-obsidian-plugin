@@ -3,9 +3,9 @@ import { DndContext, closestCenter, type DragEndEvent, type DraggableSyntheticLi
 import { SortableContext, useSortable, verticalListSortingStrategy } from '@dnd-kit/sortable';
 import { restrictToParentElement, restrictToVerticalAxis } from '@dnd-kit/modifiers';
 import { CSS } from '@dnd-kit/utilities';
-import { Icon } from '../icon';
-import { useDragSensors } from '../../hooks/use-drag-sensors';
-import { cx, slot } from './cx';
+import { Icon } from './icon';
+import { useDragSensors } from '@/hooks/use-drag-sensors';
+import { cn } from '@/lib/utils';
 
 /** Drag-handle props handed to a sortable row. */
 export interface HandleProps {
@@ -14,10 +14,21 @@ export interface HandleProps {
   attributes: Record<string, unknown>;
 }
 
-/** The grip a row passes its handle props to. */
-export function DragHandle({ handle }: { handle: HandleProps }) {
+/** The grip a row passes its handle props to: always first in the row. */
+export function DragHandle({ handle, className }: { handle: HandleProps; className?: string }) {
   return (
-    <span ref={handle.ref} {...slot('drag-handle')} className="rb-drag-handle" aria-label="Drag to reorder" {...handle.attributes} {...handle.listeners}>
+    <span
+      ref={handle.ref}
+      data-slot="drag-handle"
+      aria-label="Drag to reorder"
+      className={cn(
+        'rb:inline-flex rb:shrink-0 rb:cursor-grab rb:touch-none rb:px-0.5 rb:py-1 rb:text-faint-foreground rb:hover:text-muted-foreground',
+        'rb:[&_svg]:size-[var(--rb-icon-size-sm)] rb:focus-visible:outline-none rb:focus-visible:ring-2 rb:focus-visible:ring-ring rb:rounded-control-sm',
+        className,
+      )}
+      {...handle.attributes}
+      {...handle.listeners}
+    >
       <Icon name="grip-vertical" />
     </span>
   );
@@ -28,9 +39,9 @@ function SortableRow({ id, className, children }: { id: string; className?: stri
   return (
     <div
       ref={setNodeRef}
-      {...slot('sortable-row')}
+      data-slot="sortable-row"
       data-state={isDragging ? 'dragging' : undefined}
-      className={cx(className, isDragging && 'rb-dragging')}
+      className={cn(className, isDragging && 'rb:relative rb:z-10 rb:bg-popover rb:shadow-lg rb:cursor-grabbing')}
       style={{ transform: CSS.Translate.toString(transform), transition }}
     >
       {children({ ref: setActivatorNodeRef, listeners, attributes: attributes as unknown as Record<string, unknown> })}
@@ -48,15 +59,12 @@ export function SortableList({
   className,
   rowClassName,
   renderRow,
-  variant,
 }: {
   ids: string[];
   onReorder: (from: number, to: number) => void;
   className?: string;
   rowClassName?: string;
   renderRow: (id: string, index: number, handle: HandleProps) => ReactNode;
-  /** settings: the SettingsList box (styles/ui/settings-list.css). */
-  variant?: 'settings';
 }) {
   const sensors = useDragSensors();
   const onDragEnd = ({ active, over }: DragEndEvent): void => {
@@ -66,7 +74,7 @@ export function SortableList({
   return (
     <DndContext sensors={sensors} collisionDetection={closestCenter} modifiers={[restrictToVerticalAxis, restrictToParentElement]} onDragEnd={onDragEnd}>
       <SortableContext items={ids} strategy={verticalListSortingStrategy}>
-        <div {...slot('sortable-list', variant)} className={className}>
+        <div data-slot="sortable-list" className={className}>
           {ids.map((id, i) => (
             <SortableRow key={id} id={id} className={rowClassName}>
               {(handle) => renderRow(id, i, handle)}
