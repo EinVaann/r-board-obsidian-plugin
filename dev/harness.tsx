@@ -379,8 +379,8 @@ async function main(): Promise<void> {
   if (params.has('quickadd')) return quickAddMain(params);
   const kind = params.get('kind') === 'board' || SCHEDULE ? 'board' : 'table';
   if (params.has('mobile')) document.body.classList.add('is-mobile', 'is-phone');
-  // Plugin appearance, as the setting would set it: ?theme=classic, ?mode=dark (default industrial / light).
-  applyTheme(document, parseTheme({ theme: params.get('theme') ?? 'industrial', mode: params.get('mode') ?? 'light' }));
+  // Plugin appearance, as the setting would set it: ?theme=classic, ?mode=dark, ?accent=teal|#hex (default industrial / light / vault).
+  applyTheme(document, parseTheme({ theme: params.get('theme') ?? 'industrial', mode: params.get('mode') ?? 'light', accent: params.get('accent') ?? 'vault' }));
 
   let store!: BoardStore;
   const app = fakeApp(() => store.getState().bumpVault());

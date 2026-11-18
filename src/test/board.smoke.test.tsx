@@ -497,14 +497,14 @@ describe('settings', () => {
     expect(count(el, '.rb-prop-name[aria-invalid]')).toBe(1);
   });
 
-  it('board settings → Views: lists the views in tab order and sets the default', async () => {
+  it('board settings → General: lists the views in tab order and sets the default', async () => {
     const { ctx, store } = makeContext(GAMES);
     const el = await render(
       <BoardContext.Provider value={ctx}>
         <BoardSettings />
       </BoardContext.Provider>,
     );
-    await act(async () => mousedown([...el.querySelectorAll('.rb-settings-tab')].find((t) => t.textContent === 'Views')!));
+    // The views list sits on the General tab (open by default).
     const names = [...el.querySelectorAll('.rb-views-name')].map((n) => n.textContent);
     expect(names).toEqual(GAMES.views.map((v) => v.name));
     // The first view is the default until another is picked.
@@ -531,7 +531,7 @@ describe('settings', () => {
     const autos = () => store.getState().config!.automations;
     const button = (text: string) => [...el.querySelectorAll('button')].find((b) => b.textContent?.includes(text))!;
     const tabs = [...el.querySelectorAll('.rb-settings-tab')];
-    expect(tabs.map((t) => t.textContent)).toEqual(['General', 'Properties', 'Views', 'Quick add', 'Automations']);
+    expect(tabs.map((t) => t.textContent)).toEqual(['General', 'Properties', 'Quick add', 'Automations']);
     await act(async () => mousedown(tabs.find((t) => t.textContent === 'Automations')!));
     await act(async () => button('Add automation').click());
     expect(autos()![0].triggers).toEqual([{ property: 'status', op: 'becomes' }]);

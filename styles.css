@@ -5,6 +5,10 @@
  * These defaults follow Obsidian (the Classic look). A theme changes the look
  * by overriding the variables (see 30-theme-industrial.css), not the components.
  */
+/* Obsidian's own accent, captured on <body> before a theme (Industrial) redefines --accent-* inside our elements. */
+body {
+  --rb-vault-accent: hsl(var(--accent-h, 254), var(--accent-s, 80%), var(--accent-l, 68%));
+}
 :is(.rb-root, .rb-home, .rb-embed, .modal.rb-modal, .menu.rb-menu, .rb-drag-ghost, .rb-popover, .rb-link-suggest) {
   /* --- Size scale: md (default) and sm (dense lists, toolbars inside panels) --- */
   --rb-control-h: 34px;
@@ -65,10 +69,11 @@
   --rb-btn-secondary-border: var(--background-modifier-border);
   --rb-btn-secondary-shadow: none;
   --rb-btn-secondary-hover-bg: var(--background-modifier-hover);
-  /* The board's own "create" action (New note / New row): the vault accent, flat. */
-  --rb-btn-accent-bg: var(--interactive-accent);
-  --rb-btn-accent-hover-bg: var(--interactive-accent-hover);
-  --rb-btn-accent-fg: var(--text-on-accent);
+  /* The board's own "create" action (New note / New row): the colour from plugin settings (theme.ts sets
+     --rb-user-accent on <body>), else the vault's accent (--rb-vault-accent, below; themes don't override it). */
+  --rb-btn-accent-bg: var(--rb-user-accent, var(--rb-vault-accent));
+  --rb-btn-accent-hover-bg: color-mix(in srgb, var(--rb-btn-accent-bg) 88%, #000);
+  --rb-btn-accent-fg: var(--rb-user-accent-fg, #FFFFFF);
   --rb-btn-ghost-fg: var(--text-muted);
   --rb-btn-ghost-hover-fg: var(--text-normal);
   --rb-btn-ghost-hover-bg: var(--background-modifier-hover);
@@ -2656,7 +2661,7 @@ body.rb-theme-industrial :is(.rb-root, .rb-home, .rb-embed, .modal.rb-modal, .me
   --rb-btn-secondary-border: var(--background-modifier-border);
   --rb-btn-secondary-shadow: none;
   --rb-btn-secondary-hover-bg: var(--background-modifier-hover);
-  /* New note: graphite (ink), flat; not yellow, which is for the one action in a dialog */
+  /* Active chips and badges: graphite */
   --rb-chip-on-border: var(--text-muted);
   --rb-chip-on-fg: var(--text-normal);
   --rb-badge-bg: var(--text-normal);

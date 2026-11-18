@@ -5,29 +5,40 @@ import { applyTheme, clearTheme, parseTheme } from './theme';
 
 describe('appearance', () => {
   it('defaults to industrial / auto and drops unknown values', () => {
-    expect(parseTheme(undefined)).toEqual({ theme: 'industrial', mode: 'auto' });
-    expect(parseTheme({ theme: 'neon', mode: 'sepia' })).toEqual({ theme: 'industrial', mode: 'auto' });
-    expect(parseTheme({ theme: 'classic', mode: 'dark' })).toEqual({ theme: 'classic', mode: 'dark' });
+    expect(parseTheme(undefined)).toEqual({ theme: 'industrial', mode: 'auto', accent: 'vault' });
+    expect(parseTheme({ theme: 'neon', mode: 'sepia', accent: 'rainbow' })).toEqual({ theme: 'industrial', mode: 'auto', accent: 'vault' });
+    expect(parseTheme({ theme: 'classic', mode: 'dark', accent: 'teal' })).toEqual({ theme: 'classic', mode: 'dark', accent: 'teal' });
+    expect(parseTheme({ accent: '#123abc' }).accent).toBe('#123abc');
+  });
+
+  it('button color: a preset or custom hex sets the variable with readable text; vault accent clears it', () => {
+    applyTheme(document, { theme: 'industrial', mode: 'light', accent: 'yellow' });
+    expect(document.body.style.getPropertyValue('--rb-user-accent')).toBe('#F2D33C');
+    expect(document.body.style.getPropertyValue('--rb-user-accent-fg')).toBe('#1C1C1E');
+    applyTheme(document, { theme: 'industrial', mode: 'light', accent: '#203040' });
+    expect(document.body.style.getPropertyValue('--rb-user-accent-fg')).toBe('#FFFFFF');
+    applyTheme(document, { theme: 'industrial', mode: 'light', accent: 'vault' });
+    expect(document.body.style.getPropertyValue('--rb-user-accent')).toBe('');
   });
 
   it('sets one theme class and one mode class on the body', () => {
-    applyTheme(document, { theme: 'industrial', mode: 'dark' });
+    applyTheme(document, { theme: 'industrial', mode: 'dark', accent: 'vault' });
     expect([...document.body.classList].filter((c) => c.startsWith('rb-')).sort()).toEqual(['rb-mode-dark', 'rb-theme-industrial']);
-    applyTheme(document, { theme: 'classic', mode: 'light' });
+    applyTheme(document, { theme: 'classic', mode: 'light', accent: 'vault' });
     expect([...document.body.classList].filter((c) => c.startsWith('rb-')).sort()).toEqual(['rb-mode-light', 'rb-theme-classic']);
   });
 
   it('auto follows Obsidian', () => {
     document.body.classList.add('theme-dark');
-    applyTheme(document, { theme: 'industrial', mode: 'auto' });
+    applyTheme(document, { theme: 'industrial', mode: 'auto', accent: 'vault' });
     expect(document.body.classList.contains('rb-mode-dark')).toBe(true);
     document.body.classList.replace('theme-dark', 'theme-light');
-    applyTheme(document, { theme: 'industrial', mode: 'auto' });
+    applyTheme(document, { theme: 'industrial', mode: 'auto', accent: 'vault' });
     expect(document.body.classList.contains('rb-mode-light')).toBe(true);
   });
 
   it('removes every class on unload', () => {
-    applyTheme(document, { theme: 'industrial', mode: 'dark' });
+    applyTheme(document, { theme: 'industrial', mode: 'dark', accent: 'vault' });
     clearTheme(document);
     expect([...document.body.classList].some((c) => c.startsWith('rb-'))).toBe(false);
   });

@@ -240,11 +240,10 @@ test.describe('links to views and rows', () => {
   });
 });
 
-test.describe('board settings → Views', () => {
+test.describe('board settings → General → Views', () => {
   test('dragging a view in the list reorders the tabs; the default opens first', async ({ page }) => {
     await openShop(page, VIEWS.slice(0, 3));
     await page.getByLabel('Board settings').click();
-    await page.getByRole('tab', { name: 'Views' }).click();
     await expect(page.locator('.rb-views-name')).toHaveText(['Rows', 'Lanes', 'Cards']);
     // Keyboard drag (dnd-kit): pick up "Cards", move it up twice, drop.
     await page.locator('.rb-views-row', { hasText: 'Cards' }).locator('[data-slot="drag-handle"]').focus();

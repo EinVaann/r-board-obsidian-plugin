@@ -6,7 +6,7 @@ import { QuickAddSettings } from './_components/quick-add-settings';
 import { AutomationSettings } from './_components/automation-settings';
 import { ViewsSettings } from './_components/views-settings';
 
-/** Board settings modal content: General (name, tag, folder — or a table's title column), Properties, Views, Quick add, Automations. */
+/** Board settings modal content: General (name, tag, folder — or a table's title column — and the views), Properties, Quick add, Automations. */
 export function BoardSettings() {
   const config = useBoard((s) => s.config);
   const updateConfig = useBoard((s) => s.updateConfig);
@@ -15,6 +15,7 @@ export function BoardSettings() {
   const table = config.kind === 'table';
 
   const general = (
+    <>
     <SettingsCard icon="settings" title="Board" desc={table ? 'Name and title column.' : 'Which notes this board shows, and where new ones go.'}>
       <SettingRow name="Name">
         <TextInput value={config.name ?? ''} onChange={(v) => updateConfig((c) => void (c.name = v.trim() || undefined))} />
@@ -52,6 +53,8 @@ export function BoardSettings() {
         </>
       )}
     </SettingsCard>
+    <ViewsSettings />
+    </>
   );
 
   const properties = (
@@ -80,7 +83,6 @@ export function BoardSettings() {
       tabs={[
         { id: 'general', label: 'General', icon: 'settings', content: general },
         { id: 'properties', label: table ? 'Columns' : 'Properties', icon: 'list', content: properties },
-        { id: 'views', label: 'Views', icon: 'layout-list', content: <ViewsSettings /> },
         { id: 'quick-add', label: 'Quick add', icon: 'zap', content: <QuickAddSettings /> },
         { id: 'automations', label: 'Automations', icon: 'workflow', content: <AutomationSettings /> },
       ]}
