@@ -3,7 +3,7 @@ import type { PropertyConfig } from '../types/database';
 import type { StoredValue } from '../lib/data/properties';
 import { asArray, asBoolean, optionFor } from '../lib/render/values';
 import { formulaOverride } from '../lib/data/compute';
-import { Toggle } from '../screens/settings/_components/controls';
+import { Toggle } from '../screens/modals/settings/_components/controls';
 import { useApp } from '../obsidian/mount';
 import { LinksEditor } from './links-editor';
 

@@ -8,15 +8,15 @@ import { addRow, deleteRows, duplicateRow, setCell } from '../src/lib/table/rows
 import { createBoardStore, type BoardStore } from '../src/stores/board-store';
 import { followLink, parseBoardLink } from '../src/lib/board/links';
 import { BoardContext, type BoardContextValue } from '../src/stores/board-context';
-import { BoardApp } from '../src/screens/board/board-app';
+import { BoardApp } from '../src/screens/views/board/board-app';
 import { setProperty } from '../src/lib/data/properties';
 import { openBoardSettings, openFilterModal, openViewSettings } from '../src/obsidian/settings-modals';
-import { openRecordEditor } from '../src/screens/board/_components/record-editor';
-import { DatabaseEmbed, parseEmbed } from '../src/screens/embed/embed';
+import { openRecordEditor } from '../src/screens/modals/record-editor/record-editor';
+import { DatabaseEmbed, parseEmbed } from '../src/screens/views/embed/embed';
 import SCHEDULE_FIXTURE from '../src/lib/schedule/fixture.json';
 import { AutomationWatcher } from '../src/obsidian/automation-watcher';
 import { applyTheme, parseTheme } from '../src/obsidian/theme';
-import { QuickAddForm } from '../src/screens/quick-add/quick-add';
+import { QuickAddForm } from '../src/screens/modals/quick-add/quick-add';
 import { ReactModal } from '../src/obsidian/mount';
 
 const BOARD_PATH = 'Backlog.board';

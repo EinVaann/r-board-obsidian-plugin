@@ -8,13 +8,13 @@ import { setProperty } from '../lib/data/properties';
 import { createNoteFor } from '../lib/data/notes';
 import { parseTableFile, serializeTableFile } from '../lib/table/format';
 import { addRow, deleteRows, duplicateRow, setCell } from '../lib/table/rows';
-import { openRecordEditor } from '../screens/board/_components/record-editor';
+import { openRecordEditor } from '../screens/modals/record-editor/record-editor';
 import { createBoardStore, type BoardStore } from '../stores/board-store';
 import { BoardContext, type BoardActions, type BoardContextValue } from '../stores/board-context';
-import { BoardApp } from '../screens/board/board-app';
+import { BoardApp } from '../screens/views/board/board-app';
 import { mountReact } from './mount';
 import { NoteEditModal } from './note-edit-modal';
-import { openWizard } from '../screens/settings/wizard';
+import { openWizard } from '../screens/modals/settings/wizard';
 import { openBoardSettings, openFilterModal, openViewSettings } from './settings-modals';
 import { followLink, parseBoardLink, type BoardLink } from '../lib/board/links';
 

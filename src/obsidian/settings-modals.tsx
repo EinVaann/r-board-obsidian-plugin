@@ -1,9 +1,9 @@
 import type { App } from 'obsidian';
 import { BoardContext, type BoardContextValue } from '../stores/board-context';
 import { ReactModal } from './mount';
-import { BoardSettings } from '../screens/settings/board-settings';
-import { ViewSettings } from '../screens/settings/view-settings';
-import { FilterBuilder } from '../screens/settings/filter-builder';
+import { BoardSettings } from '../screens/modals/settings/board-settings';
+import { ViewSettings } from '../screens/modals/settings/view-settings';
+import { FilterBuilder } from '../screens/modals/settings/filter-builder';
 
 /*
  * Settings modals render inside the board's own context, so they read and
