@@ -1,23 +1,23 @@
 /** Dev harness: the real R Board UI in a browser, with a fake `obsidian` and an in-memory vault. */
 import { createRef } from 'react';
 import { TFile, type App } from 'obsidian';
-import { mountReact } from '../src/react/mount';
-import { parseDatabaseConfig, serializeDatabase } from '../src/config';
-import { parseTableFile, serializeTableFile } from '../src/table/format';
-import { addRow, deleteRows, duplicateRow, setCell } from '../src/table/rows';
-import { createBoardStore, type BoardStore } from '../src/board/store';
-import { followLink, parseBoardLink } from '../src/board/links';
-import { BoardContext, type BoardContextValue } from '../src/board/context';
-import { BoardApp } from '../src/board/BoardApp';
-import { setProperty } from '../src/data/properties';
-import { openBoardSettings, openFilterModal, openViewSettings } from '../src/settings/modals';
-import { openRecordEditor } from '../src/table/RecordEditor';
-import { DatabaseEmbed, parseEmbed } from '../src/embed/Embed';
-import SCHEDULE_FIXTURE from '../src/schedule/fixture.json';
-import { AutomationWatcher } from '../src/data/AutomationWatcher';
-import { applyTheme, parseTheme } from '../src/theme';
-import { QuickAddForm } from '../src/quickadd/QuickAdd';
-import { ReactModal } from '../src/react/mount';
+import { mountReact } from '../src/obsidian/mount';
+import { parseDatabaseConfig, serializeDatabase } from '../src/lib/config';
+import { parseTableFile, serializeTableFile } from '../src/lib/table/format';
+import { addRow, deleteRows, duplicateRow, setCell } from '../src/lib/table/rows';
+import { createBoardStore, type BoardStore } from '../src/stores/board-store';
+import { followLink, parseBoardLink } from '../src/lib/board/links';
+import { BoardContext, type BoardContextValue } from '../src/stores/board-context';
+import { BoardApp } from '../src/screens/board/board-app';
+import { setProperty } from '../src/lib/data/properties';
+import { openBoardSettings, openFilterModal, openViewSettings } from '../src/obsidian/settings-modals';
+import { openRecordEditor } from '../src/screens/board/_components/record-editor';
+import { DatabaseEmbed, parseEmbed } from '../src/screens/embed/embed';
+import SCHEDULE_FIXTURE from '../src/lib/schedule/fixture.json';
+import { AutomationWatcher } from '../src/obsidian/automation-watcher';
+import { applyTheme, parseTheme } from '../src/obsidian/theme';
+import { QuickAddForm } from '../src/screens/quick-add/quick-add';
+import { ReactModal } from '../src/obsidian/mount';
 
 const BOARD_PATH = 'Backlog.board';
 

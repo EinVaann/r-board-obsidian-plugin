@@ -1,0 +1,320 @@
+import { createRef } from 'react';
+import { Notice, TFile, TextFileView, WorkspaceLeaf, debounce } from 'obsidian';
+import type RBoardPlugin from '../../main';
+import type { BoardItem, DatabaseConfig, TableRow } from '../types/database';
+import { parseDatabaseConfig, serializeDatabase } from '../lib/config';
+import { tagsForFile } from '../lib/data/query';
+import { setProperty } from '../lib/data/properties';
+import { createNoteFor } from '../lib/data/notes';
+import { parseTableFile, serializeTableFile } from '../lib/table/format';
+import { addRow, deleteRows, duplicateRow, setCell } from '../lib/table/rows';
+import { openRecordEditor } from '../screens/board/_components/record-editor';
+import { createBoardStore, type BoardStore } from '../stores/board-store';
+import { BoardContext, type BoardActions, type BoardContextValue } from '../stores/board-context';
+import { BoardApp } from '../screens/board/board-app';
+import { mountReact } from './mount';
+import { NoteEditModal } from './note-edit-modal';
+import { openWizard } from '../screens/settings/wizard';
+import { openBoardSettings, openFilterModal, openViewSettings } from './settings-modals';
+import { followLink, parseBoardLink, type BoardLink } from '../lib/board/links';
+
+export const BOARD_VIEW_TYPE = 'r-board-view';
+export const BOARD_EXTENSION = 'board';
+export const TABLE_EXTENSION = 'table';
+
+/**
+ * A board pane. Obsidian side only: it owns the `.board` file, the store, and
+ * vault-change detection; everything visible is the React tree in `BoardApp`.
+ */
+export class BoardView extends TextFileView {
+  plugin: RBoardPlugin;
+
+  private readonly store: BoardStore;
+  private readonly ctx: BoardContextValue;
+  private unmount: (() => void) | null = null;
+  /** Paths of every note in the database at the last query (pre-filter). */
+  private itemPaths = new Set<string>();
+  /** While the edit modal is open, vault changes don't repaint the board. */
+  private editing = false;
+  /** A link that arrived before the file was read; applied once it is. */
+  private pendingLink: BoardLink | null = null;
+
+  constructor(leaf: WorkspaceLeaf, plugin: RBoardPlugin) {
+    super(leaf);
+    this.plugin = plugin;
+
+    this.store = createBoardStore({
+      saveConfig: (config) => {
+        this.data = config.kind === 'table' ? serializeTableFile({ config, rows: this.store.getState().rows }) : serializeDatabase(config);
+        this.requestSave();
+        if (this.file) this.plugin.quickAdds.sync(this.file, config);
+      },
+      saveRows: (rows) => {
+        const config = this.store.getState().config;
+        if (!config) return;
+        this.data = serializeTableFile({ config, rows });
+        this.requestSave();
+      },
+      saveActiveView: (name) => {
+        if (this.file) void this.plugin.setActiveView(this.file.path, name);
+      },
+    });
+
+    const actions: BoardActions = {
+      editFile: (file, title) => this.openEditModal(file, title),
+      openNote: (item, newLeaf) => {
+        if (item.file) void this.app.workspace.openLinkText(item.file.path, item.file.path, newLeaf);
+      },
+      editItem: (item) => {
+        if (item.file) this.openEditModal(item.file, item.title);
+        else this.openRowEditor(item.id);
+      },
+      setValue: async (item, prop, value) => {
+        if (!item.file) {
+          this.store.getState().updateRows((rows) => setCell(rows, item.id, prop, value));
+          return;
+        }
+        try {
+          await setProperty(this.app, item.file, prop, value);
+        } catch (e) {
+          new Notice(`R Board: could not update ${prop.name} — ${(e as Error).message}`);
+          throw e;
+        }
+      },
+      addRow: (cells, after) => {
+        if (!this.isTable) return null;
+        let id = '';
+        this.store.getState().updateRows((rows) => void (id = addRow(rows, cells, after)));
+        return id;
+      },
+      deleteRows: (ids) => this.store.getState().updateRows((rows) => deleteRows(rows, ids)),
+      duplicateRow: (id) => this.store.getState().updateRows((rows) => void duplicateRow(rows, id)),
+      openBoardSettings: () => openBoardSettings(this.app, this.ctx),
+      openViewSettings: (index) => openViewSettings(this.app, this.ctx, index, () => this.deleteView(index)),
+      openFilter: (index) => openFilterModal(this.app, this.ctx, index),
+      createNewNote: (values) => void this.createNewNote(values),
+      openSetup: () => this.openSetup(),
+      reportItems: (items: BoardItem[]) => {
+        this.itemPaths = new Set(items.map((i) => i.id));
+      },
+    };
+
+    // `boardFile` is read lazily: the file is attached after construction.
+    const view = this;
+    this.ctx = {
+      app: this.app,
+      store: this.store,
+      actions,
+      get boardFile() {
+        return view.file as TFile;
+      },
+      scrollRef: createRef<HTMLDivElement>(),
+    };
+  }
+
+  getViewType(): string {
+    return BOARD_VIEW_TYPE;
+  }
+
+  getIcon(): string {
+    return this.isTable ? 'table' : 'layout-dashboard';
+  }
+
+  getDisplayText(): string {
+    return this.store.getState().config?.name ?? this.file?.basename ?? 'Board';
+  }
+
+  // --- TextFileView contract -------------------------------------------------
+
+  getViewData(): string {
+    return this.data;
+  }
+
+  /** Whether this pane shows a `.table` file (rows stored in the file). */
+  private get isTable(): boolean {
+    return this.file?.extension === TABLE_EXTENSION;
+  }
+
+  setViewData(data: string, _clear: boolean): void {
+    this.loadData(data);
+    this.applyLink();
+  }
+
+  /** Links like `[[Games.board#Lanes]]` or `[[Budget.table#^r1a2b3]]` arrive here as `subpath`. */
+  setEphemeralState(state: unknown): void {
+    super.setEphemeralState(state);
+    const subpath = (state as { subpath?: unknown } | null)?.subpath;
+    if (typeof subpath !== 'string' || !subpath) return;
+    this.pendingLink = parseBoardLink(subpath);
+    if (this.store.getState().config) this.applyLink();
+  }
+
+  private applyLink(): void {
+    const link = this.pendingLink;
+    const config = this.store.getState().config;
+    if (!link || !config) return;
+    this.pendingLink = null;
+    followLink(this.store, link, this.file);
+  }
+
+  private loadData(data: string): void {
+    this.data = data;
+    const saved = this.file ? this.plugin.getActiveView(this.file.path) : undefined;
+    if (this.isTable) {
+      const result = parseTableFile(data);
+      if (!result.ok) {
+        this.store.getState().loadRows([]);
+        this.store.getState().loadConfig(null, result.error);
+        return;
+      }
+      if (result.migrated) new Notice(`R Board: ${this.file?.basename} is an R Sheet table. It will be saved in R Board's format on the first edit.`);
+      this.store.getState().loadRows(result.table.rows);
+      this.store.getState().loadConfig(result.table.config, null, saved);
+      if (this.file) this.plugin.quickAdds.sync(this.file, result.table.config);
+      return;
+    }
+    const result = parseDatabaseConfig(data);
+    if (result.ok) this.store.getState().loadConfig(result.config, null, saved);
+    else this.store.getState().loadConfig(null, data.trim() === '' || data.trim() === '{}' ? null : result.error);
+    if (this.file && result.ok) this.plugin.quickAdds.sync(this.file, result.config);
+  }
+
+  /** The database config as currently shown (unsaved edits included). */
+  currentConfig(): DatabaseConfig | null {
+    return this.store.getState().config;
+  }
+
+  /** Edit the config through the store (saved, and shown live). */
+  updateConfig(recipe: (draft: DatabaseConfig) => void): void {
+    this.store.getState().updateConfig(recipe);
+  }
+
+  /** Tables: append a row through the store, so this pane's next save keeps it. */
+  appendRow(cells: Record<string, unknown>): void {
+    this.store.getState().updateRows((rows) => void addRow(rows, cells));
+  }
+
+  /** Tables: edit the rows through the store (saved, and shown live). */
+  updateRows(recipe: (draft: TableRow[]) => void): void {
+    this.store.getState().updateRows(recipe);
+  }
+
+  clear(): void {
+    this.store.getState().loadRows([]);
+    this.store.getState().loadConfig(null, null);
+  }
+
+  // --- Lifecycle -------------------------------------------------------------
+
+  async onOpen(): Promise<void> {
+    this.contentEl.addClass('rb-root');
+    this.unmount = mountReact(
+      this.app,
+      this.contentEl,
+      <BoardContext.Provider value={this.ctx}>
+        <BoardApp />
+      </BoardContext.Provider>,
+    );
+
+    const refresh = debounce(() => this.store.getState().bumpVault(), 250, true);
+    // Only the first `resolved` matters (initial index); later ones follow every edit.
+    let initialResolve = true;
+    this.registerEvent(this.app.metadataCache.on('resolved', () => {
+      if (!initialResolve) return;
+      initialResolve = false;
+      refresh();
+    }));
+    this.registerEvent(this.app.metadataCache.on('changed', (file) => {
+      if (!this.editing && this.affectsBoard(file)) refresh();
+    }));
+    this.registerEvent(this.app.metadataCache.on('deleted', (file) => {
+      if (this.itemPaths.has(file.path)) refresh();
+    }));
+    this.registerEvent(this.app.vault.on('rename', (file, oldPath) => {
+      if (this.itemPaths.has(oldPath) || (file instanceof TFile && this.affectsBoard(file))) refresh();
+    }));
+  }
+
+  async onClose(): Promise<void> {
+    this.unmount?.();
+    this.unmount = null;
+  }
+
+  /** Whether a changed note is, or was at the last query, one of this board's items. */
+  private affectsBoard(file: TFile): boolean {
+    const config = this.store.getState().config;
+    if (!config || file.extension !== 'md') return false;
+    if (this.itemPaths.has(file.path)) return true;
+    return tagsForFile(this.app, file).includes(config.sourceTag.toLowerCase());
+  }
+
+  // --- Actions ---------------------------------------------------------------
+
+  /**
+   * The in-place edit modal. Vault changes are ignored while it's open; on
+   * close the board re-queries once, and only if the note's frontmatter changed.
+   */
+  private openEditModal(file: TFile, title?: string): void {
+    this.editing = true;
+    new NoteEditModal(this.app, file, title ?? file.basename, (changed) => {
+      this.editing = false;
+      if (changed) this.store.getState().bumpVault();
+    }).open();
+  }
+
+  private openRowEditor(rowId: string): void {
+    const { updateRows } = this.store.getState();
+    openRecordEditor(this.app, this.ctx, rowId, {
+      remove: () => updateRows((rows) => deleteRows(rows, [rowId])),
+      duplicate: () => {
+        let id: string | null = null;
+        updateRows((rows) => void (id = duplicateRow(rows, rowId)));
+        if (id) this.openRowEditor(id);
+      },
+    });
+  }
+
+  /** Tables: add a row (with optional starting cells) and open it. */
+  private addRow(cells?: Record<string, unknown>): void {
+    let id = '';
+    this.store.getState().updateRows((rows) => void (id = addRow(rows, cells)));
+    this.openRowEditor(id);
+  }
+
+  private openSetup(): void {
+    if (this.isTable) {
+      new Notice('R Board: this table file could not be read. Fix or replace its contents.');
+      return;
+    }
+    openWizard(this.app, {}, 'Set up board', (config: DatabaseConfig) => {
+      this.store.getState().loadConfig(config, null);
+      this.data = serializeDatabase(config);
+      this.requestSave();
+    });
+  }
+
+  private deleteView(index: number): void {
+    const { config, updateConfig, activeView, setActiveView } = this.store.getState();
+    const name = config?.views[index]?.name;
+    if (name === undefined) return;
+    updateConfig((c) => {
+      c.views.splice(index, 1);
+      c.defaultView = c.views[0]?.name;
+    });
+    if (activeView === name) setActiveView(this.store.getState().config?.views[0]?.name ?? '');
+  }
+
+  /**
+   * Create a note (carrying the database's source tag) in the configured
+   * "New note location" and open it. If that location isn't set, open Board
+   * settings so the user can set it first.
+   */
+  private async createNewNote(values?: Record<string, unknown>): Promise<void> {
+    const config = this.store.getState().config;
+    if (!config) return;
+    if (config.kind === 'table') return this.addRow(values);
+    // Without a location, open settings so it can be set.
+    if (!config.newNoteFolder?.trim()) openBoardSettings(this.app, this.ctx);
+    await createNoteFor(this.app, config, values);
+  }
+}

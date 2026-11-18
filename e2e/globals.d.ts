@@ -1,5 +1,5 @@
 /** Hooks the dev harness (dev/harness.tsx) puts on `window`, as seen from page.evaluate in tests. */
-import type { BoardStore } from '../src/board/store';
+import type { BoardStore } from '../src/stores/board-store';
 
 declare global {
   interface Window {

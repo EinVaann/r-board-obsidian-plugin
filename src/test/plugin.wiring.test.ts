@@ -4,8 +4,8 @@ import { TFile, type App } from 'obsidian';
 // `../../main` would resolve to the built main.js; the source is main.tsx.
 // @ts-expect-error TS5097: .tsx extension in an import path
 import RBoardPlugin from '../../main.tsx';
-import { serializeDatabase } from '../config';
-import { parseTableFile, serializeTableFile, newTableFile } from '../table/format';
+import { serializeDatabase } from '../lib/config';
+import { parseTableFile, serializeTableFile, newTableFile } from '../lib/table/format';
 
 const mkFile = (p: string): TFile => new (TFile as unknown as new (p: string) => TFile)(p);
 type Handler = (...a: unknown[]) => void;

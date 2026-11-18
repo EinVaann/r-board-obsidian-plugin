@@ -1,18 +1,18 @@
 import { Notice, Plugin, TFile, TFolder, WorkspaceLeaf, normalizePath } from 'obsidian';
-import { BOARD_EXTENSION, BOARD_VIEW_TYPE, BoardView, TABLE_EXTENSION } from './src/BoardView';
-import { newTableFile, serializeTableFile } from './src/table/format';
-import { BoardHomeView, HOME_VIEW_TYPE } from './src/home/HomeView';
-import { serializeDatabase } from './src/config';
-import type { DatabaseConfig } from './src/types';
-import { openWizard } from './src/settings/Wizard';
-import { parseRecipe } from './src/recipe/parse';
-import { Recipe } from './src/recipe/Recipe';
-import { ReactRenderChild } from './src/react/mount';
-import { DatabaseEmbed, parseEmbed } from './src/embed/Embed';
-import { QuickAddCommands } from './src/quickadd/QuickAdd';
-import { AutomationWatcher } from './src/data/AutomationWatcher';
-import { relinkTables } from './src/table/append';
-import { RBoardSettingTab, applyTheme, clearTheme, parseTheme, type ThemeSettings } from './src/theme';
+import { BOARD_EXTENSION, BOARD_VIEW_TYPE, BoardView, TABLE_EXTENSION } from './src/obsidian/board-view';
+import { newTableFile, serializeTableFile } from './src/lib/table/format';
+import { BoardHomeView, HOME_VIEW_TYPE } from './src/screens/home/home-view';
+import { serializeDatabase } from './src/lib/config';
+import type { DatabaseConfig } from './src/types/database';
+import { openWizard } from './src/screens/settings/wizard';
+import { parseRecipe } from './src/lib/recipe/parse';
+import { Recipe } from './src/components/recipe';
+import { ReactRenderChild } from './src/obsidian/mount';
+import { DatabaseEmbed, parseEmbed } from './src/screens/embed/embed';
+import { QuickAddCommands } from './src/screens/quick-add/quick-add';
+import { AutomationWatcher } from './src/obsidian/automation-watcher';
+import { relinkTables } from './src/lib/table/append';
+import { RBoardSettingTab, applyTheme, clearTheme, parseTheme, type ThemeSettings } from './src/obsidian/theme';
 
 interface RBoardData {
   /** Active view name chosen per database, keyed by the `.board` file path. */

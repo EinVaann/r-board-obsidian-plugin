@@ -1,6 +1,6 @@
 import type { ReactNode, MouseEvent, CSSProperties } from 'react';
 import type { App, TFile } from 'obsidian';
-import type { BoardItem, PropertyConfig } from '../types';
+import type { BoardItem, PropertyConfig } from '../types/database';
 import {
   asArray,
   asBoolean,
@@ -13,9 +13,9 @@ import {
   parseLink,
   relativeDate,
   resolveImageSrc,
-} from '../render/values';
-import { toText } from '../formula/evaluate';
-import { openImageModal } from '../ui/ImageModal';
+} from '../lib/render/values';
+import { toText } from '../lib/formula/evaluate';
+import { openImageModal } from '../obsidian/image-modal';
 
 /** What field renderers need from the host. */
 export interface FieldEnv {
