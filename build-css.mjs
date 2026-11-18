@@ -14,8 +14,9 @@ const outFile = path.join(root, "styles.css");
 
 /** The shadcn components' Tailwind utilities (rb: prefix, no preflight), compiled from styles/tailwind.css. */
 function tailwind() {
-  const bin = path.join(root, "node_modules", ".bin", "tailwindcss");
-  return execFileSync(bin, ["-i", path.join(stylesDir, "tailwind.css"), "--optimize"], { cwd: root, encoding: "utf8", stdio: ["ignore", "pipe", "ignore"] });
+  // Run the CLI script with node: the .bin shim is a shell script, which execFileSync can't start on Windows.
+  const cli = path.join(root, "node_modules", "@tailwindcss", "cli", "dist", "index.mjs");
+  return execFileSync(process.execPath, [cli, "-i", path.join(stylesDir, "tailwind.css"), "--optimize"], { cwd: root, encoding: "utf8", stdio: ["ignore", "pipe", "ignore"] });
 }
 
 const cssIn = async (dir) =>

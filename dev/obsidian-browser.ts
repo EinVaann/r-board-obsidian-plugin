@@ -191,10 +191,12 @@ export class Modal {
       if (e.target === this.bg) this.close();
     };
     document.addEventListener('keydown', this.onKey);
+    window.addEventListener('focusin', this.onFocusIn);
     void this.onOpen();
   }
   close(): void {
     document.removeEventListener('keydown', this.onKey);
+    window.removeEventListener('focusin', this.onFocusIn);
     this.onClose();
     this.bg.remove();
   }
@@ -202,6 +204,13 @@ export class Modal {
   private onKey = (e: KeyboardEvent): void => {
     if (e.key !== 'Escape' || e.defaultPrevented || document.querySelectorAll('.dev-modal-bg').item(document.querySelectorAll('.dev-modal-bg').length - 1) !== this.bg) return;
     this.close();
+  };
+  /** Like Obsidian's keymap: focus landing outside the top modal is pulled back into it next tick. */
+  private onFocusIn = (e: FocusEvent): void => {
+    const target = e.target as Node | null;
+    if (!target || target === document.body || this.bg.contains(target)) return;
+    if (document.querySelectorAll('.dev-modal-bg').item(document.querySelectorAll('.dev-modal-bg').length - 1) !== this.bg) return;
+    window.setTimeout(() => this.bg.querySelector<HTMLElement>('input, select, textarea, button, [tabindex]')?.focus({ preventScroll: true }), 0);
   };
   onOpen(): void | Promise<void> {}
   onClose(): void {}

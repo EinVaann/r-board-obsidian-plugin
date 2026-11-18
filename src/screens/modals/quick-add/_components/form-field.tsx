@@ -12,7 +12,7 @@ import { ImageField } from '../../../../components/image-field';
 import type { ImageDraft } from '../../../../lib/data/image-import';
 import { Toggle } from '@/components/form-controls';
 import { Icon } from '@/components/icon';
-import { Popover, PopoverAnchor, PopoverContent } from '@/components/ui/popover';
+import { Popover, PopoverAnchor, PopoverContent, popoverContainer } from '@/components/ui/popover';
 
 /**
  * One quick-add field, edited the way its type is picked: a dropdown for
@@ -294,6 +294,7 @@ function Dropdown({
       </PopoverAnchor>
       <PopoverContent
         align="start"
+        container={popoverContainer(trigger.current)}
         className="rb-qa-menu rb:w-[var(--radix-popover-trigger-width)] rb:min-w-[200px] rb:p-1.5"
         onOpenAutoFocus={(e) => e.preventDefault()}
         onCloseAutoFocus={(e) => e.preventDefault()}

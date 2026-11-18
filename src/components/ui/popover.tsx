@@ -14,14 +14,23 @@ function PopoverTrigger({
   return <PopoverPrimitive.Trigger data-slot="popover-trigger" {...props} />
 }
 
+/**
+ * Where a popover opened from `el` should portal: the Obsidian modal around it, if any. Obsidian
+ * pulls focus back into the open modal when it lands outside, which would close a popover on body.
+ */
+function popoverContainer(el: Element | null | undefined): HTMLElement | undefined {
+  return el?.closest<HTMLElement>(".modal-container") ?? undefined
+}
+
 function PopoverContent({
   className,
   align = "center",
   sideOffset = 4,
+  container,
   ...props
-}: React.ComponentProps<typeof PopoverPrimitive.Content>) {
+}: React.ComponentProps<typeof PopoverPrimitive.Content> & { container?: HTMLElement }) {
   return (
-    <PopoverPrimitive.Portal>
+    <PopoverPrimitive.Portal container={container}>
       <PopoverPrimitive.Content
         data-slot="popover-content"
         align={align}
@@ -84,4 +93,5 @@ export {
   PopoverHeader,
   PopoverTitle,
   PopoverDescription,
+  popoverContainer,
 }

@@ -1,10 +1,10 @@
-import { useEffect, useState, type ComponentProps, type ReactNode } from 'react';
+import { useEffect, useRef, useState, type ComponentProps, type ReactNode } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { NativeSelect, NativeSelectOption } from '@/components/ui/native-select';
 import { Switch } from '@/components/ui/switch';
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Popover, PopoverContent, PopoverTrigger, popoverContainer } from '@/components/ui/popover';
 import { Badge } from '@/components/ui/badge';
 import { Icon } from '@/components/icon';
 import { cn } from '@/lib/utils';
@@ -169,10 +169,14 @@ export function MultiSelect<T extends string>({
     onChange(next);
   };
   const text = value.map((v) => options.find((o) => o.value === v)?.label ?? v).join(', ') || placeholder;
+  const trigger = useRef<HTMLButtonElement>(null);
+  // Controlled, so opening re-renders here and the container is read with the trigger mounted.
+  const [open, setOpen] = useState(false);
   return (
-    <Popover>
+    <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>
         <button
+          ref={trigger}
           type="button"
           data-slot="multi-select"
           aria-label={label}
@@ -189,7 +193,7 @@ export function MultiSelect<T extends string>({
           <Icon name="chevrons-up-down" className="rb:inline-flex rb:shrink-0 rb:text-muted-foreground rb:[&_svg]:size-3.5" />
         </button>
       </PopoverTrigger>
-      <PopoverContent align="start" className="rb:w-auto rb:min-w-[var(--radix-popover-trigger-width)] rb:max-h-[var(--radix-popover-content-available-height)] rb:overflow-y-auto">
+      <PopoverContent align="start" container={popoverContainer(trigger.current)} className="rb:w-auto rb:min-w-[var(--radix-popover-trigger-width)] rb:max-h-[var(--radix-popover-content-available-height)] rb:overflow-y-auto">
         <div role="listbox" aria-multiselectable="true" className="rb:flex rb:flex-col">
           {options.map((o) => {
             const on = value.includes(o.value);
