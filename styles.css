@@ -584,7 +584,7 @@
   color: var(--rb-select-on-fg);
 }
 
-/* ===== Segmented, Switch (segmented.tsx, switch.tsx) ===== */
+/* ===== Segmented (segmented.tsx). Switch is a shadcn component: its look is in switch.tsx. ===== */
 :where(.rb-root, .rb-home, .rb-embed, .modal.rb-modal) [data-slot='segmented'][data-slot] {
   display: inline-flex;
   gap: 2px;
@@ -613,36 +613,6 @@
   background: var(--rb-segment-on-bg);
   color: var(--rb-segment-on-fg);
   box-shadow: var(--rb-segment-on-shadow);
-}
-
-:where(.rb-root, .rb-home, .rb-embed, .modal.rb-modal) [data-slot='switch'][data-slot] {
-  all: unset;
-  box-sizing: border-box;
-  position: relative;
-  flex: none;
-  width: var(--rb-switch-w);
-  height: var(--rb-switch-h);
-  border-radius: var(--rb-switch-radius);
-  background: var(--rb-switch-off-bg);
-  cursor: pointer;
-  transition: background-color 0.18s;
-}
-:where(.rb-root, .rb-home, .rb-embed, .modal.rb-modal) [data-slot='switch'][data-state='checked'] { background: var(--rb-switch-on-bg); }
-:where(.rb-root, .rb-home, .rb-embed, .modal.rb-modal) [data-slot='switch']:focus-visible { box-shadow: 0 0 0 2px var(--rb-field-border-focus); }
-:where(.rb-root, .rb-home, .rb-embed, .modal.rb-modal) [data-slot='switch-thumb'] {
-  display: block;
-  width: var(--rb-switch-thumb-w);
-  height: calc(var(--rb-switch-h) - 2 * var(--rb-switch-pad));
-  margin-top: var(--rb-switch-pad);
-  border-radius: var(--rb-switch-thumb-radius);
-  background: var(--rb-switch-thumb);
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.25);
-  transform: translateX(var(--rb-switch-pad));
-  transition: transform 0.2s cubic-bezier(0.2, 0.9, 0.1, 1);
-}
-:where(.rb-root, .rb-home, .rb-embed, .modal.rb-modal) [data-slot='switch-thumb'][data-state='checked'] {
-  transform: translateX(calc(var(--rb-switch-w) - var(--rb-switch-thumb-w) - var(--rb-switch-pad)));
-  background: var(--rb-switch-thumb-on);
 }
 
 /* ===== MultiSelect popup (src/ui/primitives/select.tsx) — the trigger shares the field box in input.css ===== */
@@ -1591,7 +1561,7 @@ body .rb-table-wrap.rb-grid::-webkit-scrollbar-thumb:active { background-color: 
   background: var(--background-primary);
   box-shadow: none;
 }
-.rb-cell-editor .rb-switch { margin: 0 10px; }
+.rb-cell-editor > [data-slot='switch'] { margin: 0 10px; }
 .rb-grid:focus-within .rb-cell-active { box-shadow: inset 0 0 0 2px var(--interactive-accent); }
 .rb-grid:not(:focus-within) .rb-cell-active { box-shadow: inset 0 0 0 2px var(--background-modifier-border-hover); }
 /* A row opened from a link flashes once. */
@@ -4535,3 +4505,272 @@ body.rb-theme-industrial.rb-mode-dark { --rb-chart-palette: #ECECE6, #E9CD62, #8
 /* ---------- Selection / "this one" ---------- */
 .rb-theme-industrial .rb-root .rb-cell-range { background: rgba(255, 228, 26, 0.16); }
 .rb-theme-industrial .rb-root .rb-chart { border-radius: 12px; padding: 12px; }
+
+/*! tailwindcss v4.3.5 | MIT License | https://tailwindcss.com */
+@layer properties {
+  @supports (((-webkit-hyphens: none)) and (not (margin-trim: block))) or ((-moz-orient: inline) and (not (color: rgb(from red r g b)))) {
+    *, :before, :after, ::backdrop {
+      --tw-translate-x: 0;
+      --tw-translate-y: 0;
+      --tw-translate-z: 0;
+      --tw-border-style: solid;
+      --tw-shadow: 0 0 #0000;
+      --tw-shadow-color: initial;
+      --tw-shadow-alpha: 100%;
+      --tw-inset-shadow: 0 0 #0000;
+      --tw-inset-shadow-color: initial;
+      --tw-inset-shadow-alpha: 100%;
+      --tw-ring-color: initial;
+      --tw-ring-shadow: 0 0 #0000;
+      --tw-inset-ring-color: initial;
+      --tw-inset-ring-shadow: 0 0 #0000;
+      --tw-ring-inset: initial;
+      --tw-ring-offset-width: 0px;
+      --tw-ring-offset-color: #fff;
+      --tw-ring-offset-shadow: 0 0 #0000;
+    }
+  }
+}
+
+:root, :host {
+  --rb-default-transition-duration: .15s;
+  --rb-default-transition-timing-function: cubic-bezier(.4, 0, .2, 1);
+}
+
+.rb\:pointer-events-none {
+  pointer-events: none !important;
+}
+
+.rb\:relative {
+  position: relative !important;
+}
+
+.rb\:m-0 {
+  margin: 0 !important;
+}
+
+.rb\:block {
+  display: block !important;
+}
+
+.rb\:inline-flex {
+  display: inline-flex !important;
+}
+
+.rb\:h-\[calc\(var\(--rb-switch-h\)-2\*var\(--rb-switch-pad\)\)\] {
+  height: calc(var(--rb-switch-h) - 2 * var(--rb-switch-pad)) !important;
+}
+
+.rb\:h-switch-h {
+  height: var(--rb-switch-h) !important;
+}
+
+.rb\:w-switch-thumb {
+  width: var(--rb-switch-thumb-w) !important;
+}
+
+.rb\:w-switch-w {
+  width: var(--rb-switch-w) !important;
+}
+
+.rb\:shrink-0 {
+  flex-shrink: 0 !important;
+}
+
+.rb\:translate-x-switch-pad {
+  --tw-translate-x: var(--rb-switch-pad) !important;
+  translate: var(--tw-translate-x) var(--tw-translate-y) !important;
+}
+
+.rb\:cursor-pointer {
+  cursor: pointer !important;
+}
+
+.rb\:items-center {
+  align-items: center !important;
+}
+
+.rb\:rounded-switch {
+  border-radius: var(--rb-switch-radius) !important;
+}
+
+.rb\:rounded-switch-thumb {
+  border-radius: var(--rb-switch-thumb-radius) !important;
+}
+
+.rb\:border-0 {
+  border-style: var(--tw-border-style) !important;
+  border-width: 0 !important;
+}
+
+.rb\:bg-switch-off {
+  background-color: var(--rb-switch-off-bg) !important;
+}
+
+.rb\:bg-switch-thumb {
+  background-color: var(--rb-switch-thumb) !important;
+}
+
+.rb\:p-0 {
+  padding: 0 !important;
+}
+
+.rb\:shadow-none {
+  --tw-shadow: 0 0 #0000 !important;
+  box-shadow: var(--tw-inset-shadow), var(--tw-inset-ring-shadow), var(--tw-ring-offset-shadow), var(--tw-ring-shadow), var(--tw-shadow) !important;
+}
+
+.rb\:shadow-sm {
+  --tw-shadow: 0 1px 3px 0 var(--tw-shadow-color, #0000001a), 0 1px 2px -1px var(--tw-shadow-color, #0000001a) !important;
+  box-shadow: var(--tw-inset-shadow), var(--tw-inset-ring-shadow), var(--tw-ring-offset-shadow), var(--tw-ring-shadow), var(--tw-shadow) !important;
+}
+
+.rb\:transition-colors {
+  transition-property: color, background-color, border-color, outline-color, text-decoration-color, fill, stroke, --tw-gradient-from, --tw-gradient-via, --tw-gradient-to !important;
+  transition-timing-function: var(--tw-ease, var(--rb-default-transition-timing-function)) !important;
+  transition-duration: var(--tw-duration, var(--rb-default-transition-duration)) !important;
+}
+
+.rb\:transition-transform {
+  transition-property: transform, translate, scale, rotate !important;
+  transition-timing-function: var(--tw-ease, var(--rb-default-transition-timing-function)) !important;
+  transition-duration: var(--tw-duration, var(--rb-default-transition-duration)) !important;
+}
+
+.rb\:outline-none {
+  --tw-outline-style: none !important;
+  outline-style: none !important;
+}
+
+.rb\:focus-visible\:ring-2:focus-visible {
+  --tw-ring-shadow: var(--tw-ring-inset, ) 0 0 0 calc(2px + var(--tw-ring-offset-width)) var(--tw-ring-color, currentcolor) !important;
+  box-shadow: var(--tw-inset-shadow), var(--tw-inset-ring-shadow), var(--tw-ring-offset-shadow), var(--tw-ring-shadow), var(--tw-shadow) !important;
+}
+
+.rb\:focus-visible\:ring-ring:focus-visible {
+  --tw-ring-color: var(--rb-field-border-focus) !important;
+}
+
+.rb\:disabled\:cursor-not-allowed:disabled {
+  cursor: not-allowed !important;
+}
+
+.rb\:disabled\:opacity-50:disabled {
+  opacity: .5 !important;
+}
+
+.rb\:data-\[state\=checked\]\:translate-x-\[calc\(var\(--rb-switch-w\)-var\(--rb-switch-thumb-w\)-var\(--rb-switch-pad\)\)\][data-state="checked"] {
+  --tw-translate-x: calc(var(--rb-switch-w) - var(--rb-switch-thumb-w) - var(--rb-switch-pad)) !important;
+  translate: var(--tw-translate-x) var(--tw-translate-y) !important;
+}
+
+.rb\:data-\[state\=checked\]\:bg-switch-on[data-state="checked"] {
+  background-color: var(--rb-switch-on-bg) !important;
+}
+
+.rb\:data-\[state\=checked\]\:bg-switch-thumb-on[data-state="checked"] {
+  background-color: var(--rb-switch-thumb-on) !important;
+}
+
+@property --tw-translate-x {
+  syntax: "*";
+  inherits: false;
+  initial-value: 0;
+}
+
+@property --tw-translate-y {
+  syntax: "*";
+  inherits: false;
+  initial-value: 0;
+}
+
+@property --tw-translate-z {
+  syntax: "*";
+  inherits: false;
+  initial-value: 0;
+}
+
+@property --tw-border-style {
+  syntax: "*";
+  inherits: false;
+  initial-value: solid;
+}
+
+@property --tw-shadow {
+  syntax: "*";
+  inherits: false;
+  initial-value: 0 0 #0000;
+}
+
+@property --tw-shadow-color {
+  syntax: "*";
+  inherits: false
+}
+
+@property --tw-shadow-alpha {
+  syntax: "<percentage>";
+  inherits: false;
+  initial-value: 100%;
+}
+
+@property --tw-inset-shadow {
+  syntax: "*";
+  inherits: false;
+  initial-value: 0 0 #0000;
+}
+
+@property --tw-inset-shadow-color {
+  syntax: "*";
+  inherits: false
+}
+
+@property --tw-inset-shadow-alpha {
+  syntax: "<percentage>";
+  inherits: false;
+  initial-value: 100%;
+}
+
+@property --tw-ring-color {
+  syntax: "*";
+  inherits: false
+}
+
+@property --tw-ring-shadow {
+  syntax: "*";
+  inherits: false;
+  initial-value: 0 0 #0000;
+}
+
+@property --tw-inset-ring-color {
+  syntax: "*";
+  inherits: false
+}
+
+@property --tw-inset-ring-shadow {
+  syntax: "*";
+  inherits: false;
+  initial-value: 0 0 #0000;
+}
+
+@property --tw-ring-inset {
+  syntax: "*";
+  inherits: false
+}
+
+@property --tw-ring-offset-width {
+  syntax: "<length>";
+  inherits: false;
+  initial-value: 0;
+}
+
+@property --tw-ring-offset-color {
+  syntax: "*";
+  inherits: false;
+  initial-value: #fff;
+}
+
+@property --tw-ring-offset-shadow {
+  syntax: "*";
+  inherits: false;
+  initial-value: 0 0 #0000;
+}

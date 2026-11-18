@@ -96,7 +96,7 @@ body .rb-table-wrap.rb-grid::-webkit-scrollbar-thumb:active { background-color: 
   background: var(--background-primary);
   box-shadow: none;
 }
-.rb-cell-editor .rb-switch { margin: 0 10px; }
+.rb-cell-editor > [data-slot='switch'] { margin: 0 10px; }
 .rb-grid:focus-within .rb-cell-active { box-shadow: inset 0 0 0 2px var(--interactive-accent); }
 .rb-grid:not(:focus-within) .rb-cell-active { box-shadow: inset 0 0 0 2px var(--background-modifier-border-hover); }
 /* A row opened from a link flashes once. */

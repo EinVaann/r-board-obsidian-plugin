@@ -41,6 +41,7 @@ const context = await esbuild.context({
   minify: prod,
   treeShaking: true,
   outfile: "main.js",
+  alias: { "@": path.join(path.dirname(fileURLToPath(import.meta.url)), "src") },
 });
 
 if (prod) {

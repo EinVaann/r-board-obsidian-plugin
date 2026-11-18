@@ -1,4 +1,4 @@
-/* ===== Segmented, Switch (segmented.tsx, switch.tsx) ===== */
+/* ===== Segmented (segmented.tsx). Switch is a shadcn component: its look is in switch.tsx. ===== */
 :where(.rb-root, .rb-home, .rb-embed, .modal.rb-modal) [data-slot='segmented'][data-slot] {
   display: inline-flex;
   gap: 2px;
@@ -29,32 +29,3 @@
   box-shadow: var(--rb-segment-on-shadow);
 }
 
-:where(.rb-root, .rb-home, .rb-embed, .modal.rb-modal) [data-slot='switch'][data-slot] {
-  all: unset;
-  box-sizing: border-box;
-  position: relative;
-  flex: none;
-  width: var(--rb-switch-w);
-  height: var(--rb-switch-h);
-  border-radius: var(--rb-switch-radius);
-  background: var(--rb-switch-off-bg);
-  cursor: pointer;
-  transition: background-color 0.18s;
-}
-:where(.rb-root, .rb-home, .rb-embed, .modal.rb-modal) [data-slot='switch'][data-state='checked'] { background: var(--rb-switch-on-bg); }
-:where(.rb-root, .rb-home, .rb-embed, .modal.rb-modal) [data-slot='switch']:focus-visible { box-shadow: 0 0 0 2px var(--rb-field-border-focus); }
-:where(.rb-root, .rb-home, .rb-embed, .modal.rb-modal) [data-slot='switch-thumb'] {
-  display: block;
-  width: var(--rb-switch-thumb-w);
-  height: calc(var(--rb-switch-h) - 2 * var(--rb-switch-pad));
-  margin-top: var(--rb-switch-pad);
-  border-radius: var(--rb-switch-thumb-radius);
-  background: var(--rb-switch-thumb);
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.25);
-  transform: translateX(var(--rb-switch-pad));
-  transition: transform 0.2s cubic-bezier(0.2, 0.9, 0.1, 1);
-}
-:where(.rb-root, .rb-home, .rb-embed, .modal.rb-modal) [data-slot='switch-thumb'][data-state='checked'] {
-  transform: translateX(calc(var(--rb-switch-w) - var(--rb-switch-thumb-w) - var(--rb-switch-pad)));
-  background: var(--rb-switch-thumb-on);
-}

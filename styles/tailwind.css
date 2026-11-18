@@ -1,0 +1,63 @@
+/*
+ * Tailwind for the shadcn components in src/components/ui. Compiled by build-css.mjs, appended last.
+ * prefix(rb): every class is `rb:…`, so nothing collides with Obsidian, themes or other plugins.
+ * No preflight (a global reset would restyle Obsidian). No layers + important: Obsidian's own
+ * button/input rules are unlayered and high-specificity, and would otherwise win over utilities.
+ */
+@import "tailwindcss/theme.css" prefix(rb);
+@import "tailwindcss/utilities.css" prefix(rb) important source(none);
+@source "../src/components";
+@source "../src/screens";
+
+/* Only our own roots get dark variants; the plugin's mode class sits on <body>. */
+@custom-variant dark (&:where(.theme-dark *, .rb-mode-dark *));
+
+/*
+ * shadcn's colour names, mapped onto the plugin's --rb-* tokens (styles/00-tokens.css and the theme
+ * modules). Themes change those tokens; components never hard-code a colour.
+ */
+@theme inline {
+  --color-background: var(--rb-surface-bg);
+  --color-foreground: var(--text-normal);
+  --color-muted: var(--rb-surface-sunken);
+  --color-muted-foreground: var(--text-muted);
+  --color-faint-foreground: var(--text-faint);
+  --color-accent: var(--background-modifier-hover);
+  --color-accent-foreground: var(--text-normal);
+  --color-border: var(--rb-surface-border);
+  --color-divider: var(--rb-divider);
+  --color-input: var(--rb-field-border);
+  --color-input-hover: var(--rb-field-border-hover);
+  --color-field: var(--rb-field-bg);
+  --color-ring: var(--rb-field-border-focus);
+  --color-popover: var(--rb-popover-bg);
+  --color-popover-foreground: var(--text-normal);
+  --color-primary: var(--rb-btn-primary-fg);
+  --color-destructive: var(--rb-danger-fg);
+  --color-switch-on: var(--rb-switch-on-bg);
+  --color-switch-off: var(--rb-switch-off-bg);
+  --color-switch-thumb: var(--rb-switch-thumb);
+  --color-switch-thumb-on: var(--rb-switch-thumb-on);
+
+  --radius-control: var(--rb-control-radius);
+  --radius-control-sm: var(--rb-control-radius-sm);
+  --radius-surface: var(--rb-surface-radius);
+  --radius-button: var(--rb-btn-radius);
+  --radius-switch: var(--rb-switch-radius);
+  --radius-switch-thumb: var(--rb-switch-thumb-radius);
+
+  --text-control: var(--rb-control-font);
+  --text-control-sm: var(--rb-control-font-sm);
+  --text-hint: var(--rb-font-hint);
+  --text-label: var(--rb-font-label);
+
+  --spacing-control: var(--rb-control-h);
+  --spacing-control-sm: var(--rb-control-h-sm);
+  --spacing-icon-btn-sm: var(--rb-icon-btn-sm);
+  --spacing-row: var(--rb-row-h);
+  --spacing-row-indent: var(--rb-row-indent);
+  --spacing-switch-w: var(--rb-switch-w);
+  --spacing-switch-h: var(--rb-switch-h);
+  --spacing-switch-thumb: var(--rb-switch-thumb-w);
+  --spacing-switch-pad: var(--rb-switch-pad);
+}

@@ -18,7 +18,7 @@ await esbuild.build({
   format: "iife",
   jsx: "automatic",
   define: { "process.env.NODE_ENV": '"development"' },
-  alias: { obsidian: path.join(root, "dev/obsidian-browser.ts") },
+  alias: { obsidian: path.join(root, "dev/obsidian-browser.ts"), "@": path.join(root, "src") },
   sourcemap: "inline",
   logLevel: "warning",
 });

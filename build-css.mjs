@@ -1,4 +1,5 @@
 import { promises as fs } from "fs";
+import { execFileSync } from "child_process";
 import path from "path";
 import { fileURLToPath } from "url";
 
@@ -11,9 +12,15 @@ const root = path.dirname(fileURLToPath(import.meta.url));
 const stylesDir = path.join(root, "styles");
 const outFile = path.join(root, "styles.css");
 
+/** The shadcn components' Tailwind utilities (rb: prefix, no preflight), compiled from styles/tailwind.css. */
+function tailwind() {
+  const bin = path.join(root, "node_modules", ".bin", "tailwindcss");
+  return execFileSync(bin, ["-i", path.join(stylesDir, "tailwind.css"), "--optimize"], { cwd: root, encoding: "utf8", stdio: ["ignore", "pipe", "ignore"] });
+}
+
 const cssIn = async (dir) =>
   (await fs.readdir(dir))
-    .filter((f) => f.endsWith(".css"))
+    .filter((f) => f.endsWith(".css") && f !== "tailwind.css")
     .sort((a, b) => a.localeCompare(b, "en", { numeric: true }))
     .map((f) => path.join(dir, f));
 
@@ -35,6 +42,9 @@ export async function buildCss() {
   for (const file of files) {
     parts.push(await fs.readFile(file, "utf8"));
   }
+  // Last, so a component's own classes beat the older partials.
+  parts.push(tailwind());
+  entries.push("tailwind.css (compiled)");
 
   // Join with a blank line; partials already end in newlines, so trim the
   // seams to avoid runaway blank lines, then end with a single trailing newline.
