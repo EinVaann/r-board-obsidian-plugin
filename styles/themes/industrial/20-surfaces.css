@@ -10,11 +10,12 @@
  * buttons, and yellow kept for "this one" (selection, running, primary).
  */
 body.rb-theme-industrial {
-  --rbi-yellow: #FFE41A;
-  --rbi-yellow-soft: #FFF6B0;
-  --rbi-yellow-ink: #1C1C1E;
+  /* The accent ("yellow" in names, from the default): plugin settings set --rb-user-accent (theme.ts). */
+  --rbi-yellow: var(--rb-user-accent, #FFE41A);
+  --rbi-yellow-ink: var(--rb-user-accent-fg, #1C1C1E);
+  --rbi-yellow-soft: color-mix(in srgb, var(--rbi-yellow) 30%, #FFFFFF);
   /* Flat by rule (styles/RULES.md): the "-grad" / "-glow" names stay for the rules that use them. */
-  --rbi-yellow-grad: #FFE41A;
+  --rbi-yellow-grad: var(--rbi-yellow);
   --rbi-yellow-glow: none;
   --rbi-head: 'Barlow Semi Condensed', 'Arial Narrow', var(--font-interface);
 }
@@ -30,7 +31,7 @@ body.rb-theme-industrial.rb-mode-light {
   --rbi-sunken: rgba(28, 28, 30, 0.05);
   --rbi-ink-grad: #1C1C1E;
   --rbi-ink-text: #F5F5F2;
-  --rbi-running: #FFF9D1;
+  --rbi-running: color-mix(in srgb, var(--rbi-yellow) 18%, #FFFFFF);
   --rbi-scrim: rgba(225, 225, 220, 0.55);
 }
 body.rb-theme-industrial.rb-mode-dark {
@@ -45,7 +46,7 @@ body.rb-theme-industrial.rb-mode-dark {
   --rbi-sunken: rgba(0, 0, 0, 0.2);
   --rbi-ink-grad: #ECECE6;
   --rbi-ink-text: #1C1C1E;
-  --rbi-running: rgba(255, 228, 26, 0.08);
+  --rbi-running: color-mix(in srgb, var(--rbi-yellow) 8%, transparent);
   --rbi-scrim: rgba(10, 10, 12, 0.6);
 }
 
@@ -88,7 +89,7 @@ body.rb-theme-industrial.rb-mode-light :is(.rb-root, .rb-home, .rb-embed, .modal
   --shadow-l: 0 30px 70px -20px rgba(28, 28, 30, 0.35);
   --blur-background: #FFFFFF;
   --raised-mask-background: transparent;
-  --text-selection: rgba(255, 228, 26, 0.35);
+  --text-selection: color-mix(in srgb, var(--rbi-yellow) 35%, transparent);
   --highlight-mix-blend-mode: darken;
   --color-red-rgb: 192, 38, 63; --color-orange-rgb: 194, 106, 42; --color-yellow-rgb: 212, 164, 0; --color-green-rgb: 111, 163, 50;
   --color-cyan-rgb: 60, 150, 150; --color-blue-rgb: 77, 123, 214; --color-purple-rgb: 112, 102, 255; --color-pink-rgb: 200, 80, 140;
@@ -132,7 +133,7 @@ body.rb-theme-industrial.rb-mode-dark :is(.rb-root, .rb-home, .rb-embed, .modal.
   --shadow-l: 0 30px 70px -20px rgba(0, 0, 0, 0.8);
   --blur-background: #2C2C30;
   --raised-mask-background: transparent;
-  --text-selection: rgba(255, 228, 26, 0.25);
+  --text-selection: color-mix(in srgb, var(--rbi-yellow) 25%, transparent);
   --highlight-mix-blend-mode: lighten;
   --color-red-rgb: 255, 107, 131; --color-orange-rgb: 240, 154, 85; --color-yellow-rgb: 233, 205, 98; --color-green-rgb: 163, 208, 101;
   --color-cyan-rgb: 110, 200, 200; --color-blue-rgb: 126, 163, 240; --color-purple-rgb: 168, 150, 255; --color-pink-rgb: 240, 150, 200;
@@ -281,7 +282,7 @@ body.rb-theme-industrial :is(.rb-root, .rb-home, .rb-embed, .modal.rb-modal, .me
   --tag-border-color-hover: transparent;
   --table-border-color: var(--background-modifier-border);
   --table-header-color: var(--text-normal);
-  --table-selection: rgba(255, 228, 26, 0.18);
+  --table-selection: color-mix(in srgb, var(--rbi-yellow) 18%, transparent);
   --table-selection-border-color: var(--text-normal);
   --table-add-button-border-color: var(--background-modifier-border);
   --nav-item-color: var(--text-muted);
@@ -341,8 +342,9 @@ body.rb-theme-industrial .modal.rb-modal .modal-title { font-size: 16px; font-we
 body.rb-theme-industrial .modal.rb-modal .setting-item { background: transparent; border-radius: 0; margin-bottom: 0; }
 
 /* Default chart series colors (read by the chart code): a graphite ramp with one yellow. */
-body.rb-theme-industrial.rb-mode-light { --rb-chart-palette: #3E3E43, #E9CD62, #A7A79C, #6B6B66, #CDCDC0, #8A8A84, #55554F, #D6D6CF; }
-body.rb-theme-industrial.rb-mode-dark { --rb-chart-palette: #ECECE6, #E9CD62, #8A8A84, #B9B9B2, #5A5A5E, #D6D6CF, #6F6F6A, #A3A39D; }
+/* Charts: distinct hues, not the theme colour; deeper on light, brighter on dark, so each series reads. */
+body.rb-theme-industrial.rb-mode-light { --rb-chart-palette: #3B7DD8, #E07A3F, #2E9E7A, #C2477D, #8A63C9, #C9A227, #4BA3C3, #8C6D4F, #6B7280, #5E9E3A; }
+body.rb-theme-industrial.rb-mode-dark { --rb-chart-palette: #6FA8F5, #F2995E, #4FC79F, #E87AAA, #A98BE8, #E3C44F, #6CC4E0, #C29A74, #9CA3AF, #8BCB62; }
 
 /* ---------- Canvas and planes ---------- */
 /* Text inherits from <body>, outside R Board: set it on our own roots. */
@@ -611,5 +613,5 @@ body.rb-theme-industrial.rb-mode-dark { --rb-chart-palette: #ECECE6, #E9CD62, #8
 }
 
 /* ---------- Selection / "this one" ---------- */
-.rb-theme-industrial .rb-root .rb-cell-range { background: rgba(255, 228, 26, 0.16); }
+.rb-theme-industrial .rb-root .rb-cell-range { background: color-mix(in srgb, var(--rbi-yellow) 16%, transparent); }
 .rb-theme-industrial .rb-root .rb-chart { border-radius: 12px; padding: 12px; }

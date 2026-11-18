@@ -5,19 +5,22 @@ import { applyTheme, clearTheme, parseTheme } from './theme';
 
 describe('appearance', () => {
   it('defaults to industrial / auto and drops unknown values', () => {
-    expect(parseTheme(undefined)).toEqual({ theme: 'industrial', mode: 'auto', accent: 'vault' });
-    expect(parseTheme({ theme: 'neon', mode: 'sepia', accent: 'rainbow' })).toEqual({ theme: 'industrial', mode: 'auto', accent: 'vault' });
+    expect(parseTheme(undefined)).toEqual({ theme: 'industrial', mode: 'auto', accent: 'yellow' });
+    expect(parseTheme({ theme: 'neon', mode: 'sepia', accent: 'rainbow' })).toEqual({ theme: 'industrial', mode: 'auto', accent: 'yellow' });
     expect(parseTheme({ theme: 'classic', mode: 'dark', accent: 'teal' })).toEqual({ theme: 'classic', mode: 'dark', accent: 'teal' });
     expect(parseTheme({ accent: '#123abc' }).accent).toBe('#123abc');
   });
 
-  it('button color: a preset or custom hex sets the variable with readable text; vault accent clears it', () => {
+  it('accent color (Industrial only): a preset or hex sets the variable with readable text', () => {
     applyTheme(document, { theme: 'industrial', mode: 'light', accent: 'yellow' });
-    expect(document.body.style.getPropertyValue('--rb-user-accent')).toBe('#F2D33C');
+    expect(document.body.style.getPropertyValue('--rb-user-accent')).toBe('#FFE41A');
     expect(document.body.style.getPropertyValue('--rb-user-accent-fg')).toBe('#1C1C1E');
     applyTheme(document, { theme: 'industrial', mode: 'light', accent: '#203040' });
     expect(document.body.style.getPropertyValue('--rb-user-accent-fg')).toBe('#FFFFFF');
     applyTheme(document, { theme: 'industrial', mode: 'light', accent: 'vault' });
+    expect(document.body.style.getPropertyValue('--rb-user-accent')).toBe('var(--rb-vault-accent)');
+    // Classic follows Obsidian: the setting doesn't apply.
+    applyTheme(document, { theme: 'classic', mode: 'light', accent: 'teal' });
     expect(document.body.style.getPropertyValue('--rb-user-accent')).toBe('');
   });
 

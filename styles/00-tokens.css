@@ -69,11 +69,10 @@ body {
   --rb-btn-secondary-border: var(--background-modifier-border);
   --rb-btn-secondary-shadow: none;
   --rb-btn-secondary-hover-bg: var(--background-modifier-hover);
-  /* The board's own "create" action (New note / New row): the colour from plugin settings (theme.ts sets
-     --rb-user-accent on <body>), else the vault's accent (--rb-vault-accent, below; themes don't override it). */
-  --rb-btn-accent-bg: var(--rb-user-accent, var(--rb-vault-accent));
+  /* The board's own "create" action (New note / New row): the vault's accent (Industrial: its accent colour). */
+  --rb-btn-accent-bg: var(--rb-vault-accent);
   --rb-btn-accent-hover-bg: color-mix(in srgb, var(--rb-btn-accent-bg) 88%, #000);
-  --rb-btn-accent-fg: var(--rb-user-accent-fg, #FFFFFF);
+  --rb-btn-accent-fg: #FFFFFF;
   --rb-btn-ghost-fg: var(--text-muted);
   --rb-btn-ghost-hover-fg: var(--text-normal);
   --rb-btn-ghost-hover-bg: var(--background-modifier-hover);
