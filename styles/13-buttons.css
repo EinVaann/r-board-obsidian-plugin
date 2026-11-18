@@ -39,10 +39,10 @@
 }
 
 /* Full-width primary buttons for "Add property" / "Add filter" / "Delete view". */
-.rb-wizard .setting-item:not(.rb-prop-row):not(.rb-filter-row) > .setting-item-control:only-child {
+.rb-wizard .setting-item:not(.rb-filter-row) > .setting-item-control:only-child {
   justify-content: stretch;
 }
-.rb-wizard .setting-item:not(.rb-prop-row):not(.rb-filter-row) > .setting-item-control:only-child button {
+.rb-wizard .setting-item:not(.rb-filter-row) > .setting-item-control:only-child button {
   flex: 1 1 auto;
 }
 

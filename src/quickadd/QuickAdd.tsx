@@ -8,10 +8,12 @@ import { appendTableRow, openBoardView } from '../table/append';
 import { createNoteFor } from '../data/notes';
 import { queryItems } from '../data/query';
 import { toStored, type StoredValue } from '../data/properties';
-import { asArray } from '../render/values';
+import { asArray, linkTo, parseLink } from '../render/values';
+import { saveImageDraft, type ImageDraft } from '../data/imageImport';
 import { FormField } from './FormField';
 import { ReactModal } from '../react/mount';
 import { Icon } from '../react/Icon';
+import { Button } from '../ui';
 import { PROPERTY_TYPE_ICON } from '../settings/PropertyEditor';
 import { TABLE_EXTENSION } from '../BoardView';
 import { quickAddCommand, quickAddCommandId } from './ids';
@@ -119,9 +121,10 @@ export async function openQuickAdd(app: App, file: TFile): Promise<void> {
           modal.close();
           void addRecord(app, file, config, title, values, created);
         }}
+        onCancel={() => modal.close()}
       />
     ),
-    { title: quickAddName(config, file), cls: 'rb-settings-modal rb-quick-add-modal' },
+    { title: quickAddName(config, file), cls: 'rb-quick-add-modal' },
   ).open();
 }
 
@@ -175,33 +178,63 @@ export function quickAddFields(config: DatabaseConfig): PropertyConfig[] {
 }
 
 /** Title first, then the chosen fields. Enter moves to the next field; on the last, it adds. */
-function QuickAddForm({
+export function QuickAddForm({
   app,
   config,
   known,
   sourcePath,
+  initial,
   onSubmit,
+  onCancel,
 }: {
   app: App;
   config: DatabaseConfig;
   known: Record<string, string[]>;
   sourcePath: string;
+  /** Starting values, by property name. */
+  initial?: Record<string, StoredValue>;
   /** `created`: select / multi values typed in the form, by property name. */
   onSubmit: (title: string, values: Record<string, StoredValue>, created: Record<string, string[]>) => void;
+  onCancel?: () => void;
 }) {
-  const titleProp = config.kind === 'table' ? config.properties.find((p) => p.name === config.titleProperty) : undefined;
+  // Tables: the title column, edited like its type (text, link, url…). A formula title is computed, so not asked.
+  const titleProp = config.kind === 'table' ? config.properties.find((p) => p.name === config.titleProperty && p.type !== 'formula') : undefined;
   const fields = titleProp ? [titleProp, ...quickAddFields(config)] : quickAddFields(config);
   // Editors commit on blur, just before the Add click: a ref sees that value at once.
-  const values = useRef<Record<string, StoredValue>>({});
+  const values = useRef<Record<string, StoredValue>>({ ...initial });
   const [, rerender] = useState(0);
   const [title, setTitle] = useState('');
   const titleRef = useRef(title);
   const fieldsEl = useRef<HTMLDivElement>(null);
   const done = useRef(false);
+  const [drafts, setDrafts] = useState<Record<string, ImageDraft | null>>({});
+  const [saving, setSaving] = useState(false);
 
-  const submit = (): void => {
+  /** Write dropped images into the vault; their links become the field values. */
+  const saveDrafts = async (): Promise<boolean> => {
+    for (const [name, draft] of Object.entries(drafts)) {
+      if (!draft) continue;
+      try {
+        const file = await saveImageDraft(app, draft);
+        values.current[name] = linkTo(app, file, sourcePath, false);
+        setDrafts((d) => ({ ...d, [name]: null }));
+      } catch (e) {
+        new Notice(`R Board: could not save "${draft.name}" — ${(e as Error).message}`);
+        return false;
+      }
+    }
+    return true;
+  };
+
+  const submit = async (): Promise<void> => {
     if (done.current) return;
     done.current = true;
+    setSaving(true);
+    if (!(await saveDrafts())) {
+      done.current = false;
+      setSaving(false);
+      return;
+    }
     const stored: Record<string, StoredValue> = {};
     const created: Record<string, string[]> = {};
     for (const p of fields) {
@@ -213,30 +246,45 @@ function QuickAddForm({
       const added = asArray(s).filter((x) => !p.options?.some((o) => o.value === x) && !known[p.name]?.includes(x));
       if (added.length) created[p.name] = added;
     }
-    const t = titleProp ? String(stored[titleProp.name] ?? '') : titleRef.current.trim();
+    const t = titleProp ? asArray(stored[titleProp.name]).map((v) => parseLink(v)?.text ?? v).join(', ') : titleRef.current.trim();
     onSubmit(t, stored, created);
   };
 
   /** After Enter: focus the next field, or add when it was the last. */
   const next = (): void => {
-    const els = Array.from(fieldsEl.current?.querySelectorAll<HTMLElement>('input:not(.rb-qa-search), select, button[role="switch"], .rb-qa-select') ?? []);
+    const els = Array.from(fieldsEl.current?.querySelectorAll<HTMLElement>('input:not(.rb-qa-search):not([type="file"]), select, button[role="switch"], .rb-qa-select') ?? []);
     const at = els.indexOf(document.activeElement as HTMLElement);
     if (at >= 0 && at < els.length - 1) els[at + 1].focus();
-    else submit();
+    else void submit();
   };
 
+  const mod = /Mac|iPhone|iPad/.test(navigator.platform) ? '⌘' : 'Ctrl';
+  /** The field that names the record: first, full width, focused on open. */
+  const isTitle = (p: PropertyConfig): boolean => p === titleProp;
+
   return (
-    <div className="rb-wizard rb-record rb-quick-add">
-      <div ref={fieldsEl}>
-        {!titleProp && (
-          <div className="setting-item rb-record-row">
-            <div className="setting-item-info">
-              <div className="setting-item-name">
-                <Icon name="file-text" className="rb-record-icon" />
-                Title
+    <div
+      className="rb-quick-add"
+      onKeyDown={(e) => {
+        if (e.key !== 'Enter' || !(e.metaKey || e.ctrlKey) || e.nativeEvent.isComposing) return;
+        e.preventDefault();
+        e.stopPropagation();
+        // Let the focused editor commit on blur first.
+        (document.activeElement as HTMLElement | null)?.blur?.();
+        setTimeout(() => void submit(), 0);
+      }}
+    >
+      <div className="rb-qa-body" ref={fieldsEl}>
+        <div className="rb-qa-fields">
+          {!titleProp && (
+            // A board's note title is its file name: always plain text.
+            <div className="rb-qa-field rb-qa-field-title" data-width="full">
+              <div className="rb-qa-label-row">
+                <span className="rb-qa-label">
+                  <Icon name="file-text" />
+                  Title
+                </span>
               </div>
-            </div>
-            <div className="setting-item-control">
               <input
                 type="text"
                 autoFocus
@@ -244,45 +292,77 @@ function QuickAddForm({
                 placeholder="Untitled"
                 onChange={(e) => setTitle((titleRef.current = e.target.value))}
                 onKeyDown={(e) => {
-                  if (e.key !== 'Enter' || e.nativeEvent.isComposing) return;
+                  if (e.key !== 'Enter' || e.metaKey || e.ctrlKey || e.nativeEvent.isComposing) return;
                   e.preventDefault();
                   next();
                 }}
               />
             </div>
-          </div>
-        )}
-        {fields.map((prop, i) => (
-          <div key={prop.name} className="setting-item rb-record-row">
-            <div className="setting-item-info">
-              <div className="setting-item-name">
-                <Icon name={PROPERTY_TYPE_ICON[prop.type]} className="rb-record-icon" />
-                {propertyLabel(prop)}
-              </div>
-            </div>
-            <div className="setting-item-control">
-              <FormField
-                app={app}
-                prop={prop}
-                value={values.current[prop.name]}
-                known={known[prop.name] ?? []}
-                sourcePath={sourcePath}
-                autoFocus={!!titleProp && i === 0}
-                onChange={(value) => {
-                  values.current[prop.name] = value;
-                  rerender((n) => n + 1);
-                }}
-                onEnter={next}
-              />
-            </div>
-          </div>
-        ))}
+          )}
+          {fields.map((prop, i) => {
+              const field = (
+                <FormField
+                  app={app}
+                  prop={prop}
+                  value={values.current[prop.name]}
+                  known={known[prop.name] ?? []}
+                  sourcePath={sourcePath}
+                  autoFocus={!!titleProp && i === 0}
+                  draft={drafts[prop.name] ?? null}
+                  imageFolder={config.quickAdd?.imageFolders?.[prop.name]}
+                  onDraft={(d) => setDrafts((all) => ({ ...all, [prop.name]: d }))}
+                  onChange={(value) => {
+                    values.current[prop.name] = value;
+                    rerender((n) => n + 1);
+                  }}
+                  onEnter={next}
+                />
+              );
+              const label = (
+                <span className="rb-qa-label">
+                  <Icon name={PROPERTY_TYPE_ICON[prop.type]} />
+                  {propertyLabel(prop)}
+                </span>
+              );
+              // A switch sits beside its label, in a box the height of the other controls.
+              return prop.type === 'checkbox' ? (
+                <div key={prop.name} className="rb-qa-field rb-qa-field-check" data-width="half">
+                  <label className="rb-qa-check-row">
+                    {label}
+                    {field}
+                  </label>
+                </div>
+              ) : (
+                <div key={prop.name} className={isTitle(prop) ? 'rb-qa-field rb-qa-field-title' : 'rb-qa-field'} data-width={isTitle(prop) ? 'full' : fieldWidth(prop)}>
+                  {/* Not a <label>: a click on it would re-open dropdowns and pickers. */}
+                  <div className="rb-qa-label-row">{label}</div>
+                  {field}
+                </div>
+              );
+            })}
+        </div>
       </div>
-      <div className="rb-record-actions">
-        <button className="mod-cta" onClick={submit}>
-          <Icon name="plus" /> Add
-        </button>
+      <div className="rb-qa-footer">
+        <span className="rb-qa-keys">
+          <kbd>Enter</kbd> next field
+          <span className="rb-qa-dot">·</span>
+          <kbd>{mod}</kbd>
+          <kbd>Enter</kbd> add
+        </span>
+        {onCancel && (
+          <Button variant="ghost" onClick={onCancel}>
+            Cancel
+          </Button>
+        )}
+        <Button variant="primary" icon="plus" disabled={saving} onClick={() => void submit()}>
+          {saving ? 'Adding…' : 'Add'}
+        </Button>
       </div>
     </div>
   );
+}
+
+/** Short values share a row; lists, links, images and free text take the full width. */
+function fieldWidth(prop: PropertyConfig): 'half' | 'full' {
+  return prop.type === 'select' || prop.type === 'number' || prop.type === 'date' || prop.type === 'checkbox' ? 'half' : 'full';
 }

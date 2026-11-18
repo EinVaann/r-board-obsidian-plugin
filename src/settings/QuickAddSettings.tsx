@@ -5,7 +5,9 @@ import { propertyLabel } from '../config';
 import { newId } from '../table/format';
 import { Icon } from '../react/Icon';
 import { PROPERTY_TYPE_ICON } from './PropertyEditor';
+import { FolderInput } from '../components/FolderInput';
 import { SettingRow, SettingsCard, Toggle } from './controls';
+import { LabeledField, SettingsList, SettingsRow } from '../ui';
 import { quickAddCommandId } from '../quickadd/ids';
 import { canSetHotkeys, hotkeyConflicts, openHotkeySettings, printHotkey, recordHotkey, setHotkey } from '../quickadd/hotkeys';
 
@@ -14,6 +16,7 @@ export function QuickAddSettings() {
   const { app, boardFile } = useBoardContext();
   const config = useBoard((s) => s.config);
   const updateConfig = useBoard((s) => s.updateConfig);
+  const [openRows, setOpenRows] = useState<Set<string>>(() => new Set());
   if (!config) return null;
   const q = config.quickAdd;
   const table = config.kind === 'table';
@@ -36,6 +39,15 @@ export function QuickAddSettings() {
       if (on) chosen.add(field);
       else chosen.delete(field);
       c.quickAdd.properties = c.properties.map((p) => p.name).filter((n) => chosen.has(n));
+    });
+  const setImageFolder = (field: string, folder: string): void =>
+    updateConfig((c) => {
+      if (!c.quickAdd) return;
+      const folders = { ...c.quickAdd.imageFolders };
+      if (folder.trim()) folders[field] = folder.trim();
+      else delete folders[field];
+      if (Object.keys(folders).length) c.quickAdd.imageFolders = folders;
+      else delete c.quickAdd.imageFolders;
     });
 
   return (
@@ -73,20 +85,41 @@ export function QuickAddSettings() {
       </SettingsCard>
       {q && (
         <SettingsCard icon="list" title="Fields to ask for" desc={`The ${table ? 'title column' : 'title'} is always asked first. Formulas are computed, so they aren't listed.`}>
-          {candidates.length === 0 && <div className="rb-empty">No other {table ? 'columns' : 'properties'} yet.</div>}
-          {candidates.map((p) => (
-            <SettingRow
-              key={p.name}
-              name={
-                <>
-                  <Icon name={PROPERTY_TYPE_ICON[p.type]} className="rb-record-icon" /> {propertyLabel(p)}
-                </>
-              }
-              toggle
-            >
-              <Toggle checked={q.properties.includes(p.name)} onChange={(on) => toggleField(p.name, on)} label={propertyLabel(p)} />
-            </SettingRow>
-          ))}
+          {candidates.length === 0 ? (
+            <div className="rb-empty">No other {table ? 'columns' : 'properties'} yet.</div>
+          ) : (
+            <SettingsList>
+              {candidates.map((p) => {
+                const on = q.properties.includes(p.name);
+                // Image fields have options (their folder): they expand in place like a column does.
+                const options = p.type === 'image' && (
+                  <LabeledField label="Save dropped images to" hint="Empty: the last folder used, else Obsidian's attachment folder.">
+                    <FolderInput
+                      app={app}
+                      value={q.imageFolders?.[p.name] ?? ''}
+                      placeholder="Attachment folder"
+                      aria-label={`Folder for ${propertyLabel(p)} images`}
+                      onChange={(v) => setImageFolder(p.name, v)}
+                    />
+                  </LabeledField>
+                );
+                return (
+                  <SettingsRow
+                    key={p.name}
+                    icon={PROPERTY_TYPE_ICON[p.type]}
+                    name={propertyLabel(p)}
+                    muted={!on}
+                    expandSlot
+                    control={<Toggle checked={on} onChange={(v) => toggleField(p.name, v)} label={propertyLabel(p)} />}
+                    open={openRows.has(p.name)}
+                    onOpenChange={(o) => setOpenRows((s) => (o ? new Set(s).add(p.name) : new Set([...s].filter((n) => n !== p.name))))}
+                  >
+                    {options || undefined}
+                  </SettingsRow>
+                );
+              })}
+            </SettingsList>
+          )}
         </SettingsCard>
       )}
     </>

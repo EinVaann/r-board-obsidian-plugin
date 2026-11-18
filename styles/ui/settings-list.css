@@ -1,0 +1,81 @@
+/* ===== SettingsList, SettingsRow, AddRow (settings-list.tsx) — rules in styles/RULES.md ===== */
+:where(.rb-root, .rb-home, .rb-embed, .modal.rb-modal) :is([data-slot='settings-list'], [data-slot='sortable-list'][data-variant='settings']) {
+  display: flex;
+  flex-direction: column;
+  border: 1px solid var(--rb-surface-border);
+  border-radius: var(--rb-surface-radius);
+  overflow: hidden;
+}
+:where(.rb-root, .rb-home, .rb-embed, .modal.rb-modal) [data-slot='settings-list'] > [data-slot='settings-row'] + [data-slot='settings-row'] { border-top: 1px solid var(--rb-divider); }
+
+:where(.rb-root, .rb-home, .rb-embed, .modal.rb-modal) [data-slot='settings-row'][data-state='open'] { background: var(--rb-surface-sunken); }
+:where(.rb-root, .rb-home, .rb-embed, .modal.rb-modal) [data-slot='settings-row'][data-muted] [data-slot='settings-row-name'] { color: var(--text-faint); }
+
+:where(.rb-root, .rb-home, .rb-embed, .modal.rb-modal) [data-slot='settings-row-head'] {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: var(--rb-row-h);
+  padding: 4px 8px 4px 10px;
+}
+:where(.rb-root, .rb-home, .rb-embed, .modal.rb-modal) [data-slot='settings-row-icon'] { display: inline-flex; flex: none; color: var(--text-muted); }
+:where(.rb-root, .rb-home, .rb-embed, .modal.rb-modal) [data-slot='settings-row-icon'] svg { width: var(--rb-icon-size); height: var(--rb-icon-size); }
+:where(.rb-root, .rb-home, .rb-embed, .modal.rb-modal) [data-slot='settings-row-name'] {
+  display: flex;
+  align-items: center;
+  flex: 1 1 auto;
+  min-width: 0;
+  color: var(--text-normal);
+  font-size: var(--rb-control-font);
+  font-weight: var(--rb-weight-label);
+}
+:where(.rb-root, .rb-home, .rb-embed, .modal.rb-modal) [data-slot='settings-row-meta'] { flex: none; color: var(--text-faint); font-size: var(--rb-font-hint); white-space: nowrap; }
+:where(.rb-root, .rb-home, .rb-embed, .modal.rb-modal) [data-slot='settings-row-actions'],
+:where(.rb-root, .rb-home, .rb-embed, .modal.rb-modal) [data-slot='settings-row-control'] { display: flex; align-items: center; flex: none; gap: 2px; }
+
+/* Text in a row (name / type editors) reads as plain text until hovered or focused. */
+:where(.rb-root, .rb-home, .rb-embed, .modal.rb-modal) [data-slot='settings-row-head'] :is([data-slot='input'], [data-slot='select']):not(:hover):not(:focus):not([aria-invalid]) {
+  border-color: transparent;
+  background-color: transparent;
+}
+:where(.rb-root, .rb-home, .rb-embed, .modal.rb-modal) [data-slot='settings-row-name'] > [data-slot='input'] { flex: 1; min-width: 0; margin-left: calc(-1 * var(--rb-control-px-sm)); font-weight: var(--rb-weight-label); }
+
+:where(.rb-root, .rb-home, .rb-embed, .modal.rb-modal) [data-slot='settings-row-head'] [data-part='expand-spacer'] { flex: none; width: var(--rb-icon-btn-sm); }
+/* ⌄ turns up while the row is open. */
+:where(.rb-root, .rb-home, .rb-embed, .modal.rb-modal) [data-slot='settings-row'] [data-part='expand'] svg { transition: transform 0.15s ease; }
+:where(.rb-root, .rb-home, .rb-embed, .modal.rb-modal) [data-slot='settings-row'][data-state='open'] > [data-slot='settings-row-head'] [data-part='expand'] svg { transform: rotate(180deg); }
+
+/* In-place options: under a hairline, indented to the name. */
+:where(.rb-root, .rb-home, .rb-embed, .modal.rb-modal) [data-slot='settings-row-body'] {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 12px 14px 14px var(--rb-row-indent);
+  border-top: 1px solid var(--rb-divider);
+}
+:where(.rb-root, .rb-home, .rb-embed, .modal.rb-modal) [data-slot='settings-row-body'][hidden] { display: none; }
+
+/* Add row: under its list, full width, dashed; quiet until hovered. */
+:where(.rb-root, .rb-home, .rb-embed, .modal.rb-modal) [data-slot='add-row'][data-slot] {
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--rb-control-gap);
+  width: 100%;
+  height: var(--rb-control-h);
+  margin: 10px 0 0;
+  padding: 0 var(--rb-btn-px);
+  border: 1px dashed var(--rb-field-border-hover);
+  border-radius: var(--rb-surface-radius);
+  background: transparent;
+  box-shadow: none;
+  color: var(--text-faint);
+  font: inherit;
+  font-size: var(--rb-control-font);
+  font-weight: var(--rb-weight-label);
+  cursor: pointer;
+}
+:where(.rb-root, .rb-home, .rb-embed, .modal.rb-modal) [data-slot='add-row']:hover { border-color: var(--text-faint); background: transparent; color: var(--text-normal); }
+:where(.rb-root, .rb-home, .rb-embed, .modal.rb-modal) [data-slot='add-row'] .rb-icon { display: inline-flex; }
+:where(.rb-root, .rb-home, .rb-embed, .modal.rb-modal) [data-slot='add-row'] svg { width: var(--rb-icon-size-sm); height: var(--rb-icon-size-sm); }

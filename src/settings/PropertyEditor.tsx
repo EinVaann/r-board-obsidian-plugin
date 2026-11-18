@@ -1,13 +1,12 @@
 import { useRef, useState } from 'react';
-import * as Collapsible from '@radix-ui/react-collapsible';
 import { Platform } from 'obsidian';
 import { arrayMove } from '@dnd-kit/sortable';
 import type { NumberFormat, NumberStyle, PropertyConfig, PropertyType } from '../types';
-import { Icon } from '../react/Icon';
 import { formatNumber } from '../render/values';
 import { FUNCTIONS } from '../formula/evaluate';
 import { parseFormula } from '../formula/parse';
-import { DragHandle, Segmented, Select, SortableList, TextInput, Toggle, type HandleProps } from './controls';
+import { Segmented, Select, TextInput, Toggle, type HandleProps } from './controls';
+import { AddRow, Button, IconButton, Input, SettingsRow, SortableSettingsList } from '../ui';
 import { OptionsEditor } from './OptionsEditor';
 import { renameRefs } from '../formula/tokenize';
 import { newId as newKey } from '../table/format';
@@ -140,11 +139,10 @@ export function PropertyEditor({
 
   return (
     <>
-      <SortableList
+      <SortableSettingsList
         ids={ids.current}
         onReorder={reorder}
         className="rb-prop-list"
-        rowClassName="rb-prop-row"
         renderRow={(id, i, handle) => (
           <PropertyRow
             prop={properties[i]}
@@ -158,10 +156,7 @@ export function PropertyEditor({
           />
         )}
       />
-      <button className="rb-prop-add" onClick={add}>
-        <Icon name="plus" className="rb-prop-add-icon" />
-        <span>Add property</span>
-      </button>
+      <AddRow className="rb-prop-add" label={table ? 'Add column' : 'Add property'} onClick={add} />
     </>
   );
 }
@@ -189,11 +184,13 @@ function PropertyRow({
   // Phones: too narrow for type + remove in the header; they move into the body.
   const phone = Platform.isPhone;
   const typeSelect = (
-    <select
-      className="rb-prop-select rb-prop-type"
+    <Select<PropertyType>
+      size="sm"
+      className="rb-prop-type"
+      aria-label="Type"
       value={prop.type}
-      onChange={(e) => {
-        const type = e.target.value as PropertyType;
+      options={(Object.keys(RENDER_OPTIONS) as PropertyType[]).map((t) => ({ value: t, label: TYPE_LABELS[t] }))}
+      onChange={(type) => {
         const keepOptions = (type === 'select' || type === 'multi') && (prop.type === 'select' || prop.type === 'multi');
         onChange({
           type,
@@ -206,52 +203,32 @@ function PropertyRow({
           single: type === 'links' ? true : undefined,
         });
       }}
-    >
-      {(Object.keys(RENDER_OPTIONS) as PropertyType[]).map((t) => (
-        <option key={t} value={t}>
-          {TYPE_LABELS[t]}
-        </option>
-      ))}
-    </select>
+    />
   );
+  const nameValue = table ? (prop.label ?? '') : prop.name;
   return (
-    <Collapsible.Root className={open ? 'rb-prop-card rb-open' : 'rb-prop-card'} open={open} onOpenChange={onOpenChange}>
-      <div className="rb-prop-head">
-        <DragHandle handle={handle} />
-        <Icon name={PROPERTY_TYPE_ICON[prop.type]} className="rb-prop-type-icon" />
-        {table ? (
-          <input
-            className={(prop.label ?? '').trim() ? 'rb-prop-name' : 'rb-prop-name rb-invalid'}
-            type="text"
-            placeholder="Column name"
-            aria-label="Column name"
-            value={prop.label ?? ''}
-            autoFocus={autoFocus}
-            onChange={(e) => onChange({ label: e.target.value })}
-          />
-        ) : (
-          <input
-            className={prop.name.trim() ? 'rb-prop-name' : 'rb-prop-name rb-invalid'}
-            type="text"
-            placeholder="frontmatter key"
-            aria-label="Frontmatter key"
-            value={prop.name}
-            autoFocus={autoFocus}
-            onChange={(e) => onChange({ name: e.target.value })}
-          />
-        )}
-        {!phone && typeSelect}
-        <Collapsible.Trigger className="rb-icon-btn rb-prop-expand" aria-label={open ? 'Hide options' : 'Show options'}>
-          <Icon name="chevron-down" />
-        </Collapsible.Trigger>
-        {!phone && (
-          <button className="rb-icon-btn rb-prop-remove" aria-label="Remove property" onClick={onRemove}>
-            <Icon name="trash-2" />
-          </button>
-        )}
-      </div>
-
-      <Collapsible.Content className="rb-prop-body">
+    <SettingsRow
+      className="rb-prop-card"
+      handle={handle}
+      icon={PROPERTY_TYPE_ICON[prop.type]}
+      open={open}
+      onOpenChange={onOpenChange}
+      name={
+        <Input
+          size="sm"
+          className="rb-prop-name"
+          invalid={!nameValue.trim()}
+          placeholder={table ? 'Column name' : 'frontmatter key'}
+          aria-label={table ? 'Column name' : 'Frontmatter key'}
+          value={nameValue}
+          autoFocus={autoFocus}
+          onChange={(e) => onChange(table ? { label: e.target.value } : { name: e.target.value })}
+        />
+      }
+      meta={phone ? undefined : typeSelect}
+      actions={phone ? undefined : <IconButton icon="trash-2" size="sm" tone="danger" className="rb-prop-remove" label={table ? 'Remove column' : 'Remove property'} onClick={onRemove} />}
+    >
+      <div className="rb-prop-body">
         {phone && <Field label="Type" wide>{typeSelect}</Field>}
         {prop.type === 'formula' && (
           <Field label="Formula" wide>
@@ -334,13 +311,13 @@ function PropertyRow({
         </Field>
         {phone && (
           <Field label="" wide>
-            <button className="mod-warning rb-prop-remove-wide" onClick={onRemove}>
-              <Icon name="trash-2" /> Remove property
-            </button>
+            <Button variant="danger" icon="trash-2" className="rb-prop-remove-wide" onClick={onRemove}>
+              {table ? 'Remove column' : 'Remove property'}
+            </Button>
           </Field>
         )}
-      </Collapsible.Content>
-    </Collapsible.Root>
+      </div>
+    </SettingsRow>
   );
 }
 

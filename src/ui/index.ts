@@ -13,6 +13,7 @@ export { Button, IconButton, type ButtonProps, type IconButtonProps } from './pr
 export { Input, TextInput, NumberInput, type InputProps, type NumberInputProps } from './primitives/input';
 export { Select, MultiSelect, type SelectProps, type MultiSelectProps } from './primitives/select';
 export { Segmented } from './primitives/segmented';
+export { Floating } from './primitives/popover';
 export { Switch } from './primitives/switch';
 export { Pill, Chip } from './primitives/pill';
 export { Card, CardHeader, CardIcon, CardTitle, CardDescription, CardActions, CardContent, CardFooter, SimpleCard } from './primitives/card';
@@ -20,3 +21,4 @@ export { Field, FieldInfo, FieldLabel, FieldHint, FieldDescription, FieldControl
 export { SettingRow } from './primitives/setting-row';
 export { Tabs, type TabDef } from './primitives/tabs';
 export { SortableList, DragHandle, type HandleProps } from './primitives/sortable-list';
+export { SettingsList, SortableSettingsList, SettingsRow, AddRow, type SettingsRowProps } from './primitives/settings-list';

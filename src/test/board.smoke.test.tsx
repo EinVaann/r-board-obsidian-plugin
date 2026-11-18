@@ -488,13 +488,13 @@ describe('settings', () => {
     await act(async () => mousedown(el.querySelectorAll('.rb-settings-tab')[1]));
     expect(count(el, '.rb-prop-card')).toBe(GAMES.properties.length);
 
-    await act(async () => el.querySelector<HTMLButtonElement>('.rb-prop-expand')!.click());
-    expect(count(el, '.rb-prop-body:not([hidden])')).toBe(1);
+    await act(async () => el.querySelector<HTMLButtonElement>('.rb-prop-card [data-part="expand"]')!.click());
+    expect(count(el, '.rb-prop-body')).toBe(1);
     expect(count(el, '.rb-segment')).toBe(2); // image: fill / fit
 
     await act(async () => el.querySelector<HTMLButtonElement>('.rb-prop-add')!.click());
     expect(store.getState().config!.properties).toHaveLength(GAMES.properties.length + 1);
-    expect(count(el, '.rb-prop-name.rb-invalid')).toBe(1);
+    expect(count(el, '.rb-prop-name[aria-invalid]')).toBe(1);
   });
 
   it('board settings → Views: lists the views in tab order and sets the default', async () => {
@@ -636,11 +636,11 @@ describe('settings', () => {
         </BoardContext.Provider>,
       );
       await act(async () => mousedown(el.querySelectorAll('.rb-settings-tab')[1]));
-      const head = el.querySelector('.rb-prop-head')!;
+      const head = el.querySelector('.rb-prop-card [data-slot="settings-row-head"]')!;
       expect(head.querySelector('.rb-prop-type')).toBeNull();
       expect(head.querySelector('.rb-prop-remove')).toBeNull();
-      await act(async () => el.querySelector<HTMLButtonElement>('.rb-prop-expand')!.click());
-      const body = el.querySelector('.rb-prop-body:not([hidden])')!;
+      await act(async () => el.querySelector<HTMLButtonElement>('.rb-prop-card [data-part="expand"]')!.click());
+      const body = el.querySelector('.rb-prop-body')!;
       expect(body.querySelector('.rb-prop-type')).not.toBeNull();
       expect(body.querySelector('.rb-prop-remove-wide')).not.toBeNull();
     });

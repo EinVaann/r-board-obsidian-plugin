@@ -185,6 +185,11 @@ body .rb-cell-editor .rb-links-editor input.rb-links-editor-input:focus { height
   background: var(--background-secondary);
   box-shadow: var(--shadow-l);
 }
+/* Lives in <body>, outside the themed modal: take the industrial popover colours from the body theme. */
+body.rb-theme-industrial.rb-mode-light .rb-link-suggest { background: #FFFFFF; border-color: rgba(0, 0, 0, 0.1); color: #1C1C1E; --text-normal: #1C1C1E; --text-muted: #6E6E73; --background-modifier-hover: rgba(0, 0, 0, 0.05); }
+body.rb-theme-industrial.rb-mode-dark .rb-link-suggest { background: #232326; border-color: rgba(255, 255, 255, 0.1); color: #EDEDF0; --text-normal: #EDEDF0; --text-muted: #9A9AA0; --background-modifier-hover: rgba(255, 255, 255, 0.07); }
+body.rb-theme-industrial .rb-link-suggest { border-radius: 10px; padding: 6px; }
+body.rb-theme-industrial .rb-link-suggest-item { border-radius: 8px; }
 .rb-link-suggest-item { padding: 5px 8px; border-radius: var(--radius-s); cursor: pointer; }
 .rb-link-suggest-item.is-active { background: var(--background-modifier-hover); }
 .rb-link-suggest-name { color: var(--text-normal); }

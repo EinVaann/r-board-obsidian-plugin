@@ -49,8 +49,8 @@
 .is-phone .rb-drag-handle { padding: 8px 4px; }
 .is-phone .rb-drag-handle svg { width: 18px; height: 18px; }
 .is-phone .rb-wizard .rb-icon-btn { width: 38px; height: 38px; }
-.is-phone .rb-prop-body { padding-left: 14px; }
-.is-phone .rb-wizard .rb-prop-remove-wide { display: flex; align-items: center; justify-content: center; gap: 8px; width: 100%; }
+.is-phone [data-slot='settings-row-body'] { padding-left: 14px; }
+.is-phone .rb-prop-remove-wide[data-slot] { width: 100%; }
 
 /* Wizard: actions pinned at the bottom as full-width buttons. */
 .is-phone .rb-wizard-actions {

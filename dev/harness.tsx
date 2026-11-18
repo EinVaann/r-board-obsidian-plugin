@@ -16,6 +16,8 @@ import { DatabaseEmbed, parseEmbed } from '../src/embed/Embed';
 import SCHEDULE_FIXTURE from '../src/schedule/fixture.json';
 import { AutomationWatcher } from '../src/data/AutomationWatcher';
 import { applyTheme, parseTheme } from '../src/theme';
+import { QuickAddForm } from '../src/quickadd/QuickAdd';
+import { ReactModal } from '../src/react/mount';
 
 const BOARD_PATH = 'Backlog.board';
 
@@ -298,9 +300,83 @@ async function embedMain(): Promise<void> {
   }
 }
 
+/** A tiny checkerboard PNG standing in for vault images (the fake vault has no files). */
+const SAMPLE_IMAGE =
+  'data:image/svg+xml,' +
+  encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="320" height="200"><defs><linearGradient id="g" x1="0" x2="1" y1="0" y2="1"><stop offset="0" stop-color="#9aa5b1"/><stop offset="1" stop-color="#d8d2c4"/></linearGradient></defs><rect width="320" height="200" fill="url(#g)"/><circle cx="240" cy="60" r="28" fill="#f4efe6"/><path d="M0 200 L110 90 L190 160 L240 120 L320 200Z" fill="#6b7280"/></svg>');
+
+/** ?quickadd: the real quick-add form over a table with every field type (&image=linked|draft). */
+function quickAddMain(params: URLSearchParams): void {
+  applyTheme(document, parseTheme({ theme: params.get('theme') ?? 'industrial', mode: params.get('mode') ?? 'light' }));
+  const cover = new TFile('Assets/Covers/Celeste.png');
+  (cover as unknown as { parent: { path: string } }).parent = { path: 'Assets/Covers' };
+  cover.stat.size = 184_320;
+  const app = {
+    vault: {
+      getFiles: () => [cover, ...Object.keys(NOTES).map((p) => new TFile(p))],
+      getAllLoadedFiles: () => [],
+      getAllFolders: () => ['Assets', 'Assets/Covers', 'Games', 'Inbox'].map((path) => ({ path })),
+      getResourcePath: () => SAMPLE_IMAGE,
+      getAbstractFileByPath: () => null,
+    },
+    metadataCache: {
+      getFirstLinkpathDest: (lp: string) => (lp.endsWith('Celeste.png') ? cover : null),
+      fileToLinktext: (f: TFile) => f.path,
+    },
+    fileManager: { getAvailablePathForAttachment: async (n: string) => `Assets/${n}` },
+  } as unknown as App;
+  const config = parseTableFile(
+    JSON.stringify({
+      version: 1,
+      kind: 'table',
+      name: 'Moodboard',
+      titleProperty: 'title',
+      quickAdd: { id: 'qdev', properties: ['image', 'shot', 'kind', 'tags', 'rating', 'date', 'fav', 'source', 'related', 'note'], imageFolders: { image: 'Assets/Covers', shot: 'Assets/Screenshots' } },
+      properties: [
+        params.get('title') === 'link' ? { name: 'title', type: 'links', label: 'Game', single: true } : { name: 'title', type: 'text', label: 'Title' },
+        { name: 'image', type: 'image', label: 'Cover' },
+        { name: 'shot', type: 'image', label: 'Screenshot' },
+        { name: 'kind', type: 'select', label: 'Kind', options: [{ value: 'art', color: '#A78BFA' }, { value: 'photo', color: '#60A5FA' }, { value: 'screenshot' }] },
+        { name: 'tags', type: 'multi', label: 'Tags', options: [{ value: 'cozy' }, { value: 'dark' }, { value: 'pixel' }] },
+        { name: 'rating', type: 'number', label: 'Rating' },
+        { name: 'date', type: 'date', label: 'Found on' },
+        { name: 'fav', type: 'checkbox', label: 'Favourite' },
+        { name: 'source', type: 'url', label: 'Source' },
+        { name: 'related', type: 'links', label: 'Related' },
+        { name: 'note', type: 'text', label: 'Note' },
+      ],
+      views: [{ name: 'All', type: 'table' }],
+      rows: [],
+    }),
+  );
+  if (!r(config)) return;
+  const image = params.get('image');
+  const host = document.getElementById('root')!;
+  host.style.cssText = 'display:block;height:100vh;background:var(--background-secondary)';
+  new ReactModal(
+    app,
+    () => (
+      <QuickAddForm
+        app={app}
+        config={config.table.config}
+        known={{ kind: ['art', 'photo'], tags: ['cozy', 'dark'] }}
+        sourcePath="Moodboard.table"
+        initial={image === 'linked' ? { image: '[[Assets/Covers/Celeste.png]]' } : undefined}
+        onSubmit={(title, values) => log(`[quick add] ${title} ${JSON.stringify(values)}`)}
+      />
+    ),
+    { title: 'Quick add to Moodboard', cls: 'rb-quick-add-modal' },
+  ).open();
+  function r(x: ReturnType<typeof parseTableFile>): x is Extract<typeof x, { ok: true }> {
+    if (!x.ok) throw new Error(x.error);
+    return true;
+  }
+}
+
 async function main(): Promise<void> {
   const params = new URLSearchParams(location.search);
   if (params.has('embed')) return embedMain();
+  if (params.has('quickadd')) return quickAddMain(params);
   const kind = params.get('kind') === 'board' || SCHEDULE ? 'board' : 'table';
   if (params.has('mobile')) document.body.classList.add('is-mobile', 'is-phone');
   // Plugin appearance, as the setting would set it: ?theme=classic, ?mode=dark (default industrial / light).

@@ -415,6 +415,8 @@ export interface QuickAddConfig {
   properties: string[];
   /** Boards: open the new note after adding it. */
   openNote?: boolean;
+  /** Image fields: where images dropped into the form are saved, by property name. Absent = last used, else the attachment folder. */
+  imageFolders?: Record<string, string>;
 }
 
 /** A row stored in a `.table` file. Cells are keyed by property name. */

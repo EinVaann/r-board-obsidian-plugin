@@ -48,12 +48,15 @@ export function SortableList({
   className,
   rowClassName,
   renderRow,
+  variant,
 }: {
   ids: string[];
   onReorder: (from: number, to: number) => void;
   className?: string;
   rowClassName?: string;
   renderRow: (id: string, index: number, handle: HandleProps) => ReactNode;
+  /** settings: the SettingsList box (styles/ui/settings-list.css). */
+  variant?: 'settings';
 }) {
   const sensors = useDragSensors();
   const onDragEnd = ({ active, over }: DragEndEvent): void => {
@@ -63,7 +66,7 @@ export function SortableList({
   return (
     <DndContext sensors={sensors} collisionDetection={closestCenter} modifiers={[restrictToVerticalAxis, restrictToParentElement]} onDragEnd={onDragEnd}>
       <SortableContext items={ids} strategy={verticalListSortingStrategy}>
-        <div {...slot('sortable-list')} className={className}>
+        <div {...slot('sortable-list', variant)} className={className}>
           {ids.map((id, i) => (
             <SortableRow key={id} id={id} className={rowClassName}>
               {(handle) => renderRow(id, i, handle)}

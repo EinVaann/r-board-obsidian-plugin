@@ -26,23 +26,8 @@
 .rb-automation-line > [data-slot='input'].rb-automation-number { width: 80px; }
 .rb-automation-links { flex: 1 1 200px; min-width: 160px; }
 .rb-automation-check { display: inline-flex; align-items: center; gap: 6px; color: var(--text-muted); font-size: var(--rb-font-hint); cursor: pointer; }
-body .rb-automation-add {
-  align-self: flex-start;
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-  margin-left: 52px;
-  padding: 2px 6px;
-  height: auto;
-  border: none;
-  background: none;
-  box-shadow: none;
-  color: var(--text-muted);
-  font-size: var(--rb-font-hint);
-  cursor: pointer;
-}
-body .rb-automation-add:hover { color: var(--text-normal); background: var(--background-modifier-hover); }
-.rb-automation-add svg { width: 13px; height: 13px; }
+/* "Add trigger / effect" is a ghost Button; only its place in the section here. */
+.rb-automation-add { align-self: flex-start; margin-left: 52px; }
 .rb-automation-warning {
   display: flex;
   gap: 8px;

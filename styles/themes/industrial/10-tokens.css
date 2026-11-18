@@ -36,8 +36,17 @@ body.rb-theme-industrial :is(.rb-root, .rb-home, .rb-embed, .modal.rb-modal, .me
   --rb-segment-on-bg: var(--rbi-plane-flat);
   --rb-segment-on-fg: var(--text-normal);
   --rb-segment-on-shadow: 0 1px 3px rgba(28, 28, 30, 0.12);
-  --rb-switch-off-bg: var(--background-modifier-border-hover);
-  --rb-switch-on-bg: var(--text-normal);
+  /* Switch: low and wide with squared corners; on = yellow with an ink knob */
+  --rb-switch-w: 34px;
+  --rb-switch-h: 16px;
+  --rb-switch-pad: 2px;
+  --rb-switch-radius: 4px;
+  --rb-switch-thumb-w: 14px;
+  --rb-switch-thumb-radius: 2px;
+  --rb-switch-off-bg: rgba(28, 28, 30, 0.12);
+  --rb-switch-on-bg: var(--rbi-yellow);
+  --rb-switch-thumb: #FFFFFF;
+  --rb-switch-thumb-on: #1C1C1E;
 
   /* Surfaces */
   --rb-surface-bg: var(--rbi-plane);
@@ -63,7 +72,8 @@ body.rb-theme-industrial :is(.rb-root, .rb-home, .rb-embed, .modal.rb-modal, .me
 body.rb-theme-industrial.rb-mode-dark :is(.rb-root, .rb-home, .rb-embed, .modal.rb-modal, .menu.rb-menu, .rb-drag-ghost) {
   --rb-btn-danger-fg: #FF6B83;
   --rb-danger-fg: #FF6B83;
-  --rb-switch-thumb-on: #1C1C1E;
+  --rb-switch-off-bg: rgba(255, 255, 255, 0.14);
+  --rb-switch-thumb: #D9D9D2;
   --rb-segment-on-shadow: none;
   --rb-summary-bg: rgba(255, 228, 26, 0.07);
   --rb-summary-bg-hover: rgba(255, 228, 26, 0.13);

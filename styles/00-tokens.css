@@ -19,6 +19,9 @@
   --rb-icon-size: 16px;
   --rb-icon-size-sm: 14px;
   --rb-icon-btn-sm: 24px;
+  --rb-row-h: 40px;
+  /* Where a row's name starts (grip + icon): its expanded options line up with it. */
+  --rb-row-indent: 62px;
   --rb-card-pad: 14px 16px;
   --rb-card-pad-sm: 10px 12px;
   --rb-tabs-gap: 4px;
@@ -81,6 +84,13 @@
   --rb-segment-on-bg: var(--background-primary);
   --rb-segment-on-fg: var(--text-normal);
   --rb-segment-on-shadow: var(--shadow-s);
+  /* Switch size and shape (a theme can make it wider, flatter, squarer) */
+  --rb-switch-w: 38px;
+  --rb-switch-h: 22px;
+  --rb-switch-pad: 2px;
+  --rb-switch-radius: 999px;
+  --rb-switch-thumb-w: 18px;
+  --rb-switch-thumb-radius: 999px;
   --rb-switch-off-bg: var(--background-modifier-border-hover);
   --rb-switch-on-bg: var(--interactive-accent);
   --rb-switch-thumb: #FFFFFF;

@@ -191,6 +191,9 @@ export const Platform = { isMobile: false, isPhone: false };
 export function debounce<T extends (...a: never[]) => void>(fn: T): T {
   return fn;
 }
+export async function requestUrl(): Promise<never> {
+  throw new Error('requestUrl is not available in tests');
+}
 export function normalizePath(p: string): string {
   return p;
 }

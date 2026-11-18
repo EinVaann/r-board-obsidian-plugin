@@ -19,6 +19,9 @@
   --rb-icon-size: 16px;
   --rb-icon-size-sm: 14px;
   --rb-icon-btn-sm: 24px;
+  --rb-row-h: 40px;
+  /* Where a row's name starts (grip + icon): its expanded options line up with it. */
+  --rb-row-indent: 62px;
   --rb-card-pad: 14px 16px;
   --rb-card-pad-sm: 10px 12px;
   --rb-tabs-gap: 4px;
@@ -81,6 +84,13 @@
   --rb-segment-on-bg: var(--background-primary);
   --rb-segment-on-fg: var(--text-normal);
   --rb-segment-on-shadow: var(--shadow-s);
+  /* Switch size and shape (a theme can make it wider, flatter, squarer) */
+  --rb-switch-w: 38px;
+  --rb-switch-h: 22px;
+  --rb-switch-pad: 2px;
+  --rb-switch-radius: 999px;
+  --rb-switch-thumb-w: 18px;
+  --rb-switch-thumb-radius: 999px;
   --rb-switch-off-bg: var(--background-modifier-border-hover);
   --rb-switch-on-bg: var(--interactive-accent);
   --rb-switch-thumb: #FFFFFF;
@@ -284,6 +294,108 @@
 :where(.rb-root, .rb-home, .rb-embed, .modal.rb-modal) [data-slot='setting-row-description'] { color: var(--text-faint); font-size: var(--rb-font-hint); }
 :where(.rb-root, .rb-home, .rb-embed, .modal.rb-modal) [data-slot='setting-row-control'] > :is([data-slot='select'], [data-slot='input']) { min-width: 200px; }
 
+/* ===== ImageField (components/ImageField.tsx) ===== */
+[data-slot='image-field'] { display: flex; flex-direction: column; gap: 6px; width: 100%; min-width: 0; }
+/* Empty: one field-height row with a dashed edge (it takes drops); glyph, search, actions. */
+:where(.rb-root, .rb-home, .rb-embed, .modal.rb-modal) [data-slot='image-field-empty'] {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  box-sizing: border-box;
+  height: var(--rb-control-h);
+  padding: 0 4px 0 6px;
+  border: 1px dashed var(--rb-field-border-hover);
+  border-radius: var(--rb-control-radius);
+  background: var(--rb-field-bg);
+}
+:where(.rb-root, .rb-home, .rb-embed, .modal.rb-modal) [data-slot='image-field-empty']:hover { border-color: var(--text-faint); }
+:where(.rb-root, .rb-home, .rb-embed, .modal.rb-modal) [data-slot='image-field-empty']:focus-within {
+  border-style: solid;
+  border-color: var(--rb-field-border-focus);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--rb-field-border-focus) 18%, transparent);
+}
+[data-slot='image-field'][data-state='over'] [data-slot='image-field-empty'] {
+  border-style: solid;
+  border-color: var(--rb-field-border-focus);
+  background: color-mix(in srgb, var(--rb-field-border-focus) 8%, var(--rb-field-bg));
+}
+[data-slot='image-field-glyph'] {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 24px;
+  height: 24px;
+  border-radius: var(--rb-control-radius-sm);
+  background: var(--background-modifier-hover);
+  color: var(--text-muted);
+}
+[data-slot='image-field-glyph'] svg { width: 14px; height: 14px; }
+[data-slot='image-field'][data-state='busy'] [data-slot='image-field-glyph'] svg { animation: rb-spin 1s linear infinite; }
+@keyframes rb-spin { to { transform: rotate(360deg); } }
+[data-slot='image-field-drop'] { flex: 1; color: var(--text-normal); font-size: var(--rb-control-font); }
+.modal.rb-modal [data-slot='image-field-empty'] input,
+.modal.rb-modal [data-slot='image-field-empty'] input:is(:hover, :focus, :focus-visible),
+.rb-root [data-slot='image-field-empty'] input,
+.rb-root [data-slot='image-field-empty'] input:is(:hover, :focus, :focus-visible) {
+  outline: none;
+  flex: 1;
+  min-width: 0;
+  height: calc(var(--rb-control-h) - 2px);
+  padding: 0;
+  border: none;
+  background: transparent;
+  box-shadow: none;
+  font-size: var(--rb-control-font);
+}
+[data-slot='image-field-empty'] input::placeholder { color: var(--text-faint); }
+
+/* Linked image, or the draft's box. */
+[data-slot='image-field'] > [data-slot='image-field-preview'],
+[data-slot='image-field-draft'] {
+  padding: 8px;
+  border: 1px solid var(--rb-surface-border);
+  border-radius: var(--rb-control-radius);
+  background: var(--rb-surface-sunken);
+}
+[data-slot='image-field-draft'] { display: flex; flex-direction: column; gap: 6px; }
+[data-slot='image-field'][data-state='over'] :is([data-slot='image-field-draft'], [data-slot='image-field'] > [data-slot='image-field-preview']) {
+  border-style: solid;
+  border-color: var(--rb-field-border-focus);
+  color: var(--text-normal);
+}
+
+[data-slot='image-field-preview'] { display: flex; align-items: center; gap: 10px; min-width: 0; }
+[data-slot='image-field-preview'] > img,
+[data-slot='image-field-missing'] {
+  width: 56px;
+  height: 56px;
+  flex-shrink: 0;
+  object-fit: cover;
+  border-radius: var(--rb-control-radius-sm);
+  background: var(--rb-field-bg);
+}
+[data-slot='image-field-missing'] { display: flex; align-items: center; justify-content: center; color: var(--text-faint); }
+[data-slot='image-field-meta'] { display: flex; flex-direction: column; gap: 2px; flex: 1; min-width: 0; font-size: var(--rb-font-hint); color: var(--text-muted); }
+[data-slot='image-field-meta'] > span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+[data-slot='image-field-meta'] > span:first-child { color: var(--text-normal); font-size: var(--rb-font-label); }
+[data-slot='image-field-actions'] { display: flex; align-items: center; gap: 2px; flex-shrink: 0; }
+
+[data-slot='image-field-row'] { display: grid; grid-template-columns: 56px minmax(0, 1fr); align-items: center; gap: 10px; font-size: var(--rb-font-label); color: var(--text-muted); }
+[data-slot='image-field-row'] [data-slot='input'] { width: 100%; }
+[data-slot='image-field-row'] [data-slot='number-input'] { display: inline-flex; align-items: center; gap: 6px; justify-self: start; }
+[data-slot='image-field-row'] [data-slot='number-input'] [data-slot='input'] { width: 84px; text-align: left; }
+[data-slot='image-field-name'] { display: flex; align-items: center; gap: 4px; min-width: 0; }
+[data-slot='image-field-name'] [data-slot='input'] { flex: 1; min-width: 0; }
+[data-slot='image-field-ext'] { color: var(--text-faint); font-family: var(--font-monospace); font-size: var(--rb-font-hint); }
+[data-slot='image-field-path'] { display: flex; align-items: center; gap: 4px; min-width: 0; color: var(--text-faint); font-size: var(--rb-font-hint); }
+[data-slot='image-field-path'] > span:last-child { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+[data-slot='image-field-path'] .rb-icon svg { width: 12px; height: 12px; }
+[data-slot='image-field-hint'] { color: var(--text-muted); font-size: var(--rb-font-hint); }
+[data-slot='image-field-error'] { color: var(--rb-danger-fg); font-size: var(--rb-font-hint); }
+
+.rb-image-field-dialog { display: flex; flex-direction: column; gap: 12px; }
+
 /* ===== Input, NumberInput, Select, MultiSelect trigger (input.tsx, select.tsx) ===== */
 /* Every field-like part shares one box: same height, corners, font and border per size. */
 :where(.rb-root, .rb-home, .rb-embed, .modal.rb-modal) :is([data-slot='input'], [data-slot='select'], [data-slot='multi-select-trigger'])[data-slot] {
@@ -337,7 +449,7 @@
 
 /* Older screens still using classes: same box from the same tokens (compact inside list rows). */
 /* Move each to the Input / Select primitive when its screen is next touched. */
-:where(.rb-root, .rb-home, .rb-embed, .modal.rb-modal) :is(.rb-prop-name, .rb-prop-input, .rb-filter-value, .rb-col-add-input, .rb-col-field-input, .rb-prop-select, .rb-filter-select):not([data-slot]) {
+:where(.rb-root, .rb-home, .rb-embed, .modal.rb-modal) :is(.rb-prop-input, .rb-filter-value, .rb-col-add-input, .rb-col-field-input, .rb-filter-select):not([data-slot]) {
   box-sizing: border-box;
   height: var(--rb-control-h);
   padding: 0 var(--rb-control-px);
@@ -345,7 +457,7 @@
   font-size: var(--rb-control-font);
   line-height: normal;
 }
-:where(.rb-root, .rb-home, .rb-embed, .modal.rb-modal) :is(.rb-prop-select, .rb-filter-select):not([data-slot]) {
+:where(.rb-root, .rb-home, .rb-embed, .modal.rb-modal) .rb-filter-select:not([data-slot]) {
   appearance: none;
   -webkit-appearance: none;
   padding-right: calc(var(--rb-control-px) + 18px);
@@ -358,7 +470,7 @@
   color: var(--rb-field-fg);
   cursor: pointer;
 }
-:where(.rb-root, .rb-home, .rb-embed, .modal.rb-modal) :is(.rb-prop-head .rb-prop-name, .rb-prop-head .rb-prop-select, .rb-filter-select, .rb-filter-value, .rb-col-field-input):not([data-slot]) {
+:where(.rb-root, .rb-home, .rb-embed, .modal.rb-modal) :is(.rb-filter-select, .rb-filter-value, .rb-col-field-input):not([data-slot]) {
   height: var(--rb-control-h-sm);
   border-radius: var(--rb-control-radius-sm);
   font-size: var(--rb-control-font-sm);
@@ -508,9 +620,9 @@
   box-sizing: border-box;
   position: relative;
   flex: none;
-  width: 38px;
-  height: 22px;
-  border-radius: 999px;
+  width: var(--rb-switch-w);
+  height: var(--rb-switch-h);
+  border-radius: var(--rb-switch-radius);
   background: var(--rb-switch-off-bg);
   cursor: pointer;
   transition: background-color 0.18s;
@@ -519,15 +631,19 @@
 :where(.rb-root, .rb-home, .rb-embed, .modal.rb-modal) [data-slot='switch']:focus-visible { box-shadow: 0 0 0 2px var(--rb-field-border-focus); }
 :where(.rb-root, .rb-home, .rb-embed, .modal.rb-modal) [data-slot='switch-thumb'] {
   display: block;
-  width: 18px;
-  height: 18px;
-  border-radius: 999px;
+  width: var(--rb-switch-thumb-w);
+  height: calc(var(--rb-switch-h) - 2 * var(--rb-switch-pad));
+  margin-top: var(--rb-switch-pad);
+  border-radius: var(--rb-switch-thumb-radius);
   background: var(--rb-switch-thumb);
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.25);
-  transform: translateX(2px);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.25);
+  transform: translateX(var(--rb-switch-pad));
   transition: transform 0.2s cubic-bezier(0.2, 0.9, 0.1, 1);
 }
-:where(.rb-root, .rb-home, .rb-embed, .modal.rb-modal) [data-slot='switch-thumb'][data-state='checked'] { transform: translateX(18px); background: var(--rb-switch-thumb-on); }
+:where(.rb-root, .rb-home, .rb-embed, .modal.rb-modal) [data-slot='switch-thumb'][data-state='checked'] {
+  transform: translateX(calc(var(--rb-switch-w) - var(--rb-switch-thumb-w) - var(--rb-switch-pad)));
+  background: var(--rb-switch-thumb-on);
+}
 
 /* ===== MultiSelect popup (src/ui/primitives/select.tsx) — the trigger shares the field box in input.css ===== */
 :where(.rb-root, .rb-home, .rb-embed, .modal.rb-modal) [data-slot='multi-select'] { position: relative; display: inline-flex; max-width: 100%; }
@@ -570,6 +686,88 @@
 :where(.rb-root, .rb-home, .rb-embed, .modal.rb-modal) [data-slot='multi-select-check'] { display: inline-flex; width: var(--rb-icon-size-sm); }
 :where(.rb-root, .rb-home, .rb-embed, .modal.rb-modal) [data-slot='multi-select-check'] svg { width: var(--rb-icon-size-sm); height: var(--rb-icon-size-sm); }
 :where(.rb-root, .rb-home, .rb-embed, .modal.rb-modal) [data-slot='color-dot'] { flex: none; width: 8px; height: 8px; border-radius: 999px; background: var(--rb-dot, var(--rb-pill-default)); }
+
+/* ===== SettingsList, SettingsRow, AddRow (settings-list.tsx) — rules in styles/RULES.md ===== */
+:where(.rb-root, .rb-home, .rb-embed, .modal.rb-modal) :is([data-slot='settings-list'], [data-slot='sortable-list'][data-variant='settings']) {
+  display: flex;
+  flex-direction: column;
+  border: 1px solid var(--rb-surface-border);
+  border-radius: var(--rb-surface-radius);
+  overflow: hidden;
+}
+:where(.rb-root, .rb-home, .rb-embed, .modal.rb-modal) [data-slot='settings-list'] > [data-slot='settings-row'] + [data-slot='settings-row'] { border-top: 1px solid var(--rb-divider); }
+
+:where(.rb-root, .rb-home, .rb-embed, .modal.rb-modal) [data-slot='settings-row'][data-state='open'] { background: var(--rb-surface-sunken); }
+:where(.rb-root, .rb-home, .rb-embed, .modal.rb-modal) [data-slot='settings-row'][data-muted] [data-slot='settings-row-name'] { color: var(--text-faint); }
+
+:where(.rb-root, .rb-home, .rb-embed, .modal.rb-modal) [data-slot='settings-row-head'] {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: var(--rb-row-h);
+  padding: 4px 8px 4px 10px;
+}
+:where(.rb-root, .rb-home, .rb-embed, .modal.rb-modal) [data-slot='settings-row-icon'] { display: inline-flex; flex: none; color: var(--text-muted); }
+:where(.rb-root, .rb-home, .rb-embed, .modal.rb-modal) [data-slot='settings-row-icon'] svg { width: var(--rb-icon-size); height: var(--rb-icon-size); }
+:where(.rb-root, .rb-home, .rb-embed, .modal.rb-modal) [data-slot='settings-row-name'] {
+  display: flex;
+  align-items: center;
+  flex: 1 1 auto;
+  min-width: 0;
+  color: var(--text-normal);
+  font-size: var(--rb-control-font);
+  font-weight: var(--rb-weight-label);
+}
+:where(.rb-root, .rb-home, .rb-embed, .modal.rb-modal) [data-slot='settings-row-meta'] { flex: none; color: var(--text-faint); font-size: var(--rb-font-hint); white-space: nowrap; }
+:where(.rb-root, .rb-home, .rb-embed, .modal.rb-modal) [data-slot='settings-row-actions'],
+:where(.rb-root, .rb-home, .rb-embed, .modal.rb-modal) [data-slot='settings-row-control'] { display: flex; align-items: center; flex: none; gap: 2px; }
+
+/* Text in a row (name / type editors) reads as plain text until hovered or focused. */
+:where(.rb-root, .rb-home, .rb-embed, .modal.rb-modal) [data-slot='settings-row-head'] :is([data-slot='input'], [data-slot='select']):not(:hover):not(:focus):not([aria-invalid]) {
+  border-color: transparent;
+  background-color: transparent;
+}
+:where(.rb-root, .rb-home, .rb-embed, .modal.rb-modal) [data-slot='settings-row-name'] > [data-slot='input'] { flex: 1; min-width: 0; margin-left: calc(-1 * var(--rb-control-px-sm)); font-weight: var(--rb-weight-label); }
+
+:where(.rb-root, .rb-home, .rb-embed, .modal.rb-modal) [data-slot='settings-row-head'] [data-part='expand-spacer'] { flex: none; width: var(--rb-icon-btn-sm); }
+/* ⌄ turns up while the row is open. */
+:where(.rb-root, .rb-home, .rb-embed, .modal.rb-modal) [data-slot='settings-row'] [data-part='expand'] svg { transition: transform 0.15s ease; }
+:where(.rb-root, .rb-home, .rb-embed, .modal.rb-modal) [data-slot='settings-row'][data-state='open'] > [data-slot='settings-row-head'] [data-part='expand'] svg { transform: rotate(180deg); }
+
+/* In-place options: under a hairline, indented to the name. */
+:where(.rb-root, .rb-home, .rb-embed, .modal.rb-modal) [data-slot='settings-row-body'] {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 12px 14px 14px var(--rb-row-indent);
+  border-top: 1px solid var(--rb-divider);
+}
+:where(.rb-root, .rb-home, .rb-embed, .modal.rb-modal) [data-slot='settings-row-body'][hidden] { display: none; }
+
+/* Add row: under its list, full width, dashed; quiet until hovered. */
+:where(.rb-root, .rb-home, .rb-embed, .modal.rb-modal) [data-slot='add-row'][data-slot] {
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--rb-control-gap);
+  width: 100%;
+  height: var(--rb-control-h);
+  margin: 10px 0 0;
+  padding: 0 var(--rb-btn-px);
+  border: 1px dashed var(--rb-field-border-hover);
+  border-radius: var(--rb-surface-radius);
+  background: transparent;
+  box-shadow: none;
+  color: var(--text-faint);
+  font: inherit;
+  font-size: var(--rb-control-font);
+  font-weight: var(--rb-weight-label);
+  cursor: pointer;
+}
+:where(.rb-root, .rb-home, .rb-embed, .modal.rb-modal) [data-slot='add-row']:hover { border-color: var(--text-faint); background: transparent; color: var(--text-normal); }
+:where(.rb-root, .rb-home, .rb-embed, .modal.rb-modal) [data-slot='add-row'] .rb-icon { display: inline-flex; }
+:where(.rb-root, .rb-home, .rb-embed, .modal.rb-modal) [data-slot='add-row'] svg { width: var(--rb-icon-size-sm); height: var(--rb-icon-size-sm); }
 
 /* ===================== Board base ===================== */
 .rb-root {
@@ -1072,6 +1270,11 @@ body .rb-cell-editor .rb-links-editor input.rb-links-editor-input:focus { height
   background: var(--background-secondary);
   box-shadow: var(--shadow-l);
 }
+/* Lives in <body>, outside the themed modal: take the industrial popover colours from the body theme. */
+body.rb-theme-industrial.rb-mode-light .rb-link-suggest { background: #FFFFFF; border-color: rgba(0, 0, 0, 0.1); color: #1C1C1E; --text-normal: #1C1C1E; --text-muted: #6E6E73; --background-modifier-hover: rgba(0, 0, 0, 0.05); }
+body.rb-theme-industrial.rb-mode-dark .rb-link-suggest { background: #232326; border-color: rgba(255, 255, 255, 0.1); color: #EDEDF0; --text-normal: #EDEDF0; --text-muted: #9A9AA0; --background-modifier-hover: rgba(255, 255, 255, 0.07); }
+body.rb-theme-industrial .rb-link-suggest { border-radius: 10px; padding: 6px; }
+body.rb-theme-industrial .rb-link-suggest-item { border-radius: 8px; }
 .rb-link-suggest-item { padding: 5px 8px; border-radius: var(--radius-s); cursor: pointer; }
 .rb-link-suggest-item.is-active { background: var(--background-modifier-hover); }
 .rb-link-suggest-name { color: var(--text-normal); }
@@ -1705,56 +1908,9 @@ body:not(.is-phone) .modal:has(.rb-wizard) { width: min(620px, 90vw); }
 }
 
 /* ----- Property editor (board settings + setup wizard) ----- */
-/* One bordered list, a hairline between properties (opened ones grow in place). */
-.rb-prop-list { display: flex; flex-direction: column; margin-bottom: 10px; border: 1px solid var(--background-modifier-border); border-radius: 12px; overflow: hidden; background: var(--background-primary); }
-.rb-prop-card { background: transparent; }
-/* The open property: a faint wash plus a hairline under its head, so it's clear which one is expanded. */
-.rb-prop-card.rb-open { background: color-mix(in srgb, var(--background-modifier-hover) 60%, transparent); }
-.rb-prop-row + .rb-prop-row { border-top: 1px solid var(--background-modifier-border); }
-
-.rb-prop-head {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  padding: 6px 8px 6px 6px;
-}
-.rb-prop-head .rb-drag-handle { color: var(--text-faint); }
-.rb-prop-type-icon { display: inline-flex; color: var(--text-muted); }
-.rb-prop-type-icon svg { width: 16px; height: 16px; }
-/* Size, corners and font come from 00-tokens.css. */
-.rb-prop-name,
-.rb-prop-input,
-.rb-prop-select {
-  border: 1px solid var(--background-modifier-border);
-  background-color: var(--background-modifier-form-field);
-  color: var(--text-normal);
-}
-.rb-prop-name { flex: 1 1 auto; min-width: 0; font-weight: 600; font-family: var(--font-monospace); }
-.rb-prop-name.rb-invalid { border-color: var(--text-error); }
-.rb-prop-input { width: 100%; }
-/* Custom-appearance select with a single caret — avoids native-control glyph
-   clipping (tall theme fonts) and the tiled-caret bug from .dropdown. */
-.rb-prop-select {
-  appearance: none;
-  -webkit-appearance: none;
-  background-repeat: no-repeat;
-  cursor: pointer;
-}
-.rb-prop-type { flex: 0 0 150px; }
-.rb-prop-expand svg { transition: transform 0.15s ease; }
-.rb-prop-card.rb-open .rb-prop-expand svg { transform: rotate(180deg); }
-.rb-wizard .rb-prop-remove:hover { color: var(--text-error); }
-
-/* Expanded options: a responsive grid of labelled fields. */
-.rb-prop-body {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(170px, 1fr));
-  gap: 12px 14px;
-  padding: 12px 14px 14px 38px;
-  border-top: 1px solid var(--background-modifier-border);
-}
-/* Radix keeps a collapsed body mounted with [hidden]; don't let display: grid show it. */
-.rb-prop-body[hidden] { display: none; }
+/* The list and rows are SettingsList / SettingsRow (styles/ui/settings-list.css); this is only the options layout. */
+.rb-prop-body { display: grid; grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)); gap: 12px 14px; }
+.rb-prop-type { flex: 0 0 132px; }
 .rb-prop-field { display: flex; flex-direction: column; gap: 5px; min-width: 0; }
 .rb-prop-field-wide { grid-column: 1 / -1; }
 .rb-prop-field-label {
@@ -1766,29 +1922,10 @@ body:not(.is-phone) .modal:has(.rb-wizard) { width: min(620px, 90vw); }
 }
 .rb-prop-toggle-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
 .rb-prop-toggle-desc { font-size: 12px; color: var(--text-muted); }
-
-.rb-wizard .rb-prop-add {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 6px;
-  width: 100%;
-  height: 38px;
-  padding: 0 14px;
-  border: 1px dashed var(--background-modifier-border-hover);
-  border-radius: 12px;
-  background: transparent;
-  box-shadow: none;
-  color: var(--text-faint);
-}
-.rb-wizard .rb-prop-add:hover { background: var(--background-modifier-hover); color: var(--text-normal); }
-.rb-prop-add-icon { display: inline-flex; }
-.rb-prop-add-icon svg { width: 15px; height: 15px; }
+.rb-prop-input { width: 100%; }
 
 @media (max-width: 480px) {
   .rb-prop-type { flex-basis: 96px; }
-  .rb-prop-type-icon { display: none; }
-  .rb-prop-body { padding-left: 14px; }
 }
 
 /* ===================== Settings modal (board / view settings) ===================== */
@@ -1846,7 +1983,6 @@ body:not(.is-phone) .modal.rb-settings-modal {
 .rb-btn-icon { display: inline-flex; align-items: center; gap: 6px; }
 .rb-btn-icon svg { width: 14px; height: 14px; }
 /* Property cards inside Board settings span the full width. */
-.rb-settings-body .rb-prop-card .setting-item { border-bottom: none; }
 .rb-settings-body > .rb-wizard-hint { margin: 4px 0 12px; }
 .rb-settings-body > h4:first-child,
 .rb-settings-body > .rb-section-head:first-child { margin-top: 6px; }
@@ -1912,13 +2048,9 @@ body:not(.is-phone) .modal.rb-settings-modal {
 .rb-vis-row .rb-drag-handle { color: var(--text-faint); }
 .rb-vis-row .rb-vis-toggle { margin-left: auto; }
 
-/* ── Board settings → Views: tab order (the list is SortableList) ── */
-.rb-views-row { display: flex; align-items: center; gap: 10px; min-height: 40px; padding: 4px 8px 4px 6px; }
-.rb-views-icon { display: inline-flex; color: var(--text-muted); }
-.rb-views-icon svg { width: 16px; height: 16px; }
-.rb-views-name { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: var(--rb-weight-label); }
-.rb-views-type { color: var(--text-faint); font-size: var(--rb-font-hint); white-space: nowrap; }
-.rb-views-actions { display: flex; gap: 2px; margin-left: auto; }
+/* ── Board settings → Views: the list is SettingsList; only the name's overflow and the pill gap here ── */
+.rb-views-name { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.rb-views-default { margin-left: 8px; }
 
 /* ── Column config (kanban view settings): the list is SortableList ── */
 /* Each row: grip, color swatch, label, value, then clear / hide / remove. */
@@ -1992,10 +2124,10 @@ body:not(.is-phone) .modal.rb-settings-modal {
 }
 
 /* Full-width primary buttons for "Add property" / "Add filter" / "Delete view". */
-.rb-wizard .setting-item:not(.rb-prop-row):not(.rb-filter-row) > .setting-item-control:only-child {
+.rb-wizard .setting-item:not(.rb-filter-row) > .setting-item-control:only-child {
   justify-content: stretch;
 }
-.rb-wizard .setting-item:not(.rb-prop-row):not(.rb-filter-row) > .setting-item-control:only-child button {
+.rb-wizard .setting-item:not(.rb-filter-row) > .setting-item-control:only-child button {
   flex: 1 1 auto;
 }
 
@@ -2395,8 +2527,8 @@ body:not(.is-phone) .rb-edit-modal {
 .is-phone .rb-drag-handle { padding: 8px 4px; }
 .is-phone .rb-drag-handle svg { width: 18px; height: 18px; }
 .is-phone .rb-wizard .rb-icon-btn { width: 38px; height: 38px; }
-.is-phone .rb-prop-body { padding-left: 14px; }
-.is-phone .rb-wizard .rb-prop-remove-wide { display: flex; align-items: center; justify-content: center; gap: 8px; width: 100%; }
+.is-phone [data-slot='settings-row-body'] { padding-left: 14px; }
+.is-phone .rb-prop-remove-wide[data-slot] { width: 100%; }
 
 /* Wizard: actions pinned at the bottom as full-width buttons. */
 .is-phone .rb-wizard-actions {
@@ -2732,58 +2864,160 @@ body:not(.is-phone) .rb-edit-modal {
 }
 .rb-quick-add-warning svg { width: 14px; height: 14px; color: var(--color-orange); flex-shrink: 0; }
 .rb-hotkey { font-family: var(--font-monospace); min-width: 110px; }
-.rb-quick-add-modal .setting-item-name { display: flex; align-items: center; gap: 6px; }
 
-/* Label left, one column of equal-width controls right; switches stay right-aligned. */
-.rb-quick-add .setting-item-control { flex: 0 1 340px; justify-content: flex-end; }
-.rb-quick-add .setting-item-control > input:not([type='checkbox']),
-.rb-quick-add .setting-item-control > select { width: 100%; }
-.rb-links-editor.rb-qa-choices { width: 100%; }
-.rb-quick-add .rb-qa-choices input.rb-links-editor-input { flex: 1 1 120px; width: auto; min-width: 120px; }
+/* ===== The form ===== */
+body:not(.is-phone) .modal.rb-quick-add-modal { width: min(560px, 94vw); max-height: min(820px, 90vh); }
+.modal.rb-quick-add-modal { display: flex; flex-direction: column; padding-bottom: 0; }
+.modal.rb-quick-add-modal .modal-title { font-size: var(--rb-font-title); font-weight: var(--rb-weight-label); color: var(--text-muted); }
+.modal.rb-quick-add-modal .modal-content { display: flex; flex-direction: column; flex: 1 1 auto; min-height: 0; }
+
+.rb-quick-add { display: flex; flex-direction: column; flex: 1 1 auto; min-height: 0; }
+.rb-qa-body { flex: 1 1 auto; min-height: 0; overflow-y: auto; padding: 2px 2px 16px; }
+
+/* The field that names the record (any type): first, with a hairline under it. */
+.rb-qa-field-title { padding-bottom: 14px; border-bottom: 1px solid var(--rb-divider); }
+.rb-qa-field-title .rb-qa-label { color: var(--text-normal); }
+
+/* Two columns: short values pair up, everything else spans both. */
+.rb-qa-fields { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px 12px; }
+.rb-qa-field { display: flex; flex-direction: column; gap: 6px; min-width: 0; grid-column: span 2; }
+.rb-qa-field[data-width='half'] { grid-column: span 1; }
+.is-phone .rb-qa-field[data-width='half'] { grid-column: span 2; }
+.rb-qa-label-row { display: flex; align-items: center; min-height: 16px; }
+.rb-qa-label { display: inline-flex; align-items: center; gap: 6px; color: var(--text-muted); font-size: var(--rb-font-label); font-weight: var(--rb-weight-label); }
+.rb-qa-label .rb-icon { display: inline-flex; color: var(--text-faint); }
+.rb-qa-label .rb-icon svg { width: 13px; height: 13px; }
+/* A switch has no label row: line it up with the boxes of its neighbours. */
+.rb-qa-field-check { justify-content: flex-end; }
+.rb-qa-check-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  height: var(--rb-control-h);
+  padding: 0 var(--rb-control-px);
+  border: 1px solid var(--rb-field-border);
+  border-radius: var(--rb-control-radius);
+  cursor: pointer;
+}
+.rb-qa-check-row .rb-qa-label { color: var(--text-normal); font-weight: 400; font-size: var(--rb-control-font); }
+
+/*
+ * One field box for every control in the form: plain inputs, native selects,
+ * the dropdown trigger, links and the image search all look the same.
+ */
+.rb-qa-field :is(input[type='text'], input[type='url'], input[type='date'], input[type='datetime-local'], input[type='number'], select):not([data-slot]):not([data-slot='image-field'] *):not(.rb-qa-search):not(.rb-links-editor-input),
+.rb-qa-field .rb-links-editor.rb-qa-choices,
+.rb-qa-field .rb-qa-select {
+  box-sizing: border-box;
+  width: 100%;
+  min-height: var(--rb-control-h);
+  margin: 0;
+  border: 1px solid var(--rb-field-border);
+  border-radius: var(--rb-control-radius);
+  background: var(--rb-field-bg);
+  box-shadow: none;
+  color: var(--rb-field-fg);
+  font-size: var(--rb-control-font);
+}
+.rb-qa-field :is(input[type='text'], input[type='url'], input[type='date'], input[type='datetime-local'], input[type='number'], select):not([data-slot]):not([data-slot='image-field'] *):not(.rb-qa-search):not(.rb-links-editor-input) {
+  height: var(--rb-control-h);
+  padding: 0 var(--rb-control-px);
+}
+.rb-qa-field :is(input, select):not([data-slot]):not([data-slot='image-field'] *):not(.rb-qa-search):not(.rb-links-editor-input):hover,
+.rb-qa-field .rb-links-editor.rb-qa-choices:hover,
+.rb-qa-field .rb-qa-select:hover { border-color: var(--rb-field-border-hover); }
+.rb-qa-field :is(input, select):not([data-slot]):not([data-slot='image-field'] *):not(.rb-qa-search):not(.rb-links-editor-input):focus,
+.rb-qa-field .rb-links-editor.rb-qa-choices:focus-within,
+.rb-qa-field .rb-qa-select:is(:focus-visible, .is-open) {
+  outline: none;
+  border-color: var(--rb-field-border-focus);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--rb-field-border-focus) 18%, transparent);
+}
+.rb-qa-field input::placeholder { color: var(--text-faint); }
+
+/* The input inside the links box loses its own frame (the box shows focus instead). */
+.rb-qa-field .rb-links-editor.rb-qa-choices input.rb-links-editor-input,
+.rb-qa-field .rb-links-editor.rb-qa-choices input.rb-links-editor-input:is(:hover, :focus, :focus-visible) {
+  outline: none;
+  flex: 1 1 120px;
+  width: auto;
+  min-width: 0;
+  height: calc(var(--rb-control-h) - 2px);
+  padding: 0;
+  border: none;
+  background: transparent;
+  box-shadow: none;
+}
+
+/* Links: pills and the search in one wrapping box; the browse button inside, on the right. */
+.rb-qa-field .rb-links-editor.rb-qa-choices { display: flex; flex-wrap: wrap; align-items: center; gap: 4px; padding: 0 4px 0 var(--rb-control-px); }
+.rb-qa-field .rb-links-editor.rb-qa-choices:has(.rb-links-editor-pill) { padding-left: 4px; }
+.rb-qa-field .rb-links-editor-pill { height: 24px; padding: 0 4px 0 8px; border-radius: var(--rb-control-radius-sm); background: var(--background-modifier-hover); }
+.rb-qa-field button.rb-links-editor-browse {
+  flex-shrink: 0;
+  width: 28px;
+  height: 28px;
+  margin-left: auto;
+  padding: 0;
+  border: none;
+  border-radius: var(--rb-control-radius-sm);
+  background: transparent;
+  box-shadow: none;
+  color: var(--text-faint);
+}
+.rb-qa-field button.rb-links-editor-browse:hover { background: var(--background-modifier-hover); color: var(--text-normal); }
+.rb-qa-field button.rb-links-editor-browse svg { width: 15px; height: 15px; }
 
 /* Select / multi dropdown */
 .rb-qa-dropdown { position: relative; width: 100%; }
+
 .rb-qa-select {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
   gap: 4px;
-  min-height: var(--input-height);
-  padding: 3px 28px 3px 8px;
+  padding: 4px 30px 4px var(--rb-control-px);
   position: relative;
-  border: var(--input-border-width) solid var(--background-modifier-border);
-  border-radius: var(--input-radius);
-  background: var(--background-modifier-form-field);
   cursor: pointer;
-  box-sizing: border-box;
 }
-.rb-qa-select:hover { border-color: var(--background-modifier-border-hover); }
-.rb-qa-select:focus-visible, .rb-qa-select.is-open { outline: none; box-shadow: 0 0 0 2px var(--background-modifier-border-focus); }
-.rb-qa-placeholder { color: var(--text-faint); font-size: var(--font-ui-small); }
-.rb-qa-caret { position: absolute; right: 8px; top: 50%; transform: translateY(-50%); color: var(--text-muted); display: inline-flex; }
+.rb-qa-select:has(.rb-qa-chip) { padding-left: 5px; }
+.rb-qa-placeholder { color: var(--text-faint); }
+.rb-qa-caret { position: absolute; right: 10px; top: 50%; transform: translateY(-50%); color: var(--text-faint); display: inline-flex; }
 .rb-qa-caret svg { width: 14px; height: 14px; }
 .rb-qa-chip { display: inline-flex; align-items: center; gap: 2px; padding-right: 4px; }
+/* Fixed to the viewport (Floating), so it floats over the modal instead of scrolling it. */
 .rb-qa-menu {
-  position: absolute;
-  z-index: var(--layer-popover);
-  left: 0;
-  right: 0;
-  top: calc(100% + 4px);
+  z-index: var(--layer-menu, 65);
+  display: flex;
+  flex-direction: column;
+  box-sizing: border-box;
   min-width: 200px;
   padding: 6px;
-  border: 1px solid var(--background-modifier-border);
-  border-radius: var(--radius-m);
-  background: var(--background-secondary);
-  box-shadow: var(--shadow-l);
+  border: 1px solid var(--rb-popover-border);
+  border-radius: var(--rb-control-radius);
+  background: var(--rb-popover-bg);
+  box-shadow: var(--rb-popover-shadow);
 }
-.rb-quick-add .rb-qa-menu input.rb-qa-search { width: 100%; margin-bottom: 4px; }
-.rb-qa-options { max-height: 220px; overflow-y: auto; }
-.rb-qa-option { display: flex; align-items: center; gap: 6px; padding: 4px 6px; border-radius: var(--radius-s); cursor: pointer; }
+.rb-quick-add .rb-qa-menu input.rb-qa-search,
+.rb-quick-add .rb-qa-menu input.rb-qa-search:focus {
+  width: 100%;
+  height: 30px;
+  margin-bottom: 4px;
+  padding: 0 8px;
+  border: none;
+  border-bottom: 1px solid var(--rb-divider);
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+}
+.rb-qa-options { flex: 1 1 auto; min-height: 0; max-height: 240px; overflow-y: auto; }
+.rb-qa-option { display: flex; align-items: center; gap: 6px; padding: 5px 6px; border-radius: var(--rb-control-radius-sm); cursor: pointer; }
 .rb-qa-option.is-active { background: var(--background-modifier-hover); }
-.rb-qa-check { width: 14px; display: inline-flex; color: var(--text-accent); }
+.rb-qa-check { width: 14px; display: inline-flex; color: var(--text-muted); }
 .rb-qa-check svg { width: 14px; height: 14px; }
-.rb-qa-create { color: var(--text-muted); font-size: var(--font-ui-small); }
-.rb-qa-empty { padding: 6px; color: var(--text-faint); font-size: var(--font-ui-small); }
+.rb-qa-create { color: var(--text-muted); font-size: var(--rb-font-hint); }
+.rb-qa-empty { padding: 6px; color: var(--text-faint); font-size: var(--rb-font-hint); }
 
 /* A bare ✕ in the pill's own color: beats Obsidian's default button look. */
 .rb-quick-add .rb-qa-select button.rb-qa-remove {
@@ -2806,6 +3040,29 @@ body:not(.is-phone) .rb-edit-modal {
   background: color-mix(in srgb, currentColor 18%, transparent);
 }
 .rb-qa-remove svg { width: 12px; height: 12px; }
+
+/* Footer: keyboard hints left, actions right; stays put while the fields scroll. */
+.rb-qa-footer {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0 calc(-1 * var(--size-4-4, 16px));
+  padding: 12px var(--size-4-4, 16px);
+  border-top: 1px solid var(--rb-divider);
+}
+.rb-qa-keys { display: inline-flex; align-items: center; gap: 4px; margin-right: auto; color: var(--text-faint); font-size: var(--rb-font-hint); }
+.rb-qa-keys kbd {
+  padding: 1px 5px;
+  border: 1px solid var(--rb-field-border);
+  border-radius: 4px;
+  background: transparent;
+  color: var(--text-muted);
+  font-family: inherit;
+  font-size: 11px;
+}
+.rb-qa-dot { margin: 0 4px; }
+.is-phone .rb-qa-keys { display: none; }
+.is-phone .rb-qa-footer > button { flex: 1 1 0; height: 44px; }
 
 /* Board settings → Automations: each automation a card; triggers and effects read as sentences. */
 /* Layout only: the controls are UI primitives (styles/ui/). */
@@ -2835,23 +3092,8 @@ body:not(.is-phone) .rb-edit-modal {
 .rb-automation-line > [data-slot='input'].rb-automation-number { width: 80px; }
 .rb-automation-links { flex: 1 1 200px; min-width: 160px; }
 .rb-automation-check { display: inline-flex; align-items: center; gap: 6px; color: var(--text-muted); font-size: var(--rb-font-hint); cursor: pointer; }
-body .rb-automation-add {
-  align-self: flex-start;
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-  margin-left: 52px;
-  padding: 2px 6px;
-  height: auto;
-  border: none;
-  background: none;
-  box-shadow: none;
-  color: var(--text-muted);
-  font-size: var(--rb-font-hint);
-  cursor: pointer;
-}
-body .rb-automation-add:hover { color: var(--text-normal); background: var(--background-modifier-hover); }
-.rb-automation-add svg { width: 13px; height: 13px; }
+/* "Add trigger / effect" is a ghost Button; only its place in the section here. */
+.rb-automation-add { align-self: flex-start; margin-left: 52px; }
 .rb-automation-warning {
   display: flex;
   gap: 8px;
@@ -3523,8 +3765,17 @@ body.rb-theme-industrial :is(.rb-root, .rb-home, .rb-embed, .modal.rb-modal, .me
   --rb-segment-on-bg: var(--rbi-plane-flat);
   --rb-segment-on-fg: var(--text-normal);
   --rb-segment-on-shadow: 0 1px 3px rgba(28, 28, 30, 0.12);
-  --rb-switch-off-bg: var(--background-modifier-border-hover);
-  --rb-switch-on-bg: var(--text-normal);
+  /* Switch: low and wide with squared corners; on = yellow with an ink knob */
+  --rb-switch-w: 34px;
+  --rb-switch-h: 16px;
+  --rb-switch-pad: 2px;
+  --rb-switch-radius: 4px;
+  --rb-switch-thumb-w: 14px;
+  --rb-switch-thumb-radius: 2px;
+  --rb-switch-off-bg: rgba(28, 28, 30, 0.12);
+  --rb-switch-on-bg: var(--rbi-yellow);
+  --rb-switch-thumb: #FFFFFF;
+  --rb-switch-thumb-on: #1C1C1E;
 
   /* Surfaces */
   --rb-surface-bg: var(--rbi-plane);
@@ -3550,7 +3801,8 @@ body.rb-theme-industrial :is(.rb-root, .rb-home, .rb-embed, .modal.rb-modal, .me
 body.rb-theme-industrial.rb-mode-dark :is(.rb-root, .rb-home, .rb-embed, .modal.rb-modal, .menu.rb-menu, .rb-drag-ghost) {
   --rb-btn-danger-fg: #FF6B83;
   --rb-danger-fg: #FF6B83;
-  --rb-switch-thumb-on: #1C1C1E;
+  --rb-switch-off-bg: rgba(255, 255, 255, 0.14);
+  --rb-switch-thumb: #D9D9D2;
   --rb-segment-on-shadow: none;
   --rb-summary-bg: rgba(255, 228, 26, 0.07);
   --rb-summary-bg-hover: rgba(255, 228, 26, 0.13);
@@ -3578,8 +3830,8 @@ body.rb-theme-industrial {
   --rbi-head: 'Barlow Semi Condensed', 'Arial Narrow', var(--font-interface);
 }
 body.rb-theme-industrial.rb-mode-light {
-  --rbi-canvas: radial-gradient(1100px 520px at 85% -10%, #FFFFFF 0%, rgba(255, 255, 255, 0) 60%), linear-gradient(180deg, #ECECE8 0%, #E1E1DC 100%);
-  --rbi-plane: linear-gradient(180deg, #FFFFFF 0%, #FAFAF8 100%);
+  --rbi-canvas: #E8E8E3;
+  --rbi-plane: #FFFFFF;
   --rbi-plane-flat: #FFFFFF;
   --rbi-plane-shadow: 0 1px 0 rgba(255, 255, 255, 0.9) inset, 0 1px 2px rgba(28, 28, 30, 0.05), 0 8px 24px -8px rgba(28, 28, 30, 0.12);
   --rbi-glass: linear-gradient(180deg, rgba(255, 255, 255, 0.9) 0%, rgba(255, 255, 255, 0.55) 100%);
@@ -3593,8 +3845,8 @@ body.rb-theme-industrial.rb-mode-light {
   --rbi-scrim: rgba(225, 225, 220, 0.55);
 }
 body.rb-theme-industrial.rb-mode-dark {
-  --rbi-canvas: radial-gradient(1100px 520px at 85% -10%, #2B2B2F 0%, rgba(43, 43, 47, 0) 60%), linear-gradient(180deg, #19191B 0%, #121214 100%);
-  --rbi-plane: linear-gradient(180deg, rgba(255, 255, 255, 0.055) 0%, rgba(255, 255, 255, 0.03) 100%);
+  --rbi-canvas: #17171A;
+  --rbi-plane: rgba(255, 255, 255, 0.04);
   --rbi-plane-flat: #232326;
   --rbi-plane-shadow: 0 1px 0 rgba(255, 255, 255, 0.06) inset, 0 10px 28px -10px rgba(0, 0, 0, 0.6);
   --rbi-glass: linear-gradient(180deg, rgba(255, 255, 255, 0.12) 0%, rgba(255, 255, 255, 0.05) 100%);
@@ -3896,10 +4148,6 @@ body.rb-theme-industrial :is(.rb-root, .rb-home, .rb-embed, .modal.rb-modal, .me
   letter-spacing: normal;
 }
 body.rb-theme-industrial .modal.rb-modal .modal-title { font-size: 16px; font-weight: 600; margin: 0 0 12px; text-align: left; }
-/* Toggles: graphite when on, never the vault's accent. */
-body.rb-theme-industrial :is(.rb-root, .modal.rb-modal) .checkbox-container { background-color: var(--background-modifier-border-hover); outline: none; box-shadow: inset 0 1px 2px rgba(28, 28, 30, 0.12); }
-body.rb-theme-industrial :is(.rb-root, .modal.rb-modal) .checkbox-container.is-enabled { background-color: var(--text-normal); }
-body.rb-theme-industrial.rb-mode-dark :is(.rb-root, .modal.rb-modal) .checkbox-container.is-enabled::after { background-color: #1C1C1E; }
 /* Obsidian's settings rows are cards of their own in 1.9+; ours are plain rows. */
 body.rb-theme-industrial .modal.rb-modal .setting-item { background: transparent; border-radius: 0; margin-bottom: 0; }
 
@@ -3911,8 +4159,9 @@ body.rb-theme-industrial.rb-mode-dark { --rb-chart-palette: #ECECE6, #E9CD62, #8
 /* Text inherits from <body>, outside R Board: set it on our own roots. */
 .rb-theme-industrial :is(.rb-root, .rb-home, .modal.rb-modal, .menu.rb-menu) { color: var(--text-normal); }
 .rb-theme-industrial .rb-root { background: var(--background-primary); }
+/* Flat behind content (styles/RULES.md: no gradients behind content). */
 .rb-theme-industrial .rb-root .rb-body,
-.rb-theme-industrial .rb-home { background: var(--rbi-canvas); background-attachment: local; }
+.rb-theme-industrial .rb-home { background: var(--rbi-canvas); }
 .rb-theme-industrial .rb-embed .rb-body { background: transparent; }
 .rb-theme-industrial .rb-root :is(.rb-card, .rb-schedule-week, .rb-schedule-card, .rb-sched-card, .rb-table-wrap.rb-grid, .rb-chart),
 .rb-theme-industrial .modal.rb-modal :is(.rb-sched-card, .rb-settings-group) {
@@ -4130,7 +4379,7 @@ body.rb-theme-industrial.rb-mode-dark { --rb-chart-palette: #ECECE6, #E9CD62, #8
   margin: 0 calc(var(--size-4-4) * -1);
   padding: 16px 18px 22px;
   border-radius: 0;
-  background: linear-gradient(180deg, rgba(28, 28, 30, 0.025), rgba(28, 28, 30, 0.045));
+  background: rgba(28, 28, 30, 0.035);
 }
 .rb-theme-industrial.rb-mode-dark .modal.rb-modal .rb-settings-body { background: rgba(0, 0, 0, 0.15); }
 .rb-theme-industrial .modal.rb-modal .rb-section-count { background: var(--background-modifier-hover); }
@@ -4181,7 +4430,7 @@ body.rb-theme-industrial.rb-mode-dark { --rb-chart-palette: #ECECE6, #E9CD62, #8
   line-height: 1.6;
 }
 /* Not inside the embedded note editor: Obsidian's property rows draw their own (flat) fields. */
-.rb-theme-industrial .modal.rb-modal :is(input[type='text'], input[type='number'], input[type='date'], input[type='search']):not([data-slot]):not(.rb-prop-name):not(.rb-prop-input):not(.rb-filter-value):not(.rb-col-field-input):not(.rb-col-add-input):not(.rb-edit-embed *) {
+.rb-theme-industrial .modal.rb-modal :is(input[type='text'], input[type='number'], input[type='date'], input[type='search']):not([data-slot]):not(.rb-prop-input):not(.rb-filter-value):not(.rb-col-field-input):not(.rb-col-add-input):not(.rb-edit-embed *):not(.rb-quick-add *):not([data-slot='image-field'] *) {
   border-radius: var(--rb-control-radius);
   border-color: var(--rb-field-border);
   background-color: var(--rb-field-bg);
@@ -4196,14 +4445,14 @@ body.rb-theme-industrial.rb-mode-dark { --rb-chart-palette: #ECECE6, #E9CD62, #8
   box-shadow: var(--rbi-glass-shadow);
 }
 
-.rb-theme-industrial .modal.rb-modal button.mod-warning {
+/* Obsidian's own danger buttons only; the kit's danger Button takes its look from tokens. */
+.rb-theme-industrial .modal.rb-modal button.mod-warning:not([data-slot]) {
   border-radius: 999px;
-  background: rgba(209, 31, 63, 0.05);
-  border: 1px solid rgba(209, 31, 63, 0.35);
-  color: #C0263F;
+  background: var(--rb-btn-danger-bg);
+  border: 1px solid var(--rb-btn-danger-border);
+  color: var(--rb-btn-danger-fg);
   box-shadow: none;
 }
-.rb-theme-industrial.rb-mode-dark .modal.rb-modal button.mod-warning { color: #FF6B83; }
 
 /* ---------- Menus (ours only): a glass popover ---------- */
 .rb-theme-industrial .menu.rb-menu {
@@ -4267,7 +4516,7 @@ body.rb-theme-industrial.rb-mode-dark { --rb-chart-palette: #ECECE6, #E9CD62, #8
 
 /* Settings cards, fields, value boxes: UI primitives, themed by 10-tokens.css. */
 /* Selects not yet built with the Select primitive (older screens): same look, same tokens. */
-.rb-theme-industrial :is(.rb-root, .modal.rb-modal) select:not([data-slot]):not(.rb-prop-select):not(.rb-filter-select) {
+.rb-theme-industrial :is(.rb-root, .modal.rb-modal) select:not([data-slot]):not(.rb-filter-select) {
   appearance: none;
   -webkit-appearance: none;
   height: var(--rb-control-h);

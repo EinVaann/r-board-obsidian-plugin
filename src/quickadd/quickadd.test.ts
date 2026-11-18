@@ -12,6 +12,16 @@ describe('quick add config', () => {
     expect(parseQuickAdd({ id: 'q1' })).toEqual({ id: 'q1', properties: [], openNote: undefined });
   });
 
+  it('keeps one trimmed image folder per field, dropping empty ones', () => {
+    const q = parseQuickAdd({ id: 'q1', imageFolders: { cover: ' Assets/Covers ', shot: 'Assets/Shots', thumb: '  ', bad: 3 } });
+    expect(q?.imageFolders).toEqual({ cover: 'Assets/Covers', shot: 'Assets/Shots' });
+    expect(parseQuickAdd({ id: 'q1', imageFolders: { thumb: '' } })).not.toHaveProperty('imageFolders');
+    const text = JSON.stringify({ sourceTag: 'x', properties: [], views: [], quickAdd: { id: 'q1', properties: ['cover'], imageFolders: { cover: 'Covers' } } });
+    const r = parseDatabaseConfig(text);
+    const again = r.ok && parseDatabaseConfig(serializeDatabase(r.config));
+    expect(again && again.ok && again.config.quickAdd?.imageFolders).toEqual({ cover: 'Covers' });
+  });
+
   it('round-trips through a .board file', () => {
     const text = JSON.stringify({ sourceTag: 'game', properties: [], views: [], quickAdd: { id: 'q1', properties: ['status'], openNote: true } });
     const r = parseDatabaseConfig(text);

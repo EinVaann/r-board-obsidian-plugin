@@ -227,7 +227,7 @@ function General({ config, view, viewIndex, edit, onDelete }: TabProps & { viewI
       </SettingRow>
       </SettingsCard>
       <div className="rb-settings-danger">
-        <Button variant="danger" onClick={onDelete}>
+        <Button variant="danger" icon="trash-2" onClick={onDelete}>
           Delete view
         </Button>
       </div>

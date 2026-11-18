@@ -19,7 +19,7 @@ import {
   triggerNeedsValues,
   type Chain,
 } from '../data/automations';
-import { Button, IconButton, Input, MultiSelect, Segmented, Select, SimpleCard as SettingsCard, Switch as Toggle } from '../ui';
+import { AddRow, Button, IconButton, Input, MultiSelect, Segmented, Select, SimpleCard as SettingsCard, Switch as Toggle } from '../ui';
 import { LinksEditor } from '../components/LinksEditor';
 import { Icon } from '../react/Icon';
 
@@ -101,13 +101,7 @@ export function AutomationSettings() {
           />
         ))}
       </SettingsCard>
-      {triggerProps.length > 0 && (
-        <div className="rb-settings-danger">
-          <Button icon="plus" onClick={add}>
-            Add automation
-          </Button>
-        </div>
-      )}
+      {triggerProps.length > 0 && <AddRow label="Add automation" onClick={add} />}
     </>
   );
 }
@@ -200,9 +194,9 @@ function AutomationCard({
             onRemove={() => onChange((a) => void a.triggers.splice(i, 1))}
           />
         ))}
-        <button className="rb-automation-add" onClick={() => onChange((a) => void a.triggers.push(defaultTrigger(triggerProps[0])))}>
-          <Icon name="plus" /> Add trigger
-        </button>
+        <Button variant="ghost" size="sm" icon="plus" className="rb-automation-add" onClick={() => onChange((a) => void a.triggers.push(defaultTrigger(triggerProps[0])))}>
+          Add trigger
+        </Button>
       </div>
 
       <div className="rb-automation-section">
@@ -221,9 +215,9 @@ function AutomationCard({
           />
         ))}
         {effectProps.length > 0 && (
-          <button className="rb-automation-add" onClick={() => onChange((a) => void a.effects.push(defaultEffect(effectProps[0])))}>
-            <Icon name="plus" /> Add effect
-          </button>
+          <Button variant="ghost" size="sm" icon="plus" className="rb-automation-add" onClick={() => onChange((a) => void a.effects.push(defaultEffect(effectProps[0])))}>
+            Add effect
+          </Button>
         )}
       </div>
     </div>
@@ -275,7 +269,7 @@ function TriggerRow({
           <ValuesInput prop={prop} values={t.from ?? []} placeholder="anything" onChange={(v) => onChange((x) => void (v.length ? (x.from = v) : delete x.from))} />
         </>
       )}
-      <IconButton icon="x" label="Remove trigger" size="sm" onClick={onRemove} />
+      <IconButton icon="trash-2" label="Remove trigger" size="sm" tone="danger" onClick={onRemove} />
     </div>
   );
 }
@@ -330,7 +324,7 @@ function EffectRow({
           <span>only if empty</span>
         </label>
       )}
-      <IconButton icon="x" label="Remove effect" size="sm" onClick={onRemove} />
+      <IconButton icon="trash-2" label="Remove effect" size="sm" tone="danger" onClick={onRemove} />
     </div>
   );
 }

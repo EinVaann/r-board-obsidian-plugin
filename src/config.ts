@@ -368,7 +368,10 @@ export function parseQuickAdd(raw: unknown): QuickAddConfig | undefined {
   const q = raw as Record<string, unknown>;
   if (typeof q.id !== 'string' || !q.id) return undefined;
   const properties = Array.isArray(q.properties) ? q.properties.filter((p): p is string => typeof p === 'string') : [];
-  return { id: q.id, properties, openNote: q.openNote === true || undefined };
+  const folders = Object.entries(q.imageFolders && typeof q.imageFolders === 'object' ? q.imageFolders : {})
+    .filter((e): e is [string, string] => typeof e[1] === 'string' && e[1].trim() !== '')
+    .map(([k, v]) => [k, v.trim()]);
+  return { id: q.id, properties, openNote: q.openNote === true || undefined, ...(folders.length ? { imageFolders: Object.fromEntries(folders) } : {}) };
 }
 
 /** The label shown for a property (explicit label, else the frontmatter key). */

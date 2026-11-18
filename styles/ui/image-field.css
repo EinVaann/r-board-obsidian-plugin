@@ -1,0 +1,101 @@
+/* ===== ImageField (components/ImageField.tsx) ===== */
+[data-slot='image-field'] { display: flex; flex-direction: column; gap: 6px; width: 100%; min-width: 0; }
+/* Empty: one field-height row with a dashed edge (it takes drops); glyph, search, actions. */
+:where(.rb-root, .rb-home, .rb-embed, .modal.rb-modal) [data-slot='image-field-empty'] {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  box-sizing: border-box;
+  height: var(--rb-control-h);
+  padding: 0 4px 0 6px;
+  border: 1px dashed var(--rb-field-border-hover);
+  border-radius: var(--rb-control-radius);
+  background: var(--rb-field-bg);
+}
+:where(.rb-root, .rb-home, .rb-embed, .modal.rb-modal) [data-slot='image-field-empty']:hover { border-color: var(--text-faint); }
+:where(.rb-root, .rb-home, .rb-embed, .modal.rb-modal) [data-slot='image-field-empty']:focus-within {
+  border-style: solid;
+  border-color: var(--rb-field-border-focus);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--rb-field-border-focus) 18%, transparent);
+}
+[data-slot='image-field'][data-state='over'] [data-slot='image-field-empty'] {
+  border-style: solid;
+  border-color: var(--rb-field-border-focus);
+  background: color-mix(in srgb, var(--rb-field-border-focus) 8%, var(--rb-field-bg));
+}
+[data-slot='image-field-glyph'] {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 24px;
+  height: 24px;
+  border-radius: var(--rb-control-radius-sm);
+  background: var(--background-modifier-hover);
+  color: var(--text-muted);
+}
+[data-slot='image-field-glyph'] svg { width: 14px; height: 14px; }
+[data-slot='image-field'][data-state='busy'] [data-slot='image-field-glyph'] svg { animation: rb-spin 1s linear infinite; }
+@keyframes rb-spin { to { transform: rotate(360deg); } }
+[data-slot='image-field-drop'] { flex: 1; color: var(--text-normal); font-size: var(--rb-control-font); }
+.modal.rb-modal [data-slot='image-field-empty'] input,
+.modal.rb-modal [data-slot='image-field-empty'] input:is(:hover, :focus, :focus-visible),
+.rb-root [data-slot='image-field-empty'] input,
+.rb-root [data-slot='image-field-empty'] input:is(:hover, :focus, :focus-visible) {
+  outline: none;
+  flex: 1;
+  min-width: 0;
+  height: calc(var(--rb-control-h) - 2px);
+  padding: 0;
+  border: none;
+  background: transparent;
+  box-shadow: none;
+  font-size: var(--rb-control-font);
+}
+[data-slot='image-field-empty'] input::placeholder { color: var(--text-faint); }
+
+/* Linked image, or the draft's box. */
+[data-slot='image-field'] > [data-slot='image-field-preview'],
+[data-slot='image-field-draft'] {
+  padding: 8px;
+  border: 1px solid var(--rb-surface-border);
+  border-radius: var(--rb-control-radius);
+  background: var(--rb-surface-sunken);
+}
+[data-slot='image-field-draft'] { display: flex; flex-direction: column; gap: 6px; }
+[data-slot='image-field'][data-state='over'] :is([data-slot='image-field-draft'], [data-slot='image-field'] > [data-slot='image-field-preview']) {
+  border-style: solid;
+  border-color: var(--rb-field-border-focus);
+  color: var(--text-normal);
+}
+
+[data-slot='image-field-preview'] { display: flex; align-items: center; gap: 10px; min-width: 0; }
+[data-slot='image-field-preview'] > img,
+[data-slot='image-field-missing'] {
+  width: 56px;
+  height: 56px;
+  flex-shrink: 0;
+  object-fit: cover;
+  border-radius: var(--rb-control-radius-sm);
+  background: var(--rb-field-bg);
+}
+[data-slot='image-field-missing'] { display: flex; align-items: center; justify-content: center; color: var(--text-faint); }
+[data-slot='image-field-meta'] { display: flex; flex-direction: column; gap: 2px; flex: 1; min-width: 0; font-size: var(--rb-font-hint); color: var(--text-muted); }
+[data-slot='image-field-meta'] > span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+[data-slot='image-field-meta'] > span:first-child { color: var(--text-normal); font-size: var(--rb-font-label); }
+[data-slot='image-field-actions'] { display: flex; align-items: center; gap: 2px; flex-shrink: 0; }
+
+[data-slot='image-field-row'] { display: grid; grid-template-columns: 56px minmax(0, 1fr); align-items: center; gap: 10px; font-size: var(--rb-font-label); color: var(--text-muted); }
+[data-slot='image-field-row'] [data-slot='input'] { width: 100%; }
+[data-slot='image-field-row'] [data-slot='number-input'] { display: inline-flex; align-items: center; gap: 6px; justify-self: start; }
+[data-slot='image-field-row'] [data-slot='number-input'] [data-slot='input'] { width: 84px; text-align: left; }
+[data-slot='image-field-name'] { display: flex; align-items: center; gap: 4px; min-width: 0; }
+[data-slot='image-field-name'] [data-slot='input'] { flex: 1; min-width: 0; }
+[data-slot='image-field-ext'] { color: var(--text-faint); font-family: var(--font-monospace); font-size: var(--rb-font-hint); }
+[data-slot='image-field-path'] { display: flex; align-items: center; gap: 4px; min-width: 0; color: var(--text-faint); font-size: var(--rb-font-hint); }
+[data-slot='image-field-path'] > span:last-child { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+[data-slot='image-field-path'] .rb-icon svg { width: 12px; height: 12px; }
+[data-slot='image-field-hint'] { color: var(--text-muted); font-size: var(--rb-font-hint); }
+[data-slot='image-field-error'] { color: var(--rb-danger-fg); font-size: var(--rb-font-hint); }
+
+.rb-image-field-dialog { display: flex; flex-direction: column; gap: 12px; }

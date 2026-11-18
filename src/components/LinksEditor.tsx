@@ -163,7 +163,7 @@ export function LinksEditor({
 }
 
 /** Every file in the vault (or those `accept` allows), fuzzy-searched by path. */
-class FilePicker extends FuzzySuggestModal<TFile> {
+export class FilePicker extends FuzzySuggestModal<TFile> {
   constructor(
     app: App,
     private readonly onPick: (file: TFile) => void,

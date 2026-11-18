@@ -259,4 +259,9 @@ export class Plugin {}
 export class PluginSettingTab {}
 export class Setting {}
 export const normalizePath = (p: string) => p;
+/** Plain fetch (subject to CORS, unlike Obsidian's). */
+export async function requestUrl({ url }: { url: string }) {
+  const res = await fetch(url);
+  return { arrayBuffer: await res.arrayBuffer(), headers: { 'content-type': res.headers.get('content-type') ?? '' } };
+}
 export const getAllTags = (cache: { frontmatter?: { tags?: string[] } }) => (cache?.frontmatter?.tags ?? []).map((t) => `#${t}`);

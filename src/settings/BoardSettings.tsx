@@ -53,17 +53,24 @@ export function BoardSettings() {
   );
 
   const properties = (
-    <PropertyEditor
-      table={table}
-      properties={config.properties}
-      onChange={(next) =>
-        updateConfig((c) => {
-          c.properties = next;
-          // A table always has a title column.
-          if (table && !next.some((p) => p.name === c.titleProperty)) c.titleProperty = next[0]?.name;
-        })
-      }
-    />
+    <SettingsCard
+      icon="list"
+      title={table ? 'Columns' : 'Properties'}
+      desc={table ? 'Drag to reorder. Expand a column for its style and options.' : 'Frontmatter keys the board reads. Drag to reorder; expand one for its style and options.'}
+      className="rb-props-card"
+    >
+      <PropertyEditor
+        table={table}
+        properties={config.properties}
+        onChange={(next) =>
+          updateConfig((c) => {
+            c.properties = next;
+            // A table always has a title column.
+            if (table && !next.some((p) => p.name === c.titleProperty)) c.titleProperty = next[0]?.name;
+          })
+        }
+      />
+    </SettingsCard>
   );
 
   return (

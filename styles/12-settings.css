@@ -53,7 +53,6 @@ body:not(.is-phone) .modal.rb-settings-modal {
 .rb-btn-icon { display: inline-flex; align-items: center; gap: 6px; }
 .rb-btn-icon svg { width: 14px; height: 14px; }
 /* Property cards inside Board settings span the full width. */
-.rb-settings-body .rb-prop-card .setting-item { border-bottom: none; }
 .rb-settings-body > .rb-wizard-hint { margin: 4px 0 12px; }
 .rb-settings-body > h4:first-child,
 .rb-settings-body > .rb-section-head:first-child { margin-top: 6px; }
@@ -119,13 +118,9 @@ body:not(.is-phone) .modal.rb-settings-modal {
 .rb-vis-row .rb-drag-handle { color: var(--text-faint); }
 .rb-vis-row .rb-vis-toggle { margin-left: auto; }
 
-/* ── Board settings → Views: tab order (the list is SortableList) ── */
-.rb-views-row { display: flex; align-items: center; gap: 10px; min-height: 40px; padding: 4px 8px 4px 6px; }
-.rb-views-icon { display: inline-flex; color: var(--text-muted); }
-.rb-views-icon svg { width: 16px; height: 16px; }
-.rb-views-name { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: var(--rb-weight-label); }
-.rb-views-type { color: var(--text-faint); font-size: var(--rb-font-hint); white-space: nowrap; }
-.rb-views-actions { display: flex; gap: 2px; margin-left: auto; }
+/* ── Board settings → Views: the list is SettingsList; only the name's overflow and the pill gap here ── */
+.rb-views-name { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.rb-views-default { margin-left: 8px; }
 
 /* ── Column config (kanban view settings): the list is SortableList ── */
 /* Each row: grip, color swatch, label, value, then clear / hide / remove. */

@@ -6,8 +6,11 @@ import { asArray, optionFor } from '../render/values';
 import { optionStyle } from '../components/fields';
 import { ValueEditor } from '../components/ValueEditor';
 import { LinksEditor } from '../components/LinksEditor';
+import { ImageField } from '../components/ImageField';
+import type { ImageDraft } from '../data/imageImport';
 import { Toggle } from '../settings/controls';
 import { Icon } from '../react/Icon';
+import { Floating } from '../ui';
 
 /**
  * One quick-add field, edited the way its type is picked: a dropdown for
@@ -21,7 +24,10 @@ export function FormField({
   known,
   sourcePath,
   autoFocus,
+  draft,
+  imageFolder,
   onChange,
+  onDraft,
   onEnter,
 }: {
   app: App;
@@ -32,7 +38,12 @@ export function FormField({
   /** The database file, for shortest link text. */
   sourcePath: string;
   autoFocus: boolean;
+  /** Image fields: a dropped / pasted image not saved yet; it replaces `value` on submit. */
+  draft?: ImageDraft | null;
+  /** Image fields: where new images are saved (quick add settings). */
+  imageFolder?: string;
   onChange: (value: StoredValue) => void;
+  onDraft?: (draft: ImageDraft | null) => void;
   onEnter: () => void;
 }) {
   switch (prop.type) {
@@ -41,13 +52,27 @@ export function FormField({
     case 'select':
     case 'multi':
       return <Dropdown prop={prop} value={value} known={known} autoFocus={autoFocus} onChange={onChange} onEnter={onEnter} />;
-    case 'links':
     case 'image':
+      return (
+        <ImageField
+          app={app}
+          sourcePath={sourcePath}
+          value={value}
+          onChange={onChange}
+          draft={draft ?? null}
+          onDraft={(d) => onDraft?.(d)}
+          defaultFolder={imageFolder}
+          folderKey={`${sourcePath}#${prop.name}`}
+          autoFocus={autoFocus}
+          onEnter={onEnter}
+          className="rb-qa-image"
+        />
+      );
+    case 'links':
       return (
         <LinksEditor
           app={app}
           value={value}
-          image={prop.type === 'image'}
           single={!!prop.single}
           sourcePath={sourcePath}
           autoFocus={autoFocus}
@@ -236,7 +261,7 @@ function Dropdown({
         <Icon name="chevron-down" className="rb-qa-caret" />
       </div>
       {open && (
-        <div className="rb-qa-menu">
+        <Floating anchor={trigger} className="rb-qa-menu">
           <input
             type="text"
             className="rb-qa-search"
@@ -296,7 +321,7 @@ function Dropdown({
               );
             })}
           </div>
-        </div>
+        </Floating>
       )}
     </div>
   );

@@ -51,7 +51,7 @@
 
 /* Older screens still using classes: same box from the same tokens (compact inside list rows). */
 /* Move each to the Input / Select primitive when its screen is next touched. */
-:where(.rb-root, .rb-home, .rb-embed, .modal.rb-modal) :is(.rb-prop-name, .rb-prop-input, .rb-filter-value, .rb-col-add-input, .rb-col-field-input, .rb-prop-select, .rb-filter-select):not([data-slot]) {
+:where(.rb-root, .rb-home, .rb-embed, .modal.rb-modal) :is(.rb-prop-input, .rb-filter-value, .rb-col-add-input, .rb-col-field-input, .rb-filter-select):not([data-slot]) {
   box-sizing: border-box;
   height: var(--rb-control-h);
   padding: 0 var(--rb-control-px);
@@ -59,7 +59,7 @@
   font-size: var(--rb-control-font);
   line-height: normal;
 }
-:where(.rb-root, .rb-home, .rb-embed, .modal.rb-modal) :is(.rb-prop-select, .rb-filter-select):not([data-slot]) {
+:where(.rb-root, .rb-home, .rb-embed, .modal.rb-modal) .rb-filter-select:not([data-slot]) {
   appearance: none;
   -webkit-appearance: none;
   padding-right: calc(var(--rb-control-px) + 18px);
@@ -72,7 +72,7 @@
   color: var(--rb-field-fg);
   cursor: pointer;
 }
-:where(.rb-root, .rb-home, .rb-embed, .modal.rb-modal) :is(.rb-prop-head .rb-prop-name, .rb-prop-head .rb-prop-select, .rb-filter-select, .rb-filter-value, .rb-col-field-input):not([data-slot]) {
+:where(.rb-root, .rb-home, .rb-embed, .modal.rb-modal) :is(.rb-filter-select, .rb-filter-value, .rb-col-field-input):not([data-slot]) {
   height: var(--rb-control-h-sm);
   border-radius: var(--rb-control-radius-sm);
   font-size: var(--rb-control-font-sm);

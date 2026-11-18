@@ -12,58 +12,160 @@
 }
 .rb-quick-add-warning svg { width: 14px; height: 14px; color: var(--color-orange); flex-shrink: 0; }
 .rb-hotkey { font-family: var(--font-monospace); min-width: 110px; }
-.rb-quick-add-modal .setting-item-name { display: flex; align-items: center; gap: 6px; }
 
-/* Label left, one column of equal-width controls right; switches stay right-aligned. */
-.rb-quick-add .setting-item-control { flex: 0 1 340px; justify-content: flex-end; }
-.rb-quick-add .setting-item-control > input:not([type='checkbox']),
-.rb-quick-add .setting-item-control > select { width: 100%; }
-.rb-links-editor.rb-qa-choices { width: 100%; }
-.rb-quick-add .rb-qa-choices input.rb-links-editor-input { flex: 1 1 120px; width: auto; min-width: 120px; }
+/* ===== The form ===== */
+body:not(.is-phone) .modal.rb-quick-add-modal { width: min(560px, 94vw); max-height: min(820px, 90vh); }
+.modal.rb-quick-add-modal { display: flex; flex-direction: column; padding-bottom: 0; }
+.modal.rb-quick-add-modal .modal-title { font-size: var(--rb-font-title); font-weight: var(--rb-weight-label); color: var(--text-muted); }
+.modal.rb-quick-add-modal .modal-content { display: flex; flex-direction: column; flex: 1 1 auto; min-height: 0; }
+
+.rb-quick-add { display: flex; flex-direction: column; flex: 1 1 auto; min-height: 0; }
+.rb-qa-body { flex: 1 1 auto; min-height: 0; overflow-y: auto; padding: 2px 2px 16px; }
+
+/* The field that names the record (any type): first, with a hairline under it. */
+.rb-qa-field-title { padding-bottom: 14px; border-bottom: 1px solid var(--rb-divider); }
+.rb-qa-field-title .rb-qa-label { color: var(--text-normal); }
+
+/* Two columns: short values pair up, everything else spans both. */
+.rb-qa-fields { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px 12px; }
+.rb-qa-field { display: flex; flex-direction: column; gap: 6px; min-width: 0; grid-column: span 2; }
+.rb-qa-field[data-width='half'] { grid-column: span 1; }
+.is-phone .rb-qa-field[data-width='half'] { grid-column: span 2; }
+.rb-qa-label-row { display: flex; align-items: center; min-height: 16px; }
+.rb-qa-label { display: inline-flex; align-items: center; gap: 6px; color: var(--text-muted); font-size: var(--rb-font-label); font-weight: var(--rb-weight-label); }
+.rb-qa-label .rb-icon { display: inline-flex; color: var(--text-faint); }
+.rb-qa-label .rb-icon svg { width: 13px; height: 13px; }
+/* A switch has no label row: line it up with the boxes of its neighbours. */
+.rb-qa-field-check { justify-content: flex-end; }
+.rb-qa-check-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  height: var(--rb-control-h);
+  padding: 0 var(--rb-control-px);
+  border: 1px solid var(--rb-field-border);
+  border-radius: var(--rb-control-radius);
+  cursor: pointer;
+}
+.rb-qa-check-row .rb-qa-label { color: var(--text-normal); font-weight: 400; font-size: var(--rb-control-font); }
+
+/*
+ * One field box for every control in the form: plain inputs, native selects,
+ * the dropdown trigger, links and the image search all look the same.
+ */
+.rb-qa-field :is(input[type='text'], input[type='url'], input[type='date'], input[type='datetime-local'], input[type='number'], select):not([data-slot]):not([data-slot='image-field'] *):not(.rb-qa-search):not(.rb-links-editor-input),
+.rb-qa-field .rb-links-editor.rb-qa-choices,
+.rb-qa-field .rb-qa-select {
+  box-sizing: border-box;
+  width: 100%;
+  min-height: var(--rb-control-h);
+  margin: 0;
+  border: 1px solid var(--rb-field-border);
+  border-radius: var(--rb-control-radius);
+  background: var(--rb-field-bg);
+  box-shadow: none;
+  color: var(--rb-field-fg);
+  font-size: var(--rb-control-font);
+}
+.rb-qa-field :is(input[type='text'], input[type='url'], input[type='date'], input[type='datetime-local'], input[type='number'], select):not([data-slot]):not([data-slot='image-field'] *):not(.rb-qa-search):not(.rb-links-editor-input) {
+  height: var(--rb-control-h);
+  padding: 0 var(--rb-control-px);
+}
+.rb-qa-field :is(input, select):not([data-slot]):not([data-slot='image-field'] *):not(.rb-qa-search):not(.rb-links-editor-input):hover,
+.rb-qa-field .rb-links-editor.rb-qa-choices:hover,
+.rb-qa-field .rb-qa-select:hover { border-color: var(--rb-field-border-hover); }
+.rb-qa-field :is(input, select):not([data-slot]):not([data-slot='image-field'] *):not(.rb-qa-search):not(.rb-links-editor-input):focus,
+.rb-qa-field .rb-links-editor.rb-qa-choices:focus-within,
+.rb-qa-field .rb-qa-select:is(:focus-visible, .is-open) {
+  outline: none;
+  border-color: var(--rb-field-border-focus);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--rb-field-border-focus) 18%, transparent);
+}
+.rb-qa-field input::placeholder { color: var(--text-faint); }
+
+/* The input inside the links box loses its own frame (the box shows focus instead). */
+.rb-qa-field .rb-links-editor.rb-qa-choices input.rb-links-editor-input,
+.rb-qa-field .rb-links-editor.rb-qa-choices input.rb-links-editor-input:is(:hover, :focus, :focus-visible) {
+  outline: none;
+  flex: 1 1 120px;
+  width: auto;
+  min-width: 0;
+  height: calc(var(--rb-control-h) - 2px);
+  padding: 0;
+  border: none;
+  background: transparent;
+  box-shadow: none;
+}
+
+/* Links: pills and the search in one wrapping box; the browse button inside, on the right. */
+.rb-qa-field .rb-links-editor.rb-qa-choices { display: flex; flex-wrap: wrap; align-items: center; gap: 4px; padding: 0 4px 0 var(--rb-control-px); }
+.rb-qa-field .rb-links-editor.rb-qa-choices:has(.rb-links-editor-pill) { padding-left: 4px; }
+.rb-qa-field .rb-links-editor-pill { height: 24px; padding: 0 4px 0 8px; border-radius: var(--rb-control-radius-sm); background: var(--background-modifier-hover); }
+.rb-qa-field button.rb-links-editor-browse {
+  flex-shrink: 0;
+  width: 28px;
+  height: 28px;
+  margin-left: auto;
+  padding: 0;
+  border: none;
+  border-radius: var(--rb-control-radius-sm);
+  background: transparent;
+  box-shadow: none;
+  color: var(--text-faint);
+}
+.rb-qa-field button.rb-links-editor-browse:hover { background: var(--background-modifier-hover); color: var(--text-normal); }
+.rb-qa-field button.rb-links-editor-browse svg { width: 15px; height: 15px; }
 
 /* Select / multi dropdown */
 .rb-qa-dropdown { position: relative; width: 100%; }
+
 .rb-qa-select {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
   gap: 4px;
-  min-height: var(--input-height);
-  padding: 3px 28px 3px 8px;
+  padding: 4px 30px 4px var(--rb-control-px);
   position: relative;
-  border: var(--input-border-width) solid var(--background-modifier-border);
-  border-radius: var(--input-radius);
-  background: var(--background-modifier-form-field);
   cursor: pointer;
-  box-sizing: border-box;
 }
-.rb-qa-select:hover { border-color: var(--background-modifier-border-hover); }
-.rb-qa-select:focus-visible, .rb-qa-select.is-open { outline: none; box-shadow: 0 0 0 2px var(--background-modifier-border-focus); }
-.rb-qa-placeholder { color: var(--text-faint); font-size: var(--font-ui-small); }
-.rb-qa-caret { position: absolute; right: 8px; top: 50%; transform: translateY(-50%); color: var(--text-muted); display: inline-flex; }
+.rb-qa-select:has(.rb-qa-chip) { padding-left: 5px; }
+.rb-qa-placeholder { color: var(--text-faint); }
+.rb-qa-caret { position: absolute; right: 10px; top: 50%; transform: translateY(-50%); color: var(--text-faint); display: inline-flex; }
 .rb-qa-caret svg { width: 14px; height: 14px; }
 .rb-qa-chip { display: inline-flex; align-items: center; gap: 2px; padding-right: 4px; }
+/* Fixed to the viewport (Floating), so it floats over the modal instead of scrolling it. */
 .rb-qa-menu {
-  position: absolute;
-  z-index: var(--layer-popover);
-  left: 0;
-  right: 0;
-  top: calc(100% + 4px);
+  z-index: var(--layer-menu, 65);
+  display: flex;
+  flex-direction: column;
+  box-sizing: border-box;
   min-width: 200px;
   padding: 6px;
-  border: 1px solid var(--background-modifier-border);
-  border-radius: var(--radius-m);
-  background: var(--background-secondary);
-  box-shadow: var(--shadow-l);
+  border: 1px solid var(--rb-popover-border);
+  border-radius: var(--rb-control-radius);
+  background: var(--rb-popover-bg);
+  box-shadow: var(--rb-popover-shadow);
 }
-.rb-quick-add .rb-qa-menu input.rb-qa-search { width: 100%; margin-bottom: 4px; }
-.rb-qa-options { max-height: 220px; overflow-y: auto; }
-.rb-qa-option { display: flex; align-items: center; gap: 6px; padding: 4px 6px; border-radius: var(--radius-s); cursor: pointer; }
+.rb-quick-add .rb-qa-menu input.rb-qa-search,
+.rb-quick-add .rb-qa-menu input.rb-qa-search:focus {
+  width: 100%;
+  height: 30px;
+  margin-bottom: 4px;
+  padding: 0 8px;
+  border: none;
+  border-bottom: 1px solid var(--rb-divider);
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+}
+.rb-qa-options { flex: 1 1 auto; min-height: 0; max-height: 240px; overflow-y: auto; }
+.rb-qa-option { display: flex; align-items: center; gap: 6px; padding: 5px 6px; border-radius: var(--rb-control-radius-sm); cursor: pointer; }
 .rb-qa-option.is-active { background: var(--background-modifier-hover); }
-.rb-qa-check { width: 14px; display: inline-flex; color: var(--text-accent); }
+.rb-qa-check { width: 14px; display: inline-flex; color: var(--text-muted); }
 .rb-qa-check svg { width: 14px; height: 14px; }
-.rb-qa-create { color: var(--text-muted); font-size: var(--font-ui-small); }
-.rb-qa-empty { padding: 6px; color: var(--text-faint); font-size: var(--font-ui-small); }
+.rb-qa-create { color: var(--text-muted); font-size: var(--rb-font-hint); }
+.rb-qa-empty { padding: 6px; color: var(--text-faint); font-size: var(--rb-font-hint); }
 
 /* A bare ✕ in the pill's own color: beats Obsidian's default button look. */
 .rb-quick-add .rb-qa-select button.rb-qa-remove {
@@ -86,3 +188,26 @@
   background: color-mix(in srgb, currentColor 18%, transparent);
 }
 .rb-qa-remove svg { width: 12px; height: 12px; }
+
+/* Footer: keyboard hints left, actions right; stays put while the fields scroll. */
+.rb-qa-footer {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0 calc(-1 * var(--size-4-4, 16px));
+  padding: 12px var(--size-4-4, 16px);
+  border-top: 1px solid var(--rb-divider);
+}
+.rb-qa-keys { display: inline-flex; align-items: center; gap: 4px; margin-right: auto; color: var(--text-faint); font-size: var(--rb-font-hint); }
+.rb-qa-keys kbd {
+  padding: 1px 5px;
+  border: 1px solid var(--rb-field-border);
+  border-radius: 4px;
+  background: transparent;
+  color: var(--text-muted);
+  font-family: inherit;
+  font-size: 11px;
+}
+.rb-qa-dot { margin: 0 4px; }
+.is-phone .rb-qa-keys { display: none; }
+.is-phone .rb-qa-footer > button { flex: 1 1 0; height: 44px; }
