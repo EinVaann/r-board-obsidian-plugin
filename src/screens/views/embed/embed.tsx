@@ -13,6 +13,7 @@ import { BoardContext, useBoard, useBoardContext, type BoardContextValue } from 
 import { Body } from '../board/board-app';
 import { mountReact } from '../../../obsidian/mount';
 import { Icon } from '../../../components/icon';
+import { IconButton } from '@/components/form-controls';
 import { NoteEditModal } from '../../../obsidian/note-edit-modal';
 
 /** What an embed block asks for: a database file, one of its views, a height. */
@@ -224,9 +225,7 @@ function EmbedApp({ file, height, onOpen }: { file: TFile; height?: number; onOp
         <Icon name={file.extension === 'table' ? 'table' : 'layout-dashboard'} />
         <span className="rb-embed-name">{config?.name ?? file.basename}</span>
         {view && <span className="rb-embed-view">· {view.name}</span>}
-        <button className="rb-icon-btn rb-embed-open" aria-label="Open" title={`Open ${file.basename}`} onClick={onOpen}>
-          <Icon name="external-link" />
-        </button>
+        <IconButton icon="external-link" size="sm" className="rb-embed-open" label={`Open ${file.basename}`} onClick={onOpen} />
       </div>
       {parseError && <div className="rb-embed-error">{parseError}</div>}
       <div

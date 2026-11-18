@@ -65,6 +65,10 @@
   --rb-btn-secondary-border: var(--background-modifier-border);
   --rb-btn-secondary-shadow: none;
   --rb-btn-secondary-hover-bg: var(--background-modifier-hover);
+  /* The board's own "create" action (New note / New row): the vault accent, flat. */
+  --rb-btn-accent-bg: var(--interactive-accent);
+  --rb-btn-accent-hover-bg: var(--interactive-accent-hover);
+  --rb-btn-accent-fg: var(--text-on-accent);
   --rb-btn-ghost-fg: var(--text-muted);
   --rb-btn-ghost-hover-fg: var(--text-normal);
   --rb-btn-ghost-hover-bg: var(--background-modifier-hover);
@@ -101,6 +105,15 @@
   --rb-pill-default: var(--text-faint);
   --rb-chip-border: var(--background-modifier-border);
   --rb-chip-fg: var(--text-muted);
+  /* An active chip (a sort or filter is set). */
+  --rb-chip-on-border: var(--interactive-accent);
+  --rb-chip-on-fg: var(--text-accent);
+  --rb-badge-bg: var(--interactive-accent);
+  --rb-badge-fg: var(--text-on-accent);
+
+  /* --- Board toolbar: one height for tabs, chips, search and buttons --- */
+  --rb-toolbar-h: 32px;
+  --rb-toolbar-radius: 8px;
 
   /* --- Surfaces: cards, panels, dialogs --- */
   --rb-surface-bg: var(--background-primary);

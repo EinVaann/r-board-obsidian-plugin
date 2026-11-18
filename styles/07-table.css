@@ -174,25 +174,8 @@ body .rb-table-wrap.rb-grid::-webkit-scrollbar-thumb:active { background-color: 
 body .rb-table-wrap.rb-summary-only { scrollbar-width: none; }
 body .rb-table-wrap.rb-summary-only::-webkit-scrollbar { display: none; }
 
-.rb-grid-add {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  width: 100%;
-  padding: 8px 10px;
-  height: auto;
-  background: transparent;
-  box-shadow: none;
-  border-bottom: 1px solid var(--background-modifier-border);
-  border-radius: 0;
-  color: var(--text-muted);
-  font-size: 13px;
-  cursor: pointer;
-  justify-content: flex-start;
-}
-.rb-grid-add-ungrouped { margin: 4px 0 12px; border-top: 1px solid var(--background-modifier-border); }
-.rb-grid-add:hover { background: var(--background-modifier-hover); color: var(--text-normal); }
-.rb-grid-add svg { width: 14px; height: 14px; }
+/* "New row" under the table: a ghost Button; "New row with no …" is an AddRow (compact). */
+.rb-grid-add { border-bottom: 1px solid var(--background-modifier-border); }
 
 .rb-td .rb-img { width: 48px; }
 .rb-td .rb-img img { aspect-ratio: 3 / 4; object-fit: cover; border-radius: 4px; }
@@ -208,28 +191,4 @@ body .rb-table-wrap.rb-summary-only::-webkit-scrollbar { display: none; }
 }
 .rb-pager-range { font-size: 12px; color: var(--text-muted); }
 .rb-pager-pages { display: flex; align-items: center; gap: 4px; }
-.rb-pager-btn {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  min-width: 30px;
-  height: 30px;
-  padding: 0 8px;
-  border: 1px solid transparent;
-  border-radius: 7px;
-  background: transparent;
-  box-shadow: none;
-  color: var(--text-muted);
-  font-size: 13px;
-  cursor: pointer;
-}
-.rb-pager-btn:hover:not(:disabled) { background: var(--background-modifier-hover); color: var(--text-normal); }
-.rb-pager-btn.rb-active {
-  border-color: var(--background-modifier-border);
-  background: var(--background-modifier-hover);
-  color: var(--text-normal);
-  font-weight: 600;
-}
-.rb-pager-btn:disabled { opacity: 0.35; cursor: default; }
-.rb-pager-btn svg { width: 16px; height: 16px; }
 .rb-pager-gap { padding: 0 4px; color: var(--text-faint); }

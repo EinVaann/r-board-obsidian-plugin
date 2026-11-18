@@ -31,6 +31,13 @@
   --color-secondary-border: var(--rb-btn-secondary-border);
   --color-secondary-hover: var(--rb-btn-secondary-hover-bg);
   --color-ghost-foreground: var(--rb-btn-ghost-fg);
+  --color-accent-button: var(--rb-btn-accent-bg);
+  --color-accent-button-hover: var(--rb-btn-accent-hover-bg);
+  --color-accent-button-foreground: var(--rb-btn-accent-fg);
+  --color-chip-on-border: var(--rb-chip-on-border);
+  --color-chip-on-foreground: var(--rb-chip-on-fg);
+  --color-badge: var(--rb-badge-bg);
+  --color-badge-foreground: var(--rb-badge-fg);
   --color-icon-foreground: var(--rb-icon-btn-fg);
   --color-secondary-foreground: var(--rb-btn-secondary-fg);
   --color-muted: var(--rb-surface-sunken);
@@ -72,6 +79,7 @@
   --radius-switch: var(--rb-switch-radius);
   --radius-switch-thumb: var(--rb-switch-thumb-radius);
   --radius-pill: var(--rb-pill-radius);
+  --radius-toolbar: var(--rb-toolbar-radius);
 
   --text-control: var(--rb-control-font);
   --text-control-sm: var(--rb-control-font-sm);
@@ -95,6 +103,7 @@
   --spacing-switch-thumb: var(--rb-switch-thumb-w);
   --spacing-switch-pad: var(--rb-switch-pad);
   --spacing-pill-h: var(--rb-pill-h);
+  --spacing-toolbar: var(--rb-toolbar-h);
 
   --shadow-button-primary: var(--rb-btn-primary-shadow);
   --shadow-button-secondary: var(--rb-btn-secondary-shadow);

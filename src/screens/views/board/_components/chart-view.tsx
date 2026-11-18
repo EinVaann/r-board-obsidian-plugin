@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import type { BoardItem, ChartConfig, PropertyConfig } from '../../../../types/database';
 import { defaultChartConfig, propertyLabel } from '../../../../lib/config';
 import { useBoardContext } from '../../../../stores/board-context';
+import { IconButton } from '@/components/form-controls';
 import { TitleLink, useFieldEnv } from '../../../../components/card';
 import { fieldNode } from '../../../../components/fields';
 import { asNumber, formatNumber } from '../../../../lib/render/values';
@@ -186,9 +187,7 @@ function DrillList(p: { drill: Drill; items: BoardItem[]; properties: PropertyCo
           {rows.length} item{rows.length === 1 ? '' : 's'}
           {total !== null && ` · total ${formatNumber(total, p.format)}`}
         </span>
-        <button className="rb-icon-btn" onClick={p.onClose} aria-label="Close">
-          ×
-        </button>
+        <IconButton icon="x" size="sm" label="Close" onClick={p.onClose} />
       </div>
       <div className="rb-drill-scroll">
         <table className="rb-table">

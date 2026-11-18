@@ -2,6 +2,8 @@ import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import type { App } from 'obsidian';
 import { ReactModal } from '../../../obsidian/mount';
 import { Icon } from '../../../components/icon';
+import { Button } from '@/components/ui/button';
+import { IconButton, Segmented, TextButton, TextField, Toggle } from '@/components/form-controls';
 import type { SessionType } from '../../../types/schedule';
 import type { SectionKind } from '../../../types/database';
 import { isShown } from '../../../lib/schedule/sections';
@@ -115,7 +117,7 @@ function LogSessionForm({
         </div>
         {searching && (
           <div className="rb-log-search">
-            <input type="search" autoFocus placeholder="Search games…" aria-label="Search games" value={q} onChange={(e) => setQ(e.target.value)} />
+            <TextField type="search" autoFocus placeholder="Search games…" aria-label="Search games" value={q} onChange={(e) => setQ(e.target.value)} />
             <div className="rb-log-search-list">
               {others.length === 0 && <div className="rb-schedule-muted">No match.</div>}
               {others.slice(0, 50).map((g) => (
@@ -134,41 +136,35 @@ function LogSessionForm({
           <span className="rb-log-label">Hours</span>
           <div className="rb-log-hours">
             {[1, 2].map((n) => (
-              <button key={n} type="button" className="rb-log-quick" aria-pressed={hours === String(n)} onClick={() => setHours(String(n))}>
+              <Button key={n} type="button" variant="chip" className="rb-log-quick" aria-pressed={hours === String(n)} onClick={() => setHours(String(n))}>
                 {n} h
-              </button>
+              </Button>
             ))}
-            <input ref={hoursRef} type="number" min="0" step="any" aria-label="Hours" placeholder="0" value={hours} onChange={(e) => setHours(e.target.value)} />
+            <TextField ref={hoursRef} type="number" min="0" step="any" aria-label="Hours" placeholder="0" className="rb:flex-1 rb:text-right" value={hours} onChange={(e) => setHours(e.target.value)} />
           </div>
         </div>
         <label className="rb-log-field">
           <span className="rb-log-label">Date</span>
-          <input type="date" aria-label="Date" value={date} onChange={(e) => setDate(e.target.value)} />
+          <TextField type="date" aria-label="Date" value={date} onChange={(e) => setDate(e.target.value)} />
         </label>
       </div>
 
       {withType && (
         <div className="rb-log-field">
           <span className="rb-log-label">Type</span>
-          <div className="rb-log-types" role="radiogroup" aria-label="Type">
-            {TYPE_OPTIONS.map((t) => (
-              <button key={t.value} type="button" role="radio" aria-checked={type === t.value} onClick={() => setType(t.value)}>
-                {t.label}
-              </button>
-            ))}
-          </div>
+          <Segmented<'' | SessionType> label="Type" value={type} options={TYPE_OPTIONS} onChange={setType} />
           <span className="rb-log-hint">Trial: trying a game you haven't started. Detour: a game outside the plan.</span>
         </div>
       )}
 
       <div className="rb-log-footer">
         <span className="rb-log-summary">{summary}</span>
-        <button type="button" onClick={onDone}>
+        <TextButton type="button" variant="ghost" onClick={onDone}>
           Cancel
-        </button>
-        <button type="submit" className="mod-cta" disabled={!valid}>
-          <Icon name="timer" /> Log
-        </button>
+        </TextButton>
+        <TextButton type="submit" variant="primary" icon="timer" disabled={!valid}>
+          Log
+        </TextButton>
       </div>
     </form>
   );
@@ -209,7 +205,7 @@ function NextPick({
       <div className="rb-schedule-next">
         <div className="rb-schedule-muted">Nothing is waiting. Add games to the plan to fill this lane.</div>
         <div className="rb-schedule-form-buttons">
-          <button onClick={onDone}>Close</button>
+          <TextButton onClick={onDone}>Close</TextButton>
         </div>
       </div>
     );
@@ -227,24 +223,27 @@ function NextPick({
         </button>
       ))}
       <div className="rb-schedule-form-buttons">
-        <button onClick={onDone}>Not now</button>
-        <button
+        <TextButton variant="ghost" onClick={onDone}>
+          Not now
+        </TextButton>
+        <TextButton
           onClick={() => {
             onDone();
             onChooseAny();
           }}
         >
           Choose another…
-        </button>
-        <button
-          className="mod-cta"
+        </TextButton>
+        <TextButton
+          variant="primary"
+          icon="dices"
           onClick={() => {
             const c = random();
             if (c) pick(c.id);
           }}
         >
-          🎲 Random
-        </button>
+          Random
+        </TextButton>
       </div>
     </div>
   );
@@ -263,7 +262,7 @@ function PickAny({ options, onPick }: { options: GameOption[]; onPick: (id: stri
   }, [options, q]);
   return (
     <div className="rb-schedule-any">
-      <input type="search" autoFocus placeholder="Search…" aria-label="Search games" value={q} onChange={(e) => setQ(e.target.value)} />
+      <TextField type="search" autoFocus placeholder="Search…" aria-label="Search games" value={q} onChange={(e) => setQ(e.target.value)} />
       <div className="rb-schedule-any-list">
         {shown.length === 0 && <div className="rb-schedule-muted">No match.</div>}
         {shown.map((o) => (
@@ -477,8 +476,12 @@ function MoveModal({ itemTitle, sections, lanes, from, describe, onMove, onDone 
           <div className="rb-move-label-row">
             <span className="rb-move-label">Position</span>
             <label className="rb-move-auto">
-              <input type="checkbox" checked={!pinned} onChange={(e) => setPosition(e.target.checked ? null : (from.lane === lane && from.position !== undefined ? from.position : queue.length))} />
               Let the schedule decide
+              <Toggle
+                checked={!pinned}
+                label="Let the schedule decide"
+                onChange={(on) => setPosition(on ? null : from.lane === lane && from.position !== undefined ? from.position : queue.length)}
+              />
             </label>
           </div>
           {pinned ? (
@@ -494,25 +497,25 @@ function MoveModal({ itemTitle, sections, lanes, from, describe, onMove, onDone 
           <div className="rb-move-step">
             <div className="rb-move-label">Not before</div>
             <div className="rb-move-date">
-              <input type="date" aria-label="Not before" value={notBefore} onChange={(e) => setNotBefore(e.target.value)} autoFocus={!from.notBefore} />
-              <button className="rb-move-link" onClick={() => (setNotBefore(''), setShowDate(false))}>
-                Remove
-              </button>
+              <TextField type="date" aria-label="Not before" className="rb:w-auto" value={notBefore} onChange={(e) => setNotBefore(e.target.value)} autoFocus={!from.notBefore} />
+              <IconButton icon="trash-2" tone="danger" label="Remove the date" onClick={() => (setNotBefore(''), setShowDate(false))} />
             </div>
             <div className="rb-move-note">For a release date or a DLC: it won't start before then.</div>
           </div>
         ) : (
-          <button className="rb-move-link rb-move-add-date" onClick={() => setShowDate(true)}>
-            <Icon name="calendar-plus" /> Don't start before a date…
-          </button>
+          <TextButton variant="ghost" size="sm" icon="calendar-plus" className="rb-move-add-date rb:self-start" onClick={() => setShowDate(true)}>
+            Don't start before a date…
+          </TextButton>
         ))}
 
       <div className="rb-move-footer">
         <span className="rb-move-summary">{summary.join(' · ')}</span>
-        <button onClick={onDone}>Cancel</button>
-        <button className="mod-cta" disabled={unchanged || !validDate} onClick={() => apply()}>
+        <TextButton variant="ghost" onClick={onDone}>
+          Cancel
+        </TextButton>
+        <TextButton variant="primary" disabled={unchanged || !validDate} onClick={() => apply()}>
           Move
-        </button>
+        </TextButton>
       </div>
     </div>
   );

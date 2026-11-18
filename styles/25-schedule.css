@@ -190,9 +190,6 @@
 .rb-schedule-section-hint { flex: 1; min-width: 0; color: var(--text-faint); font-size: var(--font-ui-smaller); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .rb-schedule-section-tools { margin-left: auto; display: flex; gap: 6px; cursor: default; }
 .rb-schedule-section-body { padding: 10px 0 0; }
-.rb-schedule-replan-btn { display: inline-flex; align-items: center; gap: 6px; height: 26px; padding: 0 10px; font-size: var(--font-ui-smaller); }
-.rb-schedule-replan-btn svg { width: 14px; height: 14px; }
-.rb-schedule-replan-btn:disabled { opacity: 0.4; cursor: default; }
 
 /* Queue numbers */
 .rb-schedule-index {
@@ -267,29 +264,14 @@
 .rb-schedule.is-compact .rb-schedule-footer > span:last-child { display: none; }
 
 /* Controls */
-.rb-schedule-log { display: inline-flex; align-items: center; gap: 4px; margin-left: auto; }
+.rb-schedule-log { margin-left: auto; }
 .rb-schedule-week-head > span { margin-left: auto; }
 .rb-schedule-week-head .rb-schedule-log { margin-left: 8px; }
 .rb-schedule-lane-head { display: flex; align-items: center; justify-content: space-between; }
 .rb-schedule-lane-head h4 { margin: 0; }
 .rb-schedule-lane-head { gap: 4px; }
 .rb-schedule-replan { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 6px 12px; }
-.rb-schedule-replan button { display: inline-flex; align-items: center; gap: 6px; }
-.rb-schedule-icon-btn {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  flex: none;
-  width: 28px;
-  height: 28px;
-  padding: 0;
-  border-radius: var(--radius-s);
-  color: var(--text-muted);
-  --icon-size: var(--icon-m, 18px);
-}
-.rb-schedule-icon-btn svg { width: var(--icon-size); height: var(--icon-size); }
-.rb-schedule-chip .rb-schedule-icon-btn { width: 24px; height: 24px; --icon-size: var(--icon-s, 16px); }
-.is-mobile .rb-schedule-icon-btn { width: 36px; height: 36px; }
+
 .rb-schedule-entry { position: relative; }
 .rb-schedule-entry-body { flex: 1; }
 .rb-schedule-entry-actions { display: flex; align-items: flex-start; gap: 4px; opacity: 0.6; transition: opacity 0.1s; }
@@ -318,9 +300,6 @@
 .rb-schedule-entry-title .rb-title:hover { color: var(--text-accent); text-decoration: underline; }
 .rb-schedule-chip { transition: background-color 0.12s; }
 .rb-schedule-chip:hover { background: var(--background-modifier-hover); }
-.rb-schedule-icon-btn:disabled,
-.rb-schedule-replan button:disabled { opacity: 0.35; cursor: default; pointer-events: none; }
-.rb-schedule-icon-btn:hover { color: var(--text-normal); background: var(--background-modifier-hover); }
 .rb-schedule-free { transition: background-color 0.12s; }
 .rb-schedule-free:hover { background: hsla(var(--interactive-accent-hsl), 0.08); }
 .rb-schedule-option { transition: border-color 0.12s, background-color 0.12s; }
@@ -366,30 +345,18 @@
 .rb-log-other { padding: 0 14px; color: var(--text-faint); }
 .rb-log-other.is-open { color: var(--text-normal); border-color: var(--background-modifier-border-hover); }
 .rb-log-search { display: flex; flex-direction: column; gap: 6px; }
-.rb-log-search input { width: 100%; }
 .rb-log-search-list { display: flex; flex-direction: column; max-height: 200px; overflow: auto; border: 1px solid var(--background-modifier-border); border-radius: var(--radius-m); }
 .rb-log-search-row { display: flex; justify-content: space-between; gap: 10px; height: auto; padding: 7px 12px; border: none; border-radius: 0; background: transparent; box-shadow: none; text-align: left; }
 .rb-log-search-row + .rb-log-search-row { border-top: 1px solid var(--background-modifier-border); }
 .rb-log-search-row:hover { background: var(--background-modifier-hover); }
 .rb-log-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
 .rb-log-hours { display: flex; gap: 6px; }
-.rb-log-hours input { flex: 1; min-width: 0; text-align: right; }
-.rb-log-quick { min-width: 46px; padding: 0 10px; border-radius: var(--radius-m); }
-.rb-log-quick[aria-pressed='true'] { background: var(--text-normal); color: var(--background-primary); border-color: transparent; }
-.rb-log-field input[type='date'] { width: 100%; }
-.rb-log-types { align-self: flex-start; display: inline-flex; gap: 2px; padding: 3px; border-radius: 999px; border: 1px solid var(--background-modifier-border); background: var(--background-modifier-hover); }
-.rb-log-types button { height: 28px; padding: 0 13px; border: none; border-radius: 999px; background: transparent; box-shadow: none; color: var(--text-muted); font-size: var(--font-ui-small); }
-.rb-log-types button[aria-checked='true'] { background: var(--background-primary); color: var(--text-normal); box-shadow: var(--shadow-s); }
 .rb-log-hint { font-size: var(--font-ui-smaller); color: var(--text-faint); }
 .rb-log-footer { display: flex; align-items: center; gap: 8px; margin: 4px calc(var(--size-4-4, 16px) * -1) calc(var(--size-4-4, 16px) * -1); padding: 12px var(--size-4-4, 16px); border-top: 1px solid var(--background-modifier-border); }
 .rb-log-summary { flex: 1; min-width: 0; font-size: var(--font-ui-smaller); color: var(--text-faint); }
-.rb-log-footer .mod-cta { display: inline-flex; align-items: center; gap: 6px; }
-.rb-log-footer .mod-cta svg { width: 15px; height: 15px; }
 .is-phone .rb-log-row { grid-template-columns: 1fr; }
 
 /* Modals */
-.rb-schedule-form input[type='number'],
-.rb-schedule-form input[type='date'] { width: 160px; }
 .rb-schedule-form-buttons { display: flex; justify-content: flex-end; flex-wrap: wrap; gap: 8px; margin-top: 14px; }
 .rb-schedule-next,
 .rb-schedule-any { display: flex; flex-direction: column; gap: 6px; }
@@ -407,7 +374,6 @@
 }
 .rb-schedule-option.is-best { border-color: var(--interactive-accent); }
 .rb-schedule-option-title { display: flex; align-items: center; gap: 6px; font-weight: var(--font-semibold); }
-.rb-schedule-any input[type='search'] { width: 100%; }
 .rb-schedule-any-list { display: flex; flex-direction: column; gap: 4px; max-height: 50vh; overflow: auto; }
 /* Move modal: destination cards, then lane, position and date for lanes / queue. */
 .rb-schedule-move { width: min(560px, 92vw); }
@@ -455,7 +421,7 @@
 .rb-move-step { display: flex; flex-direction: column; gap: 8px; padding-top: 14px; border-top: 1px solid var(--background-modifier-border); }
 .rb-move-label { font-size: var(--font-ui-smaller); font-weight: var(--font-semibold); color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.03em; }
 .rb-move-label-row { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
-.rb-move-auto { display: inline-flex; align-items: center; gap: 6px; color: var(--text-muted); font-size: var(--font-ui-small); cursor: pointer; }
+.rb-move-auto { display: inline-flex; align-items: center; gap: 8px; color: var(--text-muted); font-size: var(--font-ui-small); cursor: pointer; }
 .rb-move-note { color: var(--text-muted); font-size: var(--font-ui-smaller); }
 
 .rb-move-lanes { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 6px; padding: 3px; border-radius: var(--radius-m); background: var(--background-secondary); }
@@ -545,17 +511,11 @@ button.rb-move-row.is-pick:focus-visible .rb-move-row-action,
 .rb-move-row.is-me { color: var(--text-normal); font-weight: var(--font-semibold); background: hsla(var(--interactive-accent-hsl), 0.1); box-shadow: inset 0 0 0 1px var(--interactive-accent); outline-offset: 2px; }
 .rb-move-row.is-me .rb-schedule-index { background: var(--interactive-accent); color: var(--text-on-accent); }
 
-.rb-move-link,
 .rb-move-lane,
 .rb-move-dest { border: none; }
 .rb-move-row svg { width: 14px; height: 14px; }
 
-.rb-move-date { display: flex; align-items: center; gap: 10px; }
-.rb-move-date input[type='date'] { width: 170px; }
-.rb-move-link { display: inline-flex; align-items: center; gap: 6px; height: auto; padding: 2px 4px; background: transparent; box-shadow: none; color: var(--text-accent); font-size: var(--font-ui-small); }
-.rb-move-link:hover { text-decoration: underline; background: transparent; }
-.rb-move-link svg { width: 14px; height: 14px; }
-.rb-move-add-date { align-self: flex-start; }
+.rb-move-date { display: flex; align-items: center; gap: 6px; }
 
 .rb-move-footer { display: flex; align-items: center; gap: 8px; padding-top: 14px; border-top: 1px solid var(--background-modifier-border); }
 .rb-move-summary { flex: 1; min-width: 0; color: var(--text-muted); font-size: var(--font-ui-smaller); }

@@ -4,6 +4,7 @@ import type RBoardPlugin from '../../../../main';
 import { parseDatabaseConfig, type ParseResult } from '../../../lib/config';
 import { mountReact, useApp } from '../../../obsidian/mount';
 import { Icon } from '../../../components/icon';
+import { Button } from '@/components/ui/button';
 import { openWizard } from '../../modals/settings/wizard';
 import { parseTableFile } from '../../../lib/table/format';
 
@@ -98,14 +99,14 @@ function Home({ plugin, subscribe }: { plugin: RBoardPlugin; subscribe: (fn: () 
       <div className="rb-home-header">
         <h2>Boards</h2>
         <div className="rb-home-actions">
-          <button className="rb-home-create" onClick={() => void plugin.createTable()}>
-            <Icon name="table" className="rb-home-create-icon" />
+          <Button variant="secondary" className="rb-home-create" onClick={() => void plugin.createTable()}>
+            <Icon name="table" className="rb:inline-flex" />
             <span>Create table</span>
-          </button>
-          <button className="rb-home-create" onClick={create}>
-            <Icon name="plus" className="rb-home-create-icon" />
+          </Button>
+          <Button variant="accent" className="rb-home-create" onClick={create}>
+            <Icon name="plus" className="rb:inline-flex" />
             <span>Create board</span>
-          </button>
+          </Button>
         </div>
       </div>
       {boards && boards.length === 0 && (

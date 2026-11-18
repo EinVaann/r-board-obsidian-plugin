@@ -15,16 +15,7 @@
   gap: 8px;
 }
 .rb-controls-row { flex-wrap: wrap; }
-/* One shared control height so tabs, chips, search and buttons line up. */
-.rb-view-btn,
-.rb-chip,
-.rb-search,
-.rb-new-note {
-  box-sizing: border-box;
-  height: 32px;
-  padding-top: 0;
-  padding-bottom: 0;
-}
+/* Tabs, chips, search and buttons are shadcn Button / Input at size "toolbar" (--rb-toolbar-h). */
 /* Divider between the tabs row and the controls (search/sort/filter) row. */
 .rb-tabs-row {
   position: relative;
@@ -60,95 +51,10 @@
   gap: 4px;
   flex-wrap: wrap;
 }
-.rb-view-btn {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  padding: 6px 12px;
-  border: 1px solid transparent;
-  border-radius: 8px;
-  background: transparent;
-  color: var(--text-muted);
-  cursor: pointer;
-  font-size: 13px;
-  font-weight: 500;
-}
-.rb-view-btn:hover { background: var(--background-modifier-hover); color: var(--text-normal); }
-.rb-view-btn.rb-active {
-  background: var(--background-modifier-hover);
-  color: var(--text-normal);
-  border-color: var(--background-modifier-border);
-}
-.rb-view-btn.rb-active .rb-view-btn-icon { color: var(--text-accent); }
 .rb-view-btn-icon { display: inline-flex; align-items: center; }
-.rb-view-btn-icon svg { width: 16px; height: 16px; }
-.rb-view-add { color: var(--text-muted); padding: 6px 9px; }
-
-/* Search */
-.rb-search {
-  flex: 0 1 280px;
-  min-width: 150px;
-  padding: 7px 12px;
-  border-radius: 8px;
-  border: 1px solid var(--background-modifier-border);
-  background: var(--background-primary);
-  color: var(--text-normal);
-  font-size: 13px;
-}
-
-/* Sort / filter chips (Notion-style, show active state with a label) */
-.rb-chip {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  padding: 6px 11px;
-  border: 1px solid var(--background-modifier-border);
-  border-radius: 8px;
-  background: var(--background-primary);
-  color: var(--text-muted);
-  cursor: pointer;
-  font-size: 13px;
-  white-space: nowrap;
-}
-.rb-chip:hover { background: var(--background-modifier-hover); color: var(--text-normal); }
-.rb-chip-icon { display: inline-flex; }
-.rb-chip-icon svg { width: 15px; height: 15px; }
-.rb-chip-active {
-  background: var(--background-modifier-active-hover, rgba(var(--color-accent-rgb), 0.15));
-  border-color: var(--interactive-accent);
-  color: var(--text-accent);
-}
-
-/* Square tool buttons (add view / settings gears) */
-.rb-tool-btn {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  box-sizing: border-box;
-  width: 32px;
-  height: 32px;
-  padding: 0;
-  border: 1px solid var(--background-modifier-border);
-  border-radius: 8px;
-  background: var(--background-primary);
-  color: var(--text-muted);
-  cursor: pointer;
-}
-.rb-tool-btn:hover { background: var(--background-modifier-hover); color: var(--text-normal); }
-.rb-tool-btn svg { width: 17px; height: 17px; }
-
-/* Count badge on a chip (e.g. number of filter rules). */
-.rb-chip-badge {
-  min-width: 18px;
-  padding: 0 5px;
-  border-radius: 999px;
-  background: var(--interactive-accent);
-  color: var(--text-on-accent);
-  font-size: 11px;
-  font-weight: 600;
-  line-height: 18px;
-  text-align: center;
-}
+/* The tab measure copies are plain spans: give them the toolbar button's box so widths match. */
+.rb-tab-measure > .rb-view-btn { display: inline-flex; align-items: center; gap: 6px; padding: 0 12px; border: 1px solid transparent; font-size: var(--rb-control-font); font-weight: 500; }
+.rb-tab-measure svg { width: var(--rb-icon-size); height: var(--rb-icon-size); }
 
 /* Compact toolbar (narrow pane or phone; set from the measured width): one
    view dropdown, icon-only buttons and chips, search takes the free space. */
@@ -159,30 +65,8 @@
 .rb-compact .rb-tools { flex: 0 0 auto; }
 .rb-compact .rb-chip-label,
 .rb-compact .rb-new-note-label { display: none; }
-.rb-compact .rb-chip { padding: 6px 8px; }
-.rb-compact .rb-new-note { padding: 7px 9px; }
 .rb-compact .rb-controls-row { flex-wrap: nowrap; }
-.rb-compact .rb-search { flex: 1 1 auto; min-width: 0; }
-
-/* "New note" button */
-.rb-new-note {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  padding: 7px 13px;
-  border: none;
-  border-radius: 8px;
-  background: var(--interactive-accent);
-  color: var(--text-on-accent);
-  cursor: pointer;
-  font-size: 13px;
-  font-weight: 600;
-  white-space: nowrap;
-}
-.rb-new-note:hover { background: var(--interactive-accent-hover); }
-.rb-new-note-icon { display: inline-flex; }
-.rb-new-note-icon svg { width: 15px; height: 15px; }
 
 /* "N more" view dropdown (views past the first three). */
-.rb-view-more-caret { opacity: 0.7; }
+.rb-view-more-caret { display: inline-flex; opacity: 0.7; }
 .rb-view-more-caret svg { width: 14px; height: 14px; }

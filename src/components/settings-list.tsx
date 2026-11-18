@@ -132,10 +132,10 @@ const addRowClass = cn(
   'rb:[&_.rb-icon]:inline-flex rb:[&_svg]:size-[var(--rb-icon-size-sm)]',
 );
 
-/** "Add …" for the list right above it: full width, dashed. */
-export function AddRow({ label, onClick, className }: { label: string; onClick: () => void; className?: string }) {
+/** "Add …" for the list right above it: full width, dashed. `compact`: left-aligned, no top gap (kanban columns, tables). */
+export function AddRow({ label, onClick, className, compact }: { label: string; onClick: () => void; className?: string; compact?: boolean }) {
   return (
-    <button type="button" data-slot="add-row" className={cn(addRowClass, className)} onClick={onClick}>
+    <button type="button" data-slot="add-row" className={cn(addRowClass, compact && 'rb:mt-0 rb:justify-start rb:px-2.5 rb:rounded-control', className)} onClick={onClick}>
       <Icon name="plus" />
       <span>{label}</span>
     </button>

@@ -13,8 +13,9 @@ body.rb-theme-industrial {
   --rbi-yellow: #FFE41A;
   --rbi-yellow-soft: #FFF6B0;
   --rbi-yellow-ink: #1C1C1E;
-  --rbi-yellow-grad: linear-gradient(180deg, #FFEE5C 0%, #FFE41A 55%, #F2D600 100%);
-  --rbi-yellow-glow: 0 1px 0 rgba(255, 255, 255, 0.7) inset, 0 4px 12px -2px rgba(230, 200, 0, 0.45);
+  /* Flat by rule (styles/RULES.md): the "-grad" / "-glow" names stay for the rules that use them. */
+  --rbi-yellow-grad: #FFE41A;
+  --rbi-yellow-glow: none;
   --rbi-head: 'Barlow Semi Condensed', 'Arial Narrow', var(--font-interface);
 }
 body.rb-theme-industrial.rb-mode-light {
@@ -22,14 +23,14 @@ body.rb-theme-industrial.rb-mode-light {
   --rbi-plane: #FFFFFF;
   --rbi-plane-flat: #FFFFFF;
   --rbi-plane-shadow: 0 1px 0 rgba(255, 255, 255, 0.9) inset, 0 1px 2px rgba(28, 28, 30, 0.05), 0 8px 24px -8px rgba(28, 28, 30, 0.12);
-  --rbi-glass: linear-gradient(180deg, rgba(255, 255, 255, 0.9) 0%, rgba(255, 255, 255, 0.55) 100%);
-  --rbi-glass-edge: rgba(255, 255, 255, 0.95);
-  --rbi-glass-shadow: 0 1px 0 rgba(255, 255, 255, 0.9) inset, 0 -1px 0 rgba(28, 28, 30, 0.05) inset, 0 2px 6px rgba(28, 28, 30, 0.08), 0 6px 16px -6px rgba(28, 28, 30, 0.14);
+  --rbi-glass: #FFFFFF;
+  --rbi-glass-edge: #E3E3DD;
+  --rbi-glass-shadow: 0 1px 2px rgba(28, 28, 30, 0.06);
   --rbi-pop-shadow: 0 1px 0 rgba(255, 255, 255, 0.9) inset, 0 30px 70px -20px rgba(28, 28, 30, 0.35), 0 4px 14px rgba(28, 28, 30, 0.08);
   --rbi-sunken: rgba(28, 28, 30, 0.05);
-  --rbi-ink-grad: linear-gradient(180deg, #3A3A3E 0%, #1C1C1E 100%);
+  --rbi-ink-grad: #1C1C1E;
   --rbi-ink-text: #F5F5F2;
-  --rbi-running: linear-gradient(90deg, #FFF6B0 0%, rgba(255, 246, 176, 0.25) 100%);
+  --rbi-running: #FFF9D1;
   --rbi-scrim: rgba(225, 225, 220, 0.55);
 }
 body.rb-theme-industrial.rb-mode-dark {
@@ -37,14 +38,14 @@ body.rb-theme-industrial.rb-mode-dark {
   --rbi-plane: rgba(255, 255, 255, 0.04);
   --rbi-plane-flat: #232326;
   --rbi-plane-shadow: 0 1px 0 rgba(255, 255, 255, 0.06) inset, 0 10px 28px -10px rgba(0, 0, 0, 0.6);
-  --rbi-glass: linear-gradient(180deg, rgba(255, 255, 255, 0.12) 0%, rgba(255, 255, 255, 0.05) 100%);
-  --rbi-glass-edge: rgba(255, 255, 255, 0.14);
-  --rbi-glass-shadow: 0 1px 0 rgba(255, 255, 255, 0.1) inset, 0 4px 14px -4px rgba(0, 0, 0, 0.6);
+  --rbi-glass: #2A2A2E;
+  --rbi-glass-edge: rgba(255, 255, 255, 0.1);
+  --rbi-glass-shadow: none;
   --rbi-pop-shadow: 0 1px 0 rgba(255, 255, 255, 0.06) inset, 0 30px 70px -20px rgba(0, 0, 0, 0.8);
   --rbi-sunken: rgba(0, 0, 0, 0.2);
-  --rbi-ink-grad: linear-gradient(180deg, #F2F2EC 0%, #D9D9D2 100%);
+  --rbi-ink-grad: #ECECE6;
   --rbi-ink-text: #1C1C1E;
-  --rbi-running: linear-gradient(90deg, rgba(255, 228, 26, 0.14) 0%, rgba(255, 228, 26, 0.02) 100%);
+  --rbi-running: rgba(255, 228, 26, 0.08);
   --rbi-scrim: rgba(10, 10, 12, 0.6);
 }
 
@@ -365,35 +366,8 @@ body.rb-theme-industrial.rb-mode-dark { --rb-chart-palette: #ECECE6, #E9CD62, #8
 }
 .rb-theme-industrial .rb-root .rb-card { transition: transform 0.14s, box-shadow 0.14s; }
 
-/* ---------- Toolbar: the frame stays; colors follow the theme ---------- */
-.rb-theme-industrial .rb-root .rb-new-note {
-  background: var(--rbi-ink-grad);
-  color: var(--rbi-ink-text);
-  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.12) inset, 0 2px 6px rgba(28, 28, 30, 0.18);
-}
-.rb-theme-industrial .rb-root .rb-new-note:hover { background: var(--rbi-ink-grad); filter: brightness(1.1); }
-.rb-theme-industrial .rb-root .rb-view-btn.rb-active .rb-view-btn-icon { color: var(--text-normal); }
-/* Toolbar controls as in the design, stated in full so Obsidian's button / input rules can't win. */
-.rb-theme-industrial .rb-root :is(.rb-view-btn, .rb-tool-btn, .rb-chip, .rb-new-note) {
-  height: 32px;
-  border-radius: 8px;
-  font-size: 13px;
-  font-weight: 500;
-  line-height: 1;
-  filter: none;
-}
-.rb-theme-industrial .rb-root .rb-view-btn { padding: 0 12px; border: 1px solid transparent; background: transparent; box-shadow: none; color: var(--text-muted); }
-.rb-theme-industrial .rb-root .rb-view-btn:hover { background: var(--background-modifier-hover); color: var(--text-normal); }
-.rb-theme-industrial .rb-root .rb-view-btn.rb-active { background: var(--background-modifier-hover); border-color: var(--background-modifier-border); color: var(--text-normal); }
-.rb-theme-industrial .rb-root :is(.rb-tool-btn, .rb-chip) { border: 1px solid var(--background-modifier-border); background: var(--background-primary); box-shadow: none; color: var(--text-muted); }
-.rb-theme-industrial .rb-root .rb-tool-btn { width: 32px; padding: 0; }
-.rb-theme-industrial .rb-root .rb-chip { padding: 0 11px; }
-.rb-theme-industrial .rb-root :is(.rb-tool-btn, .rb-chip):hover { background: var(--background-modifier-hover); color: var(--text-normal); }
-.rb-theme-industrial .rb-root .rb-chip-active { border-color: var(--text-muted); color: var(--text-normal); background: var(--background-primary); }
-.rb-theme-industrial .rb-root .rb-new-note { padding: 0 13px; border: none; font-weight: 600; }
-.rb-theme-industrial .rb-root .rb-search { height: 32px; padding: 0 12px; border-radius: 8px; border: 1px solid var(--background-modifier-border); background: var(--background-primary); box-shadow: none; font-size: 13px; }
-.rb-theme-industrial .rb-root :is(.rb-view-btn, .rb-tool-btn, .rb-chip, .rb-new-note) svg { width: 16px; height: 16px; stroke-width: 1.75px; }
-.rb-theme-industrial .rb-root .rb-chip-badge { background: var(--text-normal); color: var(--background-primary); }
+/* Toolbar: shadcn Button / Input; Industrial only changes tokens (10-tokens.css). */
+.rb-theme-industrial .rb-root .rb-toolbar svg { stroke-width: 1.75px; }
 
 /* ---------- Gallery: a cover area on every card (initials on a gradient + hatch when there's no image) ---------- */
 .rb-theme-industrial .rb-root .rb-gallery-card { overflow: hidden; padding: 0; }
@@ -436,12 +410,12 @@ body.rb-theme-industrial.rb-mode-dark { --rb-chart-palette: #ECECE6, #E9CD62, #8
 .rb-theme-industrial .rb-root .rb-gallery-card .rb-card-body { padding: 10px 12px 12px; gap: 6px; }
 .rb-theme-industrial .rb-root .rb-gallery-card:hover { transform: translateY(-2px); }
 
-/* ---------- Kanban: glass columns, floating cards ---------- */
+/* ---------- Kanban: flat columns, floating cards ---------- */
 .rb-theme-industrial .rb-root .rb-kanban-col {
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.5), rgba(255, 255, 255, 0.25));
+  background: rgba(255, 255, 255, 0.4);
   border: 1px solid var(--background-modifier-border);
   border-radius: 14px;
-  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.8) inset;
+  box-shadow: none;
 }
 .rb-theme-industrial.rb-mode-dark .rb-root .rb-kanban-col { background: rgba(255, 255, 255, 0.025); box-shadow: none; }
 .rb-theme-industrial .rb-root .rb-kanban-add-btn { border-radius: 10px; }
@@ -477,14 +451,6 @@ body.rb-theme-industrial.rb-mode-dark { --rb-chart-palette: #ECECE6, #E9CD62, #8
 .rb-theme-industrial .rb-root .rb-kanban-cell { background: rgba(255, 255, 255, 0.35); }
 .rb-theme-industrial.rb-mode-dark .rb-root .rb-kanban-cell { background: rgba(255, 255, 255, 0.025); }
 .rb-theme-industrial .rb-root .rb-kanban-col .rb-kanban-count { margin-left: 2px; font-size: 12px; color: var(--text-faint); }
-.rb-theme-industrial .rb-root .rb-kanban-new {
-  height: 32px;
-  padding: 0 10px;
-  border: 1px dashed var(--background-modifier-border-hover);
-  border-radius: 10px;
-  color: var(--text-faint);
-}
-.rb-theme-industrial .rb-root .rb-kanban-new:hover { background: transparent; border-color: var(--text-faint); color: var(--text-normal); }
 .rb-theme-industrial .rb-root .rb-kanban-list { gap: 8px; padding: 0 8px 8px; }
 /* Swimlane cells have no header above the cards: same gap on top as at the sides. */
 .rb-theme-industrial .rb-root .rb-kanban-cell.rb-kanban-list { padding: 8px; }
@@ -509,15 +475,13 @@ body.rb-theme-industrial.rb-mode-dark { --rb-chart-palette: #ECECE6, #E9CD62, #8
 .rb-theme-industrial .rb-root .rb-schedule-index.is-now { background: var(--rbi-yellow); color: var(--rbi-yellow-ink); }
 .rb-theme-industrial .rb-root .rb-schedule-bar > div { background: var(--text-normal); border-radius: 3px; }
 .rb-theme-industrial .rb-root .rb-schedule-week-sum h4 { font-family: var(--rbi-head); letter-spacing: 0.14em; }
-.rb-theme-industrial .rb-root .rb-schedule-day-bar { background: linear-gradient(180deg, rgba(28, 28, 30, 0.03), rgba(28, 28, 30, 0.07)); box-shadow: inset 0 1px 2px rgba(28, 28, 30, 0.06); }
-.rb-theme-industrial.rb-mode-dark .rb-root .rb-schedule-day-bar { background: linear-gradient(180deg, rgba(255, 255, 255, 0.03), rgba(255, 255, 255, 0.07)); box-shadow: none; }
-.rb-theme-industrial .rb-root .rb-schedule-day-bar i { opacity: 1; background: linear-gradient(180deg, #5A5A5E 0%, #2E2E32 100%); }
-.rb-theme-industrial.rb-mode-dark .rb-root .rb-schedule-day-bar i { background: linear-gradient(180deg, #D8D8D2 0%, #9E9E98 100%); }
+.rb-theme-industrial .rb-root .rb-schedule-day-bar { background: rgba(28, 28, 30, 0.05); box-shadow: none; }
+.rb-theme-industrial.rb-mode-dark .rb-root .rb-schedule-day-bar { background: rgba(255, 255, 255, 0.05); }
+.rb-theme-industrial .rb-root .rb-schedule-day-bar i { opacity: 1; background: #3A3A3E; }
+.rb-theme-industrial.rb-mode-dark .rb-root .rb-schedule-day-bar i { background: #C4C4BE; }
 .rb-theme-industrial .rb-root .rb-schedule-day.is-today .rb-schedule-day-bar { box-shadow: inset 0 0 0 1.5px var(--text-normal); }
 .rb-theme-industrial .rb-root .rb-schedule-day.is-future .rb-schedule-day-bar { background: transparent; box-shadow: inset 0 0 0 1px var(--background-modifier-border); }
-.rb-theme-industrial .rb-root .rb-schedule-week > .rb-schedule-log { height: 36px; padding: 0 18px; }
-/* The one yellow button: Log time. */
-.rb-theme-industrial .rb-root .rb-schedule-log,
+/* Obsidian's own primary buttons in our modals (schedule dialogs) look like ours. */
 .rb-theme-industrial .modal.rb-modal .mod-cta:not([data-slot]) {
   background: var(--rb-btn-primary-bg);
   color: var(--rb-btn-primary-fg);
@@ -532,13 +496,6 @@ body.rb-theme-industrial.rb-mode-dark { --rb-chart-palette: #ECECE6, #E9CD62, #8
 .rb-theme-industrial .rb-root .rb-schedule-lane-head h4 {
   font-family: var(--rbi-head);
   letter-spacing: 0.12em;
-}
-/* Glass pills for the small secondary buttons. */
-.rb-theme-industrial .rb-root :is(.rb-schedule-icon-btn, .rb-schedule-replan-btn) {
-  background: var(--rbi-glass);
-  border: 1px solid var(--rbi-glass-edge);
-  border-radius: 999px;
-  box-shadow: var(--rbi-glass-shadow);
 }
 
 /* ---------- Table ---------- */
@@ -630,25 +587,11 @@ body.rb-theme-industrial.rb-mode-dark { --rb-chart-palette: #ECECE6, #E9CD62, #8
 .rb-theme-industrial .modal.rb-modal .rb-move-row.is-me .rb-schedule-index { background: var(--rbi-yellow); color: var(--rbi-yellow-ink); }
 .rb-theme-industrial .modal.rb-modal .rb-move-row.is-me .rb-move-row-tag { color: var(--text-muted); }
 
-/* ---------- Log time: glass chips, the picked game fills yellow ---------- */
+/* ---------- Log time: flat chips, the picked game fills yellow ---------- */
 .rb-theme-industrial .modal.rb-modal .rb-log-label { font-family: var(--rbi-head); letter-spacing: 0.12em; }
-.rb-theme-industrial .modal.rb-modal :is(.rb-log-game, .rb-log-quick) {
-  background: var(--rbi-glass);
-  border: 1px solid var(--rbi-glass-edge);
-  box-shadow: var(--rbi-glass-shadow);
-}
-.rb-theme-industrial .modal.rb-modal .rb-log-game[aria-checked='true'] {
-  background: var(--rbi-yellow-grad);
-  color: var(--rbi-yellow-ink);
-  border-color: transparent;
-  box-shadow: var(--rbi-yellow-glow);
-}
-.rb-theme-industrial .modal.rb-modal .rb-log-quick[aria-pressed='true'] { background: var(--text-normal); color: var(--background-primary); box-shadow: none; }
-.rb-theme-industrial .modal.rb-modal .rb-log-types { background: var(--rbi-sunken); }
-.rb-theme-industrial .modal.rb-modal .rb-log-types button[aria-checked='true'] { background: var(--rbi-plane-flat); }
+.rb-theme-industrial .modal.rb-modal .rb-log-game { background: var(--rbi-plane-flat); border: 1px solid var(--background-modifier-border); box-shadow: none; }
+.rb-theme-industrial .modal.rb-modal .rb-log-game[aria-checked='true'] { background: var(--rbi-yellow); color: var(--rbi-yellow-ink); border-color: transparent; }
 .rb-theme-industrial .modal.rb-modal .rb-log-footer { background: rgba(28, 28, 30, 0.02); }
-.rb-theme-industrial .modal.rb-modal .rb-log-hours input,
-.rb-theme-industrial .modal.rb-modal .rb-log-field input[type='date'] { height: 36px; border-radius: 10px; }
 
 /* Settings cards, fields, value boxes: UI primitives, themed by 10-tokens.css. */
 /* Selects not yet built with the Select primitive (older screens): same look, same tokens. */

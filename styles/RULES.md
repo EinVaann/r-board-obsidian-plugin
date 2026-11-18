@@ -19,6 +19,10 @@ import them all from `screens/modals/settings/_components/controls`).
 | Remove something big (a view, a filter set) | `Button variant="danger"`, same size as other buttons, alone at the bottom right | Delete view |
 | An action on one row | `IconButton size="sm"` at the row's right end | ⌄ options, bin |
 | Remove one row | `IconButton size="sm" tone="danger" icon="trash-2"`, always last in the row | |
+| The board's create action (toolbar, empty states, home) | `Button variant="accent"` (graphite, never yellow) | New note, New row, Create board |
+| Board toolbar | `size="toolbar"`: view tabs `ghost` + `aria-pressed`, Sort / Filter / tool buttons `chip` | |
+
+Icon-only buttons grow to a 36px tap target on phones (`.is-mobile`), in the Button itself.
 
 Labelled buttons are one height: `--rb-control-h`. `size="sm"` is only for buttons inside dense rows.
 

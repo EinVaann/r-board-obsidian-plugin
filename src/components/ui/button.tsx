@@ -13,7 +13,11 @@ const buttonVariants = cva(
         destructive: "rb:bg-danger-surface rb:text-destructive rb:border-danger-border rb:hover:bg-danger-hover",
         outline: "rb:bg-secondary rb:text-secondary-foreground rb:border-secondary-border rb:shadow-button-secondary rb:hover:bg-secondary-hover",
         secondary: "rb:bg-secondary rb:text-secondary-foreground rb:border-secondary-border rb:shadow-button-secondary rb:hover:bg-secondary-hover",
-        ghost: "rb:bg-transparent rb:text-ghost-foreground rb:hover:bg-accent rb:hover:text-accent-foreground",
+        ghost: "rb:bg-transparent rb:text-ghost-foreground rb:hover:bg-accent rb:hover:text-accent-foreground rb:aria-pressed:bg-accent rb:aria-pressed:text-foreground rb:aria-pressed:border-border",
+        // The board's create action (New note / New row): the vault accent, not the dialog's yellow.
+        accent: "rb:bg-accent-button rb:text-accent-button-foreground rb:font-semibold rb:hover:bg-accent-button-hover",
+        // Toolbar chips (Sort, Filter) and tool buttons; aria-pressed = a sort or filter is set.
+        chip: "rb:bg-field rb:text-muted-foreground rb:border-border rb:hover:bg-accent rb:hover:text-foreground rb:aria-pressed:border-chip-on-border rb:aria-pressed:text-chip-on-foreground",
         link: "rb:bg-transparent rb:text-foreground rb:underline-offset-4 rb:hover:underline",
       },
       size: {
@@ -25,11 +29,17 @@ const buttonVariants = cva(
         "icon-xs": "rb:size-5 rb:p-0 rb:rounded-control-sm rb:[&_svg:not([class*=size-])]:size-3",
         "icon-sm": "rb:size-icon-btn-sm rb:p-0 rb:rounded-control-sm",
         "icon-lg": "rb:size-control rb:p-0 rb:rounded-control rb:[&_svg:not([class*=size-])]:size-icon",
+        // Board toolbar: tabs, chips and buttons share one height.
+        toolbar: "rb:h-toolbar rb:px-3 rb:rounded-toolbar rb:text-control rb:[&_svg:not([class*=size-])]:size-icon",
+        "icon-toolbar": "rb:size-toolbar rb:p-0 rb:rounded-toolbar rb:[&_svg:not([class*=size-])]:size-icon",
       },
     },
     compoundVariants: [
       // Icon-only buttons are quiet until hovered (row actions).
       { variant: "ghost", size: ["icon", "icon-xs", "icon-sm", "icon-lg"], class: "rb:text-icon-foreground" },
+      // Touch screens: icon buttons are at least a 36px tap target.
+      { size: ["icon", "icon-xs", "icon-sm"], class: "rb:[.is-mobile_&&]:size-[36px]" },
+      { variant: "ghost", size: "toolbar", class: "rb:font-medium" },
     ],
     defaultVariants: {
       variant: "default",

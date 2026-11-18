@@ -32,6 +32,8 @@ import { useBoard, useBoardContext } from '../../../../stores/board-context';
 import { useDragSensors } from '../../../../hooks/use-drag-sensors';
 import { PROPERTY_TYPE_ICON } from '../../../modals/settings/_components/property-editor';
 import { Icon } from '../../../../components/icon';
+import { Button } from '@/components/ui/button';
+import { AddRow } from '@/components/settings-list';
 import { showMenu } from '../../../../obsidian/menu';
 
 interface TableProps {
@@ -79,10 +81,7 @@ export function TableView(props: TableProps) {
       </Sections>
       {/* A row outside every group (it lands in Uncategorized). */}
       {isTable && (
-        <button className="rb-grid-add rb-grid-add-ungrouped" onClick={() => actions.addRow({})}>
-          <Icon name="plus" />
-          <span>New row with no {propertyLabel(groupProp)}</span>
-        </button>
+        <AddRow compact className="rb-grid-add-ungrouped rb:mt-1 rb:mb-3" label={`New row with no ${propertyLabel(groupProp)}`} onClick={() => actions.addRow({})} />
       )}
       {view.summary && <SummaryTable {...props} label="Total" grand />}
     </SyncedScroll>
@@ -760,10 +759,10 @@ function Grid({
         </DndContext>
       </div>
       {isTable && (
-        <button className="rb-grid-add" onClick={() => addRow()}>
-          <Icon name="plus" />
+        <Button variant="ghost" className="rb-grid-add rb:w-full rb:justify-start rb:rounded-none rb:px-2.5 rb:font-normal" onClick={() => addRow()}>
+          <Icon name="plus" className="rb:inline-flex" />
           <span>New row</span>
-        </button>
+        </Button>
       )}
       {!isTable && visible.length === 0 && <div className="rb-empty">No notes match this view.</div>}
       {usingPages ? (

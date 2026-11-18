@@ -10,6 +10,7 @@ import { TitleLink } from '../../../../components/card';
 import { useDragSensors } from '../../../../hooks/use-drag-sensors';
 import { useElementWidth } from '../../../../components/sections';
 import { Icon } from '../../../../components/icon';
+import { IconButton as KitIconButton, TextButton } from '@/components/form-controls';
 import { defaultScheduleConfig, engineSettings, guessLogColumns, guessSchedule } from '../../../../lib/schedule/config';
 import { fromDay, localDate, toDay } from '../../../../lib/schedule/dates';
 import { forecast } from '../../../../lib/schedule/engine';
@@ -352,7 +353,9 @@ export function ScheduleView({ config, view, all, viewIndex }: { config: Databas
             {log.status === 'none' && <div>No session log yet: dates use your starting estimates. Pick a log table in the Schedule settings.</div>}
             {log.status === 'error' && <div>{log.error}</div>}
           </div>
-          <button onClick={() => actions.openViewSettings(viewIndex)}>Settings…</button>
+          <TextButton icon="sliders-horizontal" onClick={() => actions.openViewSettings(viewIndex)}>
+            Settings…
+          </TextButton>
         </div>
       )}
 
@@ -411,9 +414,9 @@ export function ScheduleView({ config, view, all, viewIndex }: { config: Databas
               : 'Long-press a game to move it'
         }
         tools={
-          <button className="rb-schedule-replan-btn" disabled={!movedPins(sc.pins)} onClick={() => editSchedule((s) => void (s.pins = replan(s.pins)))}>
-            <Icon name="refresh-cw" /> Re-plan all
-          </button>
+          <TextButton variant="ghost" size="sm" icon="refresh-cw" className="rb-schedule-replan-btn" disabled={!movedPins(sc.pins)} onClick={() => editSchedule((s) => void (s.pins = replan(s.pins)))}>
+            Re-plan all
+          </TextButton>
         }
       >
       <DndContext sensors={drag ? sensors : NO_SENSORS} collisionDetection={collision} onDragStart={(e) => setDragging(String(e.active.id))} onDragEnd={onDragEnd} onDragCancel={() => setDragging(null)}>
@@ -539,21 +542,20 @@ function propertyLabelOf(config: DatabaseConfig, name: string): string {
   return p ? propertyLabel(p).toLowerCase() : name;
 }
 
+/** A row action that doesn't start a drag or open the row. */
 function IconButton({ icon, label, onClick, disabled }: { icon: string; label: string; onClick: (e: ReactMouseEvent) => void; disabled?: boolean }) {
   return (
-    <button
-      className="clickable-icon rb-schedule-icon-btn"
-      aria-label={label}
-      title={label}
+    <KitIconButton
+      icon={icon}
+      label={label}
+      className="rb-schedule-icon-btn"
       disabled={disabled}
       onPointerDown={(e) => e.stopPropagation()}
       onClick={(e) => {
         e.stopPropagation();
         onClick(e);
       }}
-    >
-      <Icon name={icon} />
-    </button>
+    />
   );
 }
 
@@ -711,9 +713,9 @@ function WeekPanel({
         </div>
       )}
       {onLog && (
-        <button className="mod-cta rb-schedule-log" onClick={onLog}>
-          <Icon name="timer" /> Log time
-        </button>
+        <TextButton variant="primary" icon="timer" className="rb-schedule-log" onClick={onLog}>
+          Log time
+        </TextButton>
       )}
       {!compact && week.suggested.length > 0 && (
         <ul className="rb-schedule-split rb-schedule-week-left">

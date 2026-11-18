@@ -21,6 +21,7 @@ import { GroupLabel, NEUTRAL_GROUP_COLOR, ViewMore, usePaged } from '../../../..
 import { useDragSensors } from '../../../../hooks/use-drag-sensors';
 import { useBoard, useBoardContext } from '../../../../stores/board-context';
 import { Icon } from '../../../../components/icon';
+import { AddRow } from '@/components/settings-list';
 import { showMenu } from '../../../../obsidian/menu';
 
 /** Id part for the Uncategorized bucket (its group key is null). */
@@ -419,10 +420,7 @@ function Cell({ column, lane, items, collapsed, view, properties, getTargets, gr
         <KanbanCard key={item.id} item={item} view={view} properties={properties} getTargets={getTargets} groupProp={groupProp} subProp={subProp} movable={movable} onMove={onMove} />
       ))}
       <ViewMore more={more} remaining={remaining} />
-      <button className="rb-kanban-new" onClick={onAdd}>
-        <Icon name="plus" />
-        <span>New</span>
-      </button>
+      <AddRow compact label="New" className="rb-kanban-new" onClick={onAdd} />
     </div>
   );
 }

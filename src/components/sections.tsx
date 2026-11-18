@@ -4,6 +4,9 @@ import type { BoardItem, LoadLimit, PropertyConfig, ViewConfig } from '../types/
 import { cellsForGroup, collapseKey, groupItems, type ItemGroup } from '../lib/data/group';
 import { useBoard, useBoardContext } from '../stores/board-context';
 import { Icon } from './icon';
+import { Button } from './ui/button';
+import { IconButton } from './form-controls';
+import { cn } from '@/lib/utils';
 
 /** Pill color for a group without one (Uncategorized, uncolored values), as on kanban columns. */
 export const NEUTRAL_GROUP_COLOR = 'var(--text-faint)';
@@ -65,9 +68,7 @@ export function Sections({
               <Icon name={isCollapsed ? 'chevron-right' : 'chevron-down'} className="rb-section-caret" />
               <GroupLabel label={group.label} color={group.color ?? NEUTRAL_GROUP_COLOR} className="rb-section-title" />
               <span className="rb-section-count">{group.items.length}</span>
-              <button className="rb-icon-btn rb-section-add" aria-label="New item in this group" title="New item in this group" onClick={add}>
-                <Icon name="plus" />
-              </button>
+              <IconButton icon="plus" size="sm" className="rb-section-add" label="New item in this group" onClick={add} />
             </div>
             {isCollapsed ? collapsedContent?.(group.items, group) : children(group.items, `${pagePrefix}:${group.label}`, group)}
           </div>
@@ -138,21 +139,28 @@ export function Pager({ page, pages, total, size, onPage }: { page: number; page
         {from}–{to} of {total}
       </span>
       <div className="rb-pager-pages">
-        <button className="rb-pager-btn" aria-label="Previous page" disabled={page === 0} onClick={() => onPage(page - 1)}>
-          <Icon name="chevron-left" />
-        </button>
+        <Button variant="ghost" size="icon" className="rb-pager-btn" aria-label="Previous page" disabled={page === 0} onClick={() => onPage(page - 1)}>
+          <Icon name="chevron-left" className="rb:inline-flex" />
+        </Button>
         {pageWindow(page, pages).map((p, i) =>
           p === null ? (
             <span key={`gap${i}`} className="rb-pager-gap">…</span>
           ) : (
-            <button key={p} className={p === page ? 'rb-pager-btn rb-active' : 'rb-pager-btn'} aria-current={p === page ? 'page' : undefined} onClick={() => onPage(p)}>
+            <Button
+              key={p}
+              variant="ghost"
+              size="sm"
+              className={cn('rb-pager-btn rb:min-w-control-sm rb:px-2 rb:tabular-nums', p === page && 'rb-active rb:bg-accent rb:text-foreground')}
+              aria-current={p === page ? 'page' : undefined}
+              onClick={() => onPage(p)}
+            >
               {p + 1}
-            </button>
+            </Button>
           ),
         )}
-        <button className="rb-pager-btn" aria-label="Next page" disabled={page === pages - 1} onClick={() => onPage(page + 1)}>
-          <Icon name="chevron-right" />
-        </button>
+        <Button variant="ghost" size="icon" className="rb-pager-btn" aria-label="Next page" disabled={page === pages - 1} onClick={() => onPage(page + 1)}>
+          <Icon name="chevron-right" className="rb:inline-flex" />
+        </Button>
       </div>
     </div>
   );
@@ -161,9 +169,9 @@ export function Pager({ page, pages, total, size, onPage }: { page: number; page
 export function ViewMore({ more, remaining }: { more: (() => void) | null; remaining: number }) {
   if (!more) return null;
   return (
-    <button className="rb-view-more" onClick={more}>
-      View More ({remaining})
-    </button>
+    <Button variant="secondary" className="rb-view-more rb:self-center rb:mx-auto" onClick={more}>
+      View more ({remaining})
+    </Button>
   );
 }
 

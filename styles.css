@@ -65,6 +65,10 @@
   --rb-btn-secondary-border: var(--background-modifier-border);
   --rb-btn-secondary-shadow: none;
   --rb-btn-secondary-hover-bg: var(--background-modifier-hover);
+  /* The board's own "create" action (New note / New row): the vault accent, flat. */
+  --rb-btn-accent-bg: var(--interactive-accent);
+  --rb-btn-accent-hover-bg: var(--interactive-accent-hover);
+  --rb-btn-accent-fg: var(--text-on-accent);
   --rb-btn-ghost-fg: var(--text-muted);
   --rb-btn-ghost-hover-fg: var(--text-normal);
   --rb-btn-ghost-hover-bg: var(--background-modifier-hover);
@@ -101,6 +105,15 @@
   --rb-pill-default: var(--text-faint);
   --rb-chip-border: var(--background-modifier-border);
   --rb-chip-fg: var(--text-muted);
+  /* An active chip (a sort or filter is set). */
+  --rb-chip-on-border: var(--interactive-accent);
+  --rb-chip-on-fg: var(--text-accent);
+  --rb-badge-bg: var(--interactive-accent);
+  --rb-badge-fg: var(--text-on-accent);
+
+  /* --- Board toolbar: one height for tabs, chips, search and buttons --- */
+  --rb-toolbar-h: 32px;
+  --rb-toolbar-radius: 8px;
 
   /* --- Surfaces: cards, panels, dialogs --- */
   --rb-surface-bg: var(--background-primary);
@@ -280,18 +293,7 @@
   white-space: pre-wrap;
 }
 
-.rb-view-more {
-  display: block;
-  margin: 16px auto 0;
-  padding: 6px 16px;
-  border-radius: 6px;
-  background: var(--background-secondary);
-  color: var(--text-normal);
-  border: 1px solid var(--background-modifier-border);
-  cursor: pointer;
-  font-size: 13px;
-}
-.rb-view-more:hover { background: var(--background-modifier-hover); }
+.rb-view-more { margin-top: 16px; }
 
 /* ===================== Toolbar ===================== */
 .rb-toolbar {
@@ -310,16 +312,7 @@
   gap: 8px;
 }
 .rb-controls-row { flex-wrap: wrap; }
-/* One shared control height so tabs, chips, search and buttons line up. */
-.rb-view-btn,
-.rb-chip,
-.rb-search,
-.rb-new-note {
-  box-sizing: border-box;
-  height: 32px;
-  padding-top: 0;
-  padding-bottom: 0;
-}
+/* Tabs, chips, search and buttons are shadcn Button / Input at size "toolbar" (--rb-toolbar-h). */
 /* Divider between the tabs row and the controls (search/sort/filter) row. */
 .rb-tabs-row {
   position: relative;
@@ -355,95 +348,10 @@
   gap: 4px;
   flex-wrap: wrap;
 }
-.rb-view-btn {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  padding: 6px 12px;
-  border: 1px solid transparent;
-  border-radius: 8px;
-  background: transparent;
-  color: var(--text-muted);
-  cursor: pointer;
-  font-size: 13px;
-  font-weight: 500;
-}
-.rb-view-btn:hover { background: var(--background-modifier-hover); color: var(--text-normal); }
-.rb-view-btn.rb-active {
-  background: var(--background-modifier-hover);
-  color: var(--text-normal);
-  border-color: var(--background-modifier-border);
-}
-.rb-view-btn.rb-active .rb-view-btn-icon { color: var(--text-accent); }
 .rb-view-btn-icon { display: inline-flex; align-items: center; }
-.rb-view-btn-icon svg { width: 16px; height: 16px; }
-.rb-view-add { color: var(--text-muted); padding: 6px 9px; }
-
-/* Search */
-.rb-search {
-  flex: 0 1 280px;
-  min-width: 150px;
-  padding: 7px 12px;
-  border-radius: 8px;
-  border: 1px solid var(--background-modifier-border);
-  background: var(--background-primary);
-  color: var(--text-normal);
-  font-size: 13px;
-}
-
-/* Sort / filter chips (Notion-style, show active state with a label) */
-.rb-chip {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  padding: 6px 11px;
-  border: 1px solid var(--background-modifier-border);
-  border-radius: 8px;
-  background: var(--background-primary);
-  color: var(--text-muted);
-  cursor: pointer;
-  font-size: 13px;
-  white-space: nowrap;
-}
-.rb-chip:hover { background: var(--background-modifier-hover); color: var(--text-normal); }
-.rb-chip-icon { display: inline-flex; }
-.rb-chip-icon svg { width: 15px; height: 15px; }
-.rb-chip-active {
-  background: var(--background-modifier-active-hover, rgba(var(--color-accent-rgb), 0.15));
-  border-color: var(--interactive-accent);
-  color: var(--text-accent);
-}
-
-/* Square tool buttons (add view / settings gears) */
-.rb-tool-btn {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  box-sizing: border-box;
-  width: 32px;
-  height: 32px;
-  padding: 0;
-  border: 1px solid var(--background-modifier-border);
-  border-radius: 8px;
-  background: var(--background-primary);
-  color: var(--text-muted);
-  cursor: pointer;
-}
-.rb-tool-btn:hover { background: var(--background-modifier-hover); color: var(--text-normal); }
-.rb-tool-btn svg { width: 17px; height: 17px; }
-
-/* Count badge on a chip (e.g. number of filter rules). */
-.rb-chip-badge {
-  min-width: 18px;
-  padding: 0 5px;
-  border-radius: 999px;
-  background: var(--interactive-accent);
-  color: var(--text-on-accent);
-  font-size: 11px;
-  font-weight: 600;
-  line-height: 18px;
-  text-align: center;
-}
+/* The tab measure copies are plain spans: give them the toolbar button's box so widths match. */
+.rb-tab-measure > .rb-view-btn { display: inline-flex; align-items: center; gap: 6px; padding: 0 12px; border: 1px solid transparent; font-size: var(--rb-control-font); font-weight: 500; }
+.rb-tab-measure svg { width: var(--rb-icon-size); height: var(--rb-icon-size); }
 
 /* Compact toolbar (narrow pane or phone; set from the measured width): one
    view dropdown, icon-only buttons and chips, search takes the free space. */
@@ -454,32 +362,10 @@
 .rb-compact .rb-tools { flex: 0 0 auto; }
 .rb-compact .rb-chip-label,
 .rb-compact .rb-new-note-label { display: none; }
-.rb-compact .rb-chip { padding: 6px 8px; }
-.rb-compact .rb-new-note { padding: 7px 9px; }
 .rb-compact .rb-controls-row { flex-wrap: nowrap; }
-.rb-compact .rb-search { flex: 1 1 auto; min-width: 0; }
-
-/* "New note" button */
-.rb-new-note {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  padding: 7px 13px;
-  border: none;
-  border-radius: 8px;
-  background: var(--interactive-accent);
-  color: var(--text-on-accent);
-  cursor: pointer;
-  font-size: 13px;
-  font-weight: 600;
-  white-space: nowrap;
-}
-.rb-new-note:hover { background: var(--interactive-accent-hover); }
-.rb-new-note-icon { display: inline-flex; }
-.rb-new-note-icon svg { width: 15px; height: 15px; }
 
 /* "N more" view dropdown (views past the first three). */
-.rb-view-more-caret { opacity: 0.7; }
+.rb-view-more-caret { display: inline-flex; opacity: 0.7; }
 .rb-view-more-caret svg { width: 14px; height: 14px; }
 
 /* ===================== Cards (shared) ===================== */
@@ -1131,25 +1017,8 @@ body .rb-table-wrap.rb-grid::-webkit-scrollbar-thumb:active { background-color: 
 body .rb-table-wrap.rb-summary-only { scrollbar-width: none; }
 body .rb-table-wrap.rb-summary-only::-webkit-scrollbar { display: none; }
 
-.rb-grid-add {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  width: 100%;
-  padding: 8px 10px;
-  height: auto;
-  background: transparent;
-  box-shadow: none;
-  border-bottom: 1px solid var(--background-modifier-border);
-  border-radius: 0;
-  color: var(--text-muted);
-  font-size: 13px;
-  cursor: pointer;
-  justify-content: flex-start;
-}
-.rb-grid-add-ungrouped { margin: 4px 0 12px; border-top: 1px solid var(--background-modifier-border); }
-.rb-grid-add:hover { background: var(--background-modifier-hover); color: var(--text-normal); }
-.rb-grid-add svg { width: 14px; height: 14px; }
+/* "New row" under the table: a ghost Button; "New row with no …" is an AddRow (compact). */
+.rb-grid-add { border-bottom: 1px solid var(--background-modifier-border); }
 
 .rb-td .rb-img { width: 48px; }
 .rb-td .rb-img img { aspect-ratio: 3 / 4; object-fit: cover; border-radius: 4px; }
@@ -1165,30 +1034,6 @@ body .rb-table-wrap.rb-summary-only::-webkit-scrollbar { display: none; }
 }
 .rb-pager-range { font-size: 12px; color: var(--text-muted); }
 .rb-pager-pages { display: flex; align-items: center; gap: 4px; }
-.rb-pager-btn {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  min-width: 30px;
-  height: 30px;
-  padding: 0 8px;
-  border: 1px solid transparent;
-  border-radius: 7px;
-  background: transparent;
-  box-shadow: none;
-  color: var(--text-muted);
-  font-size: 13px;
-  cursor: pointer;
-}
-.rb-pager-btn:hover:not(:disabled) { background: var(--background-modifier-hover); color: var(--text-normal); }
-.rb-pager-btn.rb-active {
-  border-color: var(--background-modifier-border);
-  background: var(--background-modifier-hover);
-  color: var(--text-normal);
-  font-weight: 600;
-}
-.rb-pager-btn:disabled { opacity: 0.35; cursor: default; }
-.rb-pager-btn svg { width: 16px; height: 16px; }
 .rb-pager-gap { padding: 0 4px; color: var(--text-faint); }
 
 /* ===================== Fullscreen image modal ===================== */
@@ -1245,13 +1090,8 @@ body .rb-table-wrap.rb-summary-only::-webkit-scrollbar { display: none; }
   padding: 1px 8px;
 }
 /* "New item in this group": shown on hover (always on touch). */
-.rb-section-add {
-  margin-left: auto;
-  opacity: 0;
-  color: var(--text-muted);
-}
+.rb-section-add { margin-left: auto; opacity: 0; }
 .rb-section-header:hover .rb-section-add, .rb-section-add:focus-visible, .is-mobile .rb-section-add { opacity: 1; }
-.rb-section-add svg { width: 15px; height: 15px; }
 
 /* Group label with a color (kanban columns + gallery/table sections): a soft
    pill with a dot. The color (--gc) is blended into the theme so bright
@@ -1286,22 +1126,6 @@ body .rb-table-wrap.rb-summary-only::-webkit-scrollbar { display: none; }
 }
 .rb-home-header h2 { margin: 0; }
 .rb-home-actions { display: flex; gap: 8px; flex-wrap: wrap; justify-content: flex-end; }
-.rb-home-create {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  padding: 7px 14px;
-  border-radius: 7px;
-  border: none;
-  background: var(--interactive-accent);
-  color: var(--text-on-accent);
-  cursor: pointer;
-  font-size: 13px;
-  font-weight: 600;
-}
-.rb-home-create:hover { background: var(--interactive-accent-hover); }
-.rb-home-create-icon { display: inline-flex; }
-.rb-home-create-icon svg { width: 15px; height: 15px; }
 
 .rb-home-empty { color: var(--text-muted); padding: 40px 0; text-align: center; }
 
@@ -1792,25 +1616,8 @@ body:not(.is-phone) .rb-edit-modal {
   color: color-mix(in srgb, var(--kc) 55%, var(--text-muted));
 }
 
-/* "New" at the bottom of each column / cell (pre-fills the column and row values). */
-.rb-kanban-new {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  width: 100%;
-  height: auto;
-  padding: 8px 10px;
-  background: transparent;
-  box-shadow: none;
-  border: 1px solid color-mix(in srgb, var(--kc, var(--text-faint)) 22%, var(--background-modifier-border));
-  border-radius: 8px;
-  color: color-mix(in srgb, var(--kc, var(--text-faint)) 55%, var(--text-muted));
-  font-size: 13px;
-  cursor: pointer;
-  justify-content: flex-start;
-}
-.rb-kanban-new:hover { background: color-mix(in srgb, var(--kc, var(--text-faint)) 10%, transparent); }
-.rb-kanban-new svg { width: 13px; height: 13px; }
+/* "New" at the bottom of each column / cell is an AddRow (compact); it pre-fills the column and row values. */
+.rb-kanban-new { flex: 0 0 auto; }
 
 /* Swimlanes: the board scrolls both ways; a header row of columns, then one row per lane. */
 .rb-kanban.rb-kanban-lanes {
@@ -1948,8 +1755,6 @@ body:not(.is-phone) .rb-edit-modal {
   gap: 6px;
   margin: 8px 12px 0 16px;
 }
-.rb-split-close { margin-left: auto; color: var(--text-muted); }
-.rb-split-close svg { width: 15px; height: 15px; }
 .rb-split-title {
   display: flex;
   align-items: center;
@@ -2442,9 +2247,6 @@ body:not(.is-phone) .modal.rb-quick-add-modal { width: min(560px, 94vw); max-hei
 .rb-schedule-section-hint { flex: 1; min-width: 0; color: var(--text-faint); font-size: var(--font-ui-smaller); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .rb-schedule-section-tools { margin-left: auto; display: flex; gap: 6px; cursor: default; }
 .rb-schedule-section-body { padding: 10px 0 0; }
-.rb-schedule-replan-btn { display: inline-flex; align-items: center; gap: 6px; height: 26px; padding: 0 10px; font-size: var(--font-ui-smaller); }
-.rb-schedule-replan-btn svg { width: 14px; height: 14px; }
-.rb-schedule-replan-btn:disabled { opacity: 0.4; cursor: default; }
 
 /* Queue numbers */
 .rb-schedule-index {
@@ -2519,29 +2321,14 @@ body:not(.is-phone) .modal.rb-quick-add-modal { width: min(560px, 94vw); max-hei
 .rb-schedule.is-compact .rb-schedule-footer > span:last-child { display: none; }
 
 /* Controls */
-.rb-schedule-log { display: inline-flex; align-items: center; gap: 4px; margin-left: auto; }
+.rb-schedule-log { margin-left: auto; }
 .rb-schedule-week-head > span { margin-left: auto; }
 .rb-schedule-week-head .rb-schedule-log { margin-left: 8px; }
 .rb-schedule-lane-head { display: flex; align-items: center; justify-content: space-between; }
 .rb-schedule-lane-head h4 { margin: 0; }
 .rb-schedule-lane-head { gap: 4px; }
 .rb-schedule-replan { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 6px 12px; }
-.rb-schedule-replan button { display: inline-flex; align-items: center; gap: 6px; }
-.rb-schedule-icon-btn {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  flex: none;
-  width: 28px;
-  height: 28px;
-  padding: 0;
-  border-radius: var(--radius-s);
-  color: var(--text-muted);
-  --icon-size: var(--icon-m, 18px);
-}
-.rb-schedule-icon-btn svg { width: var(--icon-size); height: var(--icon-size); }
-.rb-schedule-chip .rb-schedule-icon-btn { width: 24px; height: 24px; --icon-size: var(--icon-s, 16px); }
-.is-mobile .rb-schedule-icon-btn { width: 36px; height: 36px; }
+
 .rb-schedule-entry { position: relative; }
 .rb-schedule-entry-body { flex: 1; }
 .rb-schedule-entry-actions { display: flex; align-items: flex-start; gap: 4px; opacity: 0.6; transition: opacity 0.1s; }
@@ -2570,9 +2357,6 @@ body:not(.is-phone) .modal.rb-quick-add-modal { width: min(560px, 94vw); max-hei
 .rb-schedule-entry-title .rb-title:hover { color: var(--text-accent); text-decoration: underline; }
 .rb-schedule-chip { transition: background-color 0.12s; }
 .rb-schedule-chip:hover { background: var(--background-modifier-hover); }
-.rb-schedule-icon-btn:disabled,
-.rb-schedule-replan button:disabled { opacity: 0.35; cursor: default; pointer-events: none; }
-.rb-schedule-icon-btn:hover { color: var(--text-normal); background: var(--background-modifier-hover); }
 .rb-schedule-free { transition: background-color 0.12s; }
 .rb-schedule-free:hover { background: hsla(var(--interactive-accent-hsl), 0.08); }
 .rb-schedule-option { transition: border-color 0.12s, background-color 0.12s; }
@@ -2618,30 +2402,18 @@ body:not(.is-phone) .modal.rb-quick-add-modal { width: min(560px, 94vw); max-hei
 .rb-log-other { padding: 0 14px; color: var(--text-faint); }
 .rb-log-other.is-open { color: var(--text-normal); border-color: var(--background-modifier-border-hover); }
 .rb-log-search { display: flex; flex-direction: column; gap: 6px; }
-.rb-log-search input { width: 100%; }
 .rb-log-search-list { display: flex; flex-direction: column; max-height: 200px; overflow: auto; border: 1px solid var(--background-modifier-border); border-radius: var(--radius-m); }
 .rb-log-search-row { display: flex; justify-content: space-between; gap: 10px; height: auto; padding: 7px 12px; border: none; border-radius: 0; background: transparent; box-shadow: none; text-align: left; }
 .rb-log-search-row + .rb-log-search-row { border-top: 1px solid var(--background-modifier-border); }
 .rb-log-search-row:hover { background: var(--background-modifier-hover); }
 .rb-log-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
 .rb-log-hours { display: flex; gap: 6px; }
-.rb-log-hours input { flex: 1; min-width: 0; text-align: right; }
-.rb-log-quick { min-width: 46px; padding: 0 10px; border-radius: var(--radius-m); }
-.rb-log-quick[aria-pressed='true'] { background: var(--text-normal); color: var(--background-primary); border-color: transparent; }
-.rb-log-field input[type='date'] { width: 100%; }
-.rb-log-types { align-self: flex-start; display: inline-flex; gap: 2px; padding: 3px; border-radius: 999px; border: 1px solid var(--background-modifier-border); background: var(--background-modifier-hover); }
-.rb-log-types button { height: 28px; padding: 0 13px; border: none; border-radius: 999px; background: transparent; box-shadow: none; color: var(--text-muted); font-size: var(--font-ui-small); }
-.rb-log-types button[aria-checked='true'] { background: var(--background-primary); color: var(--text-normal); box-shadow: var(--shadow-s); }
 .rb-log-hint { font-size: var(--font-ui-smaller); color: var(--text-faint); }
 .rb-log-footer { display: flex; align-items: center; gap: 8px; margin: 4px calc(var(--size-4-4, 16px) * -1) calc(var(--size-4-4, 16px) * -1); padding: 12px var(--size-4-4, 16px); border-top: 1px solid var(--background-modifier-border); }
 .rb-log-summary { flex: 1; min-width: 0; font-size: var(--font-ui-smaller); color: var(--text-faint); }
-.rb-log-footer .mod-cta { display: inline-flex; align-items: center; gap: 6px; }
-.rb-log-footer .mod-cta svg { width: 15px; height: 15px; }
 .is-phone .rb-log-row { grid-template-columns: 1fr; }
 
 /* Modals */
-.rb-schedule-form input[type='number'],
-.rb-schedule-form input[type='date'] { width: 160px; }
 .rb-schedule-form-buttons { display: flex; justify-content: flex-end; flex-wrap: wrap; gap: 8px; margin-top: 14px; }
 .rb-schedule-next,
 .rb-schedule-any { display: flex; flex-direction: column; gap: 6px; }
@@ -2659,7 +2431,6 @@ body:not(.is-phone) .modal.rb-quick-add-modal { width: min(560px, 94vw); max-hei
 }
 .rb-schedule-option.is-best { border-color: var(--interactive-accent); }
 .rb-schedule-option-title { display: flex; align-items: center; gap: 6px; font-weight: var(--font-semibold); }
-.rb-schedule-any input[type='search'] { width: 100%; }
 .rb-schedule-any-list { display: flex; flex-direction: column; gap: 4px; max-height: 50vh; overflow: auto; }
 /* Move modal: destination cards, then lane, position and date for lanes / queue. */
 .rb-schedule-move { width: min(560px, 92vw); }
@@ -2707,7 +2478,7 @@ body:not(.is-phone) .modal.rb-quick-add-modal { width: min(560px, 94vw); max-hei
 .rb-move-step { display: flex; flex-direction: column; gap: 8px; padding-top: 14px; border-top: 1px solid var(--background-modifier-border); }
 .rb-move-label { font-size: var(--font-ui-smaller); font-weight: var(--font-semibold); color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.03em; }
 .rb-move-label-row { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
-.rb-move-auto { display: inline-flex; align-items: center; gap: 6px; color: var(--text-muted); font-size: var(--font-ui-small); cursor: pointer; }
+.rb-move-auto { display: inline-flex; align-items: center; gap: 8px; color: var(--text-muted); font-size: var(--font-ui-small); cursor: pointer; }
 .rb-move-note { color: var(--text-muted); font-size: var(--font-ui-smaller); }
 
 .rb-move-lanes { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 6px; padding: 3px; border-radius: var(--radius-m); background: var(--background-secondary); }
@@ -2797,17 +2568,11 @@ button.rb-move-row.is-pick:focus-visible .rb-move-row-action,
 .rb-move-row.is-me { color: var(--text-normal); font-weight: var(--font-semibold); background: hsla(var(--interactive-accent-hsl), 0.1); box-shadow: inset 0 0 0 1px var(--interactive-accent); outline-offset: 2px; }
 .rb-move-row.is-me .rb-schedule-index { background: var(--interactive-accent); color: var(--text-on-accent); }
 
-.rb-move-link,
 .rb-move-lane,
 .rb-move-dest { border: none; }
 .rb-move-row svg { width: 14px; height: 14px; }
 
-.rb-move-date { display: flex; align-items: center; gap: 10px; }
-.rb-move-date input[type='date'] { width: 170px; }
-.rb-move-link { display: inline-flex; align-items: center; gap: 6px; height: auto; padding: 2px 4px; background: transparent; box-shadow: none; color: var(--text-accent); font-size: var(--font-ui-small); }
-.rb-move-link:hover { text-decoration: underline; background: transparent; }
-.rb-move-link svg { width: 14px; height: 14px; }
-.rb-move-add-date { align-self: flex-start; }
+.rb-move-date { display: flex; align-items: center; gap: 6px; }
 
 .rb-move-footer { display: flex; align-items: center; gap: 8px; padding-top: 14px; border-top: 1px solid var(--background-modifier-border); }
 .rb-move-summary { flex: 1; min-width: 0; color: var(--text-muted); font-size: var(--font-ui-smaller); }
@@ -2891,6 +2656,11 @@ body.rb-theme-industrial :is(.rb-root, .rb-home, .rb-embed, .modal.rb-modal, .me
   --rb-btn-secondary-border: var(--background-modifier-border);
   --rb-btn-secondary-shadow: none;
   --rb-btn-secondary-hover-bg: var(--background-modifier-hover);
+  /* New note: graphite (ink), flat; not yellow, which is for the one action in a dialog */
+  --rb-chip-on-border: var(--text-muted);
+  --rb-chip-on-fg: var(--text-normal);
+  --rb-badge-bg: var(--text-normal);
+  --rb-badge-fg: var(--background-primary);
   --rb-btn-ghost-fg: var(--text-muted);
   --rb-btn-ghost-hover-fg: var(--text-normal);
   --rb-btn-ghost-hover-bg: var(--background-modifier-hover);
@@ -2966,8 +2736,9 @@ body.rb-theme-industrial {
   --rbi-yellow: #FFE41A;
   --rbi-yellow-soft: #FFF6B0;
   --rbi-yellow-ink: #1C1C1E;
-  --rbi-yellow-grad: linear-gradient(180deg, #FFEE5C 0%, #FFE41A 55%, #F2D600 100%);
-  --rbi-yellow-glow: 0 1px 0 rgba(255, 255, 255, 0.7) inset, 0 4px 12px -2px rgba(230, 200, 0, 0.45);
+  /* Flat by rule (styles/RULES.md): the "-grad" / "-glow" names stay for the rules that use them. */
+  --rbi-yellow-grad: #FFE41A;
+  --rbi-yellow-glow: none;
   --rbi-head: 'Barlow Semi Condensed', 'Arial Narrow', var(--font-interface);
 }
 body.rb-theme-industrial.rb-mode-light {
@@ -2975,14 +2746,14 @@ body.rb-theme-industrial.rb-mode-light {
   --rbi-plane: #FFFFFF;
   --rbi-plane-flat: #FFFFFF;
   --rbi-plane-shadow: 0 1px 0 rgba(255, 255, 255, 0.9) inset, 0 1px 2px rgba(28, 28, 30, 0.05), 0 8px 24px -8px rgba(28, 28, 30, 0.12);
-  --rbi-glass: linear-gradient(180deg, rgba(255, 255, 255, 0.9) 0%, rgba(255, 255, 255, 0.55) 100%);
-  --rbi-glass-edge: rgba(255, 255, 255, 0.95);
-  --rbi-glass-shadow: 0 1px 0 rgba(255, 255, 255, 0.9) inset, 0 -1px 0 rgba(28, 28, 30, 0.05) inset, 0 2px 6px rgba(28, 28, 30, 0.08), 0 6px 16px -6px rgba(28, 28, 30, 0.14);
+  --rbi-glass: #FFFFFF;
+  --rbi-glass-edge: #E3E3DD;
+  --rbi-glass-shadow: 0 1px 2px rgba(28, 28, 30, 0.06);
   --rbi-pop-shadow: 0 1px 0 rgba(255, 255, 255, 0.9) inset, 0 30px 70px -20px rgba(28, 28, 30, 0.35), 0 4px 14px rgba(28, 28, 30, 0.08);
   --rbi-sunken: rgba(28, 28, 30, 0.05);
-  --rbi-ink-grad: linear-gradient(180deg, #3A3A3E 0%, #1C1C1E 100%);
+  --rbi-ink-grad: #1C1C1E;
   --rbi-ink-text: #F5F5F2;
-  --rbi-running: linear-gradient(90deg, #FFF6B0 0%, rgba(255, 246, 176, 0.25) 100%);
+  --rbi-running: #FFF9D1;
   --rbi-scrim: rgba(225, 225, 220, 0.55);
 }
 body.rb-theme-industrial.rb-mode-dark {
@@ -2990,14 +2761,14 @@ body.rb-theme-industrial.rb-mode-dark {
   --rbi-plane: rgba(255, 255, 255, 0.04);
   --rbi-plane-flat: #232326;
   --rbi-plane-shadow: 0 1px 0 rgba(255, 255, 255, 0.06) inset, 0 10px 28px -10px rgba(0, 0, 0, 0.6);
-  --rbi-glass: linear-gradient(180deg, rgba(255, 255, 255, 0.12) 0%, rgba(255, 255, 255, 0.05) 100%);
-  --rbi-glass-edge: rgba(255, 255, 255, 0.14);
-  --rbi-glass-shadow: 0 1px 0 rgba(255, 255, 255, 0.1) inset, 0 4px 14px -4px rgba(0, 0, 0, 0.6);
+  --rbi-glass: #2A2A2E;
+  --rbi-glass-edge: rgba(255, 255, 255, 0.1);
+  --rbi-glass-shadow: none;
   --rbi-pop-shadow: 0 1px 0 rgba(255, 255, 255, 0.06) inset, 0 30px 70px -20px rgba(0, 0, 0, 0.8);
   --rbi-sunken: rgba(0, 0, 0, 0.2);
-  --rbi-ink-grad: linear-gradient(180deg, #F2F2EC 0%, #D9D9D2 100%);
+  --rbi-ink-grad: #ECECE6;
   --rbi-ink-text: #1C1C1E;
-  --rbi-running: linear-gradient(90deg, rgba(255, 228, 26, 0.14) 0%, rgba(255, 228, 26, 0.02) 100%);
+  --rbi-running: rgba(255, 228, 26, 0.08);
   --rbi-scrim: rgba(10, 10, 12, 0.6);
 }
 
@@ -3318,35 +3089,8 @@ body.rb-theme-industrial.rb-mode-dark { --rb-chart-palette: #ECECE6, #E9CD62, #8
 }
 .rb-theme-industrial .rb-root .rb-card { transition: transform 0.14s, box-shadow 0.14s; }
 
-/* ---------- Toolbar: the frame stays; colors follow the theme ---------- */
-.rb-theme-industrial .rb-root .rb-new-note {
-  background: var(--rbi-ink-grad);
-  color: var(--rbi-ink-text);
-  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.12) inset, 0 2px 6px rgba(28, 28, 30, 0.18);
-}
-.rb-theme-industrial .rb-root .rb-new-note:hover { background: var(--rbi-ink-grad); filter: brightness(1.1); }
-.rb-theme-industrial .rb-root .rb-view-btn.rb-active .rb-view-btn-icon { color: var(--text-normal); }
-/* Toolbar controls as in the design, stated in full so Obsidian's button / input rules can't win. */
-.rb-theme-industrial .rb-root :is(.rb-view-btn, .rb-tool-btn, .rb-chip, .rb-new-note) {
-  height: 32px;
-  border-radius: 8px;
-  font-size: 13px;
-  font-weight: 500;
-  line-height: 1;
-  filter: none;
-}
-.rb-theme-industrial .rb-root .rb-view-btn { padding: 0 12px; border: 1px solid transparent; background: transparent; box-shadow: none; color: var(--text-muted); }
-.rb-theme-industrial .rb-root .rb-view-btn:hover { background: var(--background-modifier-hover); color: var(--text-normal); }
-.rb-theme-industrial .rb-root .rb-view-btn.rb-active { background: var(--background-modifier-hover); border-color: var(--background-modifier-border); color: var(--text-normal); }
-.rb-theme-industrial .rb-root :is(.rb-tool-btn, .rb-chip) { border: 1px solid var(--background-modifier-border); background: var(--background-primary); box-shadow: none; color: var(--text-muted); }
-.rb-theme-industrial .rb-root .rb-tool-btn { width: 32px; padding: 0; }
-.rb-theme-industrial .rb-root .rb-chip { padding: 0 11px; }
-.rb-theme-industrial .rb-root :is(.rb-tool-btn, .rb-chip):hover { background: var(--background-modifier-hover); color: var(--text-normal); }
-.rb-theme-industrial .rb-root .rb-chip-active { border-color: var(--text-muted); color: var(--text-normal); background: var(--background-primary); }
-.rb-theme-industrial .rb-root .rb-new-note { padding: 0 13px; border: none; font-weight: 600; }
-.rb-theme-industrial .rb-root .rb-search { height: 32px; padding: 0 12px; border-radius: 8px; border: 1px solid var(--background-modifier-border); background: var(--background-primary); box-shadow: none; font-size: 13px; }
-.rb-theme-industrial .rb-root :is(.rb-view-btn, .rb-tool-btn, .rb-chip, .rb-new-note) svg { width: 16px; height: 16px; stroke-width: 1.75px; }
-.rb-theme-industrial .rb-root .rb-chip-badge { background: var(--text-normal); color: var(--background-primary); }
+/* Toolbar: shadcn Button / Input; Industrial only changes tokens (10-tokens.css). */
+.rb-theme-industrial .rb-root .rb-toolbar svg { stroke-width: 1.75px; }
 
 /* ---------- Gallery: a cover area on every card (initials on a gradient + hatch when there's no image) ---------- */
 .rb-theme-industrial .rb-root .rb-gallery-card { overflow: hidden; padding: 0; }
@@ -3389,12 +3133,12 @@ body.rb-theme-industrial.rb-mode-dark { --rb-chart-palette: #ECECE6, #E9CD62, #8
 .rb-theme-industrial .rb-root .rb-gallery-card .rb-card-body { padding: 10px 12px 12px; gap: 6px; }
 .rb-theme-industrial .rb-root .rb-gallery-card:hover { transform: translateY(-2px); }
 
-/* ---------- Kanban: glass columns, floating cards ---------- */
+/* ---------- Kanban: flat columns, floating cards ---------- */
 .rb-theme-industrial .rb-root .rb-kanban-col {
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.5), rgba(255, 255, 255, 0.25));
+  background: rgba(255, 255, 255, 0.4);
   border: 1px solid var(--background-modifier-border);
   border-radius: 14px;
-  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.8) inset;
+  box-shadow: none;
 }
 .rb-theme-industrial.rb-mode-dark .rb-root .rb-kanban-col { background: rgba(255, 255, 255, 0.025); box-shadow: none; }
 .rb-theme-industrial .rb-root .rb-kanban-add-btn { border-radius: 10px; }
@@ -3430,14 +3174,6 @@ body.rb-theme-industrial.rb-mode-dark { --rb-chart-palette: #ECECE6, #E9CD62, #8
 .rb-theme-industrial .rb-root .rb-kanban-cell { background: rgba(255, 255, 255, 0.35); }
 .rb-theme-industrial.rb-mode-dark .rb-root .rb-kanban-cell { background: rgba(255, 255, 255, 0.025); }
 .rb-theme-industrial .rb-root .rb-kanban-col .rb-kanban-count { margin-left: 2px; font-size: 12px; color: var(--text-faint); }
-.rb-theme-industrial .rb-root .rb-kanban-new {
-  height: 32px;
-  padding: 0 10px;
-  border: 1px dashed var(--background-modifier-border-hover);
-  border-radius: 10px;
-  color: var(--text-faint);
-}
-.rb-theme-industrial .rb-root .rb-kanban-new:hover { background: transparent; border-color: var(--text-faint); color: var(--text-normal); }
 .rb-theme-industrial .rb-root .rb-kanban-list { gap: 8px; padding: 0 8px 8px; }
 /* Swimlane cells have no header above the cards: same gap on top as at the sides. */
 .rb-theme-industrial .rb-root .rb-kanban-cell.rb-kanban-list { padding: 8px; }
@@ -3462,15 +3198,13 @@ body.rb-theme-industrial.rb-mode-dark { --rb-chart-palette: #ECECE6, #E9CD62, #8
 .rb-theme-industrial .rb-root .rb-schedule-index.is-now { background: var(--rbi-yellow); color: var(--rbi-yellow-ink); }
 .rb-theme-industrial .rb-root .rb-schedule-bar > div { background: var(--text-normal); border-radius: 3px; }
 .rb-theme-industrial .rb-root .rb-schedule-week-sum h4 { font-family: var(--rbi-head); letter-spacing: 0.14em; }
-.rb-theme-industrial .rb-root .rb-schedule-day-bar { background: linear-gradient(180deg, rgba(28, 28, 30, 0.03), rgba(28, 28, 30, 0.07)); box-shadow: inset 0 1px 2px rgba(28, 28, 30, 0.06); }
-.rb-theme-industrial.rb-mode-dark .rb-root .rb-schedule-day-bar { background: linear-gradient(180deg, rgba(255, 255, 255, 0.03), rgba(255, 255, 255, 0.07)); box-shadow: none; }
-.rb-theme-industrial .rb-root .rb-schedule-day-bar i { opacity: 1; background: linear-gradient(180deg, #5A5A5E 0%, #2E2E32 100%); }
-.rb-theme-industrial.rb-mode-dark .rb-root .rb-schedule-day-bar i { background: linear-gradient(180deg, #D8D8D2 0%, #9E9E98 100%); }
+.rb-theme-industrial .rb-root .rb-schedule-day-bar { background: rgba(28, 28, 30, 0.05); box-shadow: none; }
+.rb-theme-industrial.rb-mode-dark .rb-root .rb-schedule-day-bar { background: rgba(255, 255, 255, 0.05); }
+.rb-theme-industrial .rb-root .rb-schedule-day-bar i { opacity: 1; background: #3A3A3E; }
+.rb-theme-industrial.rb-mode-dark .rb-root .rb-schedule-day-bar i { background: #C4C4BE; }
 .rb-theme-industrial .rb-root .rb-schedule-day.is-today .rb-schedule-day-bar { box-shadow: inset 0 0 0 1.5px var(--text-normal); }
 .rb-theme-industrial .rb-root .rb-schedule-day.is-future .rb-schedule-day-bar { background: transparent; box-shadow: inset 0 0 0 1px var(--background-modifier-border); }
-.rb-theme-industrial .rb-root .rb-schedule-week > .rb-schedule-log { height: 36px; padding: 0 18px; }
-/* The one yellow button: Log time. */
-.rb-theme-industrial .rb-root .rb-schedule-log,
+/* Obsidian's own primary buttons in our modals (schedule dialogs) look like ours. */
 .rb-theme-industrial .modal.rb-modal .mod-cta:not([data-slot]) {
   background: var(--rb-btn-primary-bg);
   color: var(--rb-btn-primary-fg);
@@ -3485,13 +3219,6 @@ body.rb-theme-industrial.rb-mode-dark { --rb-chart-palette: #ECECE6, #E9CD62, #8
 .rb-theme-industrial .rb-root .rb-schedule-lane-head h4 {
   font-family: var(--rbi-head);
   letter-spacing: 0.12em;
-}
-/* Glass pills for the small secondary buttons. */
-.rb-theme-industrial .rb-root :is(.rb-schedule-icon-btn, .rb-schedule-replan-btn) {
-  background: var(--rbi-glass);
-  border: 1px solid var(--rbi-glass-edge);
-  border-radius: 999px;
-  box-shadow: var(--rbi-glass-shadow);
 }
 
 /* ---------- Table ---------- */
@@ -3583,25 +3310,11 @@ body.rb-theme-industrial.rb-mode-dark { --rb-chart-palette: #ECECE6, #E9CD62, #8
 .rb-theme-industrial .modal.rb-modal .rb-move-row.is-me .rb-schedule-index { background: var(--rbi-yellow); color: var(--rbi-yellow-ink); }
 .rb-theme-industrial .modal.rb-modal .rb-move-row.is-me .rb-move-row-tag { color: var(--text-muted); }
 
-/* ---------- Log time: glass chips, the picked game fills yellow ---------- */
+/* ---------- Log time: flat chips, the picked game fills yellow ---------- */
 .rb-theme-industrial .modal.rb-modal .rb-log-label { font-family: var(--rbi-head); letter-spacing: 0.12em; }
-.rb-theme-industrial .modal.rb-modal :is(.rb-log-game, .rb-log-quick) {
-  background: var(--rbi-glass);
-  border: 1px solid var(--rbi-glass-edge);
-  box-shadow: var(--rbi-glass-shadow);
-}
-.rb-theme-industrial .modal.rb-modal .rb-log-game[aria-checked='true'] {
-  background: var(--rbi-yellow-grad);
-  color: var(--rbi-yellow-ink);
-  border-color: transparent;
-  box-shadow: var(--rbi-yellow-glow);
-}
-.rb-theme-industrial .modal.rb-modal .rb-log-quick[aria-pressed='true'] { background: var(--text-normal); color: var(--background-primary); box-shadow: none; }
-.rb-theme-industrial .modal.rb-modal .rb-log-types { background: var(--rbi-sunken); }
-.rb-theme-industrial .modal.rb-modal .rb-log-types button[aria-checked='true'] { background: var(--rbi-plane-flat); }
+.rb-theme-industrial .modal.rb-modal .rb-log-game { background: var(--rbi-plane-flat); border: 1px solid var(--background-modifier-border); box-shadow: none; }
+.rb-theme-industrial .modal.rb-modal .rb-log-game[aria-checked='true'] { background: var(--rbi-yellow); color: var(--rbi-yellow-ink); border-color: transparent; }
 .rb-theme-industrial .modal.rb-modal .rb-log-footer { background: rgba(28, 28, 30, 0.02); }
-.rb-theme-industrial .modal.rb-modal .rb-log-hours input,
-.rb-theme-industrial .modal.rb-modal .rb-log-field input[type='date'] { height: 36px; border-radius: 10px; }
 
 /* Settings cards, fields, value boxes: UI primitives, themed by 10-tokens.css. */
 /* Selects not yet built with the Select primitive (older screens): same look, same tokens. */
@@ -3753,6 +3466,14 @@ body.rb-theme-industrial.rb-mode-dark { --rb-chart-palette: #ECECE6, #E9CD62, #8
   margin-block: calc(var(--rb-spacing) * -2) !important;
 }
 
+.rb\:mt-0 {
+  margin-top: 0 !important;
+}
+
+.rb\:mt-1 {
+  margin-top: var(--rb-spacing) !important;
+}
+
 .rb\:mt-2\.5 {
   margin-top: calc(var(--rb-spacing) * 2.5) !important;
 }
@@ -3854,6 +3575,11 @@ body.rb-theme-industrial.rb-mode-dark { --rb-chart-palette: #ECECE6, #E9CD62, #8
   height: var(--rb-icon-btn-sm) !important;
 }
 
+.rb\:size-toolbar {
+  width: var(--rb-toolbar-h) !important;
+  height: var(--rb-toolbar-h) !important;
+}
+
 .rb\:h-5 {
   height: calc(var(--rb-spacing) * 5) !important;
 }
@@ -3896,6 +3622,10 @@ body.rb-theme-industrial.rb-mode-dark { --rb-chart-palette: #ECECE6, #E9CD62, #8
 
 .rb\:h-switch-h {
   height: var(--rb-switch-h) !important;
+}
+
+.rb\:h-toolbar {
+  height: var(--rb-toolbar-h) !important;
 }
 
 .rb\:max-h-\[var\(--radix-popover-content-available-height\)\] {
@@ -3970,6 +3700,14 @@ body.rb-theme-industrial.rb-mode-dark { --rb-chart-palette: #ECECE6, #E9CD62, #8
   min-width: 0 !important;
 }
 
+.rb\:min-w-\[18px\] {
+  min-width: 18px !important;
+}
+
+.rb\:min-w-\[150px\] {
+  min-width: 150px !important;
+}
+
 .rb\:min-w-\[200px\] {
   min-width: 200px !important;
 }
@@ -3978,8 +3716,20 @@ body.rb-theme-industrial.rb-mode-dark { --rb-chart-palette: #ECECE6, #E9CD62, #8
   min-width: var(--radix-popover-trigger-width) !important;
 }
 
+.rb\:min-w-control-sm {
+  min-width: var(--rb-control-h-sm) !important;
+}
+
 .rb\:flex-1 {
   flex: 1 !important;
+}
+
+.rb\:flex-\[0_1_280px\] {
+  flex: 0 280px !important;
+}
+
+.rb\:flex-auto {
+  flex: auto !important;
 }
 
 .rb\:shrink-0 {
@@ -4140,6 +3890,10 @@ body.rb-theme-industrial.rb-mode-dark { --rb-chart-palette: #ECECE6, #E9CD62, #8
   row-gap: calc(var(--rb-spacing) * 2) !important;
 }
 
+.rb\:self-center {
+  align-self: center !important;
+}
+
 .rb\:self-start {
   align-self: flex-start !important;
 }
@@ -4198,6 +3952,10 @@ body.rb-theme-industrial.rb-mode-dark { --rb-chart-palette: #ECECE6, #E9CD62, #8
   border-radius: 2147483647px !important;
 }
 
+.rb\:rounded-none {
+  border-radius: 0 !important;
+}
+
 .rb\:rounded-pill {
   border-radius: var(--rb-pill-radius) !important;
 }
@@ -4212,6 +3970,10 @@ body.rb-theme-industrial.rb-mode-dark { --rb-chart-palette: #ECECE6, #E9CD62, #8
 
 .rb\:rounded-switch-thumb {
   border-radius: var(--rb-switch-thumb-radius) !important;
+}
+
+.rb\:rounded-toolbar {
+  border-radius: var(--rb-toolbar-radius) !important;
 }
 
 .rb\:border {
@@ -4299,8 +4061,16 @@ body.rb-theme-industrial.rb-mode-dark { --rb-chart-palette: #ECECE6, #E9CD62, #8
   background-color: var(--background-modifier-hover) !important;
 }
 
+.rb\:bg-accent-button {
+  background-color: var(--rb-btn-accent-bg) !important;
+}
+
 .rb\:bg-background {
   background-color: var(--rb-field-bg) !important;
+}
+
+.rb\:bg-badge {
+  background-color: var(--rb-badge-bg) !important;
 }
 
 .rb\:bg-card {
@@ -4379,8 +4149,20 @@ body.rb-theme-industrial.rb-mode-dark { --rb-chart-palette: #ECECE6, #E9CD62, #8
   padding-inline: var(--rb-spacing) !important;
 }
 
+.rb\:px-1\.5 {
+  padding-inline: calc(var(--rb-spacing) * 1.5) !important;
+}
+
 .rb\:px-2 {
   padding-inline: calc(var(--rb-spacing) * 2) !important;
+}
+
+.rb\:px-2\.5 {
+  padding-inline: calc(var(--rb-spacing) * 2.5) !important;
+}
+
+.rb\:px-3 {
+  padding-inline: calc(var(--rb-spacing) * 3) !important;
 }
 
 .rb\:px-4 {
@@ -4455,13 +4237,25 @@ body.rb-theme-industrial.rb-mode-dark { --rb-chart-palette: #ECECE6, #E9CD62, #8
   padding-left: var(--rb-row-indent) !important;
 }
 
+.rb\:text-center {
+  text-align: center !important;
+}
+
 .rb\:text-left {
   text-align: left !important;
+}
+
+.rb\:text-right {
+  text-align: right !important;
 }
 
 .rb\:text-sm {
   font-size: var(--rb-text-sm) !important;
   line-height: var(--tw-leading, var(--rb-text-sm--line-height)) !important;
+}
+
+.rb\:text-\[11px\] {
+  font-size: 11px !important;
 }
 
 .rb\:text-\[length\:var\(--rb-pill-font\)\] {
@@ -4486,6 +4280,11 @@ body.rb-theme-industrial.rb-mode-dark { --rb-chart-palette: #ECECE6, #E9CD62, #8
 
 .rb\:text-title {
   font-size: var(--rb-font-title) !important;
+}
+
+.rb\:leading-\[18px\] {
+  --tw-leading: 18px !important;
+  line-height: 18px !important;
 }
 
 .rb\:leading-none {
@@ -4525,6 +4324,14 @@ body.rb-theme-industrial.rb-mode-dark { --rb-chart-palette: #ECECE6, #E9CD62, #8
   .rb\:text-\[color-mix\(in_srgb\,var\(--rb-pill-c\,var\(--rb-pill-default\)\)_65\%\,var\(--text-normal\)\)\] {
     color: color-mix(in srgb,var(--rb-pill-c, var(--rb-pill-default)) 65%,var(--text-normal)) !important;
   }
+}
+
+.rb\:text-accent-button-foreground {
+  color: var(--rb-btn-accent-fg) !important;
+}
+
+.rb\:text-badge-foreground {
+  color: var(--rb-badge-fg) !important;
 }
 
 .rb\:text-card-foreground {
@@ -4763,6 +4570,10 @@ body.rb-theme-industrial.rb-mode-dark { --rb-chart-palette: #ECECE6, #E9CD62, #8
     background-color: var(--background-modifier-hover) !important;
   }
 
+  .rb\:hover\:bg-accent-button-hover:hover {
+    background-color: var(--rb-btn-accent-hover-bg) !important;
+  }
+
   .rb\:hover\:bg-danger-hover:hover {
     background-color: var(--rb-btn-danger-hover-bg) !important;
   }
@@ -4875,6 +4686,26 @@ body.rb-theme-industrial.rb-mode-dark { --rb-chart-palette: #ECECE6, #E9CD62, #8
 
 .rb\:aria-invalid\:border-destructive[aria-invalid="true"] {
   border-color: var(--rb-danger-fg) !important;
+}
+
+.rb\:aria-pressed\:border-border[aria-pressed="true"] {
+  border-color: var(--rb-surface-border) !important;
+}
+
+.rb\:aria-pressed\:border-chip-on-border[aria-pressed="true"] {
+  border-color: var(--rb-chip-on-border) !important;
+}
+
+.rb\:aria-pressed\:bg-accent[aria-pressed="true"] {
+  background-color: var(--background-modifier-hover) !important;
+}
+
+.rb\:aria-pressed\:text-chip-on-foreground[aria-pressed="true"] {
+  color: var(--rb-chip-on-fg) !important;
+}
+
+.rb\:aria-pressed\:text-foreground[aria-pressed="true"] {
+  color: var(--text-normal) !important;
 }
 
 .rb\:data-\[invalid\=true\]\:text-destructive[data-invalid="true"] {
@@ -5216,6 +5047,11 @@ body.rb-theme-industrial.rb-mode-dark { --rb-chart-palette: #ECECE6, #E9CD62, #8
 .rb\:\[\&\>svg\]\:size-3 > svg {
   width: calc(var(--rb-spacing) * 3) !important;
   height: calc(var(--rb-spacing) * 3) !important;
+}
+
+.is-mobile .rb\:\[\.is-mobile_\&\&\]\:size-\[36px\].rb\:\[\.is-mobile_\&\&\]\:size-\[36px\] {
+  width: 36px !important;
+  height: 36px !important;
 }
 
 @property --tw-translate-x {

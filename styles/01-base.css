@@ -44,15 +44,4 @@
   white-space: pre-wrap;
 }
 
-.rb-view-more {
-  display: block;
-  margin: 16px auto 0;
-  padding: 6px 16px;
-  border-radius: 6px;
-  background: var(--background-secondary);
-  color: var(--text-normal);
-  border: 1px solid var(--background-modifier-border);
-  cursor: pointer;
-  font-size: 13px;
-}
-.rb-view-more:hover { background: var(--background-modifier-hover); }
+.rb-view-more { margin-top: 16px; }

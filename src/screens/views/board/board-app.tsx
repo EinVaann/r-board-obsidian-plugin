@@ -4,6 +4,10 @@ import type { DatabaseConfig, ViewConfig, ViewType } from '../../../types/databa
 import { effectiveSort, makeDefaultView, NO_SORT_KEY, propertyLabel, titleLabel, titlePropertyOf, TITLE_SORT_KEY } from '../../../lib/config';
 import { countFilterRules } from '../../../lib/data/filter';
 import { Icon } from '../../../components/icon';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { IconButton } from '@/components/form-controls';
+import { cn } from '@/lib/utils';
 import { BoardContext, useBoard, useBoardContext } from '../../../stores/board-context';
 import { selectCurrentView } from '../../../stores/board-store';
 import { useViewItems } from '../../../hooks/use-items';
@@ -123,14 +127,13 @@ function SplitView({ config, view, companion }: { config: DatabaseConfig; view: 
             <span>{companion.name}</span>
             {settings.followFilter && <span className="rb-split-follow">filtered by {view.name}</span>}
           </button>
-          <button
-            className="rb-icon-btn rb-split-close"
-            aria-label="Close split view"
-            title="Close split view"
+          <IconButton
+            icon="x"
+            size="sm"
+            className="rb-split-close rb:ml-auto"
+            label="Close split view"
             onClick={() => updateView(config.views.indexOf(view), (v) => void (v.companion = undefined))}
-          >
-            <Icon name="x" />
-          </button>
+          />
         </div>
         <BoardContext.Provider value={companionCtx}>
           <ScrollBody>{settings.followFilter ? <FollowingBody config={config} view={companion} lead={view} /> : <Body config={config} view={companion} />}</ScrollBody>
@@ -173,9 +176,9 @@ function Setup({ error }: { error: string | null }) {
       <Icon name="layout-dashboard" className="rb-setup-icon" />
       <h3>Set up this board</h3>
       {error && <p className="rb-setup-error">{error}</p>}
-      <button className="rb-home-create" onClick={actions.openSetup}>
+      <Button variant="accent" onClick={actions.openSetup}>
         Configure board
-      </button>
+      </Button>
     </div>
   );
 }
@@ -185,9 +188,10 @@ function NoViews() {
   return (
     <div className="rb-empty rb-empty-views">
       <div>This board has no views yet.</div>
-      <button className="rb-home-create" onClick={createView}>
+      <Button variant="accent" onClick={createView}>
+        <Icon name="plus" className="rb:inline-flex" />
         Create view
-      </button>
+      </Button>
     </div>
   );
 }
@@ -365,16 +369,19 @@ function Toolbar({ config, view }: { config: DatabaseConfig; view: ViewConfig | 
         </div>
         <div className="rb-view-switch">
           {config.views.slice(0, tabs).map((v, i) => (
-            <button
+            <Button
               key={i}
+              variant="ghost"
+              size="toolbar"
               className={v === view ? 'rb-view-btn rb-active' : 'rb-view-btn'}
+              aria-pressed={v === view}
               title={`${v.name} (${v.type})`}
               onClick={() => setActiveView(v.name)}
               onContextMenu={(e) => openTabMenu(e, i, v.name)}
             >
               <Icon name={TYPE_ICON[v.type]} className="rb-view-btn-icon" />
               <span>{v.name}</span>
-            </button>
+            </Button>
           ))}
           {config.views.length > tabs && (
             <MoreViews config={config} start={tabs} view={view} viewIndex={viewIndex} onPick={setActiveView} onContextMenu={openTabMenu} />
@@ -385,14 +392,16 @@ function Toolbar({ config, view }: { config: DatabaseConfig; view: ViewConfig | 
         </div>
         <div className="rb-spacer" />
         <div className="rb-tools" ref={toolsRef}>
-          <button
+          <Button
+            variant="accent"
+            size="toolbar"
             className="rb-new-note"
             title={config.kind === 'table' ? 'Add a row to this table' : 'Create a new note in this database'}
             onClick={() => actions.createNewNote()}
           >
-            <Icon name={config.kind === 'table' ? 'plus' : 'file-plus'} className="rb-new-note-icon" />
+            <Icon name={config.kind === 'table' ? 'plus' : 'file-plus'} className="rb-new-note-icon rb:inline-flex" />
             <span className="rb-new-note-label">{config.kind === 'table' ? 'New row' : 'New note'}</span>
-          </button>
+          </Button>
           {view && <ToolButton icon="sliders-horizontal" label="View settings" onClick={() => actions.openViewSettings(viewIndex)} />}
           <ToolButton icon="settings" label="Board settings" onClick={actions.openBoardSettings} />
         </div>
@@ -401,7 +410,14 @@ function Toolbar({ config, view }: { config: DatabaseConfig; view: ViewConfig | 
       {/* Row 2: search, sort / filter chips. The schedule plans every item, so it has none. */}
       {view?.type !== 'schedule' && (
         <div className="rb-controls-row">
-          <input className="rb-search" type="search" placeholder="Search…" value={search} onChange={(e) => setSearch(e.target.value)} />
+          <Input
+            className={cn('rb-search rb:h-toolbar rb:rounded-toolbar rb:w-auto', compact ? 'rb:flex-auto rb:min-w-0' : 'rb:flex-[0_1_280px] rb:min-w-[150px]')}
+            type="search"
+            aria-label="Search"
+            placeholder="Search…"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+          />
           {view && view.type !== 'chart' && <SortChip config={config} view={view} viewIndex={viewIndex} />}
           {view && (
             <Chip icon="filter" label="Filter" badge={filters || undefined} active={filters > 0} onClick={() => actions.openFilter(viewIndex)} />
@@ -447,8 +463,11 @@ function MoreViews({
   };
 
   return (
-    <button
+    <Button
+      variant="ghost"
+      size="toolbar"
       className={activeHidden ? 'rb-view-btn rb-view-more-btn rb-active' : 'rb-view-btn rb-view-more-btn'}
+      aria-pressed={activeHidden}
       title={start === 0 ? 'Switch view' : `${hidden} more view${hidden === 1 ? '' : 's'}`}
       onClick={open}
       onContextMenu={activeHidden ? (e) => onContextMenu(e, viewIndex, view.name) : undefined}
@@ -462,15 +481,15 @@ function MoreViews({
         <span>{hidden} more</span>
       )}
       <Icon name="chevron-down" className="rb-view-more-caret" />
-    </button>
+    </Button>
   );
 }
 
 function ToolButton({ icon, label, onClick }: { icon: string; label: string; onClick: (e: ReactMouseEvent) => void }) {
   return (
-    <button className="rb-tool-btn" aria-label={label} title={label} onClick={onClick}>
-      <Icon name={icon} />
-    </button>
+    <Button variant="chip" size="icon-toolbar" className="rb-tool-btn" aria-label={label} title={label} onClick={onClick}>
+      <Icon name={icon} className="rb:inline-flex" />
+    </Button>
   );
 }
 
@@ -489,11 +508,13 @@ function Chip({
   onClick: (e: ReactMouseEvent) => void;
 }) {
   return (
-    <button className={active ? 'rb-chip rb-chip-active' : 'rb-chip'} title={label} onClick={onClick}>
-      <Icon name={icon} className="rb-chip-icon" />
+    <Button variant="chip" size="toolbar" className={active ? 'rb-chip rb-chip-active' : 'rb-chip'} aria-pressed={active} title={label} onClick={onClick}>
+      <Icon name={icon} className="rb-chip-icon rb:inline-flex" />
       <span className="rb-chip-label">{label}</span>
-      {badge !== undefined && <span className="rb-chip-badge">{badge}</span>}
-    </button>
+      {badge !== undefined && (
+        <span className="rb-chip-badge rb:min-w-[18px] rb:px-1.5 rb:rounded-pill rb:bg-badge rb:text-badge-foreground rb:text-[11px] rb:font-semibold rb:leading-[18px] rb:text-center">{badge}</span>
+      )}
+    </Button>
   );
 }
 
@@ -589,9 +610,10 @@ function EmptyState({ config, view, viewIndex, total }: { config: DatabaseConfig
       <div className="rb-empty rb-empty-state">
         <div>{table ? 'This table has no rows yet.' : `No notes tagged #${config.sourceTag} yet.`}</div>
         <div className="rb-empty-actions">
-          <button className="rb-home-create" onClick={() => actions.createNewNote()}>
+          <Button variant="accent" onClick={() => actions.createNewNote()}>
+            <Icon name={table ? 'plus' : 'file-plus'} className="rb:inline-flex" />
             {table ? 'New row' : 'New note'}
-          </button>
+          </Button>
         </div>
       </div>
     );
@@ -606,8 +628,8 @@ function EmptyState({ config, view, viewIndex, total }: { config: DatabaseConfig
         All {total} {table ? 'rows' : 'notes'} are hidden by the current {reasonRef.current || 'filter'}.
       </div>
       <div className="rb-empty-actions">
-        {hasSearch && <button onClick={() => setSearch('')}>Clear search</button>}
-        {hasFilter && <button onClick={() => updateView(viewIndex, (v) => void (v.filter = undefined))}>Clear filter</button>}
+        {hasSearch && <Button variant="secondary" onClick={() => setSearch('')}>Clear search</Button>}
+        {hasFilter && <Button variant="secondary" onClick={() => updateView(viewIndex, (v) => void (v.filter = undefined))}>Clear filter</Button>}
       </div>
     </div>
   );

@@ -32,13 +32,8 @@
   padding: 1px 8px;
 }
 /* "New item in this group": shown on hover (always on touch). */
-.rb-section-add {
-  margin-left: auto;
-  opacity: 0;
-  color: var(--text-muted);
-}
+.rb-section-add { margin-left: auto; opacity: 0; }
 .rb-section-header:hover .rb-section-add, .rb-section-add:focus-visible, .is-mobile .rb-section-add { opacity: 1; }
-.rb-section-add svg { width: 15px; height: 15px; }
 
 /* Group label with a color (kanban columns + gallery/table sections): a soft
    pill with a dot. The color (--gc) is blended into the theme so bright

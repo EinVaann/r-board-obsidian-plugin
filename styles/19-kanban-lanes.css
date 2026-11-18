@@ -19,25 +19,8 @@
   color: color-mix(in srgb, var(--kc) 55%, var(--text-muted));
 }
 
-/* "New" at the bottom of each column / cell (pre-fills the column and row values). */
-.rb-kanban-new {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  width: 100%;
-  height: auto;
-  padding: 8px 10px;
-  background: transparent;
-  box-shadow: none;
-  border: 1px solid color-mix(in srgb, var(--kc, var(--text-faint)) 22%, var(--background-modifier-border));
-  border-radius: 8px;
-  color: color-mix(in srgb, var(--kc, var(--text-faint)) 55%, var(--text-muted));
-  font-size: 13px;
-  cursor: pointer;
-  justify-content: flex-start;
-}
-.rb-kanban-new:hover { background: color-mix(in srgb, var(--kc, var(--text-faint)) 10%, transparent); }
-.rb-kanban-new svg { width: 13px; height: 13px; }
+/* "New" at the bottom of each column / cell is an AddRow (compact); it pre-fills the column and row values. */
+.rb-kanban-new { flex: 0 0 auto; }
 
 /* Swimlanes: the board scrolls both ways; a header row of columns, then one row per lane. */
 .rb-kanban.rb-kanban-lanes {

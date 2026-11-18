@@ -8,22 +8,6 @@
 }
 .rb-home-header h2 { margin: 0; }
 .rb-home-actions { display: flex; gap: 8px; flex-wrap: wrap; justify-content: flex-end; }
-.rb-home-create {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  padding: 7px 14px;
-  border-radius: 7px;
-  border: none;
-  background: var(--interactive-accent);
-  color: var(--text-on-accent);
-  cursor: pointer;
-  font-size: 13px;
-  font-weight: 600;
-}
-.rb-home-create:hover { background: var(--interactive-accent-hover); }
-.rb-home-create-icon { display: inline-flex; }
-.rb-home-create-icon svg { width: 15px; height: 15px; }
 
 .rb-home-empty { color: var(--text-muted); padding: 40px 0; text-align: center; }
 
