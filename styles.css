@@ -251,6 +251,18 @@ body {
 }
 :where(.rb-root, .rb-home, .rb-embed, .modal.rb-modal) select option:disabled { color: var(--text-faint); }
 
+/* ===== Date fields ===== */
+/* Obsidian (app.css "Date input") pins the calendar icon absolutely at left: 4px and relies on its own
+   --input-padding; our fields set their own padding, so the icon sat on the text. Put it back in flow, on
+   the right, as browsers draw it. Same :not() as Obsidian's rule, plus our scope, so this wins. */
+:is(.rb-root, .rb-home, .rb-embed, .modal.rb-modal) :is(input[type='date'], input[type='datetime-local']):not([disabled='true'])::-webkit-calendar-picker-indicator {
+  position: static;
+  margin: 0 0 0 6px;
+  opacity: 0.6;
+  cursor: pointer;
+}
+:is(.rb-root, .rb-home, .rb-embed, .modal.rb-modal) :is(input[type='date'], input[type='datetime-local']):not([disabled='true'])::-webkit-calendar-picker-indicator:hover { opacity: 1; }
+
 /* ===================== Board base ===================== */
 .rb-root {
   display: flex;

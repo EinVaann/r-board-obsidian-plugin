@@ -47,6 +47,16 @@ body {
   display: flex;
   flex-direction: column;
 }
+/* Like Obsidian's app.css "Date input": the calendar icon pinned at the left, over the field's padding. */
+input[type='date'],
+input[type='datetime-local'] { position: relative; }
+input[type='date']:not([disabled="true"])::-webkit-calendar-picker-indicator,
+input[type='datetime-local']:not([disabled="true"])::-webkit-calendar-picker-indicator {
+  position: absolute;
+  left: 4px;
+  right: auto;
+  opacity: 0.5;
+}
 /* Like Obsidian's app.css: buttons centre their content (components must not rely on the default). */
 button {
   display: inline-flex;
