@@ -224,6 +224,16 @@ test.describe('schedule view', () => {
     expect(rows.at(-1)!.cells).toMatchObject({ notes: ['[[Backlog Items/Ex Astris|Ex Astris]]'], hours: 4 });
   });
 
+  test('Log time takes hours and minutes and stores decimal hours', async ({ page }) => {
+    await page.getByRole('button', { name: 'Log time for Ex Astris' }).first().click();
+    await page.getByLabel('Hours').fill('1');
+    await page.getByLabel('Minutes').fill('6');
+    await expect(page.locator('.rb-log-summary')).toContainText('1 h 6 min (1.1 h)');
+    await page.getByRole('button', { name: 'Log', exact: true }).click();
+    const rows = await page.evaluate(() => JSON.parse(window.__files['Backlog timelog.table']).rows as { cells: Record<string, unknown> }[]);
+    expect(rows.at(-1)!.cells).toMatchObject({ hours: 1.1 });
+  });
+
   test('the right-click menu is the same short one everywhere', async ({ page }) => {
     const items = [
       page.locator('.rb-schedule-entry.is-current').first(),

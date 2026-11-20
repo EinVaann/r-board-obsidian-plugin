@@ -62,13 +62,20 @@ function LogSessionForm({
   // Opened from the toolbar (no game given): nothing is picked yet.
   const [item, setItem] = useState(initial ?? '');
   const [hours, setHours] = useState('');
+  const [minutes, setMinutes] = useState('');
   const [date, setDate] = useState(today);
   const [type, setType] = useState<SessionType | ''>(initial ? typeFor(initial) : '');
   const [searching, setSearching] = useState(false);
   const [q, setQ] = useState('');
   const hoursRef = useRef<HTMLInputElement>(null);
-  const h = Number(hours);
-  const valid = !!item && hours.trim() !== '' && Number.isFinite(h) && h > 0 && /^\d{4}-\d{2}-\d{2}$/.test(date);
+  const hh = hours.trim() === '' ? 0 : Number(hours);
+  const mm = minutes.trim() === '' ? 0 : Number(minutes);
+  const h = hh + mm / 60;
+  const valid = !!item && Number.isFinite(hh) && Number.isFinite(mm) && hh >= 0 && mm >= 0 && h > 0 && /^\d{4}-\d{2}-\d{2}$/.test(date);
+  const quick = (n: number): void => {
+    setHours(String(n));
+    setMinutes('');
+  };
   const picked = games.find((g) => g.id === item);
   // Running games are chips; a game picked from the search joins them.
   const chips = games.filter((g) => g.running || g.id === item);
@@ -92,7 +99,7 @@ function LogSessionForm({
     onSubmit({ item, hours: Math.round(h * 100) / 100 || h, date, ...(withType && type ? { type } : {}) });
     onDone();
   };
-  const summary = !item ? 'Pick a game' : !valid ? 'How long did you play?' : `${Math.round(h * 100) / 100} h · ${picked?.title ?? ''}`;
+  const summary = !item ? 'Pick a game' : !valid ? 'How long did you play?' : `${formatDuration(h)} (${Math.round(h * 100) / 100} h) · ${picked?.title ?? ''}`;
 
   return (
     <form
@@ -133,14 +140,21 @@ function LogSessionForm({
 
       <div className="rb-log-row">
         <div className="rb-log-field">
-          <span className="rb-log-label">Hours</span>
+          <span className="rb-log-label">Time</span>
           <div className="rb-log-hours">
             {[1, 2].map((n) => (
-              <Button key={n} type="button" variant="chip" className="rb-log-quick" aria-pressed={hours === String(n)} onClick={() => setHours(String(n))}>
+              <Button key={n} type="button" variant="chip" className="rb-log-quick" aria-pressed={hours === String(n) && !mm} onClick={() => quick(n)}>
                 {n} h
               </Button>
             ))}
-            <TextField ref={hoursRef} type="number" min="0" step="any" aria-label="Hours" placeholder="0" className="rb:flex-1 rb:text-right" value={hours} onChange={(e) => setHours(e.target.value)} />
+            <label className="rb-log-unit">
+              <TextField ref={hoursRef} type="number" min="0" step="1" inputMode="numeric" aria-label="Hours" placeholder="0" className="rb:text-right" value={hours} onChange={(e) => setHours(e.target.value)} />
+              <span>h</span>
+            </label>
+            <label className="rb-log-unit">
+              <TextField type="number" min="0" max="59" step="1" inputMode="numeric" aria-label="Minutes" placeholder="0" className="rb:text-right" value={minutes} onChange={(e) => setMinutes(e.target.value)} />
+              <span>min</span>
+            </label>
           </div>
         </div>
         <label className="rb-log-field">
@@ -168,6 +182,14 @@ function LogSessionForm({
       </div>
     </form>
   );
+}
+
+/** 1.1 → "1 h 6 min", 0.5 → "30 min", 2 → "2 h". */
+export function formatDuration(hours: number): string {
+  const total = Math.round(hours * 60);
+  const h = Math.floor(total / 60);
+  const m = total % 60;
+  return [h ? `${h} h` : '', m ? `${m} min` : ''].filter(Boolean).join(' ') || '0 min';
 }
 
 export interface Candidate extends GameOption {

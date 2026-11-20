@@ -2417,6 +2417,8 @@ body:not(.is-phone) .modal.rb-quick-add-modal { width: min(560px, 94vw); max-hei
 .rb-log-search-row:hover { background: var(--background-modifier-hover); }
 .rb-log-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
 .rb-log-hours { display: flex; gap: 6px; }
+.rb-log-unit { display: flex; flex: 1; align-items: center; gap: 4px; min-width: 0; font-size: var(--font-ui-smaller); color: var(--text-muted); }
+.rb-log-unit input { min-width: 0; }
 .rb-log-hint { font-size: var(--font-ui-smaller); color: var(--text-faint); }
 .rb-log-footer { display: flex; align-items: center; gap: 8px; margin: 4px calc(var(--size-4-4, 16px) * -1) calc(var(--size-4-4, 16px) * -1); padding: 12px var(--size-4-4, 16px); border-top: 1px solid var(--background-modifier-border); }
 .rb-log-summary { flex: 1; min-width: 0; font-size: var(--font-ui-smaller); color: var(--text-faint); }
