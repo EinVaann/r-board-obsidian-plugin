@@ -7,6 +7,7 @@ import { defaultScheduleConfig, guessLogColumns, guessSchedule } from '../../../
 import { conditionProperties, defaultSections, kindName, sectionProblems } from '../../../../lib/schedule/sections';
 import { DEFAULT_PENALTIES, DEFAULT_SETTINGS } from '../../../../types/schedule';
 import { useLinkedTable } from '../../../../hooks/use-linked-table';
+import { logShapeMissing, shapeLogTable } from '../../../../lib/schedule/log-table';
 import { AddRowInput, Button, Field, IconButton, Input, MultiSelect, NumberInput, Pill, Segmented, Select, SettingsCard as SimpleCard, type Option } from './controls';
 
 const KINDS: { value: SectionKind; hint: string }[] = [
@@ -29,6 +30,20 @@ export function ScheduleSettings({ config, view, edit }: { config: DatabaseConfi
   const logProps = log.status === 'ok' ? log.table.config.properties : [];
   const cols = guessLogColumns(logProps, sc);
   const tables = app.vault.getFiles().filter((f) => f.extension === 'table').map((f) => f.path).sort();
+  const missing = log.status === 'ok' ? logShapeMissing(logProps) : [];
+  const [shapeError, setShapeError] = useState<string | null>(null);
+
+  /** Link a log table and add the columns the schedule needs to it. */
+  const pickLog = async (path: string): Promise<void> => {
+    setShapeError(null);
+    if (!path) return set({ log: undefined, logItem: undefined, logHours: undefined, logDate: undefined, logType: undefined });
+    const r = await shapeLogTable(app, path);
+    if (!r.ok) {
+      setShapeError(r.error);
+      return set({ log: path });
+    }
+    set({ log: path, ...r.columns });
+  };
 
   const props = config.properties;
   const of = (types: PropertyConfig['type'][]): Option<string>[] => [
@@ -44,9 +59,18 @@ export function ScheduleSettings({ config, view, edit }: { config: DatabaseConfi
     <div className="rb-sched-settings">
       <Card icon="table" title="Session log" desc="One row per play session. Only logged hours move the forecast.">
         <Field label="Log table">
-          <Select value={sc.log ?? ''} options={[{ value: '', label: 'None' }, ...tables.map((t) => ({ value: t, label: t }))]} onChange={(v) => set({ log: v || undefined })} />
+          <Select value={sc.log ?? ''} options={[{ value: '', label: 'None' }, ...tables.map((t) => ({ value: t, label: t }))]} onChange={(v) => void pickLog(v)} />
         </Field>
         {log.status === 'error' && <div className="rb-sched-error">{log.error}</div>}
+        {shapeError && <div className="rb-sched-error">{shapeError}</div>}
+        {log.status === 'ok' && missing.length > 0 && (
+          <div className="rb-sched-section-tools">
+            <span className="rb-sched-hint">Missing: {missing.join(', ')}.</span>
+            <Button variant="ghost" size="sm" icon="wand" onClick={() => void pickLog(sc.log!)}>
+              Add them to the table
+            </Button>
+          </div>
+        )}
         {log.status === 'ok' && (
           <div className="rb-sched-grid">
             <Field label="Game">

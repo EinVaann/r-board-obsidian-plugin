@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import type { BoardItem, DatabaseConfig } from '../../types/database';
+import type { BoardItem, DatabaseConfig, PropertyConfig } from '../../types/database';
 import { parseDatabaseConfig, serializeDatabase, makeDefaultView } from '../config';
 import { defaultScheduleConfig, guessLogColumns, guessSchedule, parseSchedule } from './config';
 import { formatRange, formatShortRange } from './format';
@@ -72,6 +72,12 @@ describe('schedule config', () => {
     expect(guessed.sections![0].conditions).toEqual([{ property: 'status', op: 'is', value: 'playing' }, { property: 'live-service', op: 'checked' }]);
     expect(guessLogColumns([{ name: 'notes', type: 'links' }, { name: 'h', type: 'number' }, { name: 'd', type: 'date' }], defaultScheduleConfig()))
       .toEqual({ logItem: 'notes', logHours: 'h', logDate: 'd', logType: undefined });
+    const typed: PropertyConfig[] = [
+      { name: 'notes', type: 'links' },
+      { name: 'c84', type: 'select', label: 'Kind', options: [{ value: 'lane' }, { value: 'trial' }] },
+    ];
+    expect(guessLogColumns(typed, defaultScheduleConfig()).logType).toBe('c84');
+    expect(guessLogColumns([{ name: 'x', type: 'text', label: 'Type' }], defaultScheduleConfig()).logType).toBe('x');
   });
 });
 

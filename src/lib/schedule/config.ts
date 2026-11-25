@@ -107,12 +107,24 @@ export function guessSchedule(config: DatabaseConfig, c: ScheduleConfig): Schedu
 }
 
 /** Log columns not chosen yet, guessed from the log table's properties. */
-export function guessLogColumns(log: PropertyConfig[], c: ScheduleConfig): Required<Pick<ScheduleConfig, 'logItem' | 'logHours' | 'logDate'>> & { logType?: string } {
+export function guessLogColumns(
+  log: PropertyConfig[],
+  c: Pick<ScheduleConfig, 'logItem' | 'logHours' | 'logDate' | 'logType'> = {},
+): Required<Pick<ScheduleConfig, 'logItem' | 'logHours' | 'logDate'>> & { logType?: string } {
   const has = (name: string | undefined): string | undefined => (name && log.some((p) => p.name === name) ? name : undefined);
   return {
     logItem: has(c.logItem) ?? log.find((p) => p.type === 'links')?.name ?? '',
     logHours: has(c.logHours) ?? log.find((p) => p.type === 'number')?.name ?? '',
     logDate: has(c.logDate) ?? log.find((p) => p.type === 'date')?.name ?? '',
-    logType: has(c.logType),
+    logType: has(c.logType) ?? log.find(isTypeColumn)?.name,
   };
+}
+
+export const SESSION_TYPES = ['lane', 'live', 'detour', 'trial'];
+
+/** A select whose options are session types, or a select / text column named "type". */
+function isTypeColumn(p: PropertyConfig): boolean {
+  if (p.type !== 'select' && p.type !== 'text') return false;
+  if (p.options?.some((o) => SESSION_TYPES.includes(o.value.toLowerCase()))) return true;
+  return /^(session )?type$/i.test(p.label ?? p.name);
 }
